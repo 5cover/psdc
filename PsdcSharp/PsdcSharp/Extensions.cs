@@ -66,9 +66,9 @@ internal static class Extensions
 
     public static T LogOperation<T>(this string name, Func<T> operation)
     {
-        Console.Write($"{name}...");
+        Console.Error.Write($"{name}...");
         T t = operation();
-        Console.WriteLine(" done");
+        Console.Error.WriteLine(" done");
         return t;
     }
 

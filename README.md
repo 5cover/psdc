@@ -25,8 +25,8 @@ Short name | Long name | Description | Expected value | Default value
 
 Short name | Long name | Description
 -|-|-
-N/A | --ecrire-noNewline | Changes the behavior of the ``ecrireEcran`` subroutine so it doesn't print a newline | switch parameter
+N/A | --ecrire-noNewline | Changes the behavior of the `ecrireEcran` subroutine so it doesn't print a newline | switch parameter
 
 ## Tools
 
-[Visual Studio Code Pseudocode extension](https://marketplace.visualstudio.com/items?itemName=NoanPerrot.pseudocode) (by Noan Perrot
+[Visual Studio Code Pseudocode extension](https://marketplace.visualstudio.com/items?itemName=NoanPerrot.pseudocode) (by Noan Perrot)

@@ -2,11 +2,11 @@ namespace Scover.Psdc.Parsing.Nodes;
 
 internal interface Node
 {
-    internal sealed record Algorithm(ParseResult<string> Name, IReadOnlyCollection<ParseResult<Declaration>> Declarations) : Node;
+    internal sealed record Algorithm(IReadOnlyCollection<ParseResult<Declaration>> Declarations) : Node;
 
     internal interface Declaration : Node
     {
-        internal sealed record MainProgram(IReadOnlyCollection<ParseResult<Statement>> Block) : Declaration;
+        internal sealed record MainProgram(ParseResult<string> ProgramName, IReadOnlyCollection<ParseResult<Statement>> Block) : Declaration;
 
         internal sealed record Alias(ParseResult<string> Name, ParseResult<Type> Type) : Declaration;
 
@@ -36,9 +36,13 @@ internal interface Node
         internal sealed record Return(ParseResult<Expression> Value) : Statement;
 
         internal sealed record Alternative(
-            ParseResult<Expression> Condition,
-            IReadOnlyCollection<ParseResult<Statement>> ThenBlock,
-            Option<IReadOnlyCollection<ParseResult<Statement>>> ElseBlock) : Statement;
+            Alternative.Clause If,
+            IReadOnlyCollection<ParseResult<Alternative.Clause>> ElseIfs,
+            Option<IReadOnlyCollection<ParseResult<Statement>>> Else) : Statement
+        {
+            // Helper type, not a node on it own
+            internal sealed record Clause(ParseResult<Expression> Condition, IReadOnlyCollection<ParseResult<Statement>> Block);
+        }
 
         internal sealed record Assignment(ParseResult<string> Target, ParseResult<Expression> Value) : Statement;
 

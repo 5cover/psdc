@@ -14,7 +14,7 @@ internal partial class CodeGeneratorC
         StringBuilder format = new();
 
         foreach (var partNode in parts) {
-            GetValueOrAddSyntaxError(partNode).MatchSome(part => {
+            GetValueOrSyntaxError(partNode).MatchSome(part => {
                 if (part is Node.Expression.Literal literal) {
                     format.Append(literal.Value.Replace("%", "%%"));
                 } else {

@@ -40,7 +40,7 @@ $$
 
 &\textbf{Général}\notag\\
 
-⟨Algorithme⟩ &\to \text{programme}\ identifiant\ \text{c'est\ début} ⟨Déclaration⟩^* \text{fin}
+⟨Algorithme⟩ &\to ⟨Déclaration⟩^*
 \\
 ⟨Bloc⟩ &\to ⟨Instruction⟩^*
 
@@ -49,9 +49,10 @@ $$
 ⟨Déclaration⟩ &\to \begin{cases}
     ⟨DéclarationAlias⟩\\
     ⟨DéclarationConstante⟩\\
-    ⟨SignatureFonction⟩ \text{c'est\ début}⟨Bloc⟩ \text{fin}\\
+    ⟨ProgrammePrincipal⟩\\
+    ⟨SignatureFonction⟩ \text{c'est\ début} ⟨Bloc⟩ \text{fin}\\
     ⟨SignatureFonction⟩;\\
-    ⟨SignatureProcédure⟩ \text{c'est\ début}⟨Bloc⟩ \text{fin}\\
+    ⟨SignatureProcédure⟩ \text{c'est\ début} ⟨Bloc⟩ \text{fin}\\
     ⟨SignatureProcédure⟩;\\
     \text{début} ⟨Bloc⟩ \text{fin}\\
 \end{cases}
@@ -65,15 +66,17 @@ $$
 \\
 ⟨DéfinitionStructure⟩ &\to \text{structure\ début} ⟨DéclarationVariable⟩^+ \text{fin}
 \\
-⟨SignatureFonction⟩ &\to \text{fonction}\ identifiant(⟨ParamètreFormel⟩^{*|,}) \text{délivre} ⟨Type⟩
-\\
-⟨SignatureProcédure⟩ &\to \text{procédure}\ identifiant(⟨ParamètreFormel⟩^{*|,})
-\\
 ⟨ParamètreFormel⟩ &\to \begin{cases}
     \text{entF}\\
     \text{sortF}\\
     \text{entF/sortF}\\
 \end{cases} identifiant : ⟨Type⟩
+\\
+⟨ProgrammePrincpal⟩ &\to \text{programme}\ identifiant\ \text{c'est\ début} ⟨Bloc⟩ \text{fin}
+\\
+⟨SignatureFonction⟩ &\to \text{fonction}\ identifiant(⟨ParamètreFormel⟩^{*|,}) \text{délivre} ⟨Type⟩
+\\
+⟨SignatureProcédure⟩ &\to \text{procédure}\ identifiant(⟨ParamètreFormel⟩^{*|,})
 
 \\&\textbf{Instructions}\notag\\
 

@@ -130,8 +130,10 @@ internal sealed class Tokenizer : CompilationStep
         new(KeywordFor, "pour"),
         new(KeywordIf, "si"),
         new(KeywordRepeat, "répéter"),
+        new(KeywordStep, "pas"),
         new(KeywordSwitch, "selon"),
         new(KeywordThen, "alors"),
+        new(KeywordTo, "à"),
         new(KeywordUntil, "jusqu'à"),
         new(KeywordWhen, "quand"),
         new(KeywordWhile, "tant que"),
@@ -143,10 +145,6 @@ internal sealed class Tokenizer : CompilationStep
         new(KeywordEntSortF, "entF/sortF"),
         new(KeywordSortE, "sortE"),
         new(KeywordSortF, "sortF"),
-
-        // Contextual keywords
-        new(KeywordStep, "pas"),
-        new(KeywordTo, "à"),
     };
 
     private static IEnumerable<TokenRule> EndRules => new List<RegexTokenRule> { new(Identifier, @"([\p{L}_][\p{L}_0-9]*)") };
@@ -171,6 +169,8 @@ internal sealed class Tokenizer : CompilationStep
                 yield return token.Value;
             }
         } while (offset < _input.Length);
+
+        yield return new Token(End, null, offset, 0);
     }
 
     private Option<Token> ReadNextValidToken(int startIndex)

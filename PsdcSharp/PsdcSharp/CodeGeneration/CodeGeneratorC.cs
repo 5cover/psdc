@@ -9,7 +9,7 @@ namespace Scover.Psdc.CodeGeneration;
 internal sealed partial class CodeGeneratorC : CodeGenerator
 {
     private readonly IncludeSet _includes = new();
-    private readonly Indentation _indentation = new();
+    private readonly Indentation _indent = new();
     private readonly ParseResult<Node.Algorithm> _root;
     private readonly Scope _scope = new();
 
@@ -18,12 +18,12 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     public override string Generate()
     {
         StringBuilder output = new();
-        GetValueOrAddSyntaxError(_root).MatchSome(root => GenerateAlgorithm(output, root).AppendLine());
+        GetValueOrSyntaxError(_root).MatchSome(root => GenerateAlgorithm(output, root).AppendLine());
 
         StringBuilder head = new();
         _includes.Generate(head);
 
-        return head.Append(output).ToString();
+        return head.AppendLine().Append(output).ToString();
     }
 
     private static string GetOperationOperator(TokenType @operator) => @operator switch {
@@ -47,12 +47,12 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     private Option<TypeInfo> CreateType(Node.Type type) => type switch {
         Node.Type.String => TypeInfo.String.Create().Some(),
         Node.Type.Primitive p => TypeInfo.Primitive.Create(p.Type).Some(),
-        Node.Type.AliasReference alias => GetValueOrAddSyntaxError(alias.Name)
+        Node.Type.AliasReference alias => GetValueOrSyntaxError(alias.Name)
             .FlatMap(aliasName => _scope.GetSymbol<Symbol.TypeAlias>(aliasName)
                 .Map(aliasType => TypeInfo.Alias.Create(aliasName, aliasType.TargetType))),
-        Node.Type.Array array => GetValueOrAddSyntaxError(array.Type).FlatMap(CreateType).Map(elementType
-         => TypeInfo.Array.Create(elementType, GetValuesOrAddSyntaxErrors(array.Dimensions).Select(GenerateExpressionToString))),
-        Node.Type.LengthedString str => GetValueOrAddSyntaxError(str.Length).Map(length
+        Node.Type.Array array => GetValueOrSyntaxError(array.Type).FlatMap(CreateType).Map(elementType
+         => TypeInfo.Array.Create(elementType, GetValuesOrSyntaxErrors(array.Dimensions).Select(GenerateExpressionToString))),
+        Node.Type.LengthedString str => GetValueOrSyntaxError(str.Length).Map(length
          => EvaluateValue(length)
             .FlatMap(Parse.ToInt32)
             .Map(TypeInfo.LengthedString.Create)
@@ -70,9 +70,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     {
         _scope.Push(); // global scope
 
-        GetValueOrAddSyntaxError(algorithm.Name).MatchSome(name => _indentation.Indent(output).AppendLine($"// {name}"));
-
-        foreach (Node.Declaration declaration in GetValuesOrAddSyntaxErrors(algorithm.Declarations)) {
+        foreach (Node.Declaration declaration in GetValuesOrSyntaxErrors(algorithm.Declarations)) {
             GenerateDeclaration(output, declaration);
         }
 
@@ -83,12 +81,23 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateArraySubscript(StringBuilder output, Node.Expression.ArraySubscript arraySubscript)
     {
-        GetValueOrAddSyntaxError(arraySubscript.Array).MatchSome(array => GenerateExpression(output, array));
+        GetValueOrSyntaxError(arraySubscript.Array).MatchSome(array => GenerateExpression(output, array));
 
-        foreach (Node.Expression index in GetValuesOrAddSyntaxErrors(arraySubscript.Indices)) {
+        foreach (Node.Expression index in GetValuesOrSyntaxErrors(arraySubscript.Indices)) {
             GenerateExpression(output.Append('['), index).Append(']');
         }
 
+        return output;
+    }
+
+    private StringBuilder GenerateBlock(StringBuilder output, IReadOnlyCollection<ParseResult<Node.Statement>> block)
+    {
+        _scope.Push();
+        foreach (ParseResult<Node.Statement> statementNode in block) {
+            GetValueOrSyntaxError(statementNode).MatchSome(statement =>
+                GenerateStatement(output, statement, statementNode.SourceTokens));
+        }
+        _scope.Pop();
         return output;
     }
 
@@ -106,7 +115,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         Node.Expression.OperationBinary binaryOperation => GenerateOperationBinary(output, binaryOperation),
         Node.Expression.OperationUnary unaryOperation => GenerateOperationUnary(output, unaryOperation),
         Node.Expression.ArraySubscript arraySubscript => GenerateArraySubscript(output, arraySubscript),
-        Node.Expression.Bracketed bracketed => GetValueOrAddSyntaxError(bracketed.Expression)
+        Node.Expression.Bracketed bracketed => GetValueOrSyntaxError(bracketed.Expression)
             .Map(expr => GenerateExpression(output.Append('('), expr).Append(')')).ValueOr(output),
         Node.Expression.Variable variable => output.Append(variable.Name),
         _ => throw expression.ToUnmatchedException(),
@@ -122,39 +131,31 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateMainProgram(StringBuilder output, Node.Declaration.MainProgram mainProgram)
     {
-        _indentation.Indent(output).AppendLine("int main()");
-        _indentation.Indent(output).AppendLine("{");
+        GetValueOrSyntaxError(mainProgram.ProgramName).MatchSome(name => _indent.Indent(output).AppendLine($"// {name}"));
+        _indent.Indent(output).AppendLine("int main() {");
 
-        _scope.Push();
-        _indentation.Increase();
+        _indent.Increase();
+        GenerateBlock(output, mainProgram.Block);
+        _indent.Indent(output.AppendLine()).AppendLine("return 0;");
+        _indent.Decrease();
 
-        foreach (ParseResult<Node.Statement> statementNode in mainProgram.Block) {
-            GetValueOrAddSyntaxError(statementNode).MatchSome(statement =>
-                GenerateStatement(output, statement, statementNode.SourceTokens));
-        }
-
-        _indentation.Indent(output).AppendLine("return 0;");
-
-        _indentation.Decrease();
-        _scope.Pop();
-
-        _indentation.Indent(output).AppendLine("}");
+        _indent.Indent(output).AppendLine("}");
 
         return output;
     }
 
     private StringBuilder GenerateOperationBinary(StringBuilder output, Node.Expression.OperationBinary operation)
     {
-        GetValueOrAddSyntaxError(operation.Operand1).MatchSome(op1 => GenerateExpression(output, op1));
+        GetValueOrSyntaxError(operation.Operand1).MatchSome(op1 => GenerateExpression(output, op1));
         output.Append($" {GetOperationOperator(operation.Operator)} ");
-        GetValueOrAddSyntaxError(operation.Operand2).MatchSome(op2 => GenerateExpression(output, op2));
+        GetValueOrSyntaxError(operation.Operand2).MatchSome(op2 => GenerateExpression(output, op2));
         return output;
     }
 
     private StringBuilder GenerateOperationUnary(StringBuilder output, Node.Expression.OperationUnary operation)
     {
         output.Append(GetOperationOperator(operation.Operator));
-        GetValueOrAddSyntaxError(operation.Operand).MatchSome(op1 => GenerateExpression(output, op1));
+        GetValueOrSyntaxError(operation.Operand).MatchSome(op1 => GenerateExpression(output, op1));
         return output;
     }
 
@@ -164,7 +165,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
         var (format, arguments) = BuildFormatString(print.Arguments);
 
-        _indentation.Indent(output).Append($@"printf(""{format}\n""");
+        _indent.Indent(output).Append($@"printf(""{format}\n""");
 
         foreach (Node.Expression arg in arguments) {
             GenerateExpression(output.Append(", "), arg);
@@ -179,7 +180,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
         var (format, arguments) = BuildFormatString(read.Argument.Yield());
 
-        _indentation.Indent(output).Append($@"scanf(""{format}""");
+        _indent.Indent(output).Append($@"scanf(""{format}""");
 
         foreach (Node.Expression arg in arguments) {
             GenerateExpression(output.Append(", "), arg);
@@ -193,15 +194,49 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         Node.Statement.Read read => GenerateReadStatement(output, read),
         Node.Statement.VariableDeclaration variableDeclaration => GenerateVariableDeclaration(output, variableDeclaration, sourceTokens),
         Node.Statement.Assignment assignment => GenerateAssignment(output, assignment),
+        Node.Statement.Alternative alternative => GenerateAlternative(output, alternative),
         _ => throw statement.ToUnmatchedException(),
     };
 
+    private StringBuilder GenerateAlternative(StringBuilder output, Node.Statement.Alternative alternative)
+    {
+        GenerateClause(output, alternative.If, "if");
+
+        foreach (var elseIf in GetValuesOrSyntaxErrors(alternative.ElseIfs)) {
+            GenerateClause(output, elseIf, "else if");
+        }
+
+        alternative.Else.MatchSome(elseBlock
+         => {
+             _indent.Indent(output).AppendLine("else {");
+             _indent.Increase();
+             GenerateBlock(output, elseBlock);
+             _indent.Decrease();
+             _indent.Indent(output).AppendLine("}");
+         });
+
+        return output;
+    }
+
+    private StringBuilder GenerateClause(StringBuilder output, Node.Statement.Alternative.Clause clause, string keyword)
+    {
+        _indent.Indent(output).Append($"{keyword} (");
+        GetValueOrSyntaxError(clause.Condition).MatchSome(cond => GenerateExpression(output, cond));
+        output.AppendLine(") {");
+
+        _indent.Increase();
+        GenerateBlock(output, clause.Block);
+        _indent.Decrease();
+
+        return _indent.Indent(output).AppendLine("}");
+    }
+
     private StringBuilder GenerateAssignment(StringBuilder output, Node.Statement.Assignment assignment)
     {
-        _indentation.Indent(output);
-        GetValueOrAddSyntaxError(assignment.Target).Map(output.Append);
+        _indent.Indent(output);
+        GetValueOrSyntaxError(assignment.Target).Map(output.Append);
         output.Append(" = ");
-        GetValueOrAddSyntaxError(assignment.Value).Map(expr => GenerateExpression(output, expr));
+        GetValueOrSyntaxError(assignment.Value).Map(expr => GenerateExpression(output, expr));
         output.AppendLine(";");
 
         return output;
@@ -209,10 +244,10 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateVariableDeclaration(StringBuilder output, Node.Statement.VariableDeclaration variableDeclaration, IReadOnlyCollection<Token> sourceTokens)
     {
-        _indentation.Indent(output);
+        _indent.Indent(output);
 
-        GetValueOrAddSyntaxError(variableDeclaration.Type).FlatMap(CreateType).MatchSome(variableType => {
-            List<string> names = GetValuesOrAddSyntaxErrors(variableDeclaration.Names).ToList();
+        GetValueOrSyntaxError(variableDeclaration.Type).FlatMap(CreateType).MatchSome(variableType => {
+            List<string> names = GetValuesOrSyntaxErrors(variableDeclaration.Names).ToList();
             foreach (var name in names.Where(name => !_scope.TryAdd(name, new Symbol.Variable(variableType)))) {
                 AddMessage(Message.RedefinedSymbol<Symbol.Variable>(sourceTokens, name));
             }
@@ -225,7 +260,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         return output;
     }
 
-    private Option<T> GetValueOrAddSyntaxError<T>(ParseResult<T> result)
+    private Option<T> GetValueOrSyntaxError<T>(ParseResult<T> result)
     {
         if (result.HasValue) {
             return result.Value.Some();
@@ -237,6 +272,6 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     }
 
     /// <remarks>The returned collection should only be enumerated once, otherwise we may get duplicate errors.</remarks>
-    private IEnumerable<T> GetValuesOrAddSyntaxErrors<T>(IEnumerable<ParseResult<T>> results)
-     => results.Select(GetValueOrAddSyntaxError).WhereSome();
+    private IEnumerable<T> GetValuesOrSyntaxErrors<T>(IEnumerable<ParseResult<T>> results)
+     => results.Select(GetValueOrSyntaxError).WhereSome();
 }

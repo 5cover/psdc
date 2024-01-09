@@ -8,23 +8,18 @@ internal sealed partial class Parser : CompilationStep
     private readonly IEnumerable<Token> _tokens;
     public Parser(IEnumerable<Token> tokens) => _tokens = tokens;
 
-#region General
-
     // Parsing starts here with the "Algorithm" production rule
     public ParseResult<Node.Algorithm> Parse() => ParseOperation.Start(_tokens)
-        .ParseToken(TokenType.KeywordProgram)
-        .ParseToken(TokenType.Identifier, out var name)
-        .ParseToken(TokenType.KeywordIs)
-        .ParseZeroOrMoreUntilEnd(ParseDeclaration, out IReadOnlyCollection<ParseResult<Node.Declaration>> declarations)
-    .BuildResult(() => new Node.Algorithm(name, declarations));
+        .ParseZeroOrMoreUntilToken(tokens => ParseEither(tokens, declarationParsers),
+            out IReadOnlyCollection<ParseResult<Node.Declaration>> declarations, TokenType.End)
+    .BuildResult(() => new Node.Algorithm(declarations));
 
-#endregion General
+    #region Declarations
 
-#region Declarations
-
-    private static ParseResult<Node.Declaration> ParseDeclaration(IEnumerable<Token> tokens)
-     => ParseAliasDeclaration(tokens)
-     .Else<Node.Declaration>(() => ParseMainProgram(tokens));
+    private static readonly IReadOnlyDictionary<TokenType, ParseMethod<Node.Declaration>> declarationParsers = new Dictionary<TokenType, ParseMethod<Node.Declaration>>{
+        [TokenType.KeywordTypeAlias] = ParseAliasDeclaration,
+        [TokenType.KeywordProgram] = ParseMainProgram,
+    };
 
     private static ParseResult<Node.Declaration.Alias> ParseAliasDeclaration(IEnumerable<Token> tokens) => ParseOperation.Start(tokens)
         .ParseToken(TokenType.KeywordTypeAlias)
@@ -36,35 +31,51 @@ internal sealed partial class Parser : CompilationStep
     .BuildResult(() => new Node.Declaration.Alias(name, type));
 
     private static ParseResult<Node.Declaration.MainProgram> ParseMainProgram(IEnumerable<Token> tokens) => ParseOperation.Start(tokens)
+        .ParseToken(TokenType.KeywordProgram)
+        .ParseToken(TokenType.Identifier, out var name)
+        .ParseToken(TokenType.KeywordIs)
         .ParseToken(TokenType.KeywordBegin)
-        .ParseZeroOrMoreUntilToken(ParseStatement, TokenType.KeywordEnd, out var block)
+        .ParseZeroOrMoreUntilToken(ParseStatement, out var block, TokenType.KeywordEnd)
         .ParseToken(TokenType.KeywordEnd)
-    .BuildResult(() => new Node.Declaration.MainProgram(block));
+    .BuildResult(() => new Node.Declaration.MainProgram(name, block));
 
-#endregion Declarations
+    #endregion Declarations
 
-#region Statements
+    #region Statements
 
     private static readonly IReadOnlyDictionary<TokenType, ParseMethod<Node.Statement>> statementParsers = new Dictionary<TokenType, ParseMethod<Node.Statement>> {
         [TokenType.KeywordEcrireEcran] = ParsePrintStatement,
         [TokenType.KeywordLireClavier] = ParseReadStatement,
         [TokenType.Identifier] = (tokens) => ParseVariableDeclaration(tokens)
             .Else<Node.Statement>(() => ParseAssignment(tokens)),
+        [TokenType.KeywordIf] = ParseAlternative,
     };
 
     private static ParseResult<Node.Statement> ParseStatement(IEnumerable<Token> tokens) => ParseEither(tokens, statementParsers);
 
-    /*private static ParseResult<Node.Statement.Alternative> ParseAlternative(IEnumerable<Token> tokens) => ParseOperation.Start(tokens)
+    private static ParseResult<Node.Statement.Alternative> ParseAlternative(IEnumerable<Token> tokens) => ParseOperation.Start(tokens)
         .ParseToken(TokenType.KeywordIf)
-        .Parse(ParseExpression, out var condition)
+        .Parse(ParseExpression, out var ifClauseCondition)
         .ParseToken(TokenType.KeywordThen)
-        .ParseZeroOrMoreUntilToken(ParseStatement, TokenType., out var thenBlock)
+        .ParseZeroOrMoreUntilToken(ParseStatement, out var ifClauseBlock,
+            TokenType.KeywordElseIf, TokenType.KeywordElse, TokenType.KeywordEndIf)
+        .ParseZeroOrMoreUntilToken(tokens => ParseAlternativeClause(tokens, TokenType.KeywordElseIf), out var elseIfClauses,
+            TokenType.KeywordEndIf, TokenType.KeywordElse)
         .Parse(tokens => ParseOperation.Start(tokens)
             .ParseToken(TokenType.KeywordElse)
-            .ParseZeroOrMoreUntilToken(ParseStatement, TokenType., out var elseBlock)
-            .BuildResult(() => elseBlock), out var elseBlock)
+            .ParseZeroOrMoreUntilToken(ParseStatement, out var elseBlock, TokenType.KeywordEndIf)
+            .BuildResult(() => elseBlock), out var elseClause)
         .ParseToken(TokenType.KeywordEndIf)
-        .BuildResult(() => new Node.Statement.Alternative(condition, thenBlock, elseBlock.DiscardError()));*/
+        .BuildResult(() => new Node.Statement.Alternative(new(ifClauseCondition, ifClauseBlock),
+            elseIfClauses, elseClause.DiscardError()));
+
+    private static ParseResult<Node.Statement.Alternative.Clause> ParseAlternativeClause(IEnumerable<Token> tokens, TokenType type) => ParseOperation.Start(tokens)
+        .ParseToken(type)
+        .Parse(ParseExpression, out var condition)
+        .ParseToken(TokenType.KeywordThen)
+        .ParseZeroOrMoreUntilToken(ParseStatement, out var block,
+            TokenType.KeywordElseIf, TokenType.KeywordElse, TokenType.KeywordEndIf)
+    .BuildResult(() => new Node.Statement.Alternative.Clause(condition, block));
 
     private static ParseResult<Node.Statement.VariableDeclaration> ParseVariableDeclaration(IEnumerable<Token> tokens) => ParseOperation.Start(tokens)
         .ParseOneOrMoreDelimited(tokens => ParseTokenValue(tokens, TokenType.Identifier), TokenType.DelimiterSeparator, out var names)
@@ -96,9 +107,9 @@ internal sealed partial class Parser : CompilationStep
         .ParseToken(TokenType.DelimiterTerminator)
     .BuildResult(() => new Node.Statement.Read(argument));
 
-#endregion Statements
+    #endregion Statements
 
-#region Types
+    #region Types
 
     private static readonly IReadOnlyDictionary<TokenType, ParseMethod<Node.Type>> completeTypeParsers = new Dictionary<TokenType, ParseMethod<Node.Type>> {
         [TokenType.KeywordInteger] = MakePrimitiveTypeParser(PrimitiveType.Integer),
@@ -139,16 +150,16 @@ internal sealed partial class Parser : CompilationStep
     private static ParseResult<Node.Type.StructureDefinition> ParseStructureDefinition(IEnumerable<Token> tokens) => ParseOperation.Start(tokens)
         .ParseToken(TokenType.KeywordStructure)
         .ParseToken(TokenType.KeywordBegin)
-        .ParseZeroOrMoreUntilToken(ParseVariableDeclaration, TokenType.KeywordEnd, out var components)
+        .ParseZeroOrMoreUntilToken(ParseVariableDeclaration, out var components, TokenType.KeywordEnd)
         .ParseToken(TokenType.KeywordEnd)
     .BuildResult(() => new Node.Type.StructureDefinition(components));
 
     private static ParseMethod<Node.Type.Primitive> MakePrimitiveTypeParser(PrimitiveType type)
      => tokens => ParseResult.Ok(Take(1, tokens), new Node.Type.Primitive(type));
 
-#endregion Types
+    #endregion Types
 
-#region Terminals
+    #region Terminals
 
-#endregion Terminals
+    #endregion Terminals
 }

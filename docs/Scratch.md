@@ -4,7 +4,11 @@
 
 Project roadmap:
 
-- Alternatives
+- Brace initialization (voire TD4 ex 1)
+- Alternative keywords
+    - finPour in place of fin
+
+- ~~Alternatives~~
 - Loops
 - Procedures
 - Functions
@@ -12,9 +16,7 @@ Project roadmap:
 - Files
 - CLI
 - Tests?
-
-- CodeMaid Cleanup
-- Push repository
+- Command arguments (use nuget package)
 - Release
 - Documentation
 
@@ -113,6 +115,8 @@ Solution 2 : ParseError should have a property for the minimal amount of expecte
 Then we can just skip that amount of tokens next time we parse.
 
 Solution 3 : who cares, it's not that big of a deal.
+
+Solution 4 : skim until first token of the target node, then resume parskong
 
 ## What constitutes to be a ParseResult
 

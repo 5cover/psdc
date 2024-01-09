@@ -126,8 +126,10 @@ internal enum TokenType
     KeywordFor,
     KeywordIf,
     KeywordRepeat,
+    KeywordStep,
     KeywordSwitch,
     KeywordThen,
+    KeywordTo,
     KeywordUntil,
     KeywordWhen,
     KeywordWhile,
@@ -145,12 +147,8 @@ internal enum TokenType
 
     #endregion Parameters
 
-    #region Contextual
-
-    KeywordStep,
-    KeywordTo,
-
-    #endregion Contextual
-
     #endregion Keywords
+
+    /// <summary>Special tokens that indicates the end of the token sequence.</summary>
+    End,
 }

@@ -13,12 +13,11 @@ internal abstract class ParseOperation
     public abstract ParseOperation Parse<T>(ParseMethod<T> parse, out ParseResult<T> result);
     public abstract ParseOperation ParseOneOrMoreDelimited<T>(ParseMethod<T> parse, TokenType delimiter, out IReadOnlyCollection<ParseResult<T>> items);
     public abstract ParseOperation ParseOneOrMoreUntil<T>(ParseMethod<T> parse, Predicate<IEnumerable<Token>> until, out IReadOnlyCollection<ParseResult<T>> items);
-    public abstract ParseOperation ParseOneOrMoreUntilToken<T>(ParseMethod<T> parse, TokenType until, out IReadOnlyCollection<ParseResult<T>> items);
+    public abstract ParseOperation ParseOneOrMoreUntilToken<T>(ParseMethod<T> parse, out IReadOnlyCollection<ParseResult<T>> items, params TokenType[] endTokens);
     public abstract ParseOperation ParseToken(TokenType type, out ParseResult<string> value);
     public abstract ParseOperation ParseToken(TokenType type);
     public abstract ParseOperation ParseZeroOrMoreUntil<T>(ParseMethod<T> parse, Predicate<IEnumerable<Token>> until, out IReadOnlyCollection<ParseResult<T>> items);
-    public abstract ParseOperation ParseZeroOrMoreUntilEnd<T>(ParseMethod<T> parse, out IReadOnlyCollection<ParseResult<T>> items);
-    public abstract ParseOperation ParseZeroOrMoreUntilToken<T>(ParseMethod<T> parse, TokenType until, out IReadOnlyCollection<ParseResult<T>> items);
+    public abstract ParseOperation ParseZeroOrMoreUntilToken<T>(ParseMethod<T> parse, out IReadOnlyCollection<ParseResult<T>> items, params TokenType[] endTokens);
 
     private sealed class SuccessfulSoFarOperation : ParseOperation
     {
@@ -84,8 +83,8 @@ internal abstract class ParseOperation
             return this;
         }
 
-        public override ParseOperation ParseOneOrMoreUntilToken<T>(ParseMethod<T> parse, TokenType until, out IReadOnlyCollection<ParseResult<T>> items)
-            => ParseOneOrMoreUntil(parse, tokens => FirstTokenIs(tokens, until), out items);
+        public override ParseOperation ParseOneOrMoreUntilToken<T>(ParseMethod<T> parse, out IReadOnlyCollection<ParseResult<T>> items, params TokenType[] endTokens)
+            => ParseOneOrMoreUntil(parse, tokens => FirstTokenIsAny(tokens, endTokens), out items);
 
         public override ParseOperation ParseToken(TokenType type)
         {
@@ -116,11 +115,8 @@ internal abstract class ParseOperation
             return this;
         }
 
-        public override ParseOperation ParseZeroOrMoreUntilEnd<T>(ParseMethod<T> parse, out IReadOnlyCollection<ParseResult<T>> items)
-            => ParseZeroOrMoreUntil(parse, _ => false, out items);
-
-        public override ParseOperation ParseZeroOrMoreUntilToken<T>(ParseMethod<T> parse, TokenType until, out IReadOnlyCollection<ParseResult<T>> items)
-            => ParseZeroOrMoreUntil(parse, tokens => FirstTokenIs(tokens, until), out items);
+        public override ParseOperation ParseZeroOrMoreUntilToken<T>(ParseMethod<T> parse, out IReadOnlyCollection<ParseResult<T>> items, params TokenType[] endTokens)
+         => ParseZeroOrMoreUntil(parse, tokens => FirstTokenIsAny(tokens, endTokens), out items);
 
         private IEnumerable<ParseResult<T>> ParseZeroOrMoreUntilImpl<T>(ParseMethod<T> parse, Predicate<IEnumerable<Token>> until)
         {
@@ -135,8 +131,8 @@ internal abstract class ParseOperation
             }
         }
 
-        private static bool FirstTokenIs(IEnumerable<Token> tokens, TokenType type)
-            => tokens.FirstOrNone().Map(token => token.Type == type).ValueOr(false);
+        private static bool FirstTokenIsAny(IEnumerable<Token> tokens, IEnumerable<TokenType> types)
+         => tokens.FirstOrNone().Map(token => types.Contains(token.Type)).ValueOr(false);
 
         private ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(_readTokens, result);
         private bool NextParsingTokenIs(TokenType type) => ParsingTokens.FirstOrDefault() is { } token && token.Type == type;
@@ -171,7 +167,7 @@ internal abstract class ParseOperation
             return this;
         }
 
-        public override ParseOperation ParseOneOrMoreUntilToken<T>(ParseMethod<T> parse, TokenType until, out IReadOnlyCollection<ParseResult<T>> items)
+        public override ParseOperation ParseOneOrMoreUntilToken<T>(ParseMethod<T> parse, out IReadOnlyCollection<ParseResult<T>> items, params TokenType[] endTokens)
         {
             items = Array.Empty<ParseResult<T>>();
             return this;
@@ -191,13 +187,7 @@ internal abstract class ParseOperation
             return this;
         }
 
-        public override ParseOperation ParseZeroOrMoreUntilEnd<T>(ParseMethod<T> parse, out IReadOnlyCollection<ParseResult<T>> items)
-        {
-            items = Array.Empty<ParseResult<T>>();
-            return this;
-        }
-
-        public override ParseOperation ParseZeroOrMoreUntilToken<T>(ParseMethod<T> parse, TokenType until, out IReadOnlyCollection<ParseResult<T>> items)
+        public override ParseOperation ParseZeroOrMoreUntilToken<T>(ParseMethod<T> parse, out IReadOnlyCollection<ParseResult<T>> items, params TokenType[] endTokens)
         {
             items = Array.Empty<ParseResult<T>>();
             return this;

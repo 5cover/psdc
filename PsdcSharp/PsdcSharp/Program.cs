@@ -11,14 +11,23 @@ internal static class Program
     {
         /*string Input = File.ReadAllText("test.psc");/**/
         const string Input = """
-                             programme HelloWorld c'est
-                             début
-                                 variable : entier;
-                                 lireClavier(variable);
-                                 variable := variable + 1;
-                                 écrireÉcran(5 + variable + 8);
-                             fin
-                             """;/**/
+        programme VotreAge3000 c'est
+        début
+            age : entier;
+            écrireÉcran("Quel âge avez-vous ? ");
+            lireClavier(age);
+
+            écrireÉcran("Vous avez ", age, " ans.");
+
+            si age >= 18 alors
+                écrireÉcran("Vous êtes majeur");
+            sinonsi age == 16 alors
+                écrireÉcran("C'est l'heure de se faire recenser!");
+            sinon
+                écrireÉcran("T'es un bébé toi!");
+            finsi
+        fin
+        """;/**/
 
         Tokenizer tokenizer = new(Input);
         List<Token> tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToList());
@@ -32,7 +41,7 @@ internal static class Program
         string generatedC = "Generating code".LogOperation(codeGenerator.Generate);
         PrintMessages(codeGenerator, Input);
 
-        Console.WriteLine("Generated C : ");
+        Console.Error.WriteLine("Generated C : ");
         Console.WriteLine(generatedC);
     }
 
@@ -47,19 +56,19 @@ internal static class Program
             ReadOnlySpan<char> faultyLine = input.Line(position.Line);
             (ConsoleColor? foreground, ConsoleColor? background) msgColor = message.Type.GetConsoleColor();
 
-            msgColor.DoInColor(() => Console.Write($"[P{(int)message.Code:d3}]"));
+            msgColor.DoInColor(() => Console.Error.Write($"[P{(int)message.Code:d3}]"));
 
-            Console.WriteLine($" {message.Type}: {message.Contents} (at {position})");
+            Console.Error.WriteLine($" {message.Type}: {message.Contents} (at {position})");
 
             // Part of line before error
-            Console.Write($"\t---> {faultyLine[..startColumn].TrimStart()}"); // trim to remove indentation
+            Console.Error.Write($"\t---> {faultyLine[..startColumn].TrimStart()}"); // trim to remove indentation
 
             msgColor.SetColor();
-            Console.Write($"{faultyLine[startColumn..endColumn]}");
+            Console.Error.Write($"{faultyLine[startColumn..endColumn]}");
             Console.ResetColor();
 
             // Part of line after error
-            Console.WriteLine($"{faultyLine[endColumn..]}");
+            Console.Error.WriteLine($"{faultyLine[endColumn..]}");
         }
     }
 }

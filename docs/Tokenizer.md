@@ -66,6 +66,8 @@ Diacritics are optional. (délivre == delivre)
 - si
 - sinon
 - tant que
+- à
+- pas
 
 #### Parameters
 
@@ -75,12 +77,6 @@ Diacritics are optional. (délivre == delivre)
 - entF/sortF
 - sortE
 - sortF
-
-### Contextual keyword
-
-Tokens recognized as keywords only in specific contexts, or as identifiers otherwise.
-
-- à, pas : inside `pour` loop
 
 ### Identifier
 
