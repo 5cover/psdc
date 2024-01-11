@@ -1,29 +1,55 @@
 # Compiler messages
 
-## Erreurs
+## P0* : Erreurs
 
-### PS000
+### P0001
 
 Token inconnu : 'X'.
 
-X : token inconnu
+Unknown token : 'X'.
 
-### PS0001
+### P0002
 
-Point-virgule manquant.
+Erreur de syntaxe. Attendu A, B, ou C ; reçu D.
 
-## Avertissements
+Syntax error. Expected A, B, or C ; recieved D.
 
-## Suggestions
+### P0003
 
-### PS2000
+Impossible d'inférer le type de l'expression.
+
+Can't infer type of expression.
+
+### P0004
+
+Symbole 'X' non défini dans cette portée.
+
+Symbol 'X' undefined in current scope.
+
+### P0005
+
+Symbole 'X' redéfini dans cette portée.
+
+Symbol 'X' redefined in current scope.
+
+## P1* : Avertissements
+
+## P2* : Suggestions
+
+### P20* : Respecter les conventions
+
+#### P2000
 
 'X' : convention de nommage de composant de structure non respectée : préfixer par 'c_'
 
 X : nom de composant de structure
 
-### PS2001
+#### P2001
 
 'X' : convention de nommage de type non respectée : préfixer par 'c_'
 
 X : nom de type
+
+#### P2002
+
+Déclarer les variables en début de routine

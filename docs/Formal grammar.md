@@ -84,7 +84,7 @@ $$
     ⟨Alternative⟩\\
     ⟨Assignation⟩\\
     ⟨BouclePour⟩\\
-    ⟨BoucleRepéter⟩\\
+    ⟨BoucleRépéter⟩\\
     ⟨BoucleFaireTantQue⟩\\
     ⟨BoucleTantQue⟩\\
     ⟨Selon⟩\\
@@ -111,15 +111,17 @@ $$
 ⟨Assignation⟩ &\to identifiant = ⟨Expression⟩;
 \\
 ⟨BouclePour⟩ &\to \begin{split}
-&   \text{pour}\ identifiant
+&    \text{pour}\ identifiant
     \ \text{de} ⟨Expression⟩ \text{à} ⟨Expression⟩
-    \{\text{pas} ⟨Expression⟩\}^?\\
-&   \text{faire} ⟨Bloc⟩ \text{finfaire}\\
+    \{\text{pas} ⟨Expression⟩\}^?
+    \text{faire} \\
+&   ⟨Bloc⟩ \\
+&   \text{finfaire}
 \end{split}
 \\
-⟨BoucleRepéter⟩ &\to \text{répéter} ⟨Bloc⟩ \text{jusqu'à} ⟨Expression⟩
+⟨BoucleRépéter⟩ &\to \text{répéter} ⟨Bloc⟩ \text{jusqu'à} (⟨Expression⟩)
 \\
-⟨BoucleFaireTantQue⟩ &\to \text{faire} ⟨Bloc⟩ \text{tant\ que} ⟨Expression⟩
+⟨BoucleFaireTantQue⟩ &\to \text{faire} ⟨Bloc⟩ \text{tant\ que} (⟨Expression⟩)
 \\
 ⟨BoucleTantQue⟩ &\to \text{tant\ que} ⟨Expression⟩ \text{faire} ⟨Bloc⟩ \text{finfaire}
 \\

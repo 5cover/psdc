@@ -1,4 +1,23 @@
+using static Scover.Psdc.TokenType;
+
 namespace Scover.Psdc;
+
+internal static class TokenTypeExtensions
+{
+    public static string? DisplayName(this TokenType type) => type switch {
+        CommentMultiline => "multiline comment",
+        CommentSingleline => "singleline comment",
+        Identifier => "identifier",
+        LiteralCharacter => "character literal",
+        LiteralInteger => "integer literal",
+        LiteralReal => "real literal",
+        LiteralString => "string literal",
+        Eof => "end of file",
+        _ => null
+    };
+
+    public static string? Humanize(this TokenType type) => type.DisplayName() ?? type.ToString();
+}
 
 internal enum TokenType
 {
@@ -10,20 +29,20 @@ internal enum TokenType
     LiteralReal,
     LiteralString,
 
-    #region Delimiters
+    #region Punctuations
 
     CloseBrace,
     CloseBracket,
     CloseSquareBracket,
-    DelimiterCase,
-    DelimiterColon,
-    DelimiterSeparator,
-    DelimiterTerminator,
     OpenBrace,
     OpenBracket,
     OpenSquareBracket,
+    PunctuationCase,
+    PunctuationColon,
+    PunctuationSeparator,
+    PunctuationTerminator,
 
-    #endregion Delimiters
+    #endregion Punctuations
 
     #region Operators
 
@@ -76,7 +95,7 @@ internal enum TokenType
     KeywordArray,
     KeywordConstant,
     KeywordFalse,
-    KeywordOf,
+    KeywordFrom,
     KeywordTrue,
 
     #endregion Data
@@ -149,6 +168,6 @@ internal enum TokenType
 
     #endregion Keywords
 
-    /// <summary>Special tokens that indicates the end of the token sequence.</summary>
-    End,
+    /// <summary>Special token that indicates the end of the token sequence.</summary>
+    Eof,
 }

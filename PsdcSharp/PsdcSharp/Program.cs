@@ -9,25 +9,7 @@ internal static class Program
 {
     private static void Main()
     {
-        /*string Input = File.ReadAllText("test.psc");/**/
-        const string Input = """
-        programme VotreAge3000 c'est
-        début
-            age : entier;
-            écrireÉcran("Quel âge avez-vous ? ");
-            lireClavier(age);
-
-            écrireÉcran("Vous avez ", age, " ans.");
-
-            si age >= 18 alors
-                écrireÉcran("Vous êtes majeur");
-            sinonsi age == 16 alors
-                écrireÉcran("C'est l'heure de se faire recenser!");
-            sinon
-                écrireÉcran("T'es un bébé toi!");
-            finsi
-        fin
-        """;/**/
+        string Input = File.ReadAllText("../../testPrograms/loop.psc");
 
         Tokenizer tokenizer = new(Input);
         List<Token> tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToList());
@@ -48,27 +30,29 @@ internal static class Program
     private static void PrintMessages(CompilationStep step, string input)
     {
         while (step.TryDequeueMessage(out Message? message)) {
-            Position position = input.GetPositionAt(message.StartIndex);
+            Position startPos = input.GetPositionAt(message.StartIndex);
+            Position endPos = input.GetPositionAt(message.EndIndex);
 
-            int startColumn = position.Column;
-            int endColumn = input.GetPositionAt(message.EndIndex).Column;
+            Position pos = startPos.Line == endPos.Line ? startPos : endPos;
 
-            ReadOnlySpan<char> faultyLine = input.Line(position.Line);
-            (ConsoleColor? foreground, ConsoleColor? background) msgColor = message.Type.GetConsoleColor();
+            // if the error spans over multiple lines, take the last line
 
-            msgColor.DoInColor(() => Console.Error.Write($"[P{(int)message.Code:d3}]"));
+            ReadOnlySpan<char> faultyLine = input.Line(pos.Line);
+            var msgColor = message.Type.GetConsoleColor();
 
-            Console.Error.WriteLine($" {message.Type}: {message.Contents} (at {position})");
+            msgColor.DoInColor(() => Console.Error.Write($"[P{(int)message.Code:d4}]"));
+
+            Console.Error.WriteLine($" {message.Type}: {message.Content(input)} ({pos})");
 
             // Part of line before error
-            Console.Error.Write($"\t---> {faultyLine[..startColumn].TrimStart()}"); // trim to remove indentation
+            Console.Error.Write($"\t---> {faultyLine[..pos.Column].TrimStart()}"); // trim to remove indentation
 
             msgColor.SetColor();
-            Console.Error.Write($"{faultyLine[startColumn..endColumn]}");
+            Console.Error.Write($"{faultyLine[pos.Column..endPos.Column]}");
             Console.ResetColor();
 
             // Part of line after error
-            Console.Error.WriteLine($"{faultyLine[endColumn..]}");
+            Console.Error.WriteLine($"{faultyLine[endPos.Column..].TrimEnd()}");
         }
     }
 }

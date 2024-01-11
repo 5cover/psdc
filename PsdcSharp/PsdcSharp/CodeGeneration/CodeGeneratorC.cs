@@ -18,12 +18,12 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     public override string Generate()
     {
         StringBuilder output = new();
-        GetValueOrSyntaxError(_root).MatchSome(root => GenerateAlgorithm(output, root).AppendLine());
+        GetValueOrSyntaxError(_root).MatchSome(root => GenerateAlgorithm(output, root));
 
         StringBuilder head = new();
         _includes.Generate(head);
 
-        return head.AppendLine().Append(output).ToString();
+        return head.Append(output).ToString();
     }
 
     private static string GetOperationOperator(TokenType @operator) => @operator switch {
@@ -136,7 +136,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
         _indent.Increase();
         GenerateBlock(output, mainProgram.Block);
-        _indent.Indent(output.AppendLine()).AppendLine("return 0;");
+        _indent.Indent(output).AppendLine("return 0;");
         _indent.Decrease();
 
         _indent.Indent(output).AppendLine("}");
@@ -183,7 +183,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         _indent.Indent(output).Append($@"scanf(""{format}""");
 
         foreach (Node.Expression arg in arguments) {
-            GenerateExpression(output.Append(", "), arg);
+            GenerateExpression(output.Append(", &"), arg);
         }
 
         return output.AppendLine(");");
@@ -195,6 +195,10 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         Node.Statement.VariableDeclaration variableDeclaration => GenerateVariableDeclaration(output, variableDeclaration, sourceTokens),
         Node.Statement.Assignment assignment => GenerateAssignment(output, assignment),
         Node.Statement.Alternative alternative => GenerateAlternative(output, alternative),
+        Node.Statement.WhileLoop whileLoop => GenerateWhileLoop(output, whileLoop),
+        Node.Statement.DoWhileLoop doWhileLoop => GenerateDoWhileLoop(output, doWhileLoop),
+        Node.Statement.RepeatLoop repeatLoop => GenerateRepeatLoop(output, repeatLoop),
+        Node.Statement.ForLoop forLoop => GenerateForLoop(output, forLoop),
         _ => throw statement.ToUnmatchedException(),
     };
 
@@ -203,17 +207,16 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         GenerateClause(output, alternative.If, "if");
 
         foreach (var elseIf in GetValuesOrSyntaxErrors(alternative.ElseIfs)) {
-            GenerateClause(output, elseIf, "else if");
+            GenerateClause(output, elseIf, " else if");
         }
 
-        alternative.Else.MatchSome(elseBlock
-         => {
-             _indent.Indent(output).AppendLine("else {");
-             _indent.Increase();
-             GenerateBlock(output, elseBlock);
-             _indent.Decrease();
-             _indent.Indent(output).AppendLine("}");
-         });
+        alternative.Else.MatchSome(elseBlock => {
+            _indent.Indent(output).AppendLine(" else {");
+            _indent.Increase();
+            GenerateBlock(output, elseBlock);
+            _indent.Decrease();
+            _indent.Indent(output).AppendLine("}");
+        });
 
         return output;
     }
@@ -228,7 +231,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         GenerateBlock(output, clause.Block);
         _indent.Decrease();
 
-        return _indent.Indent(output).AppendLine("}");
+        return _indent.Indent(output).Append('}');
     }
 
     private StringBuilder GenerateAssignment(StringBuilder output, Node.Statement.Assignment assignment)
@@ -259,6 +262,78 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
         return output;
     }
+
+    private StringBuilder GenerateWhileLoop(StringBuilder output, Node.Statement.WhileLoop whileLoop)
+    {
+        _indent.Indent(output).Append("while ");
+        GetValueOrSyntaxError(whileLoop.Condition).MatchSome(cond => GenerateExpressionEnclosedInBrackets(output, cond));
+        output.AppendLine(" {");
+
+        _indent.Increase();
+        GenerateBlock(output, whileLoop.Block);
+        _indent.Decrease();
+
+        return _indent.Indent(output).AppendLine("}");
+    }
+
+    private StringBuilder GenerateDoWhileLoop(StringBuilder output, Node.Statement.DoWhileLoop doWhileLoop)
+    {
+        _indent.Indent(output).AppendLine("do {");
+
+        _indent.Increase();
+        GenerateBlock(output, doWhileLoop.Block);
+        _indent.Decrease();
+
+        _indent.Indent(output).Append("} while ");
+        GetValueOrSyntaxError(doWhileLoop.Condition).MatchSome(cond => GenerateExpressionEnclosedInBrackets(output, cond));
+        output.AppendLine(";");
+
+        return output;
+    }
+
+    private StringBuilder GenerateRepeatLoop(StringBuilder output, Node.Statement.RepeatLoop repeatLoop)
+    {
+        _indent.Indent(output).AppendLine("do {");
+
+        _indent.Increase();
+        GenerateBlock(output, repeatLoop.Block);
+        _indent.Decrease();
+
+        _indent.Indent(output).Append("} while (!");
+        GetValueOrSyntaxError(repeatLoop.Condition).MatchSome(cond => GenerateExpressionEnclosedInBrackets(output, cond));
+        output.AppendLine(");");
+
+        return output;
+    }
+
+    private StringBuilder GenerateForLoop(StringBuilder output, Node.Statement.ForLoop forLoop)
+    {
+        string variant = GetValueOrSyntaxError(forLoop.VariantName).ValueOr("");
+
+        _indent.Indent(output).Append($"for ({variant} = ");
+        GetValueOrSyntaxError(forLoop.Start).MatchSome(start => GenerateExpression(output, start));
+
+        output.Append($"; {variant} <= ");
+        GetValueOrSyntaxError(forLoop.End).MatchSome(end => GenerateExpression(output, end));
+
+        output.Append($"; {variant}");
+        forLoop.Step.Match(
+            step => GenerateExpression(output.Append(" += "), step),
+            none: () => output.Append("++"));
+        output.AppendLine(") {");
+
+        _indent.Increase();
+        GenerateBlock(output, forLoop.Block);
+        _indent.Decrease();
+
+        return _indent.Indent(output).AppendLine("}");
+    }
+
+    private StringBuilder GenerateExpressionEnclosedInBrackets(StringBuilder output, Node.Expression expression)
+     => expression switch {
+        Node.Expression.Bracketed => GenerateExpression(output, expression),
+        _ => GenerateExpression(output.Append('('), expression).Append(')')
+     };
 
     private Option<T> GetValueOrSyntaxError<T>(ParseResult<T> result)
     {

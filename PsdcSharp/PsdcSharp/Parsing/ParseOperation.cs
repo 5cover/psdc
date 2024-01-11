@@ -10,6 +10,7 @@ internal abstract class ParseOperation
     public static ParseOperation Start(IEnumerable<Token> tokens) => new SuccessfulSoFarOperation(tokens);
 
     public abstract ParseResult<T> BuildResult<T>(Func<T> buildResult);
+    public abstract ParseResult<T> FlattenResult<T>(Func<ParseResult<T>> buildResult);
     public abstract ParseOperation Parse<T>(ParseMethod<T> parse, out ParseResult<T> result);
     public abstract ParseOperation ParseOneOrMoreDelimited<T>(ParseMethod<T> parse, TokenType delimiter, out IReadOnlyCollection<ParseResult<T>> items);
     public abstract ParseOperation ParseOneOrMoreUntil<T>(ParseMethod<T> parse, Predicate<IEnumerable<Token>> until, out IReadOnlyCollection<ParseResult<T>> items);
@@ -29,6 +30,7 @@ internal abstract class ParseOperation
         public SuccessfulSoFarOperation(IEnumerable<Token> tokens) => _tokens = tokens;
 
         public override ParseResult<T> BuildResult<T>(Func<T> buildResult) => MakeOkResult(buildResult());
+        public override ParseResult<T> FlattenResult<T>(Func<ParseResult<T>> buildResult) => buildResult().WithSourceTokens(_readTokens);
 
         public override ParseOperation Parse<T>(ParseMethod<T> parse, out ParseResult<T> result)
         {
@@ -120,8 +122,9 @@ internal abstract class ParseOperation
 
         private IEnumerable<ParseResult<T>> ParseZeroOrMoreUntilImpl<T>(ParseMethod<T> parse, Predicate<IEnumerable<Token>> until)
         {
+            while (!NextParsingTokenIs(TokenType.Eof)
+             && !until(ParsingTokens)
             // We stop when SourceTokens is empty to guard against infinite loops.
-            while (!until(ParsingTokens)
             // Semantically if SourceTokens is an empty collection it means that we're out of tokens to parse.
              && parse(ParsingTokens) is { SourceTokens.Count: > 0 } item
             // But still check it as a failsafe against infinite loops.
@@ -153,6 +156,9 @@ internal abstract class ParseOperation
         }
 
         public override ParseResult<T> BuildResult<T>(Func<T> buildResult)
+         => ParseResult.Fail<T>(_readTokens, _error);
+
+        public override ParseResult<T> FlattenResult<T>(Func<ParseResult<T>> buildResult)
          => ParseResult.Fail<T>(_readTokens, _error);
 
         public override ParseOperation ParseOneOrMoreDelimited<T>(ParseMethod<T> parse, TokenType delimiter, out IReadOnlyCollection<ParseResult<T>> items)

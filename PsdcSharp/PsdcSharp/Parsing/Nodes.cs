@@ -44,6 +44,16 @@ internal interface Node
             internal sealed record Clause(ParseResult<Expression> Condition, IReadOnlyCollection<ParseResult<Statement>> Block);
         }
 
+        internal sealed record WhileLoop(ParseResult<Expression> Condition, IReadOnlyCollection<ParseResult<Statement>> Block) : Statement;
+        internal sealed record DoWhileLoop(IReadOnlyCollection<ParseResult<Statement>> Block, ParseResult<Expression> Condition) : Statement;
+        internal sealed record RepeatLoop(IReadOnlyCollection<ParseResult<Statement>> Block, ParseResult<Expression> Condition) : Statement;
+        internal sealed record ForLoop(
+            ParseResult<string> VariantName,
+            ParseResult<Expression> Start,
+            ParseResult<Expression> End,
+            Option<Expression> Step,
+            IReadOnlyCollection<ParseResult<Statement>> Block) : Statement;
+
         internal sealed record Assignment(ParseResult<string> Target, ParseResult<Expression> Value) : Statement;
 
         internal sealed record Ecrire(ParseResult<Expression> Argument1, ParseResult<Expression> Argument2) : Statement;

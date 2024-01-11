@@ -33,11 +33,11 @@ internal static class Extensions
         return new Position(line, column);
     }
 
-    public static (ConsoleColor? foreground, ConsoleColor? background) GetConsoleColor(this MessageSeverity msgType) => msgType switch {
+    public static (ConsoleColor? foreground, ConsoleColor? background) GetConsoleColor(this MessageSeverity msgSeverity) => msgSeverity switch {
         MessageSeverity.Error => (ConsoleColor.Red, null),
         MessageSeverity.Warning => (ConsoleColor.Yellow, null),
         MessageSeverity.Suggestion => (ConsoleColor.Blue, null),
-        _ => throw msgType.ToUnmatchedException(),
+        _ => throw msgSeverity.ToUnmatchedException(),
     };
 
     public static IEnumerable<T> Yield<T>(this T t)
@@ -83,7 +83,7 @@ internal static class Extensions
 
     public static ReadOnlySpan<char> Line(this string str, int lineNumber)
     {
-        SpanLineEnumerator lines = str.AsSpan().EnumerateLines();
+        var lines = str.AsSpan().EnumerateLines();
         bool success = true;
         for (; success && lineNumber >= 0; --lineNumber) {
             success = lines.MoveNext();

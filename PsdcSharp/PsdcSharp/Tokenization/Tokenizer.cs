@@ -5,24 +5,14 @@ using static Scover.Psdc.TokenType;
 
 namespace Scover.Psdc.Tokenization;
 
-internal sealed record Token(TokenType Type, string? Value, int StartIndex, int Length);
-
-internal interface TokenRule
-{
-    /// <summary>Attempts to extract a token out of a string.</summary>
-    /// <param name="input">The string to tokenize</param>
-    /// <param name="startIndex">The index at which the token must start</param>
-    /// <returns>An option wrapping the token that could be extracted.</returns>
-    Option<Token> TryExtract(string input, int startIndex);
-}
-
 internal sealed class Tokenizer : CompilationStep
 {
     private static readonly IReadOnlyList<TokenRule> rules =
-        BeginRules
-            .Concat(KeywordRules.OrderByDescending(rule => rule.Expected.Length))
-            .Concat(SymbolRules.OrderByDescending(rule => rule.Expected.Length))
-            .Concat(EndRules).ToList();
+        RulesBeforeKeywords
+        .Concat(KeywordRules.OrderByDescending(rule => rule.Expected.Length))
+        .Concat(PunctuationRules.OrderByDescending(rule => rule.Expected.Length))
+        .Concat(RulesAfterKeywords)
+    .ToList();
 
     private static readonly IReadOnlySet<TokenType> ignoredTokens = new HashSet<TokenType> { CommentMultiline, CommentSingleline };
 
@@ -30,7 +20,7 @@ internal sealed class Tokenizer : CompilationStep
 
     public Tokenizer(string input) => _input = input;
 
-    private static IEnumerable<TokenRule> BeginRules => new List<RegexTokenRule> {
+    private static IEnumerable<TokenRule> RulesBeforeKeywords => new List<RegexTokenRule> {
         new(CommentMultiline, @"/\*(.*?)\*/", RegexOptions.Singleline),
         new(CommentSingleline, "//(.*)$", RegexOptions.Multiline),
         new(LiteralReal, @"(\d*\.\d+)"),
@@ -39,7 +29,7 @@ internal sealed class Tokenizer : CompilationStep
         new(LiteralCharacter, "'(.)'"),
     };
 
-    private static IEnumerable<StringTokenRule> SymbolRules => new List<StringTokenRule> {
+    private static IEnumerable<StringTokenRule> PunctuationRules => new List<StringTokenRule> {
         // Delimiters
         new(OpenBracket, "("),
         new(CloseBracket, ")"),
@@ -47,10 +37,10 @@ internal sealed class Tokenizer : CompilationStep
         new(CloseSquareBracket, "]"),
         new(OpenBrace, "{"),
         new(CloseBrace, "}"),
-        new(DelimiterSeparator, ","),
-        new(DelimiterTerminator, ";"),
-        new(DelimiterColon, ":"),
-        new(DelimiterCase, "=>"),
+        new(PunctuationSeparator, ","),
+        new(PunctuationTerminator, ";"),
+        new(PunctuationColon, ":"),
+        new(PunctuationCase, "=>"),
 
         // Arithmetic operators
         new(OperatorPlus, "+"),
@@ -91,7 +81,7 @@ internal sealed class Tokenizer : CompilationStep
         new(KeywordArray, "tableau"),
         new(KeywordConstant, "constante"),
         new(KeywordFalse, "faux"),
-        new(KeywordOf, "de"),
+        new(KeywordFrom, "de"),
         new(KeywordTrue, "vrai"),
 
         // Type keywords
@@ -147,7 +137,7 @@ internal sealed class Tokenizer : CompilationStep
         new(KeywordSortF, "sortF"),
     };
 
-    private static IEnumerable<TokenRule> EndRules => new List<RegexTokenRule> { new(Identifier, @"([\p{L}_][\p{L}_0-9]*)") };
+    private static IEnumerable<TokenRule> RulesAfterKeywords => new List<RegexTokenRule> { new(Identifier, @"([\p{L}_][\p{L}_0-9]*)") };
 
     public IEnumerable<Token> Tokenize()
     {
@@ -170,7 +160,7 @@ internal sealed class Tokenizer : CompilationStep
             }
         } while (offset < _input.Length);
 
-        yield return new Token(End, null, offset, 0);
+        yield return new Token(Eof, null, offset, 0);
     }
 
     private Option<Token> ReadNextValidToken(int startIndex)

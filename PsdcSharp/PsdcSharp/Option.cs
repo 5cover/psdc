@@ -119,4 +119,10 @@ internal static class OptionalCollectionExtensions
      => items.FirstOrDefault(predicate) is { } first ? first.Some() : Option.None<T>();
     public static Option<T> FirstOrNone<T>(this IEnumerable<T> items)
      => items.FirstOrDefault() is { } first ? first.Some() : Option.None<T>();
+    public static Option<T> LastOrNone<T>(this IEnumerable<Option<T>> options, Func<Option<T>, bool> predicate)
+     => options.LastOrDefault(predicate, Option.None<T>());
+    public static Option<T> LastOrNone<T>(this IEnumerable<T> items, Func<T, bool> predicate)
+     => items.LastOrDefault(predicate) is { } last ? last.Some() : Option.None<T>();
+    public static Option<T> LastOrNone<T>(this IEnumerable<T> items)
+     => items.LastOrDefault() is { } last ? last.Some() : Option.None<T>();
 }

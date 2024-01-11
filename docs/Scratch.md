@@ -9,7 +9,11 @@ Project roadmap:
     - finPour in place of fin
 
 - ~~Alternatives~~
-- Loops
+- ~~Loops~~
+    - ~~For~~
+    - ~~While~~
+    - ~~Do..While~~
+    - ~~Repeat..Until~~
 - Procedures
 - Functions
 - Structures
@@ -19,6 +23,41 @@ Project roadmap:
 - Command arguments (use nuget package)
 - Release
 - Documentation
+
+### Sample programs
+
+- Prime sieve (find nth prime)
+
+## Lvalue/rvalue
+
+We need to differenciate between lvalues and rvalues in the formal grammar, the ast and the parser.
+
+So we don't allow things like `lireClavier(69)`
+
+Also we need to change our FG with assigment, currently it only allows identifiers as the left operands :
+
+`target := value`
+
+However arrays exist:
+
+`array[5] := value`
+
+`array[indice / 2 + 4] := value`
+
+## For loops
+
+Note : we assume that start <= end : `for (i = start; i <= end; i += step)`
+
+if start > end, then step must be < 0 : `for (i = start; i >= end; i += step)`
+
+Solution 1 : use safe version : `for (i = start; step < 0 ? i >= end : i <= end; i += step)`
+
+Solution 2 : disallow decreasing variant (but we won't be able to diagnose the issue, simply ignore the problem)
+
+Solution 3 : require *step* to be a compile-time constant so we can choose to either `<=` or `>=` at compile-time instead of at run-time like Solution 1. This would require
+
+- expression evaluation
+- constant folding
 
 ## Building a failure-resilient ParseOperation
 
@@ -107,16 +146,22 @@ so basically when a parsing error occurs in a parsing loop, what we currently do
 So whenever an error occurs, get a bunch of other errors for the following tokens, even though they were valid.
 If ecrireEcran is mispelled, we get "expected ecrireEcran" for all tokens up to the final semi.
 
-Solution 1 : when error, keep reading and silence further errors until we hit something valid or lack of tokens
+**Solution 1** : when error, keep reading and silence further errors until we hit something valid or lack of tokens
 
 > this doesn't work because we don't know when do stop reading invalid stuff. We could hit on a potentially next invalid statmement.
 
-Solution 2 : ParseError should have a property for the minimal amount of expected tokens.
+**Solution 2** : ParseError should have a property for the minimal amount of expected tokens.
 Then we can just skip that amount of tokens next time we parse.
 
-Solution 3 : who cares, it's not that big of a deal.
+> tedious
 
-Solution 4 : skim until first token of the target node, then resume parskong
+**Solution 3** : who cares, it's not that big of a deal.
+
+> it clutters the message list
+
+**Solution 4** : skim until first token of the target node, then resume parskong
+
+> this could actually work
 
 ## What constitutes to be a ParseResult
 

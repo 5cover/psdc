@@ -16,7 +16,9 @@ internal partial class CodeGeneratorC
         foreach (var partNode in parts) {
             GetValueOrSyntaxError(partNode).MatchSome(part => {
                 if (part is Node.Expression.Literal literal) {
-                    format.Append(literal.Value.Replace("%", "%%"));
+                    format.Append(literal.Value
+                        .Replace("%", "%%") // escape C format specifiers
+                        .Replace(@"\", @"\\")); // escape C escape sequences
                 } else {
                     part.EvaluateType(_scope).Match(partType => {
                         partType.FormatComponent.MatchSome(c => format.Append(c));
