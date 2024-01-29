@@ -9,19 +9,20 @@ internal static class Program
 {
     private static void Main()
     {
-        string Input = File.ReadAllText("../../testPrograms/loop.psc");
-
-        Tokenizer tokenizer = new(Input);
+        using var stdin = new StreamReader(Console.OpenStandardInput());
+        string input = stdin.ReadToEnd();
+        
+        Tokenizer tokenizer = new(input);
         List<Token> tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToList());
-        PrintMessages(tokenizer, Input);
+        PrintMessages(tokenizer, input);
 
         Parser parser = new(tokens);
         ParseResult<Node.Algorithm> abstractSyntaxTree = "Parsing".LogOperation(parser.Parse);
-        PrintMessages(parser, Input);
+        PrintMessages(parser, input);
 
         CodeGenerator codeGenerator = new CodeGeneratorC(abstractSyntaxTree);
         string generatedC = "Generating code".LogOperation(codeGenerator.Generate);
-        PrintMessages(codeGenerator, Input);
+        PrintMessages(codeGenerator, input);
 
         Console.Error.WriteLine("Generated C : ");
         Console.WriteLine(generatedC);
