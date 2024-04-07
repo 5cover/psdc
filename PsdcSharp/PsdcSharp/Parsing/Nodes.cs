@@ -19,13 +19,13 @@ internal interface Node
         internal sealed record FunctionDeclaration(ParseResult<FunctionSignature> Signature) : Declaration;
 
         internal sealed record FunctionDefinition(ParseResult<FunctionSignature> Signature, IReadOnlyCollection<ParseResult<Statement>> Block) : Declaration;
+
+        internal sealed record ProcedureSignature(ParseResult<string> Name, IReadOnlyCollection<ParseResult<FormalParameter>> ParameterList) : Node;
+
+        internal sealed record FunctionSignature(ParseResult<string> Name, IReadOnlyCollection<ParseResult<FormalParameter>> ParameterList, ParseResult<Type> ReturnType) : Node;
+
+        internal sealed record FormalParameter(ParseResult<ParameterMode> Mode, ParseResult<string> Name, ParseResult<Type> Type) : Node;
     }
-
-    internal sealed record ProcedureSignature(ParseResult<string> Name, IReadOnlyCollection<ParseResult<FormalParameter>> ParameterList) : Node;
-
-    internal sealed record FunctionSignature(ParseResult<string> Name, IReadOnlyCollection<ParseResult<FormalParameter>> ParameterList, Type ReturnType) : Node;
-
-    internal sealed record FormalParameter(ParseResult<ParameterMode> Mode, ParseResult<string> Name, ParseResult<Type> ParameterType) : Node;
 
     internal sealed record EffectiveParameter(ParseResult<ParameterMode> Mode, ParseResult<Expression> Value) : Node;
 

@@ -37,10 +37,10 @@ internal sealed class Tokenizer : CompilationStep
         new(CloseSquareBracket, "]"),
         new(OpenBrace, "{"),
         new(CloseBrace, "}"),
-        new(PunctuationSeparator, ","),
-        new(PunctuationTerminator, ";"),
-        new(PunctuationColon, ":"),
+        new(PunctuationComma, ","),
+        new(PunctuationSemicolon, ";"),
         new(PunctuationCase, "=>"),
+        new(PunctuationColon, ":"),
 
         // Arithmetic operators
         new(OperatorPlus, "+"),

@@ -1,11 +1,11 @@
 using Scover.Psdc.CodeGeneration;
+using Scover.Psdc.Parsing.Nodes;
 
 namespace Scover.Psdc;
 
 internal interface Symbol
 {
     internal sealed record Variable(TypeInfo Type) : Symbol;
-
     internal sealed record Constant(TypeInfo Type, string Value) : Symbol;
     internal sealed record TypeAlias(TypeInfo TargetType) : Symbol;
 }

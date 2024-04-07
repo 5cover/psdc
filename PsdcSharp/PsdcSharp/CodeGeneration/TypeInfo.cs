@@ -4,14 +4,14 @@ using Scover.Psdc.Parsing.Nodes;
 
 namespace Scover.Psdc.CodeGeneration;
 
-internal abstract class TypeInfo : IEquatable<TypeInfo?>
+internal class TypeInfo : IEquatable<TypeInfo?>
 {
     private readonly string _preModifier, _typeName, _postModifier;
-    protected TypeInfo(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders, string preModifier = "", string postModifier = "", bool isNumeric = false)
+    private TypeInfo(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders, string preModifier = "", string postModifier = "", bool isNumeric = false, int indirectionLevel = 0)
      => (_preModifier, _typeName, _postModifier, FormatComponent, IsNumeric, RequiredHeaders)
-            = (preModifier, typeName, postModifier, formatComponent, isNumeric, requiredHeaders);
+        = (preModifier + new string('*', indirectionLevel), typeName, postModifier, formatComponent, isNumeric, requiredHeaders);
 
-    protected TypeInfo(string typeName, string? formatComponent, string preModifier = "", string postModifier = "", bool isNumeric = false, IEnumerable<string>? requiredHeaders = null)
+    private TypeInfo(string typeName, string? formatComponent, string preModifier = "", string postModifier = "", bool isNumeric = false, IEnumerable<string>? requiredHeaders = null)
         : this(typeName, formatComponent.SomeNotNull(), requiredHeaders ?? Enumerable.Empty<string>(), preModifier, postModifier, isNumeric)
     {
     }
@@ -19,11 +19,15 @@ internal abstract class TypeInfo : IEquatable<TypeInfo?>
     public Option<string> FormatComponent { get; }
     public bool IsNumeric { get; }
     public IEnumerable<string> RequiredHeaders { get; }
+    public TypeInfo ToPointer(int level)
+     => new(_typeName, FormatComponent, RequiredHeaders, _preModifier, _postModifier, IsNumeric, level);
+    
     public bool Equals(TypeInfo? other)
      => ReferenceEquals(this, other) || other is not null
         && _preModifier == other._preModifier
         && _typeName == other._typeName
         && _postModifier == other._postModifier;
+
     public override bool Equals(object? obj) => Equals(obj as TypeInfo);
     public override int GetHashCode() => HashCode.Combine(_preModifier, _typeName, _postModifier);
 
@@ -32,21 +36,8 @@ internal abstract class TypeInfo : IEquatable<TypeInfo?>
 
     public override string ToString() => $"{_preModifier}{_typeName}{_postModifier}";
 
-    public sealed class String : TypeInfo
-    {
-        private String() : base("char", "%s", "*")
-        {
-        }
-        public static String Create() => new();
-    }
-
-    public sealed class Alias : TypeInfo
-    {
-        private Alias(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders) : base(typeName, formatComponent, requiredHeaders)
-        {
-        }
-        public static Alias Create(string name, TypeInfo target) => new(name, target.FormatComponent, target.RequiredHeaders);
-    }
+    public static TypeInfo CreateString() => new("char", "%s", "*");
+    public static TypeInfo CreateAlias(string name, TypeInfo target) => new(name, target.FormatComponent, target.RequiredHeaders);
 
     public sealed class Primitive : TypeInfo
     {
@@ -66,33 +57,15 @@ internal abstract class TypeInfo : IEquatable<TypeInfo?>
         };
     }
 
-    public sealed class Array : TypeInfo
-    {
-        private Array(string typeName, string? formatComponent = null, string preModifier = "", string postModifier = "")
-            : base(typeName, formatComponent, preModifier, postModifier)
-        {
+    public static TypeInfo CreateArray(TypeInfo type, IEnumerable<string> dimensions) {
+        StringBuilder postModifier = new(type._postModifier);
+
+        foreach (string dimension in dimensions) {
+            postModifier.Append($"[{dimension}]");
         }
 
-        public static Array Create(TypeInfo type, IEnumerable<string> dimensions)
-
-        {
-            StringBuilder postModifier = new(type._postModifier);
-
-            foreach (string dimension in dimensions) {
-                postModifier.Append($"[{dimension}]");
-            }
-
-            return new(type._typeName, type._preModifier, postModifier.ToString());
-        }
+        return new(type._typeName, null, type._preModifier, postModifier.ToString());
     }
 
-    public sealed class LengthedString : TypeInfo
-    {
-        private LengthedString(string formatComponent, string postModifier) : base("char", formatComponent, postModifier: postModifier)
-        {
-        }
-
-        public static LengthedString Create(string length) => new("%s", $"[{length}]");
-        public static LengthedString Create(int length) => new($"%{length}s", $"[{length}]");
-    }
+    public static TypeInfo CreateLengthedString(string length) => new("char", "%s", postModifier: $"[{length}]");
 }

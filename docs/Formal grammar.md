@@ -36,7 +36,7 @@ camelCase|token
 ---
 
 $$
-\begin{align}
+\begin{align*}
 
 &\textbf{Général}\notag\\
 
@@ -66,17 +66,17 @@ $$
 \\
 ⟨DéfinitionStructure⟩ &\to \text{structure\ début} ⟨DéclarationVariable⟩^+ \text{fin}
 \\
-⟨ParamètreFormel⟩ &\to \begin{cases}
-    \text{entF}\\
-    \text{sortF}\\
-    \text{entF/sortF}\\
-\end{cases} identifiant : ⟨Type⟩
-\\
 ⟨ProgrammePrincpal⟩ &\to \text{programme}\ identifiant\ \text{c'est\ début} ⟨Bloc⟩ \text{fin}
 \\
 ⟨SignatureFonction⟩ &\to \text{fonction}\ identifiant(⟨ParamètreFormel⟩^{*|,}) \text{délivre} ⟨Type⟩
 \\
 ⟨SignatureProcédure⟩ &\to \text{procédure}\ identifiant(⟨ParamètreFormel⟩^{*|,})
+\\
+⟨ParamètreFormel⟩ &\to \begin{cases}
+    \text{entF}\\
+    \text{sortF}\\
+    \text{entF/sortF}\\
+\end{cases} identifiant : ⟨Type⟩
 
 \\&\textbf{Instructions}\notag\\
 
@@ -243,5 +243,5 @@ $$
     \text{réel}\\
 \end{cases}
 
-\end{align}
+\end{align*}
 $$

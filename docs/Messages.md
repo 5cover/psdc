@@ -52,4 +52,4 @@ X : nom de type
 
 #### P2002
 
-Déclarer les variables en début de routine
+Déclarer les variables en début de fonction/procédure

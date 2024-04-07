@@ -20,10 +20,15 @@ internal partial class Parser
 
     private static List<Token> Take(int count, IEnumerable<Token> tokens) => tokens.Take(count).ToList();
 
-    private static ParseResult<T> ParseEither<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, ParseMethod<T>> parsers)
-     => tokens.FirstOrDefault() is { } firstToken && parsers.TryGetValue(firstToken.Type, out var parser)
+    private static ParseResult<T> ParseEither<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, ParseMethod<T>> parserMap)
+     => tokens.FirstOrDefault() is { } firstToken && parserMap.TryGetValue(firstToken.Type, out var parser)
         ? parser(tokens)
-        : ParseResult.Fail<T>(Take(1, tokens), ParseError.FromExpectedTokens(parsers.Keys));
+        : ParseResult.Fail<T>(Take(1, tokens), ParseError.FromExpectedTokens(parserMap.Keys));
+
+    private static ParseResult<T> ParseEither<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, T> map)
+     => tokens.FirstOrDefault() is { } firstToken && map.TryGetValue(firstToken.Type, out var t)
+        ? ParseResult.Ok(Take(1, tokens), t)
+        : ParseResult.Fail<T>(Take(1, tokens), ParseError.FromExpectedTokens(map.Keys));
 
     private static ParseResult<TokenType> ParseTokenType(
         IEnumerable<Token> tokens,

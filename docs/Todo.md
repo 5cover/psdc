@@ -23,6 +23,12 @@ Project roadmap:
 - Release
 - Documentation
 
+## Cleanup
+
+- Map operator types
+- Refactor TypeInfo and others to isolate C-specific code
+- Try to eliminate duplication (CodeGeneratorC.cs is a mess)
+
 ## Sample programs
 
 - Prime sieve (find nth prime)

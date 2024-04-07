@@ -39,8 +39,8 @@ internal enum TokenType
     OpenSquareBracket,
     PunctuationCase,
     PunctuationColon,
-    PunctuationSeparator,
-    PunctuationTerminator,
+    PunctuationComma,
+    PunctuationSemicolon,
 
     #endregion Punctuations
 

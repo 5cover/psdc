@@ -132,6 +132,6 @@ internal partial class Parser
 
     private static ParseOperation ParseIndexes(ParseOperation parseOperation, out IReadOnlyCollection<ParseResult<Node.Expression>> indexes) => parseOperation
         .ParseToken(TokenType.OpenSquareBracket)
-        .ParseOneOrMoreDelimited(ParseExpression, TokenType.CloseSquareBracket, out indexes)
+        .ParseOneOrMoreSeparated(ParseExpression, TokenType.CloseSquareBracket, out indexes)
         .ParseToken(TokenType.CloseSquareBracket);
 }

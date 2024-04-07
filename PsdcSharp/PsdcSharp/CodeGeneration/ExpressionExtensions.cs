@@ -28,7 +28,7 @@ internal static class ExpressionExtensions
         Node.Expression.Literal.Character => TypeInfo.Primitive.Create(PrimitiveType.Character).Some<TypeInfo, ErrorProvider>(),
         Node.Expression.Literal.Integer => TypeInfo.Primitive.Create(PrimitiveType.Integer).Some<TypeInfo, ErrorProvider>(),
         Node.Expression.Literal.Real => TypeInfo.Primitive.Create(PrimitiveType.Real).Some<TypeInfo, ErrorProvider>(),
-        Node.Expression.Literal.String str => TypeInfo.LengthedString.Create(str.Value.Length).Some<TypeInfo, ErrorProvider>(),
+        Node.Expression.Literal.String str => TypeInfo.CreateLengthedString(str.Value.Length.ToString()).Some<TypeInfo, ErrorProvider>(),
         Node.Expression.Bracketed b => b.Expression.Match(
             some: expr => EvaluateType(expr, scope),
             none: error => Option.None<TypeInfo, ErrorProvider>(tokens

@@ -76,6 +76,54 @@ The difference between a variable and a parameter declaration is that, in a vari
 
 In a way parameters are consumers and variables are providers.
 
-So now I just want to know if my formal grammar is correct.
+We do differ between complete and incomplete types, not in the types of nodes, but in the parsing.
 
-For now we're gonna assume that we don't need this dicrepancy, we'll come back to this if that changes over the course of development.
+The set of complete types is a subset of all types.
+
+## For loops
+
+Note : we assume that start <= end : `for (i = start; i <= end; i += step)`
+
+if start > end, then step must be < 0 : `for (i = start; i >= end; i += step)`
+
+Solution 1 : use safe version : `for (i = start; step < 0 ? i >= end : i <= end; i += step)`
+
+**Solution 2** : disallow decreasing variant (but we won't be able to diagnose the issue, simply ignore the problem)
+
+Solution 3 : require *step* to be a compile-time constant so we can choose to either `<=` or `>=` at compile-time instead of at run-time like Solution 1. This would require
+
+- expression evaluation
+- constant folding
+
+## What constitutes to be a ParseResult
+
+Rule for what belongs in a parse result:
+
+Don't ParseResult collections, parse result the element type. Having collection properties basically means that we have a variadic node.
+
+No parse result if the node can't exist without it such as when
+
+- the only token parsed is a property (such as Literals)
+- allowing a hole will result in too permissive parsing
+
+Two kinds of properties
+
+- Identity properties : the node is the property -> no ParseResult
+- Composition properties : the node contains the property -> yes ParseResult
+
+Examples
+
+- Node.Expression.Literal.Integer(string Value) -> no ParseResult
+- Node.Type.LengthedString(`ParseResult<Expression> Length`) -> yes ParseResult
+
+Having a component encapsulated in a `ParseResult` in a node type means that we allow the outer node to exist even if this component has failed parsing. This prevents the parsing to stop for the node.
+
+So this is mostly useful for "big" nodes like subroutines.
+
+## "Helper" rules in formal grammar
+
+Where to put "helper" rules in the formal grammar?
+
+"Helper" rules are rules that carry no meaning on their own and are only used in the construction of more complex rules. Example: formal parameters.
+
+They belong to the category of all the rules they are used to construct.

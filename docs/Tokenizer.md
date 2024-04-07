@@ -1,11 +1,7 @@
-# Implémentation
+# Implementation
 
-Maintain a collection of tokens.
-
-Each should try to parse itself.
-
-If it succeeds, the input is consumed, and it returns a parameterized clone of itself. The caller adds it to the list.
-If it fails, the caller moves on to the next token.
+If succeeds, the input is consumed. The token is created and yield returned.
+If fails, report the error and move on to the next token.
 
 ## Tokens
 
