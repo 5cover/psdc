@@ -1,9 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
-using Scover.Psdc.Parsing;
 using Scover.Psdc.Parsing.Nodes;
-using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.CodeGeneration;
 
@@ -11,15 +9,15 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 {
     private readonly IncludeSet _includes = new();
     private readonly Indentation _indent = new();
-    private readonly ParseResult<Node.Algorithm> _root;
+    private readonly Node.Algorithm _root;
     private readonly Scope _scope = new();
 
-    public CodeGeneratorC(ParseResult<Node.Algorithm> root) => _root = root;
+    public CodeGeneratorC(Node.Algorithm root) => _root = root;
 
     public override string Generate()
     {
         StringBuilder output = new();
-        GetValueOrSyntaxError(_root).MatchSome(root => GenerateAlgorithm(output, root));
+        GenerateAlgorithm(output, _root);
 
         StringBuilder head = new();
         _includes.Generate(head);
@@ -31,7 +29,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     {
         _scope.Push(); // push the first scope: the global scope
 
-        foreach (Node.Declaration declaration in GetValuesOrSyntaxErrors(algorithm.Declarations)) {
+        foreach (Node.Declaration declaration in algorithm.Declarations) {
             GenerateDeclaration(output, declaration);
         }
 
@@ -40,14 +38,12 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         return output;
     }
 
-    private StringBuilder GenerateBlock(StringBuilder output, IReadOnlyCollection<ParseResult<Node.Statement>> block)
+    private StringBuilder GenerateBlock(StringBuilder output, IEnumerable<Node.Statement> block)
     {
-        _scope.Push();
-        foreach (ParseResult<Node.Statement> statementNode in block) {
-            GetValueOrSyntaxError(statementNode).MatchSome(statement =>
-                GenerateStatement(output, statement, statementNode.SourceTokens));
+        foreach (Node.Statement statement in block) {
+            GenerateStatement(output, statement);
         }
-        _scope.Pop();
+    
         return output;
     }
 
@@ -64,14 +60,16 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateMainProgram(StringBuilder output, Node.Declaration.MainProgram mainProgram)
     {
-        GetValueOrSyntaxError(mainProgram.ProgramName).MatchSome(name => _indent.Indent(output).AppendLine($"// {name}"));
+        _indent.Indent(output).AppendLine($"// {mainProgram.ProgramName}");
         output.AppendLine("int main() {");
 
+        _scope.Push();
         _indent.Increase();
         GenerateBlock(output, mainProgram.Block);
-        output.AppendLine("return 0;");
+        _indent.Indent(output).AppendLine("return 0;");
         _indent.Decrease();
-
+        _scope.Pop();
+    
         output.AppendLine("}");
 
         return output;
@@ -79,102 +77,94 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateFunctionDefinition(StringBuilder output, Node.Declaration.FunctionDefinition functionDefinition)
     {
-        GetValueOrSyntaxError(functionDefinition.Signature).MatchSome(signature => GenerateFunctionSignature(output, signature));
-        _scope.Push();
-        output.AppendLine(" {");
-        _indent.Increase();
-        functionDefinition.Signature.MatchSome(signature => {
-            foreach (var parameter in signature.ParameterList.WhereSome()) {
-                parameter.Type.DiscardError().FlatMap(CreateType).MatchSome(type
-                 => parameter.Name.DiscardError().MatchSome(name
-                  => parameter.Mode.DiscardError().MatchSome(mode
-                   => {
-                       bool added = _scope.TryAdd(name, new Symbol.Variable(mode != ParameterMode.In ? type.ToPointer(1) : type));
-                       Debug.Assert(added, "Failed to add parameter variable to scope");
-                   })));
-            }
-        });
-        GenerateBlock(output, functionDefinition.Block);
-        _indent.Decrease();
-        output.AppendLine("}");
-        _scope.Pop();
+        GenerateFunctionSignature(output, functionDefinition.Signature);
+        GenerateBody(output, functionDefinition.Signature.Parameters, functionDefinition.Block);
+    
         return output;
     }
     private StringBuilder GenerateProcedureDefinition(StringBuilder output, Node.Declaration.ProcedureDefinition procedureDefinition)
     {
-        GetValueOrSyntaxError(procedureDefinition.Signature).MatchSome(signature => GenerateProcedureSignature(output, signature));
+        GenerateProcedureSignature(output, procedureDefinition.Signature);
+        GenerateBody(output, procedureDefinition.Signature.Parameters, procedureDefinition.Block);
+        return output;
+    }
+
+    private StringBuilder GenerateBody(StringBuilder output, IEnumerable<Node.Declaration.FormalParameter> parameters, IEnumerable<Node.Statement> block) 
+    {
+        output.AppendLine(" {");
         _scope.Push();
         _indent.Increase();
-        procedureDefinition.Signature.MatchSome(signature => {
-            foreach (var parameter in signature.ParameterList.WhereSome()) {
-                parameter.Type.DiscardError().FlatMap(CreateType).MatchSome(type
-                 => parameter.Name.DiscardError().MatchSome(name
-                  => parameter.Mode.DiscardError().MatchSome(mode
-                   => {
-                       bool added = _scope.TryAdd(name, new Symbol.Variable(mode != ParameterMode.In ? type.ToPointer(1) : type));
-                       Debug.Assert(added, "Failed to add parameter variable to scope");
-                   })));
-            }
-        });
-        GenerateBlock(output, procedureDefinition.Block);
+
+        foreach (var parameter in parameters) {
+            CreateType(parameter.Type).MatchSome(type => {
+                    bool added = _scope.TryAdd(parameter.Name, new Symbol.Variable(
+                        parameter.Mode != ParameterMode.In ? type.ToPointer(1) : type));
+                    Debug.Assert(added, "Failed to add parameter variable to scope");
+                });
+        }
+        GenerateBlock(output, block);
+
         _indent.Decrease();
         _scope.Pop();
+        output.AppendLine("}");
+
         return output;
     }
 
     private StringBuilder GenerateFunctionDeclaration(StringBuilder output, Node.Declaration.FunctionDeclaration functionDeclaration)
     {
-        GetValueOrSyntaxError(functionDeclaration.Signature).MatchSome(signature => GenerateFunctionSignature(output, signature));
+        GenerateFunctionSignature(output, functionDeclaration.Signature);
         output.AppendLine(";");
         return output;
     }
 
     private StringBuilder GenerateProcedureDeclaration(StringBuilder output, Node.Declaration.ProcedureDeclaration procedure)
     {
-        GetValueOrSyntaxError(procedure.Signature).MatchSome(signature => GenerateProcedureSignature(output, signature));
+        GenerateProcedureSignature(output, procedure.Signature);
         output.AppendLine(";");
         return output;
     }
 
     private StringBuilder GenerateFunctionSignature(StringBuilder output, Node.Declaration.FunctionSignature functionSignature)
     {
-        GetValueOrSyntaxError(functionSignature.ReturnType).FlatMap(CreateType).MatchSome(type => output.Append($"{type} "));
-        GetValueOrSyntaxError(functionSignature.Name).MatchSome(name => output.Append(name));
-        output.Append('(');
-        if (functionSignature.ParameterList.Any()) {
-            output.AppendJoin(", ", GetValuesOrSyntaxErrors(functionSignature.ParameterList).Select(GenerateFormalParameterToString));
-        } else {
-            output.Append("void");
-        }
-        output.Append(')');
+        var type = CreateType(functionSignature.ReturnType).Map(type => type.ToString());
+        Debug.Assert(type.HasValue, "return type not created : todo semantic analysis");
+        GenerateSignature(output, type.Value, functionSignature.Name, functionSignature.Parameters);
+        
         return output;
     }
 
     private StringBuilder GenerateProcedureSignature(StringBuilder output, Node.Declaration.ProcedureSignature procedureSignature)
     {
+        GenerateSignature(output, "void", procedureSignature.Name, procedureSignature.Parameters);
+        return output;
+    }
+
+    private StringBuilder GenerateSignature(StringBuilder output, string cReturnType, string name, IEnumerable<Node.Declaration.FormalParameter> parameters)
+    {
         output.Append("void ");
-        GetValueOrSyntaxError(procedureSignature.Name).MatchSome(name => output.Append(name));
+        output.Append(name);
         output.Append('(');
-        if (procedureSignature.ParameterList.Any()) {
-            output.AppendJoin(", ", GetValuesOrSyntaxErrors(procedureSignature.ParameterList).Select(GenerateFormalParameterToString));
+        if (parameters.Any()) {
+            output.AppendJoin(", ", parameters.Select(GenerateFormalParameterToString));
         } else {
             output.Append("void");
         }
         output.Append(')');
+
         return output;
     }
 
     private string GenerateFormalParameterToString(Node.Declaration.FormalParameter formalParameter)
     {
         StringBuilder output = new();
-        GetValueOrSyntaxError(formalParameter.Type).FlatMap(CreateType).MatchSome(type => output.Append($"{type} "));
-        GetValueOrSyntaxError(formalParameter.Mode).MatchSome(mode
-         => GetValueOrSyntaxError(formalParameter.Name).MatchSome(name => {
-             if (mode is not ParameterMode.In) {
-                 output.Append('*');
-             }
-             output.Append(name);
-         }));
+        var type = CreateType(formalParameter.Type).Value.NotNull();
+        if (formalParameter.Mode is not ParameterMode.In) {
+            type = type.ToPointer(1);
+        }
+
+        GenerateVariableDeclaration(output, type, formalParameter.Name.Yield());
+
         return output.ToString();
     }
 
@@ -212,10 +202,10 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         return output.AppendLine(");");
     }
 
-    private StringBuilder GenerateStatement(StringBuilder output, Node.Statement statement, IReadOnlyCollection<Token> sourceTokens) => statement switch {
+    private StringBuilder GenerateStatement(StringBuilder output, Node.Statement statement) => statement switch {
         Node.Statement.Print print => GeneratePrintStatement(output, print),
         Node.Statement.Read read => GenerateReadStatement(output, read),
-        Node.Statement.VariableDeclaration variableDeclaration => GenerateVariableDeclaration(output, variableDeclaration, sourceTokens),
+        Node.Statement.VariableDeclaration variableDeclaration => GenerateLocalVariableDeclaration(output, variableDeclaration),
         Node.Statement.Assignment assignment => GenerateAssignment(output, assignment),
         Node.Statement.Alternative alternative => GenerateAlternative(output, alternative),
         Node.Statement.WhileLoop whileLoop => GenerateWhileLoop(output, whileLoop),
@@ -230,7 +220,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     {
         GenerateAlternativeClause(output, alternative.If, "if");
 
-        foreach (var elseIf in GetValuesOrSyntaxErrors(alternative.ElseIfs)) {
+        foreach (var elseIf in alternative.ElseIfs) {
             GenerateAlternativeClause(output, elseIf, " else if");
         }
 
@@ -248,7 +238,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     private StringBuilder GenerateAlternativeClause(StringBuilder output, Node.Statement.Alternative.Clause clause, string keyword)
     {
         _indent.Indent(output).Append($"{keyword} (");
-        GetValueOrSyntaxError(clause.Condition).MatchSome(cond => GenerateExpression(output, cond));
+        GenerateExpression(output, clause.Condition);
         output.AppendLine(") {");
 
         _indent.Increase();
@@ -261,36 +251,41 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     private StringBuilder GenerateAssignment(StringBuilder output, Node.Statement.Assignment assignment)
     {
         _indent.Indent(output);
-        GetValueOrSyntaxError(assignment.Target).Map(output.Append);
+        output.Append(assignment.Target);
         output.Append(" = ");
-        GetValueOrSyntaxError(assignment.Value).Map(expr => GenerateExpression(output, expr));
+        GenerateExpression(output, assignment.Value);
         output.AppendLine(";");
 
         return output;
     }
 
-    private StringBuilder GenerateVariableDeclaration(StringBuilder output, Node.Statement.VariableDeclaration variableDeclaration, IReadOnlyCollection<Token> sourceTokens)
+    private StringBuilder GenerateLocalVariableDeclaration(StringBuilder output, Node.Statement.VariableDeclaration variableDeclaration)
     {
         _indent.Indent(output);
 
-        GetValueOrSyntaxError(variableDeclaration.Type).FlatMap(CreateType).MatchSome(variableType => {
-            List<string> names = GetValuesOrSyntaxErrors(variableDeclaration.Names).ToList();
-            foreach (var name in names.Where(name => !_scope.TryAdd(name, new Symbol.Variable(variableType)))) {
-                AddMessage(Message.RedefinedSymbol<Symbol.Variable>(sourceTokens, name));
-            }
-            foreach (string header in variableType.RequiredHeaders) {
-                _includes.Ensure(header);
-            }
-            output.Append(variableType.CreateDeclaration(names)).AppendLine(";");
-        });
+        CreateType(variableDeclaration.Type).MatchSome(type
+         => GenerateVariableDeclaration(output, type, variableDeclaration.Names).AppendLine(";"));
 
         return output;
+    }
+
+    private StringBuilder GenerateVariableDeclaration(StringBuilder output, TypeInfo type, IEnumerable<string> names)
+    {
+            foreach (var name in names) {
+                _scope.TryAdd(name, new Symbol.Variable(type));
+            }
+            foreach (string header in type.RequiredHeaders) {
+                _includes.Ensure(header);
+            }
+            output.Append(type.CreateDeclaration(names));
+
+            return output;
     }
 
     private StringBuilder GenerateWhileLoop(StringBuilder output, Node.Statement.WhileLoop whileLoop)
     {
         _indent.Indent(output).Append("while ");
-        GetValueOrSyntaxError(whileLoop.Condition).MatchSome(cond => GenerateExpressionEnclosedInBrackets(output, cond));
+        GenerateExpressionEnclosedInBrackets(output, whileLoop.Condition);
         output.AppendLine(" {");
 
         _indent.Increase();
@@ -309,7 +304,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         _indent.Decrease();
 
         _indent.Indent(output).Append("} while ");
-        GetValueOrSyntaxError(doWhileLoop.Condition).MatchSome(cond => GenerateExpressionEnclosedInBrackets(output, cond));
+        GenerateExpressionEnclosedInBrackets(output, doWhileLoop.Condition);
         output.AppendLine(";");
 
         return output;
@@ -324,7 +319,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         _indent.Decrease();
 
         _indent.Indent(output).Append("} while (!");
-        GetValueOrSyntaxError(repeatLoop.Condition).MatchSome(cond => GenerateExpressionEnclosedInBrackets(output, cond));
+        GenerateExpressionEnclosedInBrackets(output, repeatLoop.Condition);
         output.AppendLine(");");
 
         return output;
@@ -332,15 +327,13 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateForLoop(StringBuilder output, Node.Statement.ForLoop forLoop)
     {
-        string variant = GetValueOrSyntaxError(forLoop.VariantName).ValueOr("");
+        _indent.Indent(output).Append($"for ({forLoop.VariantName} = ");
+        GenerateExpression(output, forLoop.Start);
 
-        _indent.Indent(output).Append($"for ({variant} = ");
-        GetValueOrSyntaxError(forLoop.Start).MatchSome(start => GenerateExpression(output, start));
+        output.Append($"; {forLoop.VariantName} <= ");
+        GenerateExpression(output, forLoop.End);
 
-        output.Append($"; {variant} <= ");
-        GetValueOrSyntaxError(forLoop.End).MatchSome(end => GenerateExpression(output, end));
-
-        output.Append($"; {variant}");
+        output.Append($"; {forLoop.VariantName}");
         forLoop.Step.Match(
             step => GenerateExpression(output.Append(" += "), step),
             none: () => output.Append("++"));
@@ -356,7 +349,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     private StringBuilder GenerateReturn(StringBuilder output, Node.Statement.Return @return)
     {
         _indent.Indent(output).Append($"return ");
-        GetValueOrSyntaxError(@return.Value).MatchSome(returnValue => GenerateExpression(output, returnValue));
+        GenerateExpression(output, @return.Value);
         output.AppendLine(";");
         return output;
     }
@@ -378,8 +371,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         Node.Expression.OperationBinary binaryOperation => GenerateOperationBinary(output, binaryOperation),
         Node.Expression.OperationUnary unaryOperation => GenerateOperationUnary(output, unaryOperation),
         Node.Expression.ArraySubscript arraySubscript => GenerateArraySubscript(output, arraySubscript),
-        Node.Expression.Bracketed bracketed => GetValueOrSyntaxError(bracketed.Expression)
-            .Map(expr => GenerateExpression(output.Append('('), expr).Append(')')).ValueOr(output),
+        Node.Expression.Bracketed bracketed => GenerateExpression(output.Append('('), bracketed.Expression).Append(')'),
         Node.Expression.Variable variable => output.Append(variable.Name),
         _ => throw expression.ToUnmatchedException(),
     };
@@ -388,9 +380,9 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateArraySubscript(StringBuilder output, Node.Expression.ArraySubscript arraySubscript)
     {
-        GetValueOrSyntaxError(arraySubscript.Array).MatchSome(array => GenerateExpression(output, array));
+        GenerateExpression(output, arraySubscript.Array);
 
-        foreach (Node.Expression index in GetValuesOrSyntaxErrors(arraySubscript.Indices)) {
+        foreach (Node.Expression index in arraySubscript.Indices) {
             GenerateExpression(output.Append('['), index).Append(']');
         }
 
@@ -405,16 +397,16 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateOperationBinary(StringBuilder output, Node.Expression.OperationBinary operation)
     {
-        GetValueOrSyntaxError(operation.Operand1).MatchSome(op1 => GenerateExpression(output, op1));
+        GenerateExpression(output, operation.Operand1);
         output.Append($" {GetOperationOperator(operation.Operator)} ");
-        GetValueOrSyntaxError(operation.Operand2).MatchSome(op2 => GenerateExpression(output, op2));
+        GenerateExpression(output, operation.Operand2);
         return output;
     }
 
     private StringBuilder GenerateOperationUnary(StringBuilder output, Node.Expression.OperationUnary operation)
     {
         output.Append(GetOperationOperator(operation.Operator));
-        GetValueOrSyntaxError(operation.Operand).MatchSome(op1 => GenerateExpression(output, op1));
+        GenerateExpression(output, operation.Operand);
         return output;
     }
 
@@ -443,17 +435,15 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     private Option<TypeInfo> CreateType(Node.Type type) => type switch {
         Node.Type.String => TypeInfo.CreateString().Some(),
         Node.Type.Primitive p => TypeInfo.Primitive.Create(p.Type).Some(),
-        Node.Type.AliasReference alias => GetValueOrSyntaxError(alias.Name)
-            .FlatMap(aliasName => _scope.GetSymbol<Symbol.TypeAlias>(aliasName)
-                .Map(aliasType => TypeInfo.CreateAlias(aliasName, aliasType.TargetType))),
-        Node.Type.Array array => GetValueOrSyntaxError(array.Type).FlatMap(CreateType).Map(elementType
-         => TypeInfo.CreateArray(elementType, GetValuesOrSyntaxErrors(array.Dimensions).Select(GenerateExpressionToString))),
-        Node.Type.LengthedString str => GetValueOrSyntaxError(str.Length).Map(length
-         => EvaluateValue(length)
+        Node.Type.AliasReference alias => _scope.GetSymbol<Symbol.TypeAlias>(alias.Name)
+                .Map(aliasType => TypeInfo.CreateAlias(alias.Name, aliasType.TargetType)),
+        Node.Type.Array array => CreateType(array.Type).Map(elementType
+         => TypeInfo.CreateArray(elementType, array.Dimensions.Select(GenerateExpressionToString))),
+        Node.Type.LengthedString str => EvaluateValue(str.Length)
             .FlatMap(Parse.ToInt32)
             .Map(Convert.ToString)
             .Map(TypeInfo.CreateLengthedString)
-            .ValueOr(() => TypeInfo.CreateLengthedString(GenerateExpressionToString(length)))),
+            .ValueOr(() => TypeInfo.CreateLengthedString(GenerateExpressionToString(str.Length))).Some(),
         _ => throw type.ToUnmatchedException(),
     };
 
@@ -470,21 +460,6 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
          Node.Expression.Bracketed => GenerateExpression(output, expression),
          _ => GenerateExpression(output.Append('('), expression).Append(')')
      };
-
-    private Option<T> GetValueOrSyntaxError<T>(ParseResult<T> result)
-    {
-        if (result.HasValue) {
-            return result.Value.Some();
-        }
-
-        AddMessage(Message.SyntaxError<T>(result.SourceTokens, result.Error));
-
-        return Option.None<T>();
-    }
-
-    /// <remarks>The returned collection should only be enumerated once, otherwise we may get duplicate errors.</remarks>
-    private IEnumerable<T> GetValuesOrSyntaxErrors<T>(IEnumerable<ParseResult<T>> results)
-     => results.Select(GetValueOrSyntaxError).WhereSome();
 
     #region Terminals
 

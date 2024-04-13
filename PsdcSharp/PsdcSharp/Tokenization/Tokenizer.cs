@@ -5,7 +5,7 @@ using static Scover.Psdc.TokenType;
 
 namespace Scover.Psdc.Tokenization;
 
-internal sealed class Tokenizer : CompilationStep
+internal sealed class Tokenizer : MessageProvider
 {
     private static readonly IReadOnlyList<TokenRule> rules =
         RulesBeforeKeywords

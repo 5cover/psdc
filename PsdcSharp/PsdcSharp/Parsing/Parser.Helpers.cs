@@ -4,19 +4,16 @@ namespace Scover.Psdc.Parsing;
 
 internal partial class Parser
 {
-    private static ParseResult<string> ParseTokenValue(IEnumerable<Token> tokens, TokenType expectedType)
+    private ParseResult<string> ParseTokenValue(IEnumerable<Token> tokens, TokenType expectedType)
      => ParseTokenValue(tokens, expectedType, val => val);
 
-    private static ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<string, T> resultCreator)
-    {
-        _ = ParseOperation.Start(tokens)
-            .ParseToken(expectedType, out var value);
-        return value.Map(resultCreator);
-    }
+    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<string, T> resultCreator) => ParseOperation.Start(this, tokens)
+        .ParseTokenValue(out var value, expectedType)
+    .MapResult(() => resultCreator(value));
 
-    private static ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<T> resultCreator) => ParseOperation.Start(tokens)
+    private ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<T> resultCreator) => ParseOperation.Start(this, tokens)
         .ParseToken(expectedType)
-    .BuildResult(resultCreator);
+    .MapResult(resultCreator);
 
     private static List<Token> Take(int count, IEnumerable<Token> tokens) => tokens.Take(count).ToList();
 
@@ -30,7 +27,7 @@ internal partial class Parser
         ? ParseResult.Ok(Take(1, tokens), t)
         : ParseResult.Fail<T>(Take(1, tokens), ParseError.FromExpectedTokens(map.Keys));
 
-    private static ParseResult<TokenType> ParseTokenType(
+    private static ParseResult<TokenType> ParseTokenOfType(
         IEnumerable<Token> tokens,
         IReadOnlySet<TokenType> allowedTokensTypes)
      => tokens.FirstOrDefault() is { } firstToken && allowedTokensTypes.Contains(firstToken.Type)

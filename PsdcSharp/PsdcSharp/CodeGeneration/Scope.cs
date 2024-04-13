@@ -1,5 +1,4 @@
 using Scover.Psdc.CodeGeneration;
-using Scover.Psdc.Parsing.Nodes;
 
 namespace Scover.Psdc;
 

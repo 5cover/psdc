@@ -2,92 +2,92 @@ namespace Scover.Psdc.Parsing.Nodes;
 
 internal interface Node
 {
-    internal sealed record Algorithm(IReadOnlyCollection<ParseResult<Declaration>> Declarations) : Node;
+    internal sealed record Algorithm(IReadOnlyCollection<Declaration> Declarations) : Node;
 
     internal interface Declaration : Node
     {
-        internal sealed record MainProgram(ParseResult<string> ProgramName, IReadOnlyCollection<ParseResult<Statement>> Block) : Declaration;
+        internal sealed record MainProgram(string ProgramName, IReadOnlyCollection<Statement> Block) : Declaration;
 
-        internal sealed record Alias(ParseResult<string> Name, ParseResult<Type> Type) : Declaration;
+        internal sealed record Alias(string Name, Type Type) : Declaration;
 
-        internal sealed record Constant(ParseResult<string> Name, ParseResult<Expression> Value) : Declaration;
+        internal sealed record Constant(string Name, Expression Value) : Declaration;
 
-        internal sealed record ProcedureDeclaration(ParseResult<ProcedureSignature> Signature) : Declaration;
+        internal sealed record ProcedureDeclaration(ProcedureSignature Signature) : Declaration;
 
-        internal sealed record ProcedureDefinition(ParseResult<ProcedureSignature> Signature, IReadOnlyCollection<ParseResult<Statement>> Block) : Declaration;
+        internal sealed record ProcedureDefinition(ProcedureSignature Signature, IReadOnlyCollection<Statement> Block) : Declaration;
 
-        internal sealed record FunctionDeclaration(ParseResult<FunctionSignature> Signature) : Declaration;
+        internal sealed record FunctionDeclaration(FunctionSignature Signature) : Declaration;
 
-        internal sealed record FunctionDefinition(ParseResult<FunctionSignature> Signature, IReadOnlyCollection<ParseResult<Statement>> Block) : Declaration;
+        internal sealed record FunctionDefinition(FunctionSignature Signature, IReadOnlyCollection<Statement> Block) : Declaration;
 
-        internal sealed record ProcedureSignature(ParseResult<string> Name, IReadOnlyCollection<ParseResult<FormalParameter>> ParameterList) : Node;
+        internal sealed record ProcedureSignature(string Name, IReadOnlyCollection<FormalParameter> Parameters) : Node;
 
-        internal sealed record FunctionSignature(ParseResult<string> Name, IReadOnlyCollection<ParseResult<FormalParameter>> ParameterList, ParseResult<Type> ReturnType) : Node;
+        internal sealed record FunctionSignature(string Name, IReadOnlyCollection<FormalParameter> Parameters, Type ReturnType) : Node;
 
-        internal sealed record FormalParameter(ParseResult<ParameterMode> Mode, ParseResult<string> Name, ParseResult<Type> Type) : Node;
+        internal sealed record FormalParameter(ParameterMode Mode, string Name, Type Type) : Node;
     }
 
-    internal sealed record EffectiveParameter(ParseResult<ParameterMode> Mode, ParseResult<Expression> Value) : Node;
+    internal sealed record EffectiveParameter(ParameterMode Mode, Expression Value) : Node;
 
     internal interface Statement : Node
     {
-        internal sealed record VariableDeclaration(IReadOnlyCollection<ParseResult<string>> Names, ParseResult<Type> Type) : Statement;
+        internal sealed record VariableDeclaration(IReadOnlyCollection<string> Names, Type Type) : Statement;
 
-        internal sealed record Return(ParseResult<Expression> Value) : Statement;
+        internal sealed record Return(Expression Value) : Statement;
 
         internal sealed record Alternative(
             Alternative.Clause If,
-            IReadOnlyCollection<ParseResult<Alternative.Clause>> ElseIfs,
-            Option<IReadOnlyCollection<ParseResult<Statement>>> Else) : Statement
+            IReadOnlyCollection<Alternative.Clause> ElseIfs,
+            Option<IReadOnlyCollection<Statement>> Else) : Statement
         {
             // Helper type, not a node on it own
-            internal sealed record Clause(ParseResult<Expression> Condition, IReadOnlyCollection<ParseResult<Statement>> Block);
+            internal sealed record Clause(Expression Condition, IReadOnlyCollection<Statement> Block);
         }
 
-        internal sealed record WhileLoop(ParseResult<Expression> Condition, IReadOnlyCollection<ParseResult<Statement>> Block) : Statement;
-        internal sealed record DoWhileLoop(IReadOnlyCollection<ParseResult<Statement>> Block, ParseResult<Expression> Condition) : Statement;
-        internal sealed record RepeatLoop(IReadOnlyCollection<ParseResult<Statement>> Block, ParseResult<Expression> Condition) : Statement;
+        internal sealed record WhileLoop(Expression Condition, IReadOnlyCollection<Statement> Block) : Statement;
+        internal sealed record DoWhileLoop(IReadOnlyCollection<Statement> Block, Expression Condition) : Statement;
+        internal sealed record RepeatLoop(IReadOnlyCollection<Statement> Block, Expression Condition) : Statement;
         internal sealed record ForLoop(
-            ParseResult<string> VariantName,
-            ParseResult<Expression> Start,
-            ParseResult<Expression> End,
+            string VariantName,
+            Expression Start,
+            Expression End,
             Option<Expression> Step,
-            IReadOnlyCollection<ParseResult<Statement>> Block) : Statement;
+            IReadOnlyCollection<Statement> Block) : Statement;
 
-        internal sealed record Assignment(ParseResult<string> Target, ParseResult<Expression> Value) : Statement;
+        internal sealed record Assignment(string Target, Expression Value) : Statement;
 
-        internal sealed record Ecrire(ParseResult<Expression> Argument1, ParseResult<Expression> Argument2) : Statement;
+        internal sealed record Ecrire(Expression Argument1, Expression Argument2) : Statement;
 
-        internal sealed record Print(IReadOnlyCollection<ParseResult<Expression>> Arguments) : Statement;
+        internal sealed record Print(IReadOnlyCollection<Expression> Arguments) : Statement;
 
-        internal sealed record Fermer(ParseResult<Expression> Argument) : Statement;
+        internal sealed record Fermer(Expression Argument) : Statement;
 
-        internal sealed record Lire(ParseResult<Expression> Argument1, ParseResult<Expression> Argument2) : Statement;
+        internal sealed record Lire(Expression Argument1, Expression Argument2) : Statement;
 
-        internal sealed record Read(ParseResult<Expression> Argument) : Statement;
+        internal sealed record Read(Expression Argument) : Statement;
 
-        internal sealed record OuvrirAjout(ParseResult<Expression> Argument) : Statement;
+        internal sealed record OuvrirAjout(Expression Argument) : Statement;
 
-        internal sealed record OuvrirEcriture(ParseResult<Expression> Argument) : Statement;
+        internal sealed record OuvrirEcriture(Expression Argument) : Statement;
 
-        internal sealed record OuvrirLecture(ParseResult<Expression> Argument) : Statement;
+        internal sealed record OuvrirLecture(Expression Argument) : Statement;
     }
 
     internal interface Expression : Node
     {
-        internal sealed record OperationBinary(ParseResult<Expression> Operand1, TokenType Operator, ParseResult<Expression> Operand2) : Expression;
+        internal sealed record OperationBinary(Expression Operand1, TokenType Operator, Expression Operand2) : Expression;
 
-        internal sealed record OperationUnary(TokenType Operator, ParseResult<Expression> Operand) : Expression;
+        internal sealed record OperationUnary(TokenType Operator, Expression Operand) : Expression;
 
-        internal sealed record BuiltinFdf(ParseResult<Expression> Argument) : Expression;
+        internal sealed record BuiltinFdf(Expression Argument) : Expression;
 
-        internal sealed record Call(ParseResult<string> Name, IReadOnlyCollection<ParseResult<EffectiveParameter>> ParameterList) : Expression;
+        internal sealed record Call(string Name, IReadOnlyCollection<EffectiveParameter> ParameterList) : Expression;
 
-        internal sealed record ComponentAccess(ParseResult<Expression> Structure, ParseResult<string> ComponentName) : Expression;
+        internal sealed record ComponentAccess(Expression Structure, string ComponentName) : Expression;
 
-        internal sealed record Bracketed(ParseResult<Expression> Expression) : Expression;
+        internal sealed record Bracketed(Expression Expression) : Expression;
 
-        internal sealed record ArraySubscript(ParseResult<Expression> Array, IReadOnlyCollection<ParseResult<Expression>> Indices) : Expression;
+        internal sealed record ArraySubscript(Expression Array, IReadOnlyCollection<Expression> Indices) : Expression;
 
         internal sealed record Variable(string Name) : Expression;
 
@@ -118,15 +118,15 @@ internal interface Node
     {
         internal sealed record String : Type;
 
-        internal sealed record Array(ParseResult<Type> Type, IReadOnlyCollection<ParseResult<Expression>> Dimensions) : Type;
+        internal sealed record Array(Type Type, IReadOnlyCollection<Expression> Dimensions) : Type;
 
         internal sealed record Primitive(PrimitiveType Type) : Type;
 
-        internal sealed record AliasReference(ParseResult<string> Name) : Type;
+        internal sealed record AliasReference(string Name) : Type;
 
-        internal sealed record LengthedString(ParseResult<Expression> Length) : Type;
+        internal sealed record LengthedString(Expression Length) : Type;
 
-        internal sealed record StructureDefinition(IReadOnlyCollection<ParseResult<Statement.VariableDeclaration>> Components) : Type;
+        internal sealed record StructureDefinition(IReadOnlyCollection<Statement.VariableDeclaration> Components) : Type;
     }
 }
 

@@ -9,8 +9,9 @@ internal static class Program
 {
     private static void Main()
     {
-        using var stdin = new StreamReader(Console.OpenStandardInput());
-        string input = stdin.ReadToEnd();
+        //using var stdin = new StreamReader(Console.OpenStandardInput());
+        //string input = stdin.ReadToEnd();
+        string input = File.ReadAllText("../../testPrograms/loop.psc");
         
         Tokenizer tokenizer = new(input);
         List<Token> tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToList());
@@ -20,15 +21,17 @@ internal static class Program
         ParseResult<Node.Algorithm> abstractSyntaxTree = "Parsing".LogOperation(parser.Parse);
         PrintMessages(parser, input);
 
-        CodeGenerator codeGenerator = new CodeGeneratorC(abstractSyntaxTree);
-        string generatedC = "Generating code".LogOperation(codeGenerator.Generate);
-        PrintMessages(codeGenerator, input);
+        if (abstractSyntaxTree.HasValue) {
+            CodeGenerator codeGenerator = new CodeGeneratorC(abstractSyntaxTree.Value);
+            string generatedC = "Generating code".LogOperation(codeGenerator.Generate);
+            PrintMessages(codeGenerator, input);
 
-        Console.Error.WriteLine("Generated C : ");
-        Console.WriteLine(generatedC);
+            Console.Error.WriteLine("Generated C : ");
+            Console.WriteLine(generatedC);
+        }
     }
 
-    private static void PrintMessages(CompilationStep step, string input)
+    private static void PrintMessages(MessageProvider step, string input)
     {
         while (step.TryDequeueMessage(out Message? message)) {
             Position startPos = input.GetPositionAt(message.StartIndex);

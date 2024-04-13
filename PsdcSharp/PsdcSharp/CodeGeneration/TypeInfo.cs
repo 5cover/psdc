@@ -32,17 +32,17 @@ internal class TypeInfo : IEquatable<TypeInfo?>
     public override int GetHashCode() => HashCode.Combine(_preModifier, _typeName, _postModifier);
 
     public string CreateDeclaration(IEnumerable<string> names)
-     => $"{_typeName} {string.Join(", ", names.Select(name => $"{_preModifier}{name}{_postModifier}"))}";
+     => $"{_typeName} {string.Join(", ", names.Select(name => _preModifier + name +_postModifier))}";
 
-    public override string ToString() => $"{_preModifier}{_typeName}{_postModifier}";
+    public override string ToString() => _typeName + _preModifier + _postModifier;
 
-    public static TypeInfo CreateString() => new("char", "%s", "*");
+    public static TypeInfo CreateString() => new("char", "%s", preModifier: "*");
     public static TypeInfo CreateAlias(string name, TypeInfo target) => new(name, target.FormatComponent, target.RequiredHeaders);
 
     public sealed class Primitive : TypeInfo
     {
         private Primitive(PrimitiveType type, string typeName, string? formatComponent = null, string preModifier = "", params string[] requiredHeaders)
-            : base(typeName, formatComponent, preModifier, isNumeric: type is not PrimitiveType.File, requiredHeaders: requiredHeaders)
+            : base(typeName, formatComponent, preModifier: preModifier, isNumeric: type is not PrimitiveType.File, requiredHeaders: requiredHeaders)
          => Type = type;
 
         public PrimitiveType Type { get; }
