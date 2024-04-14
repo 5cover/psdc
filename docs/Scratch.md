@@ -86,13 +86,9 @@ There's not need to have the code generator involved here at all.
 
 Just account for the failure, add an error message, and move on.
 
-## SourceTokens madness
-
-Okay so currently we keep track of sourcetokens in lists. But that's useless since the tokens are in order and the list of original tokens never changes. So all we really need are a start index and a length. That will simplify the code and improve performance.
-
 ## Multiparsing madness
 
-Stop failing and retrying with a diferent parser, and combinding the erros that occur, all based on the first token which is dutifully parsed twice.
+Stop failing and retrying with a diferent parser, and combinding the erros that occur, all based on the first token which is parsed twice.
 
 We're parsing things multiple times and it makes no sense.
 

@@ -127,3 +127,7 @@ Where to put "helper" rules in the formal grammar?
 "Helper" rules are rules that carry no meaning on their own and are only used in the construction of more complex rules. Example: formal parameters.
 
 They belong to the category of all the rules they are used to construct.
+
+## SourceTokens madness
+
+Okay so currently we keep track of sourcetokens in lists. But that's useless since the tokens are in order and the list of original tokens never changes. So all we really need are a start index and a length. That will simplify the code and improve performance.

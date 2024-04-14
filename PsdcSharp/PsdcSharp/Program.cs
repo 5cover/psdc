@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.Parsing.Nodes;
@@ -7,14 +8,16 @@ namespace Scover.Psdc;
 
 internal static class Program
 {
-    private static void Main()
+    private static void Main(string[] args)
     {
-        //using var stdin = new StreamReader(Console.OpenStandardInput());
-        //string input = stdin.ReadToEnd();
-        string input = File.ReadAllText("../../testPrograms/loop.psc");
+        if (args.Length != 1) {
+            throw new ArgumentException("Usage: <test_program_filename>");
+        }
+        
+        string input = File.ReadAllText($"../../testPrograms/{args[0]}");
         
         Tokenizer tokenizer = new(input);
-        List<Token> tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToList());
+        ImmutableArray<Token> tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToImmutableArray());
         PrintMessages(tokenizer, input);
 
         Parser parser = new(tokens);

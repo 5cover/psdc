@@ -35,7 +35,7 @@ internal sealed record Message(
             unknownChars.Length, startIndex,
             _ => $"Unknown token '{unknownChars}'");
 
-    public static Message SyntaxError<T>(IReadOnlyCollection<Token> sourceTokens, ParseError error)
+    public static Message SyntaxError<T>(IEnumerable<Token> sourceTokens, ParseError error)
      => Create(sourceTokens, MessageCode.SyntaxError, input => {
          StringBuilder msgContent = new();
          msgContent.Append($"Syntax error trying to generate {typeof(T).Name}: ");
@@ -65,7 +65,7 @@ internal sealed record Message(
      => Create(sourceTokens, MessageCode.RedefinedSymbol,
         _ => $"Symbol '{symbolName}' ({typeof(T).Name}) is already defined in current scope");
 
-    private static Message Create(IReadOnlyCollection<Token> involvedTokens, MessageCode code, Func<string, string> content)
+    private static Message Create(IEnumerable<Token> involvedTokens, MessageCode code, Func<string, string> content)
      => new(code,
             involvedTokens.First().StartIndex,
             involvedTokens.Last().StartIndex + involvedTokens.Last().Length,

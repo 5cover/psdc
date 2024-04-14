@@ -109,13 +109,13 @@ internal partial class Parser
             ParseResult<Node.Expression> operand2 = descentParser(tokens.Skip(count));
             count += operand2.SourceTokens.Count;
             if (!operand2.HasValue) {
-                return operand2.WithSourceTokens(Take(count, tokens));
+                return operand2.WithSourceTokens(new(tokens, count));
             }
 
-            operand1 = ParseResult.Ok(Take(count, tokens),
+            operand1 = ParseResult.Ok(new(tokens, count),
                 new Node.Expression.OperationBinary(operand1.Value, @operator.Value, operand2.Value));
             if (!operand1.HasValue) {
-                return operand1.WithSourceTokens(Take(count, tokens));
+                return operand1.WithSourceTokens(new(tokens, count));
             }
 
             @operator = ParseTokenOfType(tokens.Skip(count), operators);
@@ -134,7 +134,7 @@ internal partial class Parser
         return tokenType.Match(
             some: @operator => {
                 var prExpr = descentParser(tokens.Skip(1)).Map(expr => new Node.Expression.OperationUnary(@operator, expr));
-                return prExpr.WithSourceTokens(Take(prExpr.SourceTokens.Count + 1, tokens));
+                return prExpr.WithSourceTokens(new(tokens, prExpr.SourceTokens.Count + 1));
             },
             none: _ => descentParser(tokens));
     }

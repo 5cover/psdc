@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
@@ -7,9 +6,14 @@ internal delegate ParseResult<T> ParseMethod<out T>(IEnumerable<Token> tokens);
 
 internal abstract class ParseOperation
 {
-    private readonly List<Token> _readTokens;
-    private ParseOperation(List<Token> readTokens) { _readTokens = readTokens; }
-    public static ParseOperation Start(MessageProvider syntaxErrorReciever, IEnumerable<Token> tokens) => new SuccessfulSoFarOperation(syntaxErrorReciever, tokens);
+    private int _readCount;
+    private readonly IEnumerable<Token> _tokens;
+    private ParseOperation(IEnumerable<Token> tokens, int readCount)
+     => (_tokens, _readCount) = (tokens, readCount);
+    public static ParseOperation Start(MessageProvider syntaxErrorReciever, IEnumerable<Token> tokens)
+     => new SuccessfulSoFarOperation(tokens, syntaxErrorReciever);
+
+    protected Partition<Token> ReadTokens => new(_tokens, _readCount);    
 
     public abstract ParseResult<T> MapResult<T>(Func<T> result);
 
@@ -27,18 +31,16 @@ internal abstract class ParseOperation
     private sealed class SuccessfulSoFarOperation : ParseOperation
     {
         private readonly MessageProvider _syntaxErrorReciever;
-        private readonly IEnumerable<Token> _tokens;
-        private IEnumerable<Token> ParsingTokens => _tokens.Skip(_readTokens.Count);
-        private Token NextParsingToken => ParsingTokens.First();
+        private IEnumerable<Token> ParsingTokens => _tokens.Skip(_readCount);
 
-        public SuccessfulSoFarOperation(MessageProvider syntaxErrorReciever, IEnumerable<Token> tokens) : base(new())
-         => (_syntaxErrorReciever, _tokens) = (syntaxErrorReciever, tokens);
+        public SuccessfulSoFarOperation(IEnumerable<Token> tokens, MessageProvider syntaxErrorReciever) : base(tokens, 0)
+         => _syntaxErrorReciever = syntaxErrorReciever;
 
         public override ParseResult<T> MapResult<T>(Func<T> result) => MakeOkResult(result());
         public override ParseOperation Parse<T>(out T result, ParseMethod<T> parse)
         {
             var pr = parse(ParsingTokens);
-            _readTokens.AddRange(pr.SourceTokens);
+            _readCount += pr.SourceTokens.Count;
             if (pr.HasValue) {
                 result = pr.Value;
                 return this;
@@ -51,7 +53,7 @@ internal abstract class ParseOperation
         public override ParseOperation ParseOptional<T>(out Option<T> result, ParseMethod<T> parse) {
             var pr = parse(ParsingTokens);
             if (pr.HasValue) {
-                _readTokens.AddRange(pr.SourceTokens);
+                _readCount += pr.SourceTokens.Count;
             }
             result = pr.DiscardError();
             return this;
@@ -66,7 +68,7 @@ internal abstract class ParseOperation
             result = items;
 
             ParseResult<T> item = parse(ParsingTokens);
-            _readTokens.AddRange(item.SourceTokens);
+            _readCount += item.SourceTokens.Count;
 
             AddOrSyntaxError(items, item);
             bool endReached = until(ParsingTokens);
@@ -87,7 +89,9 @@ internal abstract class ParseOperation
         public override ParseOperation ParseToken(TokenType type)
         {
             Option<Token> token = ParsingTokens.FirstOrNone();
-            token.MatchSome(_readTokens.Add);
+            if (token.HasValue) {
+                _readCount++;
+            }
 
             return token.HasValue && token.Value.Type == type
                 ? this
@@ -97,7 +101,9 @@ internal abstract class ParseOperation
         public override ParseOperation ParseTokenValue(out string result, TokenType type)
         {
             Option<Token> token = ParsingTokens.FirstOrNone();
-            token.MatchSome(_readTokens.Add);
+            if (token.HasValue) {
+                _readCount++;
+            }
 
             if (token.HasValue && token.Value.Type == type) {
                 result = token.Value.Value ?? throw new InvalidOperationException("Parsed token doesn't have a value");
@@ -118,7 +124,7 @@ internal abstract class ParseOperation
 
             do {
                 var item = parse(ParsingTokens);
-                _readTokens.AddRange(item.SourceTokens);
+                _readCount += item.SourceTokens.Count;
                 AddOrSyntaxError(items, item);
             } while (!until(ParsingTokens) && ParsingTokens.Any());
 
@@ -128,12 +134,12 @@ internal abstract class ParseOperation
         public override ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, params TokenType[] endTokens)
          => ParseZeroOrMoreUntil(out result, parse, tokens => NextTokenIsAny(tokens, endTokens));
 
-        private ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(_readTokens, result);
+        private ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(new(_tokens, _readCount), result);
         private bool CheckAndConsumeToken(IEnumerable<Token> tokens, TokenType type)
         {
             bool nextIsSeparator = NextTokenIs(tokens, type);
             if (nextIsSeparator) {
-                _readTokens.Add(tokens.First());
+                _readCount++;
             }
             return nextIsSeparator;
         }
@@ -144,7 +150,7 @@ internal abstract class ParseOperation
                 none: error => _syntaxErrorReciever.AddMessage(Message.SyntaxError<T>(item.SourceTokens, error))
             );
 
-        private FailedOperation Fail(ParseError error) => new(_readTokens, error);
+        private FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error);
 
         private static bool NextTokenIsAny(IEnumerable<Token> tokens, IEnumerable<TokenType> types)
          => tokens.FirstOrNone().Map(token => types.Contains(token.Type)).ValueOr(false);
@@ -156,10 +162,10 @@ internal abstract class ParseOperation
     {
         private readonly ParseError _error;
 
-        public FailedOperation(List<Token> readTokens, ParseError error) : base(readTokens)
+        public FailedOperation(IEnumerable<Token> tokens, int readCount, ParseError error) : base(tokens, readCount)
          => _error = error;
 
-        public override ParseResult<T> MapResult<T>(Func<T> result) => ParseResult.Fail<T>(_readTokens, _error);
+        public override ParseResult<T> MapResult<T>(Func<T> result) => ParseResult.Fail<T>(ReadTokens, _error);
         public override ParseOperation Parse<T>(out T result, ParseMethod<T> parse) {
             result = default!;
             return this;

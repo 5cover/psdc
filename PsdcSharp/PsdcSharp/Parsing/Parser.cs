@@ -276,7 +276,7 @@ internal sealed partial class Parser : MessageProvider
     .MapResult(() => new Node.Type.StructureDefinition(components));
 
     private static ParseMethod<Node.Type.Primitive> MakePrimitiveTypeParser(PrimitiveType type)
-     => tokens => ParseResult.Ok(Take(1, tokens), new Node.Type.Primitive(type));
+     => tokens => ParseResult.Ok(new(tokens, 1), new Node.Type.Primitive(type));
 
     #endregion Types
 

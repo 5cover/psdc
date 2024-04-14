@@ -1,9 +1,27 @@
+using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 
 namespace Scover.Psdc;
+
+public readonly record struct Position(int Line, int Column)
+{
+    public override string ToString() => $"line {Line + 1}, col {Column + 1}";
+}
+
+public readonly record struct Partition<T>(IEnumerable<T> Source, int Start, int Count) : IEnumerable<T>
+{
+    public Partition(IEnumerable<T> Source, int Count) : this(Source, 0, Count)
+    {
+    }
+
+    private IEnumerable<T> Values => Source.Skip(Start).Take(Count);
+
+    public IEnumerator<T> GetEnumerator() => Values.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)Values).GetEnumerator();
+}
 
 internal static class Parse
 {
@@ -90,9 +108,4 @@ internal static class Extensions
         }
         return success ? lines.Current : throw new ArgumentOutOfRangeException(nameof(lineNumber), "Line number is out of range");
     }
-}
-
-public readonly record struct Position(int Line, int Column)
-{
-    public override string ToString() => $"line {Line + 1}, col {Column + 1}";
 }

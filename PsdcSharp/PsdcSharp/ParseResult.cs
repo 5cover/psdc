@@ -4,8 +4,8 @@ namespace Scover.Psdc.Parsing;
 
 internal interface ParseResult<out T> : Option<T, ParseError>
 {
-    IReadOnlyCollection<Token> SourceTokens { get; }
-    ParseResult<T> WithSourceTokens(IReadOnlyCollection<Token> newSourceTokens);
+    Partition<Token> SourceTokens { get; }
+    ParseResult<T> WithSourceTokens(Partition<Token> newSourceTokens);
 }
 
 internal sealed record ParseError(IReadOnlySet<TokenType> ExpectedTokens)
@@ -18,10 +18,10 @@ internal sealed record ParseError(IReadOnlySet<TokenType> ExpectedTokens)
 
 internal static class ParseResult
 {
-    public static ParseResult<T> Ok<T>(IReadOnlyCollection<Token> sourceTokens, T result)
+    public static ParseResult<T> Ok<T>(Partition<Token> sourceTokens, T result)
      => new ParseResultImpl<T>(true, result, null, sourceTokens);
 
-    public static ParseResult<T> Fail<T>(IReadOnlyCollection<Token> sourceTokens, ParseError error)
+    public static ParseResult<T> Fail<T>(Partition<Token> sourceTokens, ParseError error)
      => new ParseResultImpl<T>(false, default, error, sourceTokens);
 
     public static ParseResult<T> Else<T>(this ParseResult<T> original, Func<ParseResult<T>> alternative)
@@ -45,9 +45,9 @@ internal static class ParseResult
         bool HasValue,
         T? Value,
         ParseError? Error,
-        IReadOnlyCollection<Token> SourceTokens) : ParseResult<T>
+        Partition<Token> SourceTokens) : ParseResult<T>
     {
-        public ParseResult<T> WithSourceTokens(IReadOnlyCollection<Token> newSourceTokens)
+        public ParseResult<T> WithSourceTokens(Partition<Token> newSourceTokens)
          => this with { SourceTokens = newSourceTokens };
     }
 }
