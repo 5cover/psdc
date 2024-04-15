@@ -131,3 +131,54 @@ They belong to the category of all the rules they are used to construct.
 ## SourceTokens madness
 
 Okay so currently we keep track of sourcetokens in lists. But that's useless since the tokens are in order and the list of original tokens never changes. So all we really need are a start index and a length. That will simplify the code and improve performance.
+
+## Simplification
+
+The code has become a big mess because we've made the wrong choices.
+
+First of all, it's not the code generator role's to generate syntax errors. It would be the duty of the parser.
+
+Second of all, the way we handle failure is all wrong. Having everyting wrapped in `ParseResult`s results in tons of boilerplate code.
+
+So I propose ge get rid of `ParseResult` entirely.
+
+So how do we handle failure now?
+
+Well let's take an example of what a failure may look like:
+
+```text
+retourne result
+```
+
+We've forgotten the terminating semicolon in that return statement.
+
+What we do now is we add a failed return statement to the AST, and the code generator registers a syntax error for it when it tries to generate it.
+
+There's not need to have the code generator involved here at all.
+
+Just account for the failure, add an error message, and move on.
+
+## Multiparsing madness
+
+Stop failing and retrying with a diferent parser, and combinding the erros that occur, all based on the first token which is parsed twice.
+
+We're parsing things multiple times and it makes no sense.
+
+Let's build a tree so that the common parts of parsers can be shared.
+
+We'll need a way to branch in the parser
+
+Start with assignements and variable declarations.
+
+Remaining Elses to eliminate
+
+- ~~in ParseAliasDeclaration~~
+- ~~in ParseType~~
+- ~~in ParseExpression1~~
+- ~~in ParseArraySubscript~~
+
+~~Eliminate ParseEither?~~
+
+## Map operator types
+
+Right now operators in bin and unary expressions are TokenType. This makes no sense.

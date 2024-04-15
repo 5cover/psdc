@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Text;
-
+using Scover.Psdc.Parsing;
 using Scover.Psdc.Parsing.Nodes;
 
 namespace Scover.Psdc.CodeGeneration;
@@ -43,7 +43,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         foreach (Node.Statement statement in block) {
             GenerateStatement(output, statement);
         }
-    
+
         return output;
     }
 
@@ -61,35 +61,28 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     private StringBuilder GenerateMainProgram(StringBuilder output, Node.Declaration.MainProgram mainProgram)
     {
         _indent.Indent(output).AppendLine($"// {mainProgram.ProgramName}");
-        output.AppendLine("int main() {");
+        output.AppendLine("int main() ");
 
-        _scope.Push();
-        _indent.Increase();
-        GenerateBlock(output, mainProgram.Block);
-        _indent.Indent(output).AppendLine("return 0;");
-        _indent.Decrease();
-        _scope.Pop();
-    
-        output.AppendLine("}");
-
-        return output;
+        return GenerateScopedIndentedBlock(output, mainProgram.Block
+            .Append(new Node.Statement.Return(new Node.Expression.Literal.Integer("0"))))
+        .AppendLine();
     }
 
     private StringBuilder GenerateFunctionDefinition(StringBuilder output, Node.Declaration.FunctionDefinition functionDefinition)
     {
         GenerateFunctionSignature(output, functionDefinition.Signature);
-        GenerateBody(output, functionDefinition.Signature.Parameters, functionDefinition.Block);
-    
+        GenerateSubroutineBody(output, functionDefinition.Signature.Parameters, functionDefinition.Block);
+
         return output;
     }
     private StringBuilder GenerateProcedureDefinition(StringBuilder output, Node.Declaration.ProcedureDefinition procedureDefinition)
     {
         GenerateProcedureSignature(output, procedureDefinition.Signature);
-        GenerateBody(output, procedureDefinition.Signature.Parameters, procedureDefinition.Block);
+        GenerateSubroutineBody(output, procedureDefinition.Signature.Parameters, procedureDefinition.Block);
         return output;
     }
 
-    private StringBuilder GenerateBody(StringBuilder output, IEnumerable<Node.Declaration.FormalParameter> parameters, IEnumerable<Node.Statement> block) 
+    private StringBuilder GenerateSubroutineBody(StringBuilder output, IEnumerable<Node.Declaration.FormalParameter> parameters, IEnumerable<Node.Statement> block)
     {
         output.AppendLine(" {");
         _scope.Push();
@@ -97,10 +90,10 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
         foreach (var parameter in parameters) {
             CreateType(parameter.Type).MatchSome(type => {
-                    bool added = _scope.TryAdd(parameter.Name, new Symbol.Variable(
-                        parameter.Mode != ParameterMode.In ? type.ToPointer(1) : type));
-                    Debug.Assert(added, "Failed to add parameter variable to scope");
-                });
+                bool added = _scope.TryAdd(parameter.Name, new Symbol.Variable(
+                    parameter.Mode != ParameterMode.In ? type.ToPointer(1) : type));
+                Debug.Assert(added, "Failed to add parameter variable to scope");
+            });
         }
         GenerateBlock(output, block);
 
@@ -130,7 +123,7 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         var type = CreateType(functionSignature.ReturnType).Map(type => type.ToString());
         Debug.Assert(type.HasValue, "return type not created : todo semantic analysis");
         GenerateSignature(output, type.Value, functionSignature.Name, functionSignature.Parameters);
-        
+
         return output;
     }
 
@@ -218,34 +211,36 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateAlternative(StringBuilder output, Node.Statement.Alternative alternative)
     {
-        GenerateAlternativeClause(output, alternative.If, "if");
+        GenerateAlternativeClause(_indent.Indent(output), alternative.If, "if");
 
         foreach (var elseIf in alternative.ElseIfs) {
             GenerateAlternativeClause(output, elseIf, " else if");
         }
 
-        alternative.Else.MatchSome(elseBlock => {
-            _indent.Indent(output).AppendLine(" else {");
-            _indent.Increase();
-            GenerateBlock(output, elseBlock);
-            _indent.Decrease();
-            _indent.Indent(output).AppendLine("}");
-        });
+        alternative.Else.MatchSome(elseBlock
+         => GenerateScopedIndentedBlock(output.Append(" else "), elseBlock).AppendLine());
 
         return output;
     }
 
     private StringBuilder GenerateAlternativeClause(StringBuilder output, Node.Statement.Alternative.Clause clause, string keyword)
     {
-        _indent.Indent(output).Append($"{keyword} (");
-        GenerateExpression(output, clause.Condition);
-        output.AppendLine(") {");
+        GenerateExpression(output.Append($"{keyword} ("), clause.Condition).Append(") ");
 
+        return GenerateScopedIndentedBlock(output, clause.Block);
+    }
+
+    private StringBuilder GenerateScopedIndentedBlock(StringBuilder output, IEnumerable<Node.Statement> block)
+    {
+        output.AppendLine("{");
         _indent.Increase();
-        GenerateBlock(output, clause.Block);
+        _scope.Push();
+        GenerateBlock(output, block);
+        _scope.Pop();
         _indent.Decrease();
+        _indent.Indent(output).Append('}');
 
-        return _indent.Indent(output).Append('}');
+        return output;
     }
 
     private StringBuilder GenerateAssignment(StringBuilder output, Node.Statement.Assignment assignment)
@@ -271,39 +266,31 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateVariableDeclaration(StringBuilder output, TypeInfo type, IEnumerable<string> names)
     {
-            foreach (var name in names) {
-                _scope.TryAdd(name, new Symbol.Variable(type));
-            }
-            foreach (string header in type.RequiredHeaders) {
-                _includes.Ensure(header);
-            }
-            output.Append(type.CreateDeclaration(names));
+        foreach (var name in names) {
+            _scope.TryAdd(name, new Symbol.Variable(type));
+        }
+        foreach (string header in type.RequiredHeaders) {
+            _includes.Ensure(header);
+        }
+        output.Append(type.CreateDeclaration(names));
 
-            return output;
+        return output;
     }
 
     private StringBuilder GenerateWhileLoop(StringBuilder output, Node.Statement.WhileLoop whileLoop)
     {
         _indent.Indent(output).Append("while ");
         GenerateExpressionEnclosedInBrackets(output, whileLoop.Condition);
-        output.AppendLine(" {");
 
-        _indent.Increase();
-        GenerateBlock(output, whileLoop.Block);
-        _indent.Decrease();
-
-        return _indent.Indent(output).AppendLine("}");
+        return GenerateScopedIndentedBlock(output.Append(' '), whileLoop.Block).AppendLine();
     }
 
     private StringBuilder GenerateDoWhileLoop(StringBuilder output, Node.Statement.DoWhileLoop doWhileLoop)
     {
-        _indent.Indent(output).AppendLine("do {");
+        _indent.Indent(output).Append("do ");
 
-        _indent.Increase();
-        GenerateBlock(output, doWhileLoop.Block);
-        _indent.Decrease();
+        GenerateScopedIndentedBlock(output, doWhileLoop.Block).Append(" while ");
 
-        _indent.Indent(output).Append("} while ");
         GenerateExpressionEnclosedInBrackets(output, doWhileLoop.Condition);
         output.AppendLine(";");
 
@@ -312,13 +299,10 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
 
     private StringBuilder GenerateRepeatLoop(StringBuilder output, Node.Statement.RepeatLoop repeatLoop)
     {
-        _indent.Indent(output).AppendLine("do {");
+        _indent.Indent(output).Append("do ");
 
-        _indent.Increase();
-        GenerateBlock(output, repeatLoop.Block);
-        _indent.Decrease();
+        GenerateScopedIndentedBlock(output, repeatLoop.Block).Append(" while (!");
 
-        _indent.Indent(output).Append("} while (!");
         GenerateExpressionEnclosedInBrackets(output, repeatLoop.Condition);
         output.AppendLine(");");
 
@@ -337,13 +321,8 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
         forLoop.Step.Match(
             step => GenerateExpression(output.Append(" += "), step),
             none: () => output.Append("++"));
-        output.AppendLine(") {");
 
-        _indent.Increase();
-        GenerateBlock(output, forLoop.Block);
-        _indent.Decrease();
-
-        return _indent.Indent(output).AppendLine("}");
+        return GenerateScopedIndentedBlock(output.Append(") "), forLoop.Block).AppendLine();
     }
 
     private StringBuilder GenerateReturn(StringBuilder output, Node.Statement.Return @return)
@@ -398,14 +377,14 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     private StringBuilder GenerateOperationBinary(StringBuilder output, Node.Expression.OperationBinary operation)
     {
         GenerateExpression(output, operation.Operand1);
-        output.Append($" {GetOperationOperator(operation.Operator)} ");
+        output.Append($" {GetCOperator(operation.Operator)} ");
         GenerateExpression(output, operation.Operand2);
         return output;
     }
 
     private StringBuilder GenerateOperationUnary(StringBuilder output, Node.Expression.OperationUnary operation)
     {
-        output.Append(GetOperationOperator(operation.Operator));
+        output.Append(GetCOperator(operation.Operator));
         GenerateExpression(output, operation.Operand);
         return output;
     }
@@ -413,24 +392,6 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
     #endregion Expressions
 
     #region Helpers
-
-    private static string GetOperationOperator(TokenType @operator) => @operator switch {
-        TokenType.OperatorAnd => "&&",
-        TokenType.OperatorDivide => "/",
-        TokenType.OperatorEqual => "==",
-        TokenType.OperatorGreaterThan => ">",
-        TokenType.OperatorGreaterThanOrEqual => ">=",
-        TokenType.OperatorLessThan => "<",
-        TokenType.OperatorLessThanOrEqual => "<=",
-        TokenType.OperatorMinus => "-",
-        TokenType.OperatorModulus => "%",
-        TokenType.OperatorMultiply => "*",
-        TokenType.OperatorNot => "!",
-        TokenType.OperatorNotEqual => "!=",
-        TokenType.OperatorOr => "||",
-        TokenType.OperatorPlus => "+",
-        _ => throw @operator.ToUnmatchedException(),
-    };
 
     private Option<TypeInfo> CreateType(Node.Type type) => type switch {
         Node.Type.String => TypeInfo.CreateString().Some(),
@@ -462,6 +423,30 @@ internal sealed partial class CodeGeneratorC : CodeGenerator
      };
 
     #region Terminals
+
+    private static string GetCOperator(BinaryOperator op) => op switch {
+        BinaryOperator.And => "&&",
+        BinaryOperator.Divide => "/",
+        BinaryOperator.Equal => "==",
+        BinaryOperator.GreaterThan => ">",
+        BinaryOperator.GreaterThanOrEqual => ">=",
+        BinaryOperator.LessThan => "<",
+        BinaryOperator.LessThanOrEqual => "<=",
+        BinaryOperator.Minus => "-",
+        BinaryOperator.Modulus => "%",
+        BinaryOperator.Multiply => "*",
+        BinaryOperator.NotEqual => "!=",
+        BinaryOperator.Or => "||",
+        BinaryOperator.Plus => "+",
+        _ => throw op.ToUnmatchedException(),
+    };
+
+    private static string GetCOperator(UnaryOperator op) => op switch {
+        UnaryOperator.Minus => "-",
+        UnaryOperator.Not => "!",
+        UnaryOperator.Plus => "+",
+        _ => throw op.ToUnmatchedException(),
+    };
 
     #endregion Terminals
 

@@ -13,10 +13,17 @@ internal abstract class ParseOperation
     public static ParseOperation Start(MessageProvider syntaxErrorReciever, IEnumerable<Token> tokens)
      => new SuccessfulSoFarOperation(tokens, syntaxErrorReciever);
 
-    protected Partition<Token> ReadTokens => new(_tokens, _readCount);    
+    protected ParseResult<T> MakeFailedResult<T>(ParseError error) => ParseResult.Fail<T>(new(_tokens, _readCount), error);
+
+    public ParseResult<T> Branch<T>(Dictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches)
+     => Branch((IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>>)branches);
+    public ParseOperation Branch<T>(out T result, Dictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches)
+     => Branch(out result, (IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>>)branches);
+
+    public abstract ParseResult<T> Branch<T>(IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches);
+    public abstract ParseOperation Branch<T>(out T result, IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches);
 
     public abstract ParseResult<T> MapResult<T>(Func<T> result);
-
     public abstract ParseOperation Parse<T>(out T result, ParseMethod<T> parse);
     public abstract ParseOperation ParseOptional<T>(out Option<T> result, ParseMethod<T> parse);
     public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, TokenType separator);
@@ -27,7 +34,6 @@ internal abstract class ParseOperation
     public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, TokenType separator);
     public abstract ParseOperation ParseZeroOrMoreUntil<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, Predicate<IEnumerable<Token>> until);
     public abstract ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, params TokenType[] endTokens);
-
     private sealed class SuccessfulSoFarOperation : ParseOperation
     {
         private readonly MessageProvider _syntaxErrorReciever;
@@ -35,6 +41,30 @@ internal abstract class ParseOperation
 
         public SuccessfulSoFarOperation(IEnumerable<Token> tokens, MessageProvider syntaxErrorReciever) : base(tokens, 0)
          => _syntaxErrorReciever = syntaxErrorReciever;
+
+        public override ParseResult<T> Branch<T>(IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches)
+        {
+            Option<Token> token = ParsingTokens.FirstOrNone();
+            if (token.HasValue) {
+                _readCount++;
+            }
+
+            return token.HasValue && branches.TryGetValue(token.Value.Type, out var operation)
+                ? operation(this)
+                : MakeFailedResult<T>(ParseError.FromExpectedTokens(branches.Keys));
+        }
+
+        public override ParseOperation Branch<T>(out T result, IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches)
+        {
+            var prResult = Branch(branches);
+            if (prResult.HasValue) {
+                result = prResult.Value;
+                return this;
+            } else {
+                result = default!;
+                return Fail(prResult.Error);
+            }
+        }
 
         public override ParseResult<T> MapResult<T>(Func<T> result) => MakeOkResult(result());
         public override ParseOperation Parse<T>(out T result, ParseMethod<T> parse)
@@ -50,7 +80,8 @@ internal abstract class ParseOperation
             }
         }
 
-        public override ParseOperation ParseOptional<T>(out Option<T> result, ParseMethod<T> parse) {
+        public override ParseOperation ParseOptional<T>(out Option<T> result, ParseMethod<T> parse)
+        {
             var pr = parse(ParsingTokens);
             if (pr.HasValue) {
                 _readCount += pr.SourceTokens.Count;
@@ -165,41 +196,58 @@ internal abstract class ParseOperation
         public FailedOperation(IEnumerable<Token> tokens, int readCount, ParseError error) : base(tokens, readCount)
          => _error = error;
 
-        public override ParseResult<T> MapResult<T>(Func<T> result) => ParseResult.Fail<T>(ReadTokens, _error);
-        public override ParseOperation Parse<T>(out T result, ParseMethod<T> parse) {
+        public override ParseResult<T> Branch<T>(IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches) => MakeFailedResult<T>(_error);
+
+        public override ParseOperation Branch<T>(out T result, IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches)
+        {
             result = default!;
             return this;
         }
-        public override ParseOperation ParseOptional<T>(out Option<T> result, ParseMethod<T> parse) {
+
+        public override ParseResult<T> MapResult<T>(Func<T> result) => MakeFailedResult<T>(_error);
+        public override ParseOperation Parse<T>(out T result, ParseMethod<T> parse)
+        {
+            result = default!;
+            return this;
+        }
+        public override ParseOperation ParseOptional<T>(out Option<T> result, ParseMethod<T> parse)
+        {
             result = Option.None<T>();
             return this;
         }
-        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, TokenType separator) {
+        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, TokenType separator)
+        {
             result = Array.Empty<T>();
             return this;
         }
-        public override ParseOperation ParseOneOrMoreUntil<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, Predicate<IEnumerable<Token>> until) {
+        public override ParseOperation ParseOneOrMoreUntil<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, Predicate<IEnumerable<Token>> until)
+        {
             result = Array.Empty<T>();
             return this;
         }
-        public override ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, params TokenType[] endTokens) {
+        public override ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, params TokenType[] endTokens)
+        {
             result = Array.Empty<T>();
             return this;
         }
-        public override ParseOperation ParseTokenValue(out string result, TokenType type) {
+        public override ParseOperation ParseTokenValue(out string result, TokenType type)
+        {
             result = null!;
             return this;
         }
         public override ParseOperation ParseToken(TokenType type) => this;
-        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, TokenType separator) {
+        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, TokenType separator)
+        {
             result = Array.Empty<T>();
             return this;
         }
-        public override ParseOperation ParseZeroOrMoreUntil<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, Predicate<IEnumerable<Token>> until) {
+        public override ParseOperation ParseZeroOrMoreUntil<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, Predicate<IEnumerable<Token>> until)
+        {
             result = Array.Empty<T>();
             return this;
         }
-        public override ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, params TokenType[] endTokens) {
+        public override ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, params TokenType[] endTokens)
+        {
             result = Array.Empty<T>();
             return this;
         }

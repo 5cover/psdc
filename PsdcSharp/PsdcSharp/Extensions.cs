@@ -11,13 +11,13 @@ public readonly record struct Position(int Line, int Column)
     public override string ToString() => $"line {Line + 1}, col {Column + 1}";
 }
 
-public readonly record struct Partition<T>(IEnumerable<T> Source, int Start, int Count) : IEnumerable<T>
+public readonly record struct Partition<T>(IEnumerable<T> Source, int Count) : IEnumerable<T>
 {
-    public Partition(IEnumerable<T> Source, int Count) : this(Source, 0, Count)
+    public Partition(params T[] values) : this(values, values.Length)
     {
     }
 
-    private IEnumerable<T> Values => Source.Skip(Start).Take(Count);
+    private IEnumerable<T> Values => Source.Take(Count);
 
     public IEnumerator<T> GetEnumerator() => Values.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)Values).GetEnumerator();

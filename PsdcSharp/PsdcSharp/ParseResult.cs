@@ -38,6 +38,9 @@ internal static class ParseResult
         ? Ok(original.SourceTokens, transform(original.Value))
         : Fail<TResult>(original.SourceTokens, original.Error);
 
+    public static ParseResult<TResult> FlatMap<T, TResult>(this ParseResult<T> pr, Func<T, ParseResult<TResult>> transform)
+     => pr.HasValue ? transform(pr.Value) : Fail<TResult>(pr.SourceTokens, pr.Error);
+
     private static ParseError CombineWith(this ParseError original, ParseError @new)
      => new(original.ExpectedTokens.Concat(@new.ExpectedTokens).ToHashSet());
 

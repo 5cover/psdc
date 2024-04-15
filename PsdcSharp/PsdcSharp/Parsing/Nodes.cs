@@ -75,9 +75,9 @@ internal interface Node
 
     internal interface Expression : Node
     {
-        internal sealed record OperationBinary(Expression Operand1, TokenType Operator, Expression Operand2) : Expression;
+        internal sealed record OperationBinary(Expression Operand1, BinaryOperator Operator, Expression Operand2) : Expression;
 
-        internal sealed record OperationUnary(TokenType Operator, Expression Operand) : Expression;
+        internal sealed record OperationUnary(UnaryOperator Operator, Expression Operand) : Expression;
 
         internal sealed record BuiltinFdf(Expression Argument) : Expression;
 

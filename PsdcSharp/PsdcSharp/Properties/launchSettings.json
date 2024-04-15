@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "C#: Psdc Debug": {
+      "commandName": "Project",
+      "commandLineArgs": "functions.psc"
+    }
+  }
+}

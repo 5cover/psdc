@@ -7,70 +7,72 @@ internal partial class Parser
 {
     private readonly IReadOnlyDictionary<TokenType, ParseMethod<Node.Expression.Literal>> _literalParsers;
 
-    private static readonly IReadOnlyList<IReadOnlySet<TokenType>> operations = new List<HashSet<TokenType>> {
+    private static readonly IReadOnlyList<IReadOnlyDictionary<TokenType, BinaryOperator>> binaryOperations = new List<Dictionary<TokenType, BinaryOperator>> {
         new() {
-            TokenType.OperatorOr,
+            [TokenType.OperatorOr] = BinaryOperator.Or,
         },
         new() {
-            TokenType.OperatorAnd,
+            [TokenType.OperatorAnd] = BinaryOperator.And,
         },
         new() {
-            TokenType.OperatorEqual,
-            TokenType.OperatorNotEqual,
+            [TokenType.OperatorEqual] = BinaryOperator.Equal,
+            [TokenType.OperatorNotEqual] = BinaryOperator.NotEqual,
         },
         new() {
-            TokenType.OperatorLessThan,
-            TokenType.OperatorLessThanOrEqual,
-            TokenType.OperatorGreaterThan,
-            TokenType.OperatorGreaterThanOrEqual,
+            [TokenType.OperatorLessThan] = BinaryOperator.LessThan,
+            [TokenType.OperatorLessThanOrEqual] = BinaryOperator.LessThanOrEqual,
+            [TokenType.OperatorGreaterThan] = BinaryOperator.GreaterThan,
+            [TokenType.OperatorGreaterThanOrEqual] = BinaryOperator.GreaterThanOrEqual,
         },
         new() {
-            TokenType.OperatorPlus,
-            TokenType.OperatorMinus,
+            [TokenType.OperatorPlus] = BinaryOperator.Plus,
+            [TokenType.OperatorMinus] = BinaryOperator.Minus,
         },
         new() {
-            TokenType.OperatorMultiply,
-            TokenType.OperatorDivide,
-            TokenType.OperatorModulus,
-        },
-        new() {
-            TokenType.OperatorPlus,
-            TokenType.OperatorMinus,
-            TokenType.OperatorNot,
+            [TokenType.OperatorMultiply] = BinaryOperator.Multiply,
+            [TokenType.OperatorDivide] = BinaryOperator.Divide,
+            [TokenType.OperatorModulus] = BinaryOperator.Modulus,
         },
     };
 
+    private static readonly IReadOnlyDictionary<TokenType, UnaryOperator> unaryOperators = new Dictionary<TokenType, UnaryOperator>()
+    {
+        [TokenType.OperatorMinus] = UnaryOperator.Minus,
+        [TokenType.OperatorNot] = UnaryOperator.Not,
+        [TokenType.OperatorPlus] = UnaryOperator.Plus,
+    };
+
     private ParseResult<Node.Expression> ParseExpression(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression7, operations[0]);
+     => ParseBinaryOperation(tokens, ParseExpression7, binaryOperations[0]);
 
     private ParseResult<Node.Expression> ParseExpression7(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression6, operations[1]);
+     => ParseBinaryOperation(tokens, ParseExpression6, binaryOperations[1]);
 
     private ParseResult<Node.Expression> ParseExpression6(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression5, operations[2]);
+     => ParseBinaryOperation(tokens, ParseExpression5, binaryOperations[2]);
 
     private ParseResult<Node.Expression> ParseExpression5(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression4, operations[3]);
+     => ParseBinaryOperation(tokens, ParseExpression4, binaryOperations[3]);
 
     private ParseResult<Node.Expression> ParseExpression4(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression3, operations[4]);
+     => ParseBinaryOperation(tokens, ParseExpression3, binaryOperations[4]);
 
     private ParseResult<Node.Expression> ParseExpression3(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression2, operations[5]);
+     => ParseBinaryOperation(tokens, ParseExpression2, binaryOperations[5]);
 
     private ParseResult<Node.Expression> ParseExpression2(IEnumerable<Token> tokens)
-     => ParseUnaryOperation(tokens, ParseExpression1, operations[6]);
+     => ParseUnaryOperation(tokens, ParseExpression1, unaryOperators);
 
     private ParseResult<Node.Expression> ParseExpression1(IEnumerable<Token> tokens)
-     => ParseBracketed(tokens)
+     => ParseBracketedOrCall(tokens)
         .Else(() => ParseArraySubscript(tokens))
         .Else(() => ParseLiteral(tokens))
         .Else(() => ParseTokenValue(tokens, TokenType.Identifier)
             .Map(s => new Node.Expression.Variable(s)));
 
-    private ParseResult<Node.Expression> ParseLiteral(IEnumerable<Token> tokens) => ParseEither(tokens, _literalParsers);
+    private ParseResult<Node.Expression> ParseLiteral(IEnumerable<Token> tokens) => ParseByTokenType(tokens, _literalParsers);
 
-    private ParseResult<Node.Expression> ParseBracketed(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+    private ParseResult<Node.Expression> ParseBracketedOrCall(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(TokenType.OpenBracket)
         .Parse(out var expression, ParseExpression)
         .ParseToken(TokenType.CloseBracket)
@@ -78,7 +80,7 @@ internal partial class Parser
 
     private ParseResult<Node.Expression> ParseArraySubscript(IEnumerable<Token> tokens)
      => ParseOperation.Start(this, tokens)
-        .Parse(out var array, tokens => ParseBracketed(tokens)
+        .Parse(out var array, tokens => ParseBracketedOrCall(tokens)
                             .Else(() => ParseLiteral(tokens)))
         .Parse(out var indexes, ParseIndexes)
         .MapResult(() => new Node.Expression.ArraySubscript(array, indexes));
@@ -92,7 +94,7 @@ internal partial class Parser
     private static ParseResult<Node.Expression> ParseBinaryOperation(
         IEnumerable<Token> tokens,
         Func<IEnumerable<Token>, ParseResult<Node.Expression>> descentParser,
-        IReadOnlySet<TokenType> operators)
+        IReadOnlyDictionary<TokenType, BinaryOperator> operators)
     {
         var operand1 = descentParser(tokens);
         if (!operand1.HasValue) {
@@ -101,10 +103,10 @@ internal partial class Parser
 
         int count = operand1.SourceTokens.Count;
 
-        ParseResult<TokenType> @operator = ParseTokenOfType(tokens.Skip(count), operators);
+        var prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
         
-        while (@operator.HasValue) {
-            count += @operator.SourceTokens.Count;
+        while (prOperator.HasValue) {
+            count += prOperator.SourceTokens.Count;
 
             ParseResult<Node.Expression> operand2 = descentParser(tokens.Skip(count));
             count += operand2.SourceTokens.Count;
@@ -113,12 +115,12 @@ internal partial class Parser
             }
 
             operand1 = ParseResult.Ok(new(tokens, count),
-                new Node.Expression.OperationBinary(operand1.Value, @operator.Value, operand2.Value));
+                new Node.Expression.OperationBinary(operand1.Value, operators[prOperator.Value.Type], operand2.Value));
             if (!operand1.HasValue) {
                 return operand1.WithSourceTokens(new(tokens, count));
             }
 
-            @operator = ParseTokenOfType(tokens.Skip(count), operators);
+            prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
         }
 
         return operand1;
@@ -127,13 +129,13 @@ internal partial class Parser
     private static ParseResult<Node.Expression> ParseUnaryOperation(
         IEnumerable<Token> tokens,
         Func<IEnumerable<Token>, ParseResult<Node.Expression>> descentParser,
-        IReadOnlySet<TokenType> operators)
+        IReadOnlyDictionary<TokenType, UnaryOperator> operators)
     {
-        ParseResult<TokenType> tokenType = ParseTokenOfType(tokens, operators);
+        var prOperator = ParseTokenOfType(tokens, operators.Keys);
 
-        return tokenType.Match(
-            some: @operator => {
-                var prExpr = descentParser(tokens.Skip(1)).Map(expr => new Node.Expression.OperationUnary(@operator, expr));
+        return prOperator.Match(
+            some: op => {
+                var prExpr = descentParser(tokens.Skip(1)).Map(expr => new Node.Expression.OperationUnary(operators[op.Type], expr));
                 return prExpr.WithSourceTokens(new(tokens, prExpr.SourceTokens.Count + 1));
             },
             none: _ => descentParser(tokens));

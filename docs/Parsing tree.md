@@ -7,20 +7,39 @@ title: VariableDeclaration + Assignement
 stateDiagram-v2
 
 [*] --> Identifier
-Identifier --> PunctuationComma
-PunctuationComma --> Identifier2
-Identifier2 --> PunctuationColon 
-Identifier2 --> PunctuationComma 
-Identifier --> PunctuationColon
-PunctuationColon --> CompleteType
-CompleteType --> PunctuationSemicolon
-PunctuationSemicolon --> VariableDeclaration
-VariableDeclaration --> [*]
 Identifier --> OperatorAssignment
-OperatorAssignment --> Expression
-Expression --> PunctuationSemicolon2
-PunctuationSemicolon2 --> Assignment
-Assignment --> [*]
+Identifier --> PunctuationComma
+Identifier --> PunctuationColon
+OperatorAssignment --> Assignment
+PunctuationColon --> VariableDeclaration
+PunctuationComma --> MultipleVariableDeclaration
+
+state VariableDeclaration {
+    [*] --> CompleteType
+    CompleteType --> [*]
+}
+
+state MultipleVariableDeclaration {
+    ident : Identifier
+    comma : PunctuationComma
+    colon : PunctuationColon
+    vdecl : VariableDeclaration
+    [*] --> ident
+    ident --> comma
+    comma --> ident
+    ident --> colon
+    colon --> vdecl
+}
+
+state Assignment {
+    [*] --> Expression
+    Expression --> [*]
+}
+
+VariableDeclaration --> PunctuationSemicolon
+Assignment --> PunctuationSemicolon
+MultipleVariableDeclaration --> PunctuationSemicolon
+PunctuationSemicolon --> [*]
 ```
 
 ```mermaid
@@ -30,17 +49,17 @@ title: Procedure declaration + definition
 stateDiagram-v2
 [*] --> KeywordProcedure
 KeywordProcedure --> ProcedureSignature
-ProcedureSignature --> ProcedureDeclaration
-ProcedureSignature --> ProcedureDefinition
+ProcedureSignature --> PunctuationSemicolon
+ProcedureSignature --> KeywordIs
+PunctuationSemicolon --> ProcedureDeclaration
+KeywordIs --> ProcedureDefinition
 
 state ProcedureDeclaration {
-    [*] --> PunctuationSemicolon
-    PunctuationSemicolon --> [*]
+    [*] --> [*]
 }
 
 state ProcedureDefinition {
-    [*] --> KeywordIs
-    KeywordIs --> KeywordBegin
+    [*] --> KeywordBegin
     KeywordBegin --> Statement
     Statement --> Statement
     Statement --> KeywordEnd

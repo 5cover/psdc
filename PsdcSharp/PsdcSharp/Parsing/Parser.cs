@@ -18,14 +18,12 @@ internal sealed partial class Parser : MessageProvider
             [TokenType.KeywordProgram] = ParseMainProgram,
             [TokenType.KeywordFunction] = tokens => ParseFunctionDefinition(tokens)
                       .Else<Node.Declaration>(() => ParseFunctionDeclaration(tokens)),
-            [TokenType.KeywordProcedure] = tokens => ParseProcedureDefinition(tokens)
-                       .Else<Node.Declaration>(() => ParseProcedureDeclaration(tokens)),
+            [TokenType.KeywordProcedure] = ParseProcedureDeclarationOrDefinition,
         };
         _statementParsers = new Dictionary<TokenType, ParseMethod<Node.Statement>> {
             [TokenType.KeywordEcrireEcran] = ParsePrintStatement,
             [TokenType.KeywordLireClavier] = ParseReadStatement,
-            [TokenType.Identifier] = (tokens) => ParseVariableDeclaration(tokens)
-                     .Else<Node.Statement>(() => ParseAssignment(tokens)),
+            [TokenType.Identifier] = ParserVariableDeclarationOrAssignment,
             [TokenType.KeywordIf] = ParseAlternative,
             [TokenType.KeywordWhile] = ParseWhileLoop,
             [TokenType.KeywordDo] = ParseDoWhileLoop,
@@ -54,7 +52,7 @@ internal sealed partial class Parser : MessageProvider
 
     // Parsing starts here with the "Algorithm" production rule
     public ParseResult<Node.Algorithm> Parse() => ParseOperation.Start(this, _tokens)
-        .ParseZeroOrMoreUntilToken(out var declarations, tokens => ParseEither(tokens, _declarationParsers), TokenType.Eof)
+        .ParseZeroOrMoreUntilToken(out var declarations, tokens => ParseByTokenType(tokens, _declarationParsers), TokenType.Eof)
     .MapResult(() => new Node.Algorithm(declarations));
 
     #region Declarations
@@ -77,15 +75,22 @@ internal sealed partial class Parser : MessageProvider
         .ParseToken(TokenType.KeywordEnd)
     .MapResult(() => new Node.Declaration.MainProgram(name, block));
 
+    private ParseResult<Node.Declaration> ParseProcedureDeclarationOrDefinition(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+        .Parse(out var signature, ParseProcedureSignature)
+        .Branch<Node.Declaration>(new() {
+            [TokenType.PunctuationSemicolon] = o => o
+                .MapResult(() => new Node.Declaration.ProcedureDeclaration(signature)),
+            [TokenType.KeywordIs] = o => o
+                .ParseToken(TokenType.KeywordBegin)
+                .ParseZeroOrMoreUntilToken(out var block, ParseStatement, TokenType.KeywordEnd)
+                .ParseToken(TokenType.KeywordEnd)
+            .MapResult(() => new Node.Declaration.ProcedureDefinition(signature, block)),
+        });
+
     private ParseResult<Node.Declaration.FunctionDeclaration> ParseFunctionDeclaration(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .Parse(out var signature, ParseFunctionSignature)
         .ParseToken(TokenType.PunctuationSemicolon)
     .MapResult(() => new Node.Declaration.FunctionDeclaration(signature));
-
-    private ParseResult<Node.Declaration.ProcedureDeclaration> ParseProcedureDeclaration(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
-        .Parse(out var signature, ParseProcedureSignature)
-        .ParseToken(TokenType.PunctuationSemicolon)
-    .MapResult(() => new Node.Declaration.ProcedureDeclaration(signature));
 
     private ParseResult<Node.Declaration.FunctionDefinition> ParseFunctionDefinition(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .Parse(out var signature, ParseFunctionSignature)
@@ -94,14 +99,6 @@ internal sealed partial class Parser : MessageProvider
         .ParseZeroOrMoreUntilToken(out var block, ParseStatement, TokenType.KeywordEnd)
         .ParseToken(TokenType.KeywordEnd)
     .MapResult(() => new Node.Declaration.FunctionDefinition(signature, block));
-
-    private ParseResult<Node.Declaration.ProcedureDefinition> ParseProcedureDefinition(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
-        .Parse(out var signature, ParseProcedureSignature)
-        .ParseToken(TokenType.KeywordIs)
-        .ParseToken(TokenType.KeywordBegin)
-        .ParseZeroOrMoreUntilToken(out var block, ParseStatement, TokenType.KeywordEnd)
-        .ParseToken(TokenType.KeywordEnd)
-    .MapResult(() => new Node.Declaration.ProcedureDefinition(signature, block));
 
     private ParseResult<Node.Declaration.FunctionSignature> ParseFunctionSignature(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(TokenType.KeywordFunction)
@@ -122,7 +119,7 @@ internal sealed partial class Parser : MessageProvider
     .MapResult(() => new Node.Declaration.ProcedureSignature(name, parameters));
 
     private ParseResult<Node.Declaration.FormalParameter> ParseFormalParameter(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
-        .Parse(out var mode, tokens => ParseEither(tokens, formalParameterModes))
+        .Parse(out var mode, tokens => GetByTokenType(tokens, formalParameterModes))
         .ParseTokenValue(out var name, TokenType.Identifier)
         .ParseToken(TokenType.PunctuationColon)
         .Parse(out var type, ParseType)
@@ -132,7 +129,7 @@ internal sealed partial class Parser : MessageProvider
 
     #region Statements
 
-    private ParseResult<Node.Statement> ParseStatement(IEnumerable<Token> tokens) => ParseEither(tokens, _statementParsers);
+    private ParseResult<Node.Statement> ParseStatement(IEnumerable<Token> tokens) => ParseByTokenType(tokens, _statementParsers);
 
     private ParseResult<Node.Statement.Alternative> ParseAlternative(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(TokenType.KeywordIf)
@@ -190,6 +187,29 @@ internal sealed partial class Parser : MessageProvider
         .ParseToken(TokenType.PunctuationSemicolon)
     .MapResult(() => new Node.Statement.VariableDeclaration(names, type));
 
+    private ParseResult<Node.Statement> ParserVariableDeclarationOrAssignment(IEnumerable<Token> tokens)
+    {
+        ParseResult<Node.Statement.VariableDeclaration> FinishVariableDeclaration(ParseOperation o, IEnumerable<string> names) => o
+            .Parse(out var type, ParseCompleteType)
+            .MapResult(() => new Node.Statement.VariableDeclaration(names.ToList(), type));
+
+        return ParseOperation.Start(this, tokens)
+        .ParseTokenValue(out var firstName, TokenType.Identifier)
+        .Branch(out Node.Statement result, new() {
+            [TokenType.OperatorAssignment] = o => o
+                .Parse(out var value, ParseExpression)
+                .MapResult(() => new Node.Statement.Assignment(firstName, value)),
+            [TokenType.PunctuationComma] = o => FinishVariableDeclaration(o
+                .ParseZeroOrMoreSeparated(out var names,
+                    tokens => ParseTokenValue(tokens, TokenType.Identifier),
+                    TokenType.PunctuationComma)
+                .ParseToken(TokenType.PunctuationColon), names.Prepend(firstName)),
+            [TokenType.PunctuationColon] = o => FinishVariableDeclaration(o, firstName.Yield()),
+        })
+        .ParseToken(TokenType.PunctuationSemicolon)
+        .MapResult(() => result);
+    }
+
     private ParseResult<Node.Statement.WhileLoop> ParseWhileLoop(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(TokenType.KeywordWhile)
         .Parse(out var condition, ParseExpression)
@@ -242,7 +262,7 @@ internal sealed partial class Parser : MessageProvider
 
     #region Types
 
-    private ParseResult<Node.Type> ParseCompleteType(IEnumerable<Token> tokens) => ParseEither(tokens, _completeTypeParsers);
+    private ParseResult<Node.Type> ParseCompleteType(IEnumerable<Token> tokens) => ParseByTokenType(tokens, _completeTypeParsers);
 
     private ParseResult<Node.Type> ParseType(IEnumerable<Token> tokens)
      => ParseCompleteType(tokens).Else(()

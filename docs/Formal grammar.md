@@ -82,6 +82,7 @@ $$
 
 ⟨Instruction⟩ &\to \begin{cases}
     ⟨Alternative⟩\\
+    ⟨Appel⟩;\\
     ⟨Assignation⟩\\
     ⟨BouclePour⟩\\
     ⟨BoucleRépéter⟩\\

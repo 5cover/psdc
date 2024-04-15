@@ -1,0 +1,11 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C#: Psdc Debug",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/PsdcSharp/PsdcSharp/PsdcSharp.csproj",
+    }
+  ],
+}

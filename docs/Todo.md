@@ -25,7 +25,6 @@ Project roadmap:
 
 ## Cleanup
 
-- Map operator types
 - Refactor TypeInfo and others to isolate C-specific code
 - Try to eliminate duplication (CodeGeneratorC.cs is a mess)
 - semantic analysis pass that creates symbols and typeinfos before the code generation (so code generation needs no matchsome)
