@@ -1,3 +1,4 @@
+using Scover.Psdc.Parsing.Nodes;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
@@ -18,6 +19,8 @@ internal sealed record ParseError(IReadOnlySet<TokenType> ExpectedTokens)
 
 internal static class ParseResult
 {
+    public static ParseResult<T> Ok<T>(T result) where T : Node
+     => new ParseResultImpl<T>(true, result, null, result.SourceTokens);
     public static ParseResult<T> Ok<T>(Partition<Token> sourceTokens, T result)
      => new ParseResultImpl<T>(true, result, null, sourceTokens);
 
@@ -33,9 +36,9 @@ internal static class ParseResult
         return new ParseResultImpl<T>(alt.HasValue, alt.Value, alt.Error?.CombineWith(original.Error), alt.SourceTokens);
     }
 
-    public static ParseResult<TResult> Map<T, TResult>(this ParseResult<T> original, Func<T, TResult> transform)
+    public static ParseResult<TResult> Map<T, TResult>(this ParseResult<T> original, Func<Partition<Token>, T, TResult> transform)
      => original.HasValue
-        ? Ok(original.SourceTokens, transform(original.Value))
+        ? Ok(original.SourceTokens, transform(original.SourceTokens, original.Value))
         : Fail<TResult>(original.SourceTokens, original.Error);
 
     public static ParseResult<TResult> FlatMap<T, TResult>(this ParseResult<T> pr, Func<T, ParseResult<TResult>> transform)

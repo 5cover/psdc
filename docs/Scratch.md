@@ -1,13 +1,5 @@
 # Scratch area
 
-```cs
-private static ParseResult<Node.Declaration.ProcedureDeclaration> ParseProcedureDeclaration(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
-        .ParseToken(TokenType.KeywordProcedure)
-        .ParseToken(TokenType.Identifier, out var name)
-        .ParseToken(TokenType.OpenBracket)
-        .ParseToken(TokenType.CloseBracket)
-```
-
 ## Handle inner errors
 
 So basically when an error happens inside of the main program, we continue to parse Token by Token and fail until we consume everything up to `TokenType.Eof`. That's incorrect, as we'll end up consuming `TokenType.KeywordEnd`.
@@ -59,3 +51,14 @@ However arrays exist:
 `array[5] := value`
 
 `array[indice / 2 + 4] := value`
+
+## Scopes
+
+currently scopes are associated with ast nodes
+
+the issue is that we need access to the parent scope to retrieve symbols.
+
+currently Scope has a `Scope? ParentScope` field. This means it's up to the Parser to create the scope hierarchy. This is wrong.
+
+- solution 1 : remove Scope from nodes and build a scope tree in the semantic analyzer (will have to be traversed in semantic analyzer & code generator)
+- **solution 2** : semantic analyzer will create the scopes

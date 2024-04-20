@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Parsing;
-using Scover.Psdc.Parsing.Nodes;
+using Scover.Psdc.SemanticAnalysis;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
@@ -13,25 +13,27 @@ internal static class Program
         if (args.Length != 1) {
             throw new ArgumentException("Usage: <test_program_filename>");
         }
-        
+
         string input = File.ReadAllText($"../../testPrograms/{args[0]}");
-        
+
         Tokenizer tokenizer = new(input);
-        ImmutableArray<Token> tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToImmutableArray());
+        var tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToImmutableArray());
         PrintMessages(tokenizer, input);
 
         Parser parser = new(tokens);
-        ParseResult<Node.Algorithm> abstractSyntaxTree = "Parsing".LogOperation(parser.Parse);
+        var ast = "Parsing".LogOperation(parser.Parse);
         PrintMessages(parser, input);
 
-        if (abstractSyntaxTree.HasValue) {
-            CodeGenerator codeGenerator = new CodeGeneratorC(abstractSyntaxTree.Value);
-            string generatedC = "Generating code".LogOperation(codeGenerator.Generate);
-            PrintMessages(codeGenerator, input);
+        SemanticAnalyzer semanticAnalyzer = new(ast);
+        var semanticAst = "Analyzing semantics".LogOperation(semanticAnalyzer.AnalyzeSemantics);
+        PrintMessages(semanticAnalyzer, input);
 
-            Console.Error.WriteLine("Generated C : ");
-            Console.WriteLine(generatedC);
-        }
+        CodeGeneratorC codeGenerator = new(semanticAst);
+        string cCode = "Generating code".LogOperation(codeGenerator.Generate);
+        PrintMessages(codeGenerator, input);
+
+        Console.Error.WriteLine("Generated C : ");
+        Console.WriteLine(cCode);
     }
 
     private static void PrintMessages(MessageProvider step, string input)
@@ -40,26 +42,25 @@ internal static class Program
             Position startPos = input.GetPositionAt(message.StartIndex);
             Position endPos = input.GetPositionAt(message.EndIndex);
 
-            Position pos = startPos.Line == endPos.Line ? startPos : endPos;
-
             // if the error spans over multiple lines, take the last line
+            Position errorPos = startPos.Line == endPos.Line ? startPos : endPos;
 
-            ReadOnlySpan<char> faultyLine = input.Line(pos.Line);
+            ReadOnlySpan<char> faultyLine = input.GetLine(errorPos.Line);
             var msgColor = message.Type.GetConsoleColor();
 
-            msgColor.DoInColor(() => Console.Error.Write($"[P{(int)message.Code:d4}]"));
+            msgColor.DoInColor(() => Console.Error.Write($"[P{(int)message.Code:d4}] "));
 
-            Console.Error.WriteLine($" {message.Type}: {message.Content(input)} ({pos})");
+            Console.Error.WriteLine($"{errorPos}: {message.Type}: {message.Content(input)}");
 
             // Part of line before error
-            Console.Error.Write($"\t---> {faultyLine[..pos.Column].TrimStart()}"); // trim to remove indentation
+            Console.Error.Write($"\t---> {faultyLine[..errorPos.Column].TrimStart()}"); // trim to remove indentation
 
             msgColor.SetColor();
-            Console.Error.Write($"{faultyLine[pos.Column..endPos.Column]}");
+            Console.Error.Write($"{faultyLine[errorPos.Column..endPos.Column]}");
             Console.ResetColor();
 
             // Part of line after error
-            Console.Error.WriteLine($"{faultyLine[endPos.Column..].TrimEnd()}");
+            Console.Error.WriteLine($"{faultyLine[endPos.Column..].TrimEnd()}\n");
         }
     }
 }

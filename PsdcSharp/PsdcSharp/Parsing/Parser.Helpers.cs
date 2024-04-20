@@ -5,13 +5,15 @@ namespace Scover.Psdc.Parsing;
 internal partial class Parser
 {
     private ParseResult<string> ParseTokenValue(IEnumerable<Token> tokens, TokenType expectedType)
-     => ParseTokenValue(tokens, expectedType, val => val);
-
-    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<string, T> resultCreator) => ParseOperation.Start(this, tokens)
+     => ParseOperation.Start(this, tokens)
         .ParseTokenValue(out var value, expectedType)
-    .MapResult(() => resultCreator(value));
+    .MapResult(tokens => value);
 
-    private ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<T> resultCreator) => ParseOperation.Start(this, tokens)
+    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<Partition<Token>, string, T> resultCreator) => ParseOperation.Start(this, tokens)
+        .ParseTokenValue(out var value, expectedType)
+    .MapResult(tokens => resultCreator(tokens, value));
+
+    private ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator) => ParseOperation.Start(this, tokens)
         .ParseToken(expectedType)
     .MapResult(resultCreator);
 

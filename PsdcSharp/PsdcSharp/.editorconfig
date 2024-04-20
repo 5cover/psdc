@@ -3,7 +3,7 @@ root = true
 [*.cs]
 #### Styles de nommage ####
 
-# Règles de nommage
+# Rï¿½gles de nommage
 
 dotnet_naming_rule.constant_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.constant_should_be_pascalcase.symbols = constant
@@ -29,7 +29,7 @@ dotnet_naming_rule.private_field_should_be__camelcase.severity = suggestion
 dotnet_naming_rule.private_field_should_be__camelcase.symbols = private_field
 dotnet_naming_rule.private_field_should_be__camelcase.style = _camelcase
 
-# Spécifications de symboles
+# Spï¿½cifications de symboles
 
 dotnet_naming_symbols.constant.applicable_kinds = field, local
 dotnet_naming_symbols.constant.applicable_accessibilities = *
@@ -39,7 +39,7 @@ dotnet_naming_symbols.interface.applicable_kinds = interface
 dotnet_naming_symbols.interface.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
 dotnet_naming_symbols.interface.required_modifiers = 
 
-dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum
+dotnet_naming_symbols.types.applicable_kinds = struct, interface, enum
 dotnet_naming_symbols.types.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
 dotnet_naming_symbols.types.required_modifiers = 
 
@@ -146,7 +146,7 @@ csharp_using_directive_placement = outside_namespace:warning
 [*.vb]
 #### Styles de nommage ####
 
-# Règles de nommage
+# Rï¿½gles de nommage
 
 dotnet_naming_rule.interface_should_be_commence_par_i.severity = suggestion
 dotnet_naming_rule.interface_should_be_commence_par_i.symbols = interface
@@ -160,13 +160,13 @@ dotnet_naming_rule.membres_autres_que_des_champs_should_be_casse_pascal.severity
 dotnet_naming_rule.membres_autres_que_des_champs_should_be_casse_pascal.symbols = membres_autres_que_des_champs
 dotnet_naming_rule.membres_autres_que_des_champs_should_be_casse_pascal.style = casse_pascal
 
-# Spécifications de symboles
+# Spï¿½cifications de symboles
 
 dotnet_naming_symbols.interface.applicable_kinds = interface
 dotnet_naming_symbols.interface.applicable_accessibilities = public, friend, private, protected, protected_friend, private_protected
 dotnet_naming_symbols.interface.required_modifiers = 
 
-dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum
+dotnet_naming_symbols.types.applicable_kinds = struct, interface, enum
 dotnet_naming_symbols.types.applicable_accessibilities = public, friend, private, protected, protected_friend, private_protected
 dotnet_naming_symbols.types.required_modifiers = 
 
@@ -205,7 +205,7 @@ dotnet_style_operator_placement_when_wrapping = beginning_of_line
 insert_final_newline = true
 dotnet_style_prefer_collection_expression = true:suggestion
 dotnet_style_object_initializer = true:suggestion
-dotnet_style_collection_initializer = true:suggestion
+dotnet_style_collection_initializer = false:suggestion
 dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
 dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
 dotnet_style_prefer_conditional_expression_over_return = true:suggestion

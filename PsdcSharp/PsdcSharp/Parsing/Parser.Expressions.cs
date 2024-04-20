@@ -35,8 +35,7 @@ internal partial class Parser
         },
     };
 
-    private static readonly IReadOnlyDictionary<TokenType, UnaryOperator> unaryOperators = new Dictionary<TokenType, UnaryOperator>()
-    {
+    private static readonly IReadOnlyDictionary<TokenType, UnaryOperator> unaryOperators = new Dictionary<TokenType, UnaryOperator>() {
         [TokenType.OperatorMinus] = UnaryOperator.Minus,
         [TokenType.OperatorNot] = UnaryOperator.Not,
         [TokenType.OperatorPlus] = UnaryOperator.Plus,
@@ -68,7 +67,7 @@ internal partial class Parser
         .Else(() => ParseArraySubscript(tokens))
         .Else(() => ParseLiteral(tokens))
         .Else(() => ParseTokenValue(tokens, TokenType.Identifier)
-            .Map(s => new Node.Expression.Variable(s)));
+            .Map((t, name) => new Node.Expression.VariableReference(t, name)));
 
     private ParseResult<Node.Expression> ParseLiteral(IEnumerable<Token> tokens) => ParseByTokenType(tokens, _literalParsers);
 
@@ -76,20 +75,20 @@ internal partial class Parser
         .ParseToken(TokenType.OpenBracket)
         .Parse(out var expression, ParseExpression)
         .ParseToken(TokenType.CloseBracket)
-    .MapResult(() => new Node.Expression.Bracketed(expression));
+    .MapResult(t => new Node.Expression.Bracketed(t, expression));
 
     private ParseResult<Node.Expression> ParseArraySubscript(IEnumerable<Token> tokens)
      => ParseOperation.Start(this, tokens)
         .Parse(out var array, tokens => ParseBracketedOrCall(tokens)
                             .Else(() => ParseLiteral(tokens)))
         .Parse(out var indexes, ParseIndexes)
-        .MapResult(() => new Node.Expression.ArraySubscript(array, indexes));
+        .MapResult(t => new Node.Expression.ArraySubscript(t, array, indexes));
 
     private ParseResult<IReadOnlyCollection<Node.Expression>> ParseIndexes(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(TokenType.OpenSquareBracket)
         .ParseOneOrMoreSeparated(out var indexes, ParseExpression, TokenType.PunctuationComma)
         .ParseToken(TokenType.CloseSquareBracket)
-    .MapResult(() => indexes);
+    .MapResult(_ => indexes);
 
     private static ParseResult<Node.Expression> ParseBinaryOperation(
         IEnumerable<Token> tokens,
@@ -104,7 +103,7 @@ internal partial class Parser
         int count = operand1.SourceTokens.Count;
 
         var prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
-        
+
         while (prOperator.HasValue) {
             count += prOperator.SourceTokens.Count;
 
@@ -115,7 +114,7 @@ internal partial class Parser
             }
 
             operand1 = ParseResult.Ok(new(tokens, count),
-                new Node.Expression.OperationBinary(operand1.Value, operators[prOperator.Value.Type], operand2.Value));
+                new Node.Expression.OperationBinary(operand1.SourceTokens, operand1.Value, operators[prOperator.Value.Type], operand2.Value));
             if (!operand1.HasValue) {
                 return operand1.WithSourceTokens(new(tokens, count));
             }
@@ -135,7 +134,7 @@ internal partial class Parser
 
         return prOperator.Match(
             some: op => {
-                var prExpr = descentParser(tokens.Skip(1)).Map(expr => new Node.Expression.OperationUnary(operators[op.Type], expr));
+                var prExpr = descentParser(tokens.Skip(1)).Map((tokens, expr) => new Node.Expression.OperationUnary(tokens, operators[op.Type], expr));
                 return prExpr.WithSourceTokens(new(tokens, prExpr.SourceTokens.Count + 1));
             },
             none: _ => descentParser(tokens));

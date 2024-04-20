@@ -10,7 +10,7 @@
 
 We have two different sources of types : types directly expressed in code code and types resulting from the evaluation of expressions.
 
-The difference is that types expressed in code have their characteristics encapsulated in ParseResults, whereas for inferred types we get the values directly.
+~~The difference is that types expressed in code have their characteristics encapsulated in ParseResults, whereas for inferred types we get the values directly.~~ (this is no longer true since the AST was cleansed from ParseResults)
 
 This calls for two different types of types, DeclaredType and InferredType. But how to define them so we don't duplicate their internal structure ?
 

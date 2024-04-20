@@ -32,11 +32,11 @@ Symbole 'X' redéfini dans cette portée.
 
 Symbol 'X' redefined in current scope.
 
-## P1* : Avertissements
+## P1??? : Avertissements
 
-## P2* : Suggestions
+## P2??? : Suggestions
 
-### P20* : Respecter les conventions
+### P20?? : Respecter les conventions
 
 #### P2000
 

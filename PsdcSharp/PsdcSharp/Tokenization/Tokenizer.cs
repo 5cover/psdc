@@ -5,7 +5,7 @@ using static Scover.Psdc.TokenType;
 
 namespace Scover.Psdc.Tokenization;
 
-internal sealed class Tokenizer : MessageProvider
+internal sealed class Tokenizer(string input) : MessageProvider
 {
     private static readonly IReadOnlyList<TokenRule> rules =
         RulesBeforeKeywords
@@ -16,9 +16,7 @@ internal sealed class Tokenizer : MessageProvider
 
     private static readonly IReadOnlySet<TokenType> ignoredTokens = new HashSet<TokenType> { CommentMultiline, CommentSingleline };
 
-    private readonly string _input;
-
-    public Tokenizer(string input) => _input = input;
+    private readonly string _input = input;
 
     private static IEnumerable<TokenRule> RulesBeforeKeywords => new List<RegexTokenRule> {
         new(CommentMultiline, @"/\*(.*?)\*/", RegexOptions.Singleline),
@@ -182,7 +180,7 @@ internal sealed class Tokenizer : MessageProvider
         }
 
         if (--unknownTokenContents.Length > 0) {
-            AddMessage(Message.UnknownToken(startIndex, unknownTokenContents.ToString()));
+            AddMessage(Message.ErrorUnknownToken(startIndex, unknownTokenContents.ToString()));
         }
 
         return validToken;

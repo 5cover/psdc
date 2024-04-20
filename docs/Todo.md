@@ -23,12 +23,6 @@ Project roadmap:
 - Release
 - Documentation
 
-## Cleanup
-
-- Refactor TypeInfo and others to isolate C-specific code
-- Try to eliminate duplication (CodeGeneratorC.cs is a mess)
-- semantic analysis pass that creates symbols and typeinfos before the code generation (so code generation needs no matchsome)
-
 ## Sample programs
 
 - Prime sieve (find nth prime)

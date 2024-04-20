@@ -41,10 +41,15 @@ internal static class Option
     public static Option<T, TError> Some<T, TError>(this T value)
      => new OptionImpl<T, TError>(true, value, default);
 
+    public static T Unwrap<T>(this Option<T> option)
+     => option.HasValue ? option.Value : throw new InvalidOperationException("Option does not have a value");
+    public static T Unwrap<T, TError>(this Option<T, TError> option)
+     => option.HasValue ? option.Value : throw new InvalidOperationException("Option does not have a value");
+
     public static Option<T> SomeNotNull<T>(this T? value) where T : class
      => value is not null ? value.Some() : None<T>();
-     public static Option<T, TError> SomeNotNull<T, TError>(this T? value, TError error) where T : class
-     => value is not null ? value.Some<T, TError>() : None<T, TError>(error);
+    public static Option<T, TError> SomeNotNull<T, TError>(this T? value, TError error) where T : class
+    => value is not null ? value.Some<T, TError>() : None<T, TError>(error);
     public static Option<T, TError> SomeNotNull<T, TError>(this T? value, Func<TError> error) where T : class
      => value is not null ? value.Some<T, TError>() : None<T, TError>(error());
 
@@ -110,8 +115,8 @@ internal static class OptionalCollectionExtensions
 {
     public static IEnumerable<T> WhereSome<T>(this IEnumerable<Option<T>> options)
      => options.Where(v => v.HasValue).Select(v => v.Value.NotNull());
-    public static IEnumerable<T> WhereSome<T, TError>(this IEnumerable<Option<T, TError>> options)
-     => options.Where(v => v.HasValue).Select(v => v.Value.NotNull());
+    public static T FirstSome<T>(this IEnumerable<Option<T>> options)
+     => options.First(v => v.HasValue).Value.NotNull();
 
     public static Option<T> FirstOrNone<T>(this IEnumerable<Option<T>> options, Func<Option<T>, bool> predicate)
      => options.FirstOrDefault(predicate, Option.None<T>());

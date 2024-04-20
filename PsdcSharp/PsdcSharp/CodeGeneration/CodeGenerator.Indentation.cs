@@ -2,9 +2,9 @@ using System.Text;
 
 namespace Scover.Psdc.CodeGeneration;
 
-internal partial class CodeGeneratorC
+internal partial class CodeGenerator
 {
-    private sealed class Indentation
+    protected sealed class Indentation
     {
         private const char Character = ' ';
         private const int Multiplicity = 4;
@@ -21,5 +21,6 @@ internal partial class CodeGeneratorC
             }
             return output;
         }
+
     }
 }

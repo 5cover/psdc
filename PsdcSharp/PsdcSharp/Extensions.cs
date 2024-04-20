@@ -8,7 +8,7 @@ namespace Scover.Psdc;
 
 public readonly record struct Position(int Line, int Column)
 {
-    public override string ToString() => $"line {Line + 1}, col {Column + 1}";
+    public override string ToString() => $"L {Line + 1}, col {Column + 1}";
 }
 
 public readonly record struct Partition<T>(IEnumerable<T> Source, int Count) : IEnumerable<T>
@@ -99,7 +99,7 @@ internal static class Extensions
         return t;
     }
 
-    public static ReadOnlySpan<char> Line(this string str, int lineNumber)
+    public static ReadOnlySpan<char> GetLine(this string str, int lineNumber)
     {
         var lines = str.AsSpan().EnumerateLines();
         bool success = true;
@@ -108,4 +108,34 @@ internal static class Extensions
         }
         return success ? lines.Current : throw new ArgumentOutOfRangeException(nameof(lineNumber), "Line number is out of range");
     }
+
+    public static void Raise(this EventHandler eventHandler, object sender)
+     => eventHandler.Invoke(sender, EventArgs.Empty);
+
+    public static int GetSequenceHashCode<T>(this IEnumerable<T> items)
+    {
+        HashCode hc = new();
+        foreach (T t in items) {
+            hc.Add(t);
+        }
+        return hc.ToHashCode();
+    }
+
+    public static IEnumerable<TResult> ZipStrict<TFirst, TSecond, TResult>(
+        this IEnumerable<TFirst> first,
+        IEnumerable<TSecond> second,
+        Func<TFirst, TSecond, TResult> resultSelector)
+    {
+        using var e1 = first.GetEnumerator();
+        using var e2 = second.GetEnumerator();
+        while (e1.MoveNext()) {
+            yield return e2.MoveNext()
+                ? resultSelector(e1.Current, e2.Current)
+                : throw new InvalidOperationException("Sequences differed in length");
+        }
+        if (e2.MoveNext()) {
+            throw new InvalidOperationException("Sequences differed in length");
+        }
+    }
 }
+
