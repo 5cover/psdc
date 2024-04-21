@@ -15,6 +15,7 @@ internal enum MessageCode
     CallParameterMismatch,
     DeclaredInferredTypeMismatch,
     ExpectedConstantExpression,
+    StructureDuplicateComponent,
 
     #endregion Errors
 

@@ -47,7 +47,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                         AddMessage(Message.ErrorDeclaredInferredTypeMismatch(constant.SourceTokens, declaredType, inferredType));
                     }
                     if (!constant.Value.IsConstant(parentScope)) {
-                        AddMessage(Message.ExpectedConstantExpression(constant.SourceTokens));
+                        AddMessage(Message.ErrorExpectedConstantExpression(constant.SourceTokens));
                     }
                     AddSymbolOrError(parentScope, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, constant.Value));
                 });
@@ -318,8 +318,29 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             Node.Type.Array array => CreateTypeOrError(scope, array.Type).Map(elementType
             => new EvaluatedType.Array(elementType, array.Dimensions)),
             Node.Type.StringLengthed str => new EvaluatedType.StringLengthed(str.Length).Some(),
+            Node.Type.StructureDefinition structure => CreateStructureOrError(scope, structure),
             _ => throw type.ToUnmatchedException(),
         };
+
+        Option<EvaluatedType.Structure> CreateStructureOrError(ReadOnlyScope scope, Node.Type.StructureDefinition structure)
+        {
+            Dictionary<string, EvaluatedType> components = new();
+            bool atLeastOneNameWasntAdded = false;
+            foreach (var comp in structure.Components) {
+                CreateTypeOrError(scope, comp.Type).Match(type => {
+                    foreach (var name in comp.Names) {
+                        if (!components.TryAdd(name, type)) {
+                            AddMessage(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
+                        }
+                    }
+                }, none: () => atLeastOneNameWasntAdded = true);
+            }
+
+            // Don't create the structure if we weren't able to create all components names. This will prevent further errors when using the structure.
+            return atLeastOneNameWasntAdded
+             ? Option.None<EvaluatedType.Structure>()
+             : new EvaluatedType.Structure(components).Some();
+        }
 
         Option<EvaluatedType> EvaluateTypeOrError(ReadOnlyScope scope, Node.Expression expr)
         {

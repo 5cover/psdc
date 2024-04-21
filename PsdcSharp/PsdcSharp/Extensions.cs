@@ -37,10 +37,10 @@ internal static class Extensions
         .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
         .ToArray()).Normalize(NormalizationForm.FormC);
 
-    public static Position GetPositionAt(this string str, int index)
+    public static Position GetPositionAt(this string str, Index index)
     {
         int line = 0, column = 0;
-        for (int i = 0; i < index; i++) {
+        for (int i = 0; i < index.Value; i++) {
             if (str.AsSpan().Slice(i, Environment.NewLine.Length).SequenceEqual(Environment.NewLine)) {
                 line++;
                 column = 0;

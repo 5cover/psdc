@@ -61,12 +61,21 @@ internal sealed partial class Parser : MessageProvider
     }
 
     // Parsing starts here with the "Algorithm" production rule
-    public Node.Algorithm Parse() => ParseOperation.Start(this, _tokens)
+    public ParseResult<Node.Algorithm> Parse()
+    {
+        var algorithm = ParseOperation.Start(this, _tokens)
         .ParseToken(TokenType.KeywordProgram)
         .ParseTokenValue(out var name, TokenType.Identifier)
         .ParseToken(TokenType.KeywordIs)
         .ParseZeroOrMoreUntilToken(out var declarations, tokens => ParseByTokenType(tokens, _declarationParsers), TokenType.Eof)
-    .MapResult(t => new Node.Algorithm(t, name, declarations)).Unwrap();
+    .MapResult(t => new Node.Algorithm(t, name, declarations));
+
+        if (!algorithm.HasValue) {
+            AddMessage(Message.ErrorSyntax<Node.Algorithm>(algorithm.SourceTokens, algorithm.Error));
+        }
+
+        return algorithm;
+    }
 
     #region Declarations
 

@@ -19,7 +19,7 @@ internal enum MessageSeverity
 
 internal sealed record Message(
     MessageCode Code,
-    Option<(int StartIndex, int EndIndex)> SourceCodeSpan,
+    Option<Range> SourceCodeRange,
     // Content based on original input code
     Func<string, string> Content)
 {
@@ -31,10 +31,10 @@ internal sealed record Message(
         }
     }
 
-    public static Message ErrorUnknownToken(int startIndex, string unknownChars)
+    public static Message ErrorUnknownToken(Range range)
      => new(MessageCode.UnknownToken,
-            (startIndex, startIndex + unknownChars.Length).Some(),
-            _ => $"unknown token: '{unknownChars}'");
+            range.Some(),
+            input => $"unknown token: '{input[range]}'");
 
     public static Message ErrorSyntax<T>(IEnumerable<Token> sourceTokens, ParseError error)
      => Create(sourceTokens, MessageCode.SyntaxError, input => {
@@ -90,9 +90,13 @@ internal sealed record Message(
      => Create(sourceTokens, MessageCode.DeclaredInferredTypeMismatch,
         input => $"declared type ({declaredType.GetRepresentation(input)}) differs from inferred type ({inferredType.GetRepresentation(input)})");
 
-    public static Message ExpectedConstantExpression(IEnumerable<Token> sourceTokens)
+    public static Message ErrorExpectedConstantExpression(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.ExpectedConstantExpression,
         _ => "expected constant expression");
+
+    public static Message ErrorStructureDuplicateComponent(IEnumerable<Token> sourceTokens, string componentName)
+     => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
+        _ => $"duplicate component '{componentName}' in structure");
 
     public static Message WarningInputParameterAssignment(Node.Statement.Assignment assignment)
      => Create(assignment.SourceTokens, MessageCode.InputParameterAssignment,
@@ -104,8 +108,7 @@ internal sealed record Message(
     private static Message Create(IEnumerable<Token> involvedTokens, MessageCode code, Func<string, string> content)
      => new(code,
             involvedTokens.Any()
-            ? (involvedTokens.First().StartIndex,
-               involvedTokens.Last().StartIndex + involvedTokens.Last().Length).Some()
-            : Option.None<(int, int)>(),
+            ? (involvedTokens.First().StartIndex..(involvedTokens.Last().StartIndex + involvedTokens.Last().Length + 1)).Some()
+            : Option.None<Range>(),
             content);
 }

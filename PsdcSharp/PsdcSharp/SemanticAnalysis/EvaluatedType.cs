@@ -61,9 +61,9 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
         public override string GetRepresentation(string input) => $"chaîne({Length})";
     }
 
-    internal sealed record StructureDefinition(IReadOnlyDictionary<string, EvaluatedType> Components) : EvaluatedType
+    internal sealed record Structure(IReadOnlyDictionary<string, EvaluatedType> Components) : EvaluatedType
     {
-        public bool Equals(StructureDefinition? other) => other is not null
+        public bool Equals(Structure? other) => other is not null
          && other.Components.SequenceEqual(Components);
 
         public override int GetHashCode() => Components.GetSequenceHashCode();

@@ -21,8 +21,12 @@ internal static class Program
         PrintMessages(tokenizer, input);
 
         Parser parser = new(tokens);
-        var ast = "Parsing".LogOperation(parser.Parse);
+        var ast = "Parsing".LogOperation(parser.Parse).Value;
         PrintMessages(parser, input);
+
+        if (ast is null) {
+            return;
+        }
 
         SemanticAnalyzer semanticAnalyzer = new(ast);
         var semanticAst = "Analyzing semantics".LogOperation(semanticAnalyzer.AnalyzeSemantics);
@@ -42,9 +46,9 @@ internal static class Program
             var msgColor = message.Type.GetConsoleColor();
             msgColor.DoInColor(() => Console.Error.Write($"[P{(int)message.Code:d4}] "));
 
-            message.SourceCodeSpan.Match((startIndex, endIndex) => {
-                Position startPos = input.GetPositionAt(startIndex);
-                Position endPos = input.GetPositionAt(endIndex);
+            message.SourceCodeRange.Match(range => {
+                Position startPos = input.GetPositionAt(range.Start);
+                Position endPos = input.GetPositionAt(range.End);
 
                 // if the error spans over multiple lines, take the last line
                 Position errorPos = startPos.Line == endPos.Line ? startPos : endPos;

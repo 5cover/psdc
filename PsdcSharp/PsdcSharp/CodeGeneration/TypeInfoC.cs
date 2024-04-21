@@ -8,53 +8,68 @@ namespace Scover.Psdc.CodeGeneration;
 internal sealed class TypeInfoC : TypeInfo
 {
     public static TypeInfoC Create(EvaluatedType type, Func<Node.Expression, string> generateExpression)
+     => Create(type, generateExpression, new());
+    private static TypeInfoC Create(EvaluatedType type, Func<Node.Expression, string> generateExpression, Indentation indent)
     {
         switch (type) {
         case EvaluatedType.Primitive primitive:
             return primitive.Type switch {
-                PrimitiveType.Boolean => new("bool", requiredHeaders: IncludeSet.StdBool),
+                PrimitiveType.Boolean => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
                 PrimitiveType.Character => new("char", "%c"),
                 PrimitiveType.Integer => new("int", "%d"),
-                PrimitiveType.File => new("FILE", preModifier: "*", requiredHeaders: IncludeSet.StdIo),
+                PrimitiveType.File => new("FILE", preModifier: "*", requiredHeaders: IncludeSet.StdIo.Yield()),
                 PrimitiveType.Real => new("double", "%g"),
                 _ => throw primitive.Type.ToUnmatchedException(),
             };
         case EvaluatedType.String:
             return new("char", "%s", preModifier: "*");
         case EvaluatedType.AliasReference alias:
-            var target = Create(alias.Target, generateExpression);
+            var target = Create(alias.Target, generateExpression, indent);
             return new(alias.Name, target.FormatComponent, target.RequiredHeaders);
         case EvaluatedType.Array array:
-            var arrayType = Create(array.Type, generateExpression);
+            var arrayType = Create(array.Type, generateExpression, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
-
             foreach (var dimension in array.Dimensions) {
                 postModifier.Append($"[{generateExpression(dimension)}]");
             }
-
-            return new(arrayType._typeName, null, arrayType._preModifier, postModifier.ToString());
+            return new(arrayType._typeName,
+                requiredHeaders: arrayType.RequiredHeaders,
+                preModifier: arrayType._preModifier,
+                postModifier: postModifier.ToString());
         case EvaluatedType.StringLengthed lengthedString:
             return new("char", "%s", postModifier: $"[{generateExpression(lengthedString.Length)}]");
         case EvaluatedType.StringLengthedKnown slk:
             return new("char", "%s", postModifier: $"[{slk.Length}]");
+        case EvaluatedType.Structure structure:
+            StringBuilder sb = new("struct {");
+            sb.AppendLine();
+            indent.Increase();
+            var components = structure.Components.ToDictionary(kv => kv.Key, kv => Create(kv.Value, generateExpression, indent));
+            foreach (var comp in components) {
+                indent.Indent(sb).Append(comp.Value.GenerateDeclaration(comp.Key.Yield())).AppendLine(";");
+            }
+            indent.Decrease();
+            sb.Append('}');
+            return new(sb.ToString(),
+                // it's ok if there are duplicate headers, since IncludeSet.Ensure will ignore duplicates.
+                requiredHeaders: components.Values.SelectMany(type => type.RequiredHeaders));
         default:
             throw type.ToUnmatchedException();
         }
     }
 
-    private readonly string _preModifier, _typeName, _postModifier;
-    private readonly string? _typeQualifier;
+    private readonly string _preModifier, _typeName, _postModifier, _typeQualifier;
     private TypeInfoC(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders, string preModifier = "", string postModifier = "", string? typeQualifier = null)
      => (_preModifier, _typeName, _postModifier, _typeQualifier, FormatComponent, RequiredHeaders)
         = (preModifier,
            typeName,
            postModifier,
-           SpaceBefore(typeQualifier),
+           AddSpaceBefore(typeQualifier),
            formatComponent,
            requiredHeaders);
 
-    private TypeInfoC(string typeName, string? formatCompnent = null, string preModifier = "", string postModifier = "", string? typeQualifier = null, params string[] requiredHeaders)
-    : this(typeName, formatCompnent.SomeNotNull(), requiredHeaders, preModifier, postModifier, typeQualifier)
+    private TypeInfoC(string typeName, string? formatCompnent = null, IEnumerable<string>? requiredHeaders = null, string preModifier = "", string postModifier = "", string? typeQualifier = null)
+    : this(typeName, formatCompnent.SomeNotNull(), requiredHeaders ?? [], preModifier, postModifier, typeQualifier)
     {
     }
 
@@ -74,5 +89,5 @@ internal sealed class TypeInfoC : TypeInfo
 
     public string Generate() => $"{_typeName}{_preModifier}{_postModifier}{_typeQualifier}";
 
-    private static string SpaceBefore(string? str) => str is null ? "" : $" {str}";
+    private static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
 }

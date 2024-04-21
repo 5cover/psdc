@@ -14,7 +14,7 @@ internal sealed class Tokenizer(string input) : MessageProvider
         .Concat(RulesAfterKeywords)
     .ToList();
 
-    private static readonly IReadOnlySet<TokenType> ignoredTokens = new HashSet<TokenType> { CommentMultiline, CommentSingleline };
+    private static readonly HashSet<TokenType> ignoredTokens = new() { CommentMultiline, CommentSingleline };
 
     private readonly string _input = input;
 
@@ -139,52 +139,41 @@ internal sealed class Tokenizer(string input) : MessageProvider
 
     public IEnumerable<Token> Tokenize()
     {
-        int offset = 0;
+        int index = 0;
 
-        do {
-            if (char.IsWhiteSpace(_input[offset])) {
-                offset++;
+        int? invalidStart = null;
+
+        while (index < _input.Length) {
+            if (char.IsWhiteSpace(_input[index])) {
+                index++;
                 continue;
             }
 
-            Option<Token> token = ReadNextValidToken(offset);
+            Option<Token> token = ReadToken(index);
 
-            // If we didn't find any valid tokens then we reached the end of input.
-            // then set offset to stop the loop
-            offset = token.Map(t => t.StartIndex + t.Length).ValueOr(_input.Length);
-
-            if (token.HasValue && !ignoredTokens.Contains(token.Value.Type)) {
-                yield return token.Value;
+            if (token.HasValue) {
+                if (invalidStart is not null) {
+                    AddUnknownTokenMessage(invalidStart.Value, index);
+                    invalidStart = null;
+                }
+                index += token.Value.Length;
+                if (!ignoredTokens.Contains(token.Value.Type)) {
+                    yield return token.Value;
+                }
+            } else {
+                invalidStart ??= index;
+                index++;
             }
-        } while (offset < _input.Length);
-
-        yield return new Token(Eof, null, offset, 0);
-    }
-
-    private Option<Token> ReadNextValidToken(int startIndex)
-    {
-        StringBuilder unknownTokenContents = new();
-        Option<Token> validToken = Option.None<Token>();
-        int offset = startIndex;
-
-        while (!validToken.HasValue && offset < _input.Length) {
-            if (char.IsWhiteSpace(_input[offset])) {
-                ++offset;
-                continue;
-            }
-
-            validToken = ReadToken(offset);
-
-            _ = unknownTokenContents.Append(_input[offset]);
-            ++offset;
         }
 
-        if (--unknownTokenContents.Length > 0) {
-            AddMessage(Message.ErrorUnknownToken(startIndex, unknownTokenContents.ToString()));
+        if (invalidStart is not null) {
+            AddUnknownTokenMessage(invalidStart.Value, index);
         }
 
-        return validToken;
+        yield return new Token(Eof, null, index, 0);
     }
+    private void AddUnknownTokenMessage(int invalidStart, int index)
+     => AddMessage(Message.ErrorUnknownToken(invalidStart..index));
 
     private Option<Token> ReadToken(int offset)
      => rules.Select(r => r.TryExtract(_input, offset)).FirstOrNone(t => t.HasValue);

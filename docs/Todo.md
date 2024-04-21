@@ -13,8 +13,8 @@ Project roadmap:
     - ~~While~~
     - ~~Do..While~~
     - ~~Repeat..Until~~
-- Procedures
-- Functions
+- ~~Procedures~~
+- ~~Functions~~
 - Structures
 - Files
 - CLI
