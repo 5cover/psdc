@@ -40,7 +40,7 @@ Diacritics are optional. (délivre == delivre)
 - tableau
 - de
 
-#### Subroutines
+#### Callables
 
 - délivre
 - fonction
@@ -176,11 +176,11 @@ token|pattern|flags
 -|-|-
 Singeline comment |`//(.*)$` | Multiline
 Multiline comment |`/\*(.*?)\*/` | Singleline
-Identifier        |`([a-zA-Z_]\w*)`|
-Integer literal   |`(\d+)`|
-Real literal      |`(\d*\.\d+)`|
-String literal    |`"(.*?)"`|
-Character literal |`'(.)'`|
+Identifier        |`([a-zA-Z_]\w*)`||
+Integer literal   |`(\d+)`||
+Real literal      |`(\d*\.\d+)`||
+String literal    |`"(.*?)"`||
+Character literal |`'(.)'`||
 
 Instead of defining a million TokenTypes, what we could to is use regex to identify code structures :
 

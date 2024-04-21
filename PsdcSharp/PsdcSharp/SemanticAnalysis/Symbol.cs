@@ -3,10 +3,10 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.SemanticAnalysis;
 
-internal interface DeclarableDefinableSymbol : Symbol
+internal interface CallableSymbol : Symbol
 {
     public bool HasBeenDefined { get; }
-
+    public IReadOnlyCollection<Parameter> Parameters { get; }
     public void MarkAsDefined();
 }
 
@@ -47,7 +47,7 @@ internal interface Symbol
 
     internal sealed record Procedure(string Name, Partition<Token> SourceTokens,
         IReadOnlyCollection<Parameter> Parameters)
-    : DeclarableDefinableSymbol
+    : CallableSymbol
     {
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
@@ -60,7 +60,7 @@ internal interface Symbol
     internal sealed record Function(string Name, Partition<Token> SourceTokens,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType)
-    : DeclarableDefinableSymbol
+    : CallableSymbol
     {
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;

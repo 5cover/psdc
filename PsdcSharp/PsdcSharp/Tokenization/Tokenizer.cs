@@ -89,7 +89,7 @@ internal sealed class Tokenizer(string input) : MessageProvider
         new(KeywordString, "chaîne"),
         new(KeywordBoolean, "booléen"),
 
-        // Subroutine keywords
+        // Callable keywords
         new(KeywordDelivers, "délivre"),
         new(KeywordFunction, "fonction"),
         new(KeywordProcedure, "procédure"),

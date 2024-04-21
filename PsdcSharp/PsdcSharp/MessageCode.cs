@@ -13,10 +13,13 @@ internal enum MessageCode
     SignatureMismatch,
     ConstantAssignment,
     CallParameterMismatch,
+    DeclaredInferredTypeMismatch,
+    ExpectedConstantExpression,
+
     #endregion Errors
 
     #region Warnings
     InputParameterAssignment = 1000,
-    DivisionByZero = 1001,
+    DivisionByZero,
     #endregion Warnings
 }

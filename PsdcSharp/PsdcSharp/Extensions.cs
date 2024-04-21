@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
+using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
 
@@ -136,6 +137,12 @@ internal static class Extensions
         if (e2.MoveNext()) {
             throw new InvalidOperationException("Sequences differed in length");
         }
+    }
+
+    public static string GetSourceCode(this IEnumerable<Token> sourceTokens, string input)
+    {
+        var lastSourceToken = sourceTokens.Last();
+        return input[sourceTokens.First().StartIndex..(lastSourceToken.StartIndex + lastSourceToken.Length)];
     }
 }
 

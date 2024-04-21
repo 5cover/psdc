@@ -40,7 +40,7 @@ $$
 
 &\textbf{Général}\notag\\
 
-⟨Algorithme⟩ &\to ⟨Déclaration⟩^*
+⟨Algorithme⟩ &\to \text{programme}\ identifiant\ \text{c'est} ⟨Déclaration⟩^*
 \\
 ⟨Bloc⟩ &\to ⟨Instruction⟩^*
 
@@ -66,7 +66,7 @@ $$
 \\
 ⟨DéfinitionStructure⟩ &\to \text{structure\ début} ⟨DéclarationVariable⟩^+ \text{fin}
 \\
-⟨ProgrammePrincpal⟩ &\to \text{programme}\ identifiant\ \text{c'est\ début} ⟨Bloc⟩ \text{fin}
+⟨ProgrammePrincpal⟩ &\to \text{début} ⟨Bloc⟩ \text{fin}
 \\
 ⟨SignatureFonction⟩ &\to \text{fonction}\ identifiant(⟨ParamètreFormel⟩^{*|,}) \text{délivre} ⟨Type⟩
 \\
@@ -103,8 +103,8 @@ $$
 \end{cases}
 \\
 ⟨Alternative⟩ &\to \begin{split}
-&   \text{si} ⟨Expression⟩ \text{alors} ⟨Bloc⟩\\
-&   \{\text{sinonsi} ⟨Expression⟩ \text{alors} ⟨Bloc⟩\}^*\\
+&   \text{si} (⟨Expression⟩) \text{alors} ⟨Bloc⟩\\
+&   \{\text{sinonsi} (⟨Expression⟩) \text{alors} ⟨Bloc⟩\}^*\\
 &   \{\text{sinon} ⟨Bloc⟩\}^?\\
 &   \text{finsi}\\
 \end{split}
@@ -124,7 +124,7 @@ $$
 \\
 ⟨BoucleFaireTantQue⟩ &\to \text{faire} ⟨Bloc⟩ \text{tant\ que} (⟨Expression⟩)
 \\
-⟨BoucleTantQue⟩ &\to \text{tant\ que} ⟨Expression⟩ \text{faire} ⟨Bloc⟩ \text{finfaire}
+⟨BoucleTantQue⟩ &\to \text{tant\ que} (⟨Expression⟩) \text{faire} ⟨Bloc⟩ \text{finfaire}
 \\
 ⟨DéclarationVariable⟩ &\to identifiant^{+|,} : ⟨TypeComplet⟩;
 \\

@@ -1,3 +1,5 @@
+programme functions c'est
+
 // Naive pow function
 fonction pow(entF x: réel, entF i: entier) délivre réel;
 procédure printNTimes(entF str: chaine, entF n: entier);
@@ -26,7 +28,7 @@ procédure incrémenter(entF/sortF n: entier) c'est début
     n := n + 1;
 fin
 
-programme functions c'est début
+début
     printNTimes(entE "Bonjour", entE pow(entE 2, entE 3));
     n : entier;
     n := 0;

@@ -2,6 +2,12 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing.Nodes;
 
+internal interface CallNode : Node
+{
+    public string Name { get; }
+    public IReadOnlyCollection<EffectiveParameter> Parameters { get; }
+}
+
 internal abstract class NodeImpl(Partition<Token> sourceTokens) : Node
 {
     public Partition<Token> SourceTokens => sourceTokens;
@@ -20,21 +26,19 @@ internal interface Node
 {
     Partition<Token> SourceTokens { get; }
     internal sealed class Algorithm(Partition<Token> sourceTokens,
+        string name,
         IReadOnlyCollection<Declaration> declarations)
     : ScopedNode(sourceTokens)
     {
+        public string Name => name;
         public IReadOnlyCollection<Declaration> Declarations => declarations;
     }
 
     internal interface Declaration : Node
     {
         internal sealed class MainProgram(Partition<Token> sourceTokens,
-            string programName,
             IReadOnlyCollection<Statement> block)
-        : BlockNode(sourceTokens, block), Declaration
-        {
-            public string ProgramName => programName;
-        }
+        : BlockNode(sourceTokens, block), Declaration;
 
         internal sealed class Alias(Partition<Token> sourceTokens,
             string name,
@@ -46,10 +50,12 @@ internal interface Node
         }
 
         internal sealed class Constant(Partition<Token> sourceTokens,
+            Type type,
             string name,
             Expression value)
         : NodeImpl(sourceTokens), Declaration
         {
+            public Type Type => type;
             public string Name => name;
             public Expression Value => value;
         }
@@ -196,6 +202,15 @@ internal interface Node
             public Expression Argument => argument;
         }
 
+        internal sealed class ProcedureCall(Partition<Token> sourceTokens,
+            string name,
+            IReadOnlyCollection<EffectiveParameter> parameters)
+        : NodeImpl(sourceTokens), Statement, CallNode
+        {
+            public string Name => name;
+            public IReadOnlyCollection<EffectiveParameter> Parameters => parameters;
+        }
+
         internal sealed class EcrireEcran(Partition<Token> sourceTokens,
             IReadOnlyCollection<Expression> arguments)
         : NodeImpl(sourceTokens), Statement
@@ -297,15 +312,15 @@ internal interface Node
             public override int GetHashCode() => Argument.GetHashCode();
         }
 
-        internal sealed class Call(Partition<Token> sourceTokens,
+        internal sealed class FunctionCall(Partition<Token> sourceTokens,
             string name,
             IReadOnlyCollection<EffectiveParameter> parameters)
-        : Expression(sourceTokens)
+        : Expression(sourceTokens), CallNode
         {
             public string Name => name;
             public IReadOnlyCollection<EffectiveParameter> Parameters => parameters;
 
-            public override bool Equals(Expression? other) => other is Call o
+            public override bool Equals(Expression? other) => other is FunctionCall o
              && o.Name.Equals(Name)
              && o.Parameters.SequenceEqual(Parameters);
             public override int GetHashCode() => HashCode.Combine(Name, Parameters.GetSequenceHashCode());

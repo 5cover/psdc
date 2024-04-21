@@ -19,8 +19,7 @@ internal enum MessageSeverity
 
 internal sealed record Message(
     MessageCode Code,
-    int StartIndex,
-    int EndIndex,
+    Option<(int StartIndex, int EndIndex)> SourceCodeSpan,
     // Content based on original input code
     Func<string, string> Content)
 {
@@ -34,13 +33,13 @@ internal sealed record Message(
 
     public static Message ErrorUnknownToken(int startIndex, string unknownChars)
      => new(MessageCode.UnknownToken,
-            unknownChars.Length, startIndex,
+            (startIndex, startIndex + unknownChars.Length).Some(),
             _ => $"unknown token: '{unknownChars}'");
 
     public static Message ErrorSyntax<T>(IEnumerable<Token> sourceTokens, ParseError error)
      => Create(sourceTokens, MessageCode.SyntaxError, input => {
          StringBuilder msgContent = new();
-         msgContent.Append($"syntax error trying on {typeof(T).Name}: ");
+         msgContent.Append($"syntax error on {typeof(T).Name}: ");
 
          _ = error.ExpectedTokens.Count switch {
              1 => msgContent.Append($"expected {error.ExpectedTokens.Single().Humanize()}"),
@@ -69,42 +68,44 @@ internal sealed record Message(
 
     public static Message ErrorRedefinedMainProgram(Node.Declaration.MainProgram mainProgram)
      => Create(mainProgram.SourceTokens, MessageCode.RedefinedMainProgram,
-        _ => $"more than one main program ({mainProgram.ProgramName})");
+        _ => $"more than one main program");
 
-    public static Message ErrorMissingMainProgram()
-     => Create(Enumerable.Empty<Token>(), MessageCode.MissingMainProgram,
+    public static Message ErrorMissingMainProgram(IEnumerable<Token> sourceTokens)
+     => Create(sourceTokens, MessageCode.MissingMainProgram,
         _ => "main program missing");
 
     public static Message ErrorSignatureMismatch<TSymbol>(TSymbol actualSig, TSymbol expectedSig) where TSymbol : Symbol
      => Create(actualSig.SourceTokens, MessageCode.SignatureMismatch,
-        input => {
-            var lastSourceToken = expectedSig.SourceTokens.Last();
-            string expectedSigCode = input[expectedSig.SourceTokens.First().StartIndex..(lastSourceToken.StartIndex + lastSourceToken.Length)];
-            return $"this signature of {SymbolExtensions.GetKind<TSymbol>()} {actualSig.Name} differs from previous signature ('{expectedSigCode}')";
-        });
+        input => $"this signature of {SymbolExtensions.GetKind<TSymbol>()} {actualSig.Name} differs from previous signature ('{expectedSig.SourceTokens.GetSourceCode(input)}')");
 
-    public static Message ErrorCallParameterMismatch(Node.Expression.Call call, Symbol.Function func)
-     => Create(call.SourceTokens, MessageCode.CallParameterMismatch,
-        input => {
-            var lastSourceToken = func.SourceTokens.Last();
-            string expectedSigCode = input[func.SourceTokens.First().StartIndex..(lastSourceToken.StartIndex + lastSourceToken.Length)];
-            return $"the effective parameters of the call to {SymbolExtensions.GetKind<Symbol.Function>()} {func.Name} do not correspond to the formal parameters of the function's signature ('{expectedSigCode}')";
-        });
+    public static Message ErrorCallParameterMismatch(CallNode callNode)
+     => Create(callNode.SourceTokens, MessageCode.CallParameterMismatch,
+        _ => $"the effective parameters of the call to {SymbolExtensions.GetKind<Symbol.Function>()} {callNode.Name} do not correspond to the formal parameters of the function's signature");
 
     public static Message ErrorConstantAssignment(Node.Statement.Assignment assignment, Symbol.Constant constant)
      => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
         _ => $"reassigning constant '{constant.Name}'");
 
+    public static Message ErrorDeclaredInferredTypeMismatch(IEnumerable<Token> sourceTokens, EvaluatedType declaredType, EvaluatedType inferredType)
+     => Create(sourceTokens, MessageCode.DeclaredInferredTypeMismatch,
+        input => $"declared type ({declaredType.GetRepresentation(input)}) differs from inferred type ({inferredType.GetRepresentation(input)})");
+
+    public static Message ExpectedConstantExpression(IEnumerable<Token> sourceTokens)
+     => Create(sourceTokens, MessageCode.ExpectedConstantExpression,
+        _ => "expected constant expression");
+
     public static Message WarningInputParameterAssignment(Node.Statement.Assignment assignment)
      => Create(assignment.SourceTokens, MessageCode.InputParameterAssignment,
         _ => $"reassinging input parameter '{assignment.Target}'");
-    public static Message WarningDivisionByZero(Partition<Token> sourceTokens)
+    public static Message WarningDivisionByZero(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.DivisionByZero,
         _ => "division by zero (will cause runtime error)");
 
     private static Message Create(IEnumerable<Token> involvedTokens, MessageCode code, Func<string, string> content)
      => new(code,
-            involvedTokens.First().StartIndex,
-            involvedTokens.Last().StartIndex + involvedTokens.Last().Length,
+            involvedTokens.Any()
+            ? (involvedTokens.First().StartIndex,
+               involvedTokens.Last().StartIndex + involvedTokens.Last().Length).Some()
+            : Option.None<(int, int)>(),
             content);
 }

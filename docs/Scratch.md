@@ -52,13 +52,8 @@ However arrays exist:
 
 `array[indice / 2 + 4] := value`
 
-## Scopes
+## Create a representation of the AST being built
 
-currently scopes are associated with ast nodes
+We know the ast is build from the bottom up, but it could be interesting to see it animated.
 
-the issue is that we need access to the parent scope to retrieve symbols.
-
-currently Scope has a `Scope? ParentScope` field. This means it's up to the Parser to create the scope hierarchy. This is wrong.
-
-- solution 1 : remove Scope from nodes and build a scope tree in the semantic analyzer (will have to be traversed in semantic analyzer & code generator)
-- **solution 2** : semantic analyzer will create the scopes
+Simply add some graph-building logic in the NodeImpl constructor.

@@ -79,6 +79,16 @@ internal static class Option
             none();
         }
     }
+
+    public static void Match<T1, T2>(this Option<(T1, T2)> option, Action<T1, T2> some, Action none)
+    {
+        if (option.HasValue) {
+            some(option.Value.Item1, option.Value.Item2);
+        } else {
+            none();
+        }
+    }
+
     public static void Match<T, TError>(this Option<T, TError> option, Action<T> some, Action<TError> none)
     {
         if (option.HasValue) {
@@ -105,6 +115,17 @@ internal static class Option
             action(option.Value);
         }
     }
+    public static void MatchSome<T1, T2>(this Option<(T1, T2)> option, Action<T1, T2> action)
+    {
+        if (option.HasValue) {
+            action(option.Value.Item1, option.Value.Item2);
+        }
+    }
+
+    public static Option<(T1, T2)> Combine<T1, T2>(this Option<T1> option1, Option<T2> option2)
+     => (option1.HasValue && option2.HasValue)
+        ? Some((option1.Value, option2.Value))
+        : None<(T1, T2)>();
 
     private sealed record OptionImpl<T>(bool HasValue, T? Value) : Option<T>;
 

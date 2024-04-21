@@ -39,28 +39,31 @@ internal static class Program
     private static void PrintMessages(MessageProvider step, string input)
     {
         while (step.TryDequeueMessage(out Message? message)) {
-            Position startPos = input.GetPositionAt(message.StartIndex);
-            Position endPos = input.GetPositionAt(message.EndIndex);
-
-            // if the error spans over multiple lines, take the last line
-            Position errorPos = startPos.Line == endPos.Line ? startPos : endPos;
-
-            ReadOnlySpan<char> faultyLine = input.GetLine(errorPos.Line);
             var msgColor = message.Type.GetConsoleColor();
-
             msgColor.DoInColor(() => Console.Error.Write($"[P{(int)message.Code:d4}] "));
 
-            Console.Error.WriteLine($"{errorPos}: {message.Type}: {message.Content(input)}");
+            message.SourceCodeSpan.Match((startIndex, endIndex) => {
+                Position startPos = input.GetPositionAt(startIndex);
+                Position endPos = input.GetPositionAt(endIndex);
 
-            // Part of line before error
-            Console.Error.Write($"\t---> {faultyLine[..errorPos.Column].TrimStart()}"); // trim to remove indentation
+                // if the error spans over multiple lines, take the last line
+                Position errorPos = startPos.Line == endPos.Line ? startPos : endPos;
+                Console.Error.WriteLine($"{errorPos}: {message.Type.ToString().ToLower()}: {message.Content(input)}");
 
-            msgColor.SetColor();
-            Console.Error.Write($"{faultyLine[errorPos.Column..endPos.Column]}");
-            Console.ResetColor();
+                ReadOnlySpan<char> faultyLine = input.GetLine(errorPos.Line);
 
-            // Part of line after error
-            Console.Error.WriteLine($"{faultyLine[endPos.Column..].TrimEnd()}\n");
+                // Part of line before error
+                Console.Error.Write($"\t---> {faultyLine[..errorPos.Column].TrimStart()}"); // trim to remove indentation
+
+                msgColor.SetColor();
+                Console.Error.Write($"{faultyLine[errorPos.Column..endPos.Column]}");
+                Console.ResetColor();
+
+                // Part of line after error
+                Console.Error.WriteLine($"{faultyLine[endPos.Column..].TrimEnd()}\n");
+            }, none: () => {
+                Console.Error.WriteLine($"{message.Type}: {message.Content(input)}");
+            });
         }
     }
 }

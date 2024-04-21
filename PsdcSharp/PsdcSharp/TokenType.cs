@@ -110,14 +110,14 @@ internal enum TokenType
 
     #endregion Types
 
-    #region Subroutines
+    #region Callables
 
     KeywordDelivers,
     KeywordFunction,
     KeywordProcedure,
     KeywordReturn,
 
-    #endregion Subroutines
+    #endregion Callables
 
     #region Builtins
 

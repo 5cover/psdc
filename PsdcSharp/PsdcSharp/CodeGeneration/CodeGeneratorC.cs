@@ -22,6 +22,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
 
     private StringBuilder AppendAlgorithm(StringBuilder output, Node.Algorithm algorithm)
     {
+        Indent(output).AppendLine($"// {algorithm.Name}");
         foreach (Node.Declaration declaration in algorithm.Declarations) {
             AppendDeclaration(output, _ast.Scopes[algorithm], declaration);
         }
@@ -41,6 +42,8 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
     #region Declarations
 
     private StringBuilder AppendDeclaration(StringBuilder output, ReadOnlyScope parentScope, Node.Declaration decl) => decl switch {
+        Node.Declaration.Alias alias => AppendAliasDeclaration(output, parentScope, alias),
+        Node.Declaration.Constant constant => AppendConstant(output, constant),
         Node.Declaration.MainProgram mainProgram => AppendMainProgram(output, mainProgram),
         Node.Declaration.Function func => AppendFunctionDeclaration(output, parentScope, func),
         Node.Declaration.Procedure proc => AppendProcedureDeclaration(output, parentScope, proc),
@@ -49,9 +52,20 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
         _ => throw decl.ToUnmatchedException(),
     };
 
+    private StringBuilder AppendAliasDeclaration(StringBuilder output, ReadOnlyScope scope, Node.Declaration.Alias alias)
+    {
+        var type = CreateTypeInfo(scope.GetSymbol<Symbol.TypeAlias>(alias.Name).Unwrap().TargetType);
+        return Indent(output).AppendLine($"typedef {type.GenerateDeclaration(alias.Name.Yield())};");
+    }
+
+    private StringBuilder AppendConstant(StringBuilder output, Node.Declaration.Constant constant)
+    {
+        Indent(output).Append($"#define {constant.Name} ");
+        return AppendExpression(output.Append('('), constant.Value).AppendLine(")");
+    }
+
     private StringBuilder AppendMainProgram(StringBuilder output, Node.Declaration.MainProgram mainProgram)
     {
-        Indent(output).AppendLine($"// {mainProgram.ProgramName}");
         output.AppendLine("int main() ");
 
         return AppendBlock(output, mainProgram,
@@ -97,7 +111,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
     {
         StringBuilder output = new();
         var type = CreateTypeInfo(param.Type);
-        if (param.Mode is not ParameterMode.In) {
+        if (RequiresPointer(param.Mode)) {
             type = type.ToPointer(1);
         }
 
@@ -111,16 +125,17 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
     #region Statements
 
     private StringBuilder AppendStatement(StringBuilder output, ReadOnlyScope parentScope, Node.Statement stmt) => stmt switch {
-        Node.Statement.EcrireEcran ecrireEcran => AppendEcrireEcran(output, parentScope, ecrireEcran),
-        Node.Statement.LireClavier lireClavier => AppendLireClavier(output, parentScope, lireClavier),
-        Node.Statement.VariableDeclaration varDecl => AppendVariableDeclaration(output, parentScope, varDecl),
-        Node.Statement.Assignment assignment => AppendAssignment(output, assignment),
         Node.Statement.Alternative alternative => AppendAlternative(output, alternative),
-        Node.Statement.WhileLoop whileLoop => AppendWhileLoop(output, whileLoop),
+        Node.Statement.Assignment assignment => AppendAssignment(output, assignment),
         Node.Statement.DoWhileLoop doWhileLoop => AppendDoWhileLoop(output, doWhileLoop),
-        Node.Statement.RepeatLoop repeatLoop => AppendRepeatLoop(output, repeatLoop),
+        Node.Statement.EcrireEcran ecrireEcran => AppendEcrireEcran(output, parentScope, ecrireEcran),
         Node.Statement.ForLoop forLoop => AppendForLoop(output, forLoop),
+        Node.Statement.LireClavier lireClavier => AppendLireClavier(output, parentScope, lireClavier),
+        Node.Statement.ProcedureCall call => AppendCall(Indent(output), call).AppendLine(";"),
+        Node.Statement.RepeatLoop repeatLoop => AppendRepeatLoop(output, repeatLoop),
         Node.Statement.Return ret => AppendReturn(output, ret),
+        Node.Statement.VariableDeclaration varDecl => AppendVariableDeclaration(output, parentScope, varDecl),
+        Node.Statement.WhileLoop whileLoop => AppendWhileLoop(output, whileLoop),
         _ => throw stmt.ToUnmatchedException(),
     };
 
@@ -285,6 +300,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
     #region Expressions
 
     private StringBuilder AppendExpression(StringBuilder output, Node.Expression expr) => expr switch {
+        Node.Expression.FunctionCall call => AppendCall(output, call),
         Node.Expression.Literal.True => AppendLiteralBoolean(output, true),
         Node.Expression.Literal.False => AppendLiteralBoolean(output, false),
         Node.Expression.Literal.Character litChar => output.Append($"'{litChar.Value}'"),
@@ -334,6 +350,20 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
 
     #region Helpers
 
+    private StringBuilder AppendCall(StringBuilder output, CallNode call)
+    {
+        output.Append($"{call.Name}(");
+        const string ParameterSeparator = ", ";
+        foreach (var param in call.Parameters) {
+            if (RequiresPointer(param.Mode)) {
+                output.Append('&');
+            }
+            AppendExpression(output, param.Value).Append(ParameterSeparator);
+        }
+        output.Length -= ParameterSeparator.Length; // Remove unneeded last separator
+        return output.Append(')');
+    }
+
     private StringBuilder AppendBracketedExpression(StringBuilder output, Node.Expression expr)
      => expr switch {
          Node.Expression.Bracketed => AppendExpression(output, expr),
@@ -345,6 +375,8 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
      => TypeInfoC.Create(evaluatedType, expr => AppendExpression(new(), expr).ToString());
 
     private StringBuilder Indent(StringBuilder output) => _indent.Indent(output);
+
+    private static bool RequiresPointer(ParameterMode mode) => mode is not ParameterMode.In;
 
     #endregion Helpers
 
@@ -373,6 +405,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
         UnaryOperator.Plus => "+",
         _ => throw op.ToUnmatchedException(),
     };
+
 
     #endregion Terminals
 

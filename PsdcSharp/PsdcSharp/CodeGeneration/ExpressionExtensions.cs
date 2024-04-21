@@ -12,11 +12,12 @@ internal static class ExpressionExtensions
         [PrimitiveType.Real] = 3,
     };
 
-    public static bool IsConstant(this Node.Expression expression) => expression switch {
-        Node.Expression.OperationBinary ob => IsConstant(ob.Operand1) && IsConstant(ob.Operand2),
-        Node.Expression.OperationUnary ou => IsConstant(ou.Operand),
+    public static bool IsConstant(this Node.Expression expression, ReadOnlyScope scope) => expression switch {
+        Node.Expression.OperationBinary ob => ob.Operand1.IsConstant(scope) && ob.Operand2.IsConstant(scope),
+        Node.Expression.OperationUnary ou => ou.Operand.IsConstant(scope),
         Node.Expression.Literal => true,
-        Node.Expression.Bracketed b => IsConstant(b.Expression),
+        Node.Expression.Bracketed b => b.Expression.IsConstant(scope),
+        Node.Expression.VariableReference varRef => scope.GetSymbol<Symbol.Constant>(varRef.Name).HasValue,
         _ => throw expression.ToUnmatchedException(),
     };
 

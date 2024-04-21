@@ -63,24 +63,32 @@ internal partial class Parser
      => ParseUnaryOperation(tokens, ParseExpression1, unaryOperators);
 
     private ParseResult<Node.Expression> ParseExpression1(IEnumerable<Token> tokens)
-     => ParseBracketedOrCall(tokens)
-        .Else(() => ParseArraySubscript(tokens))
-        .Else(() => ParseLiteral(tokens))
-        .Else(() => ParseTokenValue(tokens, TokenType.Identifier)
-            .Map((t, name) => new Node.Expression.VariableReference(t, name)));
+     => ParseTerminalExpression(tokens)
+        .Else(() => ParseArraySubscript(tokens));
 
-    private ParseResult<Node.Expression> ParseLiteral(IEnumerable<Token> tokens) => ParseByTokenType(tokens, _literalParsers);
+    private ParseResult<Node.Expression> ParseTerminalExpression(IEnumerable<Token> tokens)
+     => ParseBracketed(tokens)
+     .Else(() => ParseByTokenType(tokens, _literalParsers))
+     .Else(() => ParseFunctionCall(tokens))
+     .Else(() => ParseTokenValue(tokens, TokenType.Identifier)
+        .Map((t, name) => new Node.Expression.VariableReference(t, name)));
 
-    private ParseResult<Node.Expression> ParseBracketedOrCall(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+    private ParseResult<Node.Expression> ParseBracketed(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(TokenType.OpenBracket)
         .Parse(out var expression, ParseExpression)
         .ParseToken(TokenType.CloseBracket)
     .MapResult(t => new Node.Expression.Bracketed(t, expression));
 
+    private ParseResult<Node.Expression> ParseFunctionCall(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+        .ParseTokenValue(out var name, TokenType.Identifier)
+        .ParseToken(TokenType.OpenBracket)
+        .ParseZeroOrMoreSeparated(out var parameters, ParseEffectiveParameter, TokenType.PunctuationComma)
+        .ParseToken(TokenType.CloseBracket)
+    .MapResult(t => new Node.Expression.FunctionCall(t, name, parameters));
+
     private ParseResult<Node.Expression> ParseArraySubscript(IEnumerable<Token> tokens)
      => ParseOperation.Start(this, tokens)
-        .Parse(out var array, tokens => ParseBracketedOrCall(tokens)
-                            .Else(() => ParseLiteral(tokens)))
+        .Parse(out var array, ParseTerminalExpression)
         .Parse(out var indexes, ParseIndexes)
         .MapResult(t => new Node.Expression.ArraySubscript(t, array, indexes));
 

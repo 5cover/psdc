@@ -170,9 +170,9 @@ internal abstract class ParseOperation
             if (item.HasValue) {
                 items.Add(item.Value);
             } else if (!separatorPresent) {
-                // If the first items didn't have a value and wasn't followed by a separator, go back in the read tokens to where we were when we started.
+                // If the first item didn't have a value and wasn't followed by a separator, go back in the read tokens to where we were when we started.
                 // This is so we don't read too many tokens when there are zero elements.
-                _readCount -= item.SourceTokens.Count - 1;
+                _readCount -= item.SourceTokens.Count;
             }
 
             if (separatorPresent) {

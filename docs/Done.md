@@ -118,7 +118,7 @@ Examples
 
 Having a component encapsulated in a `ParseResult` in a node type means that we allow the outer node to exist even if this component has failed parsing. This prevents the parsing to stop for the node.
 
-So this is mostly useful for "big" nodes like subroutines.
+So this is mostly useful for "big" nodes like callables.
 
 ## "Helper" rules in formal grammar
 
@@ -360,3 +360,14 @@ We need to make Symbol.Function mutable by adding a boolean value, HasBeenDefine
             - cause error, redefinition
         - Else
             - call MarkAsDefined
+
+## Scopes
+
+currently scopes are associated with ast nodes
+
+the issue is that we need access to the parent scope to retrieve symbols.
+
+currently Scope has a `Scope? ParentScope` field. This means it's up to the Parser to create the scope hierarchy. This is wrong.
+
+- solution 1 : remove Scope from nodes and build a scope tree in the semantic analyzer (will have to be traversed in semantic analyzer & code generator)
+- **solution 2** : semantic analyzer will create the scopes

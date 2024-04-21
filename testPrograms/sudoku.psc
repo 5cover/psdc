@@ -1,19 +1,16 @@
 /*
-Raphaël BARDINI - 1C2
-
-SAÉ 1.01 - Algorithme programme principal Sudoku
+Algorithme programme principal Sudoku
 */
-
-
-type t_grilleEntier = tableau[COTE_GRILLE][COTE_GRILLE] de entier;
-
 programme Sudoku c'est
+
 // Un jeu de Sudoku
 
-    constante entier N := 3;
-    constante entier NB_FICHIERS_GRILLES := 10;
-    constante entier LONGUEUR_MAX_COMMANDE := 64;
-    constante entier COTE_GRILLE := N * N;
+constante entier N := 3;
+constante entier NB_FICHIERS_GRILLES := 10;
+constante entier LONGUEUR_MAX_COMMANDE := 64;
+constante entier COTE_GRILLE := N * N;
+
+type t_grilleEntier = tableau[COTE_GRILLE, COTE_GRILLE] de entier;
 
 début
     grilleJeu : t_grilleEntier;

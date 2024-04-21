@@ -24,7 +24,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         }
 
         if (!seenMainProgram) {
-            AddMessage(Message.ErrorMissingMainProgram());
+            AddMessage(Message.ErrorMissingMainProgram(root.SourceTokens));
         }
 
         return new(root, scopes);
@@ -40,13 +40,22 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 break;
 
             case Node.Declaration.Constant constant:
-                EvaluateTypeOrError(parentScope, constant.Value).MatchSome(type
-                 => AddSymbolOrError(parentScope, new Symbol.Constant(constant.Name, constant.SourceTokens, type, constant.Value)));
+                CreateTypeOrError(parentScope, constant.Type)
+                .Combine(EvaluateTypeOrError(parentScope, constant.Value))
+                .MatchSome((declaredType, inferredType) => {
+                    if (!declaredType.Equals(inferredType)) {
+                        AddMessage(Message.ErrorDeclaredInferredTypeMismatch(constant.SourceTokens, declaredType, inferredType));
+                    }
+                    if (!constant.Value.IsConstant(parentScope)) {
+                        AddMessage(Message.ExpectedConstantExpression(constant.SourceTokens));
+                    }
+                    AddSymbolOrError(parentScope, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, constant.Value));
+                });
                 break;
 
             case Node.Declaration.Function func:
                 CreateTypeOrError(parentScope, func.Signature.ReturnType).MatchSome(returnType
-                 => HandleSubroutineDeclaration(parentScope, new Symbol.Function(
+                 => HandleCallableDeclaration(parentScope, new Symbol.Function(
                        func.Signature.Name,
                        func.Signature.SourceTokens,
                        CreateParameters(parentScope, func.Signature.Parameters),
@@ -56,7 +65,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             case Node.Declaration.FunctionDefinition funcDef:
                 CreateTypeOrError(parentScope, funcDef.Signature.ReturnType).MatchSome(returnType => {
                     var parameters = CreateParameters(parentScope, funcDef.Signature.Parameters);
-                    HandleSubroutineDefinition(parentScope, new Symbol.Function(
+                    HandleCallableDefinition(parentScope, new Symbol.Function(
                                             funcDef.Signature.Name,
                                             funcDef.Signature.SourceTokens,
                                             parameters,
@@ -75,7 +84,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 break;
 
             case Node.Declaration.Procedure proc:
-                HandleSubroutineDeclaration(parentScope, new Symbol.Procedure(
+                HandleCallableDeclaration(parentScope, new Symbol.Procedure(
                     proc.Signature.Name,
                     proc.Signature.SourceTokens,
                     CreateParameters(parentScope, proc.Signature.Parameters)));
@@ -83,7 +92,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
 
             case Node.Declaration.ProcedureDefinition procDef:
                 var parameters = CreateParameters(parentScope, procDef.Signature.Parameters);
-                HandleSubroutineDefinition(parentScope, new Symbol.Procedure(
+                HandleCallableDefinition(parentScope, new Symbol.Procedure(
                     procDef.Signature.Name,
                     procDef.Signature.SourceTokens,
                     parameters));
@@ -155,6 +164,9 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             case Node.Statement.OuvrirLecture ouvrirLecture:
                 AnalyzeExpression(parentScope, ouvrirLecture.Argument);
                 break;
+            case Node.Statement.ProcedureCall call:
+                HandleCall<Symbol.Procedure>(parentScope, call);
+                break;
             case Node.Statement.EcrireEcran ecrireEcran:
                 foreach (var arg in ecrireEcran.Arguments) {
                     AnalyzeExpression(parentScope, arg);
@@ -172,7 +184,6 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             case Node.Statement.VariableDeclaration varDecl:
                 CreateTypeOrError(parentScope, varDecl.Type).MatchSome(type => {
                     foreach (var name in varDecl.Names) {
-                        //Console.WriteLine($"adding variable {name} to scope {parentScope.GetHashCode()}");
                         AddSymbolOrError(parentScope, new Symbol.Variable(name, varDecl.SourceTokens, type));
                     }
                 });
@@ -203,15 +214,8 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             case Node.Expression.BuiltinFdf fdf:
                 AnalyzeExpression(parentScope, fdf.Argument);
                 break;
-            case Node.Expression.Call call:
-                GetSymbolOrError<Symbol.Function>(parentScope, call.SourceTokens, call.Name).MatchSome(func => {
-                    if (!call.Parameters.ZipStrict(func.Parameters, (effective, format)
-                        => effective.Mode.Equals(format.Mode)
-                        && EvaluateTypeOrError(parentScope, effective.Value).Map(type => format.Type.Equals(type)).ValueOr(false))
-                     .All(b => b)) {
-                        AddMessage(Message.ErrorCallParameterMismatch(call, func));
-                    }
-                });
+            case Node.Expression.FunctionCall call:
+                HandleCall<Symbol.Function>(parentScope, call);
                 break;
             case Node.Expression.ComponentAccess componentAccess:
                 break;
@@ -229,7 +233,6 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 AnalyzeExpression(parentScope, opUn.Operand);
                 break;
             case Node.Expression.VariableReference varRef:
-                //Console.WriteLine($"fetching variable {varRef.Name} from scope {parentScope.GetHashCode()}");
                 _ = GetSymbolOrError<Symbol.Variable>(parentScope, varRef.SourceTokens, varRef.Name);
                 break;
             default:
@@ -241,7 +244,6 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         {
             if (node is ScopedNode sn) {
                 scopes[sn] = new(parentScope);
-                //Console.WriteLine($"Created scope of parent {parentScope?.GetHashCode().ToString() ?? "(null)"} for {node.GetType().Name}: {scopes[sn].GetHashCode()}");
             }
         }
 
@@ -258,7 +260,22 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
          => parameters.Select(param => CreateTypeOrError(scope, param.Type).Map(type
             => new Symbol.Parameter(param.Name, param.SourceTokens, type, param.Mode))).WhereSome().ToList();
 
-        void HandleSubroutineDeclaration<T>(Scope parentScope, T sub) where T : DeclarableDefinableSymbol, IEquatable<T?>
+        void HandleCall<TSymbol>(Scope parentScope, CallNode call) where TSymbol : CallableSymbol
+        {
+            GetSymbolOrError<TSymbol>(parentScope, call.SourceTokens, call.Name).MatchSome(callee => {
+                if (!call.Parameters.ZipStrict(callee.Parameters, (effective, formal)
+                    => effective.Mode.Equals(formal.Mode)
+                    && EvaluateTypeOrError(parentScope, effective.Value).Map(type => formal.Type.Equals(type)).ValueOr(false))
+                 .All(b => b)) {
+                    AddMessage(Message.ErrorCallParameterMismatch(call));
+                }
+            });
+            foreach (var effective in call.Parameters) {
+                AnalyzeExpression(parentScope, effective.Value);
+            }
+        }
+
+        void HandleCallableDeclaration<T>(Scope parentScope, T sub) where T : CallableSymbol, IEquatable<T?>
         {
             if (!parentScope.TryAdd(sub, out var existingSymbol)) {
                 if (existingSymbol is T existingSub) {
@@ -271,7 +288,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             }
         }
 
-        void HandleSubroutineDefinition<T>(Scope parentScope, T sub) where T : DeclarableDefinableSymbol, IEquatable<T?>
+        void HandleCallableDefinition<T>(Scope parentScope, T sub) where T : CallableSymbol, IEquatable<T?>
         {
             if (parentScope.TryAdd(sub, out var existingSymbol)) {
                 sub.MarkAsDefined();
