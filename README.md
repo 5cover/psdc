@@ -1,4 +1,4 @@
-# PSDC
+# PSDC (WIP)
 
 Pseudocode compiler.
 Translates Pseudocode to C and compiles it.
