@@ -125,6 +125,28 @@ internal interface Node
             : BlockNode(sourceTokens, block);
         }
 
+        internal sealed class Switch(Partition<Token> sourceTokens,
+            Expression expression,
+            IReadOnlyCollection<Switch.Case> cases,
+            Option<Switch.CaseDefault> @default)
+        : NodeImpl(sourceTokens), Statement
+        {
+            public Expression Expression => expression;
+            public IReadOnlyCollection<Case> Cases => cases;
+            public Option<CaseDefault> Default => @default;
+
+            internal sealed class Case(Partition<Token> sourceTokens,
+                Expression when,
+                IReadOnlyCollection<Statement> block)
+            : BlockNode(sourceTokens, block) {
+                public Expression When => when;
+            }
+
+            internal sealed class CaseDefault(Partition<Token> sourceTokens,
+                IReadOnlyCollection<Statement> block)
+            : BlockNode(sourceTokens, block);
+        }
+
         internal sealed class Assignment(Partition<Token> sourceTokens,
             string target,
             Expression value)
@@ -254,7 +276,6 @@ internal interface Node
              && other.Type.Equals(Type);
             public override int GetHashCode() => HashCode.Combine(Names.GetSequenceHashCode(), Type);
         }
-
         internal sealed class WhileLoop(Partition<Token> sourceTokens,
             Expression condition,
             IReadOnlyCollection<Statement> block)

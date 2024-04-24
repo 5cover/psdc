@@ -30,15 +30,6 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
         return output;
     }
 
-    private StringBuilder AppendBlockStatements(StringBuilder output, BlockNode node)
-    {
-        foreach (Node.Statement statement in node.Block) {
-            AppendStatement(output, _ast.Scopes[node], statement);
-        }
-
-        return output;
-    }
-
     #region Declarations
 
     private StringBuilder AppendDeclaration(StringBuilder output, ReadOnlyScope parentScope, Node.Declaration decl) => decl switch {
@@ -134,6 +125,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
         Node.Statement.ProcedureCall call => AppendCall(Indent(output), call).AppendLine(";"),
         Node.Statement.RepeatLoop repeatLoop => AppendRepeatLoop(output, repeatLoop),
         Node.Statement.Return ret => AppendReturn(output, ret),
+        Node.Statement.Switch @switch => AppendSwitch(output, @switch),
         Node.Statement.VariableDeclaration varDecl => AppendVariableDeclaration(output, parentScope, varDecl),
         Node.Statement.WhileLoop whileLoop => AppendWhileLoop(output, whileLoop),
         _ => throw stmt.ToUnmatchedException(),
@@ -205,6 +197,15 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
         return output;
     }
 
+    private StringBuilder AppendBlockStatements(StringBuilder output, BlockNode node)
+    {
+        foreach (Node.Statement statement in node.Block) {
+            AppendStatement(output, _ast.Scopes[node], statement);
+        }
+
+        return output;
+    }
+
     private StringBuilder AppendAssignment(StringBuilder output, Node.Statement.Assignment assignment)
     {
         Indent(output);
@@ -214,6 +215,30 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
         output.AppendLine(";");
 
         return output;
+    }
+
+    private StringBuilder AppendSwitch(StringBuilder output, Node.Statement.Switch @switch)
+    {
+        Indent(output).Append("switch ");
+        AppendBracketedExpression(output, @switch.Expression).AppendLine(" {");
+
+        foreach (var @case in @switch.Cases) {
+            Indent(output).Append("case ");
+            AppendExpression(output, @case.When).AppendLine(":");
+            _indent.Increase();
+            AppendBlockStatements(output, @case);
+            Indent(output).AppendLine("break;");
+            _indent.Decrease();
+        }
+
+        @switch.Default.MatchSome(@default => {
+            Indent(output).AppendLine("default:");
+            _indent.Increase();
+            AppendBlockStatements(output, @default);
+            _indent.Decrease();
+        });
+
+        return Indent(output).AppendLine("}");
     }
 
     private StringBuilder AppendVariableDeclaration(StringBuilder output, ReadOnlyScope parentScope, Node.Statement.VariableDeclaration varDecl)
@@ -368,7 +393,6 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
      => expr switch {
          Node.Expression.Bracketed => AppendExpression(output, expr),
          _ => AppendExpression(output.Append('('), expr).Append(')')
-
      };
 
     private TypeInfoC CreateTypeInfo(EvaluatedType evaluatedType)

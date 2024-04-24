@@ -1,3 +1,12 @@
+/**
+ * @file parseExpression.c
+ * @brief This file contains the implementation of a simple expression parser.
+ * The parser can parse arithmetic expressions consisting of literal integers,
+ * addition and multiplication operators, and parentheses.
+ * It uses a recursive descent parsing algorithm to build an abstract syntax tree (AST)
+ * representing the expression.
+ * The AST is then printed and freed.
+ */
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -6,30 +15,36 @@
 
 #define ARRAYSIZE(arr) (sizeof(arr) / sizeof(arr[0]))
 
+/// @brief A stack-allocated string of maximum length 255.
+/// @brief Used to take advantage of C's automatic memory management of stack-allocated objects.
 typedef struct {
-    char str[128];
+    char str[256];
 } StackStr;
 
+/// @brief Type of a token.
 typedef enum {
-    LiteralInteger,
-    OperatorPlus,
-    OperatorMultiply,
-    OpenBracket,
-    CloseBracket,
+    TokenType_LiteralInteger,
+    TokenType_OperatorAdd,
+    TokenType_OperatorMultiply,
+    TokenType_BracketOpen,
+    TokenType_BracketClose,
 } TokenType;
 
+/// @brief A token, smallest unit of the expression.
 typedef struct {
     StackStr value;
     TokenType type;
 } Token;
 
+/// @brief Type of an expression.
 typedef enum {
-    ExpressionBinary,
-    ExpressionTerminal,
+    ExpressionType_Binary,
+    ExpressionType_Terminal,
 } ExpressionType;
 
 typedef struct ParseResult ParseResult;
 
+/// @brief A node in the abstract syntax tree (AST) representing an expression.
 typedef struct {
     ExpressionType type;
     union {
@@ -44,69 +59,113 @@ typedef struct {
     };
 } NodeExpression;
 
+/// @brief Result of a parsing operation.
 struct ParseResult {
-    bool success;
+    bool hasValue;
     union {
-        NodeExpression result;
+        NodeExpression value;
         struct {
             StackStr msg;
         } error;
     };
 };
 
+/// @brief Macro to create a failed parse result.
+/// @param message The error message of the parse result.
+/// @return A new failed ParseResult.
 #define result_fail(message)         \
     (ParseResult)                    \
     {                                \
-        .success = false,            \
+        .hasValue = false,           \
         .error = {                   \
             .msg = {.str = message}, \
         },                           \
     }
 
-ParseResult result_ok(NodeExpression expr)
-{
-    return (ParseResult){
-        .success = true,
-        .result = expr,
-    };
-}
-
-char token_get_char(Token token);
-ParseResult token_literal_create(Token token);
-NodeExpression expression_create_binary(ParseResult operand1, Token operator, ParseResult operand2);
-ParseResult expression_parse(Token const *tokens, int tokenCount);
-void expression_free(NodeExpression expr);
-void expression_show(NodeExpression expr);
-void expression_show_depth(NodeExpression const expr, int depth);
-int token_find(Token const *tokens, int tokenCount, TokenType search);
-int token_find_last(Token const *tokens, int tokenCount, TokenType search);
-
-#define token_int(val)          \
-    (Token)                     \
-    {                           \
-        .type = LiteralInteger, \
-        .value = {.str = #val}, \
+/// @brief Macro to create a successful parse result.
+/// @param expr The expression to create the parse result from.
+/// @return A new successful ParseResult.
+#define result_ok(expr)   \
+    (ParseResult)         \
+    {                     \
+        .hasValue = true, \
+        .value = (expr),  \
     }
 
+/// @brief Macro to create an integer literal token from a character.
+/// @param repr The character to create the token from.
+/// @return A new integer literal Token.
+#define token_int(val)                    \
+    (Token)                               \
+    {                                     \
+        .type = TokenType_LiteralInteger, \
+        .value = {.str = #val},           \
+    }
+
+/// @brief Get the character representation of a token.
+/// @param token The token to get the character representation of.
+/// @return The character representation of the token.
+char token_get_char(Token token);
+
+/// @brief Create a parse result from a token.
+/// @param token The token to create the parse result from.
+/// @return The parse result.
+ParseResult token_literal_create(Token token);
+
+/// @brief Create a binary expression node.
+/// @param operand1 The first operand of the binary expression.
+/// @param operator The operator of the binary expression.
+/// @param operand2 The second operand of the binary expression.
+/// @return The binary expression node.
+NodeExpression expression_create_binary(ParseResult operand1, Token operator, ParseResult operand2);
+
+/// @brief Parse an expression from a array of tokens.
+/// @param tokens The array of tokens to parse the expression from.
+/// @param tokenCount The amount of tokens in the array.
+/// @return The parse result of the expression.
+ParseResult expression_parse(Token const *tokens, int tokenCount);
+
+/// @brief Free an expression node.
+/// @param expr The expression node to free.
+void expression_free(NodeExpression expr);
+
+/// @brief Show an expression.
+/// @param expr The expression to show.
+void expression_show(NodeExpression expr);
+
+/// @brief Show an expression with depth.
+/// @param expr The expression to show.
+/// @param depth The depth of the expression.
+void expression_show_depth(NodeExpression const expr, int depth);
+
+/// @brief Find the index of the first token of a specific type in an array of tokens.
+/// @param tokens The array of tokens to search in.
+/// @param startIndex The index to start searching from.
+/// @param tokenCount The amount of tokens in the array.
+/// @param search The type of token to search for.
+int token_find(Token const *tokens, int startIndex, int tokenCount, TokenType search);
+
+/// @brief Find the index of the last token of a specific type in an array of tokens.
+/// @param tokens The array of tokens to search in.
+/// @param startIndex The index to start searching from.
+/// @param tokenCount The amount of tokens in the array.
+/// @param search The type of token to search for.
+int token_find_last(Token const *tokens, int startIndex, int tokenCount, TokenType search);
+
+/// @brief Create a token from a character.
+/// @param repr The character to create the token from.
+/// @return A new Token.
 Token token(char repr)
 {
     Token tok;
     switch (repr) {
-    case '+':
-        tok.type = OperatorPlus;
-        break;
-    case '*':
-        tok.type = OperatorMultiply;
-        break;
-    case '(':
-        tok.type = OpenBracket;
-        break;
-    case ')':
-        tok.type = CloseBracket;
-        break;
+    case '+': tok.type = TokenType_OperatorAdd; break;
+    case '*': tok.type = TokenType_OperatorMultiply; break;
+    case '(': tok.type = TokenType_BracketOpen; break;
+    case ')': tok.type = TokenType_BracketClose; break;
     default:
         fprintf(stderr, "Unsupported token representation : '%c' (%d)\n", repr, repr);
-        assert(false);
+        abort();
     }
 
     return tok;
@@ -116,45 +175,53 @@ Token const *start;
 
 int main()
 {
-    // 4 * 3 * 5
-    // Token test1[] = {token_int(4), token('*'), token_int(3), token('*'), token_int(5)};
+    Token test[] =
+        // 4 * 3 * 5
+        //{token_int(4), token('*'), token_int(3), token('*'), token_int(5)};
 
-    // 4 * 3 + 5 * 6
-    // Token test2[] = {token_int(4), token('*'), token_int(3), token('+'), token_int(5), token('*'), token_int(6)};
+        // 4 * 3 + 5 * 6
+        //{token_int(4), token('*'), token_int(3), token('+'), token_int(5), token('*'), token_int(6)};
 
-    // 4 + 3
-    // Token test3[] = {token_int(4), token('+'), token_int(3)};
+        // 4 + 3
+        //{token_int(4), token('+'), token_int(3)};
 
-    // 4 + 3 * 5
-    // Token test4[] = {token_int(4), token('+'), token_int(3), token('*'), token_int(5)};
+        // (4)
+        //{token('('), token_int(4), token(')')};
 
-    // 4 + 3 * 5 + 6
-    // Token test5[] = {token_int(4), token('+'), token_int(3), token('*'), token_int(5), token('+'), token_int(6)};
+        // (4 + 3)
+        //{token('('), token_int(4), token('+'), token_int(3), token(')')};
 
-    // 4 + (3 * 5 + 6)
-    // Token ptest1[] = {token_int(4), token('+'), token('('), token_int(3), token('*'), token_int(5), token('+'), token_int(6), token(')')};
+        // 4 + 3 * 5
+        //{token_int(4), token('+'), token_int(3), token('*'), token_int(5)};
 
-    // 4 * (3 + 5) * 6
-    Token ptest2[] = {token_int(4), token('*'), token('('), token_int(3), token('+'), token_int(5), token(')'), token('*'), token_int(6)};
+        // 4 + 3 * 5 + 6
+        //{token_int(4), token('+'), token_int(3), token('*'), token_int(5), token('+'), token_int(6)};
 
-    // 4 * (3 + 5)
-    // Token ptest3[] = {token_int(4), token('*'), token('('), token_int(3), token('+'), token_int(5), token(')')};
+        // 4 + (3 + 5) + 6
+        //{token_int(4), token('+'), token('('), token_int(3), token('+'), token_int(5), token(')'), token('+'), token_int(6)};
 
-    // (3 + 5) * 6
-    // Token ptest4[] = {token('('), token_int(3), token('+'), token_int(5), token(')'), token('*'), token_int(6)};
+        // 4 + (3 * 5 + 6)
+        //{token_int(4), token('+'), token('('), token_int(3), token('*'), token_int(5), token('+'), token_int(6), token(')')};
 
-#define TEST ptest2
-    start = TEST;
-    ParseResult r1 = expression_parse(TEST, ARRAYSIZE(TEST));
+        // 4 * (3 + 5) * 6
+        //{token_int(4), token('*'), token('('), token_int(3), token('+'), token_int(5), token(')'), token('*'), token_int(6)};
 
-    if (r1.success) {
-        expression_show(r1.result);
+        // 4 * (3 + 5)
+        //{token_int(4), token('*'), token('('), token_int(3), token('+'), token_int(5), token(')')};
+
+        // (3 + 5) * 6
+        {token('('), token_int(3), token('+'), token_int(5), token(')'), token('*'), token_int(6)};
+
+    ParseResult result = expression_parse(test, ARRAYSIZE(test));
+
+    if (result.hasValue) {
+        expression_show_depth(result.value, 0);
         putchar('\n');
-        expression_show_depth(r1.result, 0);
+        expression_show(result.value);
         putchar('\n');
-        expression_free(r1.result);
+        expression_free(result.value);
     } else {
-        printf("Parsing failed: %s\n", r1.error.msg.str);
+        printf("Parsing failed: %s\n", result.error.msg.str);
     }
 
 #undef TEST
@@ -164,61 +231,82 @@ int main()
 
 ParseResult expression_parse(Token const *tokens, int tokenCount)
 {
-    if (tokenCount == 0) {
-        return result_fail("Empty expression");
-    }
-    if (tokenCount == 1) {
-        return token_literal_create(tokens[0]);
-    }
-    if (tokenCount == 2) {
+    switch (tokenCount) {
+    case 0: return result_fail("Empty expression");
+    case 1: return token_literal_create(tokens[0]);
+    case 2: return result_fail("Invalid expression");
+    case 3:
+        // Parse a simple expression
+        if (tokens[1].type == TokenType_OperatorMultiply || tokens[1].type == TokenType_OperatorAdd) {
+            return result_ok(expression_create_binary(
+                token_literal_create(tokens[0]),
+                tokens[1],
+                token_literal_create(tokens[2])));
+        } else if (tokens[0].type == TokenType_BracketOpen && tokens[2].type == TokenType_BracketClose) {
+            return expression_parse(tokens + 1, 1);
+        }
         return result_fail("Invalid expression");
-    }
+    default:
+        // Check if the expression contains brackets
+        int const iOpenBracket = token_find(tokens, 0, tokenCount, TokenType_BracketOpen);
+        if (iOpenBracket != -1) {
+            int const iCloseBracket = token_find_last(tokens, iOpenBracket + 1, tokenCount, TokenType_BracketClose);
+            if (iCloseBracket == -1) {
+                return result_fail("Unmatched parentheses");
+            }
 
-    // Parse a simple expression
-    if (tokenCount == 3) {
-        if (tokens[1].type != OperatorMultiply && tokens[1].type != OperatorPlus) {
-            return result_fail("Non-operator operator token");
+            ParseResult expr_before;
+            bool const has_expr_before = iOpenBracket > 1;
+            if (has_expr_before) {
+                expr_before = expression_parse(tokens, iOpenBracket - 1);
+            }
+
+            ParseResult const expr_inside = expression_parse(tokens + iOpenBracket + 1, iCloseBracket - iOpenBracket - 1);
+
+            if (iCloseBracket < tokenCount - 2) {
+                ParseResult expr_after = expression_parse(tokens + iCloseBracket + 2, tokenCount - iCloseBracket - 2);
+                ParseResult expr_insideAfter = result_ok(expression_create_binary(
+                    expr_inside,
+                    tokens[iCloseBracket + 1], // operator after )
+                    expr_after));
+
+                return has_expr_before
+                         ? result_ok(expression_create_binary(
+                             expr_before,
+                             tokens[iOpenBracket - 1],
+                             expr_insideAfter))
+                         : expr_insideAfter;
+            }
+
+            return has_expr_before
+                     ? result_ok(expression_create_binary(
+                         expr_before,
+                         tokens[iOpenBracket - 1], // operator before (
+                         expr_inside))
+                     : expr_inside;
         }
 
-        return result_ok(expression_create_binary(
-            token_literal_create(tokens[0]),
-            tokens[1],
-            token_literal_create(tokens[2])));
-    }
-
-    int iOpenBracket = token_find(tokens, tokenCount, OpenBracket);
-
-    if (iOpenBracket != -1) {
-        int iCloseBracket = token_find_last(tokens + iOpenBracket, tokenCount - iOpenBracket, CloseBracket);
-        if (iCloseBracket == -1) {
-            return result_fail("Unmatched parentheses");
+        int const iPlus = token_find(tokens, 0, tokenCount, TokenType_OperatorAdd);
+        if (iPlus == -1) {
+            // plus not found: parse using associativity
+            return result_ok(expression_create_binary(
+                token_literal_create(tokens[0]),
+                tokens[1],
+                expression_parse(tokens + 2, tokenCount - 2)));
         }
-        return result_ok(expression_create_binary(
-            expression_parse(tokens, iOpenBracket - 1),
-            tokens[iOpenBracket - 1],
-            expression_parse(tokens + iOpenBracket + 1, iCloseBracket - 1)));
-    }
 
-    int iPlus = token_find(tokens, tokenCount, OperatorPlus);
-
-    if (iPlus == -1) {
-        // parse using associativity
+        // plus found: parse left and right plus operands separately
         return result_ok(expression_create_binary(
-            token_literal_create(tokens[0]),
-            tokens[1],
-            expression_parse(tokens + 2, tokenCount - 2)));
+            expression_parse(tokens, iPlus),
+            tokens[iPlus],
+            expression_parse(tokens + iPlus + 1, tokenCount - iPlus - 1)));
     }
-    // plus found: parse left and right plus operands separately
-    return result_ok(expression_create_binary(
-        expression_parse(tokens, iPlus),
-        tokens[iPlus],
-        expression_parse(tokens + iPlus + 1, tokenCount - iPlus - 1)));
 }
 
 NodeExpression expression_create_binary(ParseResult operand1, Token operator, ParseResult operand2)
 {
     NodeExpression expr = {
-        .type = ExpressionBinary,
+        .type = ExpressionType_Binary,
         .binary = {
             .operand1 = malloc(sizeof operand1),
             .operand2 = malloc(sizeof operand2),
@@ -238,52 +326,55 @@ NodeExpression expression_create_binary(ParseResult operand1, Token operator, Pa
 
 ParseResult token_literal_create(Token token)
 {
-    if (token.type != LiteralInteger) {
+    if (token.type != TokenType_LiteralInteger) {
         return result_fail("Literal token is not an integer");
     }
 
-    return result_ok((NodeExpression){
-        .type = ExpressionTerminal,
+    return result_ok(((NodeExpression){
+        .type = ExpressionType_Terminal,
         .terminal = {
             .literal = token,
-        },
-    });
+        }
+    }));
 }
 
-int token_find(Token const *tokens, int tokenCount, TokenType search)
+int token_find(Token const *tokens, int startIndex, int tokenCount, TokenType search)
 {
-    int i = 0;
-    for (; i < tokenCount && tokens[tokenCount].type != search; ++i)
-        ;
-    return i == tokenCount ? -1 : i;
+    int i = startIndex;
+    while (i < tokenCount && tokens[i].type != search) {
+        ++i;
+    }
+    return i < tokenCount ? i : -1;
 }
-int token_find_last(Token const *tokens, int tokenCount, TokenType search)
+
+int token_find_last(Token const *tokens, int startIndex, int tokenCount, TokenType search)
 {
     int i = tokenCount - 1;
-    for (; i >= 0 && tokens[tokenCount].type != search; --i)
-        ;
-    return i;
+    while (i >= startIndex && tokens[i].type != search) {
+        --i;
+    }
+    return i >= startIndex ? i : -1;
 }
 
 void expression_show(NodeExpression const expr)
 {
     switch (expr.type) {
-    case ExpressionBinary:
+    case ExpressionType_Binary:
         putchar('(');
-        if (expr.binary.operand1->success) {
-            expression_show(expr.binary.operand1->result);
+        if (expr.binary.operand1->hasValue) {
+            expression_show(expr.binary.operand1->value);
         } else {
             printf("{%s}", expr.binary.operand1->error.msg.str);
         }
         printf(" %c ", token_get_char(expr.binary.operator));
-        if (expr.binary.operand2->success) {
-            expression_show(expr.binary.operand2->result);
+        if (expr.binary.operand2->hasValue) {
+            expression_show(expr.binary.operand2->value);
         } else {
             printf("{%s}", expr.binary.operand2->error.msg.str);
         }
         putchar(')');
         break;
-    case ExpressionTerminal:
+    case ExpressionType_Terminal:
         printf("%s", expr.terminal.literal.value.str);
         break;
     }
@@ -291,27 +382,27 @@ void expression_show(NodeExpression const expr)
 
 void expression_show_depth(NodeExpression const expr, int depth)
 {
-    for (int i = 0; i < depth * 4; ++i) {
+    for (int i = 0; i < depth * 2; ++i) {
         putchar(' ');
     }
 
     switch (expr.type) {
-    case ExpressionBinary:
+    case ExpressionType_Binary:
         printf("%c\n", token_get_char(expr.binary.operator));
-        if (expr.binary.operand1->success) {
-            expression_show_depth(expr.binary.operand1->result, depth + 1);
+        if (expr.binary.operand1->hasValue) {
+            expression_show_depth(expr.binary.operand1->value, depth + 1);
         } else {
             printf("{%s}", expr.binary.operand1->error.msg.str);
         }
         putchar('\n');
-        if (expr.binary.operand2->success) {
-            expression_show_depth(expr.binary.operand2->result, depth + 1);
+        if (expr.binary.operand2->hasValue) {
+            expression_show_depth(expr.binary.operand2->value, depth + 1);
         } else {
             printf("{%s}", expr.binary.operand2->error.msg.str);
         }
         break;
 
-    case ExpressionTerminal:
+    case ExpressionType_Terminal:
         printf("%s", expr.terminal.literal.value.str);
         break;
     }
@@ -320,13 +411,13 @@ void expression_show_depth(NodeExpression const expr, int depth)
 char token_get_char(Token token)
 {
     switch (token.type) {
-    case OperatorPlus:
+    case TokenType_OperatorAdd:
         return '+';
-    case OperatorMultiply:
+    case TokenType_OperatorMultiply:
         return '*';
-    case OpenBracket:
+    case TokenType_BracketOpen:
         return '(';
-    case CloseBracket:
+    case TokenType_BracketClose:
         return ')';
     default:
         return '?';
@@ -335,12 +426,12 @@ char token_get_char(Token token)
 
 void expression_free(NodeExpression expr)
 {
-    if (expr.type == ExpressionBinary) {
-        if (expr.binary.operand1->success) {
-            expression_free(expr.binary.operand1->result);
+    if (expr.type == ExpressionType_Binary) {
+        if (expr.binary.operand1->hasValue) {
+            expression_free(expr.binary.operand1->value);
         }
-        if (expr.binary.operand2->success) {
-            expression_free(expr.binary.operand2->result);
+        if (expr.binary.operand2->hasValue) {
+            expression_free(expr.binary.operand2->value);
         }
 
         free(expr.binary.operand1);

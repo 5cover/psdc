@@ -1,15 +1,5 @@
 # Scratch area
 
-## Handle inner errors
-
-So basically when an error happens inside of the main program, we continue to parse Token by Token and fail until we consume everything up to `TokenType.Eof`. That's incorrect, as we'll end up consuming `TokenType.KeywordEnd`.
-
-This is sorta linked with "Errors that go token after token".
-
-What can we do?
-
-Solution 1 : stop oneormore and zeroormore when item parsing fails
-
 ## Errors that go token after token
 
 fix errors going one from one token:
@@ -32,9 +22,29 @@ Solution 3 : who cares, it's not that big of a deal.
 
 > it clutters the message list
 
-**Solution 4** : skim until first token of the target node, then resume parsing
+Solution 4 : skim until first token of the target node, then resume parsing
 
 > this could actually work
+
+Solution 5 : skim until valid or failure with different error
+
+> Require comparison of ParseError, could work as well. Could result in missing errors.
+
+## identifier and word primitive obession
+
+Create a `Word` class that abstracts a string but with restrictions (`\w+`)
+
+The point would be to prevent invalid identifiers. But we already check in the tokenizer. So what's the point?
+
+Semantically, it would able us to tell if an indentifier is expected instead of any string.
+
+This could be useful for string constants.
+
+## Create a representation of the AST being built
+
+We know the ast is build from the bottom up, but it could be interesting to see it animated.
+
+Simply add some graph-building logic in the NodeImpl constructor.
 
 ## Lvalue/rvalue
 
@@ -52,8 +62,21 @@ However arrays exist:
 
 `array[indice / 2 + 4] := value`
 
-## Create a representation of the AST being built
+---
 
-We know the ast is build from the bottom up, but it could be interesting to see it animated.
+I can no longer postpone this
 
-Simply add some graph-building logic in the NodeImpl constructor.
+Representing Rvalues with Node.Expressions and Lvalues with strings is no longer enough as structure component access expressions may be used as Lvalues.
+
+Should we update our formal grammar?
+
+Yes. We need some sort of restriction on which expressions can be lvalues so we don't allow horrors such as
+
+`1 + 1 := 3;`
+
+```cs
+internal interface LValue : Expression
+{
+    
+}
+```

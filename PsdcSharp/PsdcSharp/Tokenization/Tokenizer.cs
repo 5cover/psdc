@@ -124,6 +124,7 @@ internal sealed class Tokenizer(string input) : MessageProvider
         new(KeywordTo, "à"),
         new(KeywordUntil, "jusqu'à"),
         new(KeywordWhen, "quand"),
+        new(KeywordWhenOther, "quand autre"),
         new(KeywordWhile, "tant que"),
 
         // Parameter keywords

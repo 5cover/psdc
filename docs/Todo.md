@@ -15,7 +15,9 @@ Project roadmap:
     - ~~Repeat..Until~~
 - ~~Procedures~~
 - ~~Functions~~
-- Structures
+- ~~Structures~~
+- ~~Selon~~
+- Lvalues
 - Files
 - CLI
 - Tests?

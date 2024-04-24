@@ -16,23 +16,24 @@ internal sealed partial class Parser : MessageProvider
         _tokens = tokens;
 
         _declarationParsers = new Dictionary<TokenType, ParseMethod<Node.Declaration>>() {
-            [TokenType.KeywordTypeAlias] = ParseAliasDeclaration,
             [TokenType.KeywordBegin] = ParseMainProgram,
+            [TokenType.KeywordConstant] = ParseConstant,
             [TokenType.KeywordFunction] = ParseFunctionDeclarationOrDefinition,
             [TokenType.KeywordProcedure] = ParseProcedureDeclarationOrDefinition,
-            [TokenType.KeywordConstant] = ParseConstant,
+            [TokenType.KeywordTypeAlias] = ParseAliasDeclaration,
         };
 
         _statementParsers = new Dictionary<TokenType, ParseMethod<Node.Statement>>() {
-            [TokenType.KeywordEcrireEcran] = ParseEcrireEcran,
-            [TokenType.KeywordLireClavier] = ParseLireClavier,
             [TokenType.Identifier] = ParserVariableDeclarationOrAssignmentOrProcedureCall,
-            [TokenType.KeywordIf] = ParseAlternative,
-            [TokenType.KeywordWhile] = ParseWhileLoop,
             [TokenType.KeywordDo] = ParseDoWhileLoop,
-            [TokenType.KeywordRepeat] = ParseRepeatLoop,
+            [TokenType.KeywordEcrireEcran] = ParseEcrireEcran,
             [TokenType.KeywordFor] = ParseForLoop,
+            [TokenType.KeywordIf] = ParseAlternative,
+            [TokenType.KeywordLireClavier] = ParseLireClavier,
+            [TokenType.KeywordRepeat] = ParseRepeatLoop,
             [TokenType.KeywordReturn] = ParseReturn,
+            [TokenType.KeywordSwitch] = ParseSwitch,
+            [TokenType.KeywordWhile] = ParseWhileLoop,
         };
 
         _completeTypeParsers = new Dictionary<TokenType, ParseMethod<Node.Type>> {
@@ -169,7 +170,7 @@ internal sealed partial class Parser : MessageProvider
             .ParseToken(TokenType.CloseBracket)
             .ParseToken(TokenType.KeywordThen)
             .ParseZeroOrMoreUntilToken(out var block, ParseStatement,
-                TokenType.KeywordElseIf, TokenType.KeywordElse, TokenType.KeywordEndIf)
+                TokenType.KeywordEndIf, TokenType.KeywordElse)
         .MapResult(t => new Node.Statement.Alternative.ElseIfClause(t, condition, block)),
             TokenType.KeywordEndIf, TokenType.KeywordElse)
 
@@ -280,6 +281,29 @@ internal sealed partial class Parser : MessageProvider
         .Parse(out var returnValue, ParseExpression)
         .ParseToken(TokenType.PunctuationSemicolon)
     .MapResult(t => new Node.Statement.Return(t, returnValue));
+
+    private ParseResult<Node.Statement.Switch> ParseSwitch(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+        .ParseToken(TokenType.KeywordSwitch)
+        .Parse(out var expression, ParseExpression)
+        .ParseToken(TokenType.KeywordIs)
+
+        .ParseZeroOrMoreUntilToken(out var cases, tokens => ParseOperation.Start(this, tokens)
+            .ParseToken(TokenType.KeywordWhen)
+            .Parse(out var when, ParseExpression)
+            .ParseToken(TokenType.PunctuationCase)
+            .ParseZeroOrMoreUntilToken(out var block, ParseStatement,
+                TokenType.KeywordWhen, TokenType.KeywordWhenOther)
+        .MapResult(t => new Node.Statement.Switch.Case(t, when, block)),
+            TokenType.KeywordWhenOther, TokenType.KeywordEndSwitch)
+
+        .ParseOptional(out var @default, tokens => ParseOperation.Start(this, tokens)
+            .ParseToken(TokenType.KeywordWhenOther)
+            .ParseToken(TokenType.PunctuationCase)
+            .ParseZeroOrMoreUntilToken(out var block, ParseStatement, TokenType.KeywordEndSwitch)
+        .MapResult(t => new Node.Statement.Switch.CaseDefault(t, block)))
+        
+        .ParseToken(TokenType.KeywordEndSwitch)
+    .MapResult(t => new Node.Statement.Switch(t, expression, cases, @default));
 
     #endregion Statements
 

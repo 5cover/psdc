@@ -151,6 +151,7 @@ internal enum TokenType
     KeywordTo,
     KeywordUntil,
     KeywordWhen,
+    KeywordWhenOther,
     KeywordWhile,
 
     #endregion Control structures

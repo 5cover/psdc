@@ -48,7 +48,7 @@ internal sealed record Message(
          };
 
          msgContent.Append("; ").Append(sourceTokens.LastOrNone().Match(
-             token => $"{token.ErrorMessagePart.ValueOr($"got `{input.Substring(token.StartIndex, token.Length)}`")}",
+             token => $"{token.ErrorMessagePart.ValueOr($"got '{input.Substring(token.StartIndex, token.Length)}'")}",
              none: () => "got nothing"));
 
          return msgContent.ToString();
@@ -108,7 +108,7 @@ internal sealed record Message(
     private static Message Create(IEnumerable<Token> involvedTokens, MessageCode code, Func<string, string> content)
      => new(code,
             involvedTokens.Any()
-            ? (involvedTokens.First().StartIndex..(involvedTokens.Last().StartIndex + involvedTokens.Last().Length + 1)).Some()
+            ? (involvedTokens.First().StartIndex..(involvedTokens.Last().StartIndex + involvedTokens.Last().Length)).Some()
             : Option.None<Range>(),
             content);
 }

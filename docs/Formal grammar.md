@@ -102,14 +102,15 @@ $$
     \text{ouvrirLecture}(⟨Expression⟩);\\
 \end{cases}
 \\
-⟨Alternative⟩ &\to \begin{split}
-&   \text{si} (⟨Expression⟩) \text{alors} ⟨Bloc⟩\\
-&   \{\text{sinonsi} (⟨Expression⟩) \text{alors} ⟨Bloc⟩\}^*\\
-&   \{\text{sinon} ⟨Bloc⟩\}^?\\
-&   \text{finsi}\\
-\end{split}
+⟨Alternative⟩ &\to ⟨Alternative.Si⟩ ⟨Alternative.SinonSi⟩^* ⟨Alternative.Sinon⟩^? \text{finsi}
 \\
-⟨Assignation⟩ &\to identifiant = ⟨Expression⟩;
+⟨Alternative.Si⟩ &\to \text{si} (⟨Expression⟩) \text{alors} ⟨Bloc⟩
+\\
+⟨Alternative.SinonSi⟩ &\to \text{sinonsi} (⟨Expression⟩) \text{alors} ⟨Bloc⟩\
+\\
+⟨Alternative.Sinon⟩ &\to \text{sinon} ⟨Bloc⟩
+\\
+⟨Assignation⟩ &\to ⟨ExpressionLvalue⟩ = ⟨Expression⟩;
 \\
 ⟨BouclePour⟩ &\to \begin{split}
 &    \text{pour}\ identifiant
@@ -130,10 +131,14 @@ $$
 \\
 ⟨Selon⟩ &\to \begin{split}
 &   \text{selon} ⟨Expression⟩ \text{c'est}\\
-&   \{\text{quand} ⟨Expression⟩ => ⟨Instruction⟩^+\}^*\\
-&   \{\text{quand\ autre} => ⟨Instruction⟩^+\}^?\\
+&   ⟨Selon.Quand⟩^*\\
+&   ⟨Selon.QuandAutre⟩^?\\
 &   \text{finselon}\\
 \end{split}
+\\
+⟨Selon.Quand⟩ &\to \text{quand} ⟨Expression⟩ => ⟨Instruction⟩^+\
+\\
+⟨Selon.QuandAutre⟩ &\to \text{quand\ autre} => ⟨Instruction⟩^+\
 
 \\&\textbf{Expressions}\notag\\
 
@@ -145,13 +150,18 @@ $$
 
 \\&\textbf{Opérations}\notag\\
 
-⟨Expression_1⟩ &\to \begin{cases}
-    (⟨Expression⟩)\\
-    ⟨Expression⟩[⟨Expression⟩^{+|,}]\\
-    ⟨Appel⟩\\
-    ⟨Littéral⟩\\
+⟨ExpressionLvalue⟩ &\to \begin{cases}
+    (⟨ExpressionLvalue⟩)\\
     identifiant\\
     ⟨Expression⟩.identifiant\\
+    ⟨Expression⟩[⟨Expression⟩^{+|,}]\\
+\end{cases}
+\\
+⟨Expression_1⟩ &\to \begin{cases}
+    ⟨ExpressionLvalue⟩\\
+    (⟨Expression⟩)\\
+    ⟨Appel⟩\\
+    ⟨Littéral⟩\\
     \text{FdF}(⟨Expression⟩)\\
 \end{cases}
 \\

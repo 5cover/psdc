@@ -18,7 +18,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         Dictionary<ScopedNode, Scope> scopes = new();
         bool seenMainProgram = false;
 
-        AddScopeIfNecessary(null, root);
+        AddScope(null, root);
         foreach (var decl in root.Declarations) {
             AnalyzeDeclaration(scopes[root], decl);
         }
@@ -112,15 +112,15 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             switch (stmt) {
             case Node.Statement.Alternative alternative:
                 AnalyzeExpression(parentScope, alternative.If.Condition);
-                AddScopeIfNecessary(parentScope, alternative.If);
+                AddScope(parentScope, alternative.If);
                 HandleScopedBlock(alternative.If);
                 foreach (var elseIf in alternative.ElseIfs) {
-                    AddScopeIfNecessary(parentScope, elseIf);
                     AnalyzeExpression(parentScope, elseIf.Condition);
+                    AddScope(parentScope, elseIf);
                     HandleScopedBlock(elseIf);
                 }
                 alternative.Else.MatchSome(@else => {
-                    AddScopeIfNecessary(parentScope, @else);
+                    AddScope(parentScope, @else);
                     HandleScopedBlock(@else);
                 });
                 break;
@@ -191,6 +191,18 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             case Node.Statement.WhileLoop whileLoop:
                 HandleScopedBlock(whileLoop);
                 break;
+            case Node.Statement.Switch switchCase:
+                AnalyzeExpression(parentScope, switchCase.Expression);
+                foreach (var @case in switchCase.Cases) {
+                    AnalyzeExpression(parentScope, @case.When);
+                    AddScope(parentScope, @case);
+                    HandleScopedBlock(@case);
+                }
+                switchCase.Default.MatchSome(@default => {
+                    AddScope(parentScope, @default);
+                    HandleScopedBlock(@default);
+                });
+                break;
 
             default:
                 throw stmt.ToUnmatchedException();
@@ -243,8 +255,13 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         void AddScopeIfNecessary(Scope? parentScope, Node node)
         {
             if (node is ScopedNode sn) {
-                scopes[sn] = new(parentScope);
+                AddScope(parentScope, sn);
             }
+        }
+
+        void AddScope(Scope? parentScope, ScopedNode scopedNode)
+        {
+            scopes.Add(scopedNode, new(parentScope));
         }
 
         void AddParameters(Scope scope, IEnumerable<Symbol.Parameter> parameters)

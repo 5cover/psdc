@@ -64,10 +64,10 @@ internal static class Program
                 Console.ResetColor();
 
                 // Part of line after error
-                Console.Error.WriteLine($"{faultyLine[endPos.Column..].TrimEnd()}\n");
-            }, none: () => {
-                Console.Error.WriteLine($"{message.Type}: {message.Content(input)}");
-            });
+                Console.Error.WriteLine($"{faultyLine[endPos.Column..].TrimEnd()}");
+            },
+            none: () => Console.Error.WriteLine($"{message.Type}: {message.Content(input)}"));
+            Console.WriteLine();
         }
     }
 }
