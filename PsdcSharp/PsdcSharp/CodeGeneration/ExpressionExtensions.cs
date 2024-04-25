@@ -38,6 +38,9 @@ internal static class ExpressionExtensions
          => new EvaluatedType.Primitive(PrimitiveType.Real).Some<EvaluatedType, ErrorProvider>(),
         Node.Expression.Literal.String str
          => new EvaluatedType.StringLengthedKnown(str.Value.Length).Some<EvaluatedType, ErrorProvider>(),
+        Node.Expression.FunctionCall call
+         => scope.GetSymbol<Symbol.Function>(call.Name)
+            .Map(func => func.ReturnType).OrWithError((ErrorProvider)(tokens => Message.ErrorUndefinedSymbol<Symbol.Function>(tokens, call.Name))),
         _ => throw expression.ToUnmatchedException(),
     };
 

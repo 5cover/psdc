@@ -34,22 +34,19 @@ internal sealed record Message(
     public static Message ErrorUnknownToken(Range range)
      => new(MessageCode.UnknownToken,
             range.Some(),
-            input => $"unknown token: '{input[range]}'");
+            input => $"stray `{input[range]}` in program");
 
-    public static Message ErrorSyntax<T>(IEnumerable<Token> sourceTokens, ParseError error)
-     => Create(sourceTokens, MessageCode.SyntaxError, input => {
-         StringBuilder msgContent = new();
-         msgContent.Append($"syntax error on {typeof(T).Name}: ");
+    public static Message ErrorSyntax(Partition<Token> sourceTokens, ParseError error)
+     => Create(error.ErroneousToken.Map(token => sourceTokens.Append(token)).ValueOr(sourceTokens), MessageCode.SyntaxError, input => {
+         StringBuilder msgContent = new("expected ");
 
          _ = error.ExpectedTokens.Count switch {
-             1 => msgContent.Append($"expected {error.ExpectedTokens.Single().Humanize()}"),
-             > 1 => msgContent.Append("expected ").AppendJoin(", ", error.ExpectedTokens.Select(t => t.Humanize())),
-             _ => throw new UnreachableException("expected tokens set is empty"),
+             0 => throw new UnreachableException("tokens set is empty"),
+             <= 3 => msgContent.AppendJoin(", ", error.ExpectedTokens),
+             _ => msgContent.Append(error.ExpectedProductionName),
          };
 
-         msgContent.Append("; ").Append(sourceTokens.LastOrNone().Match(
-             token => $"{token.ErrorMessagePart.ValueOr($"got '{input.Substring(token.StartIndex, token.Length)}'")}",
-             none: () => "got nothing"));
+         error.ErroneousToken.MatchSome(token => msgContent.Append($", got {token}"));
 
          return msgContent.ToString();
      });
@@ -60,11 +57,11 @@ internal sealed record Message(
 
     public static Message ErrorUndefinedSymbol<TSymbol>(IEnumerable<Token> sourceTokens, string symbolName) where TSymbol : Symbol
      => Create(sourceTokens, MessageCode.UndefinedSymbol,
-        _ => $"undefined {SymbolExtensions.GetKind<TSymbol>()} in current scope: '{symbolName}'");
+        _ => $"{SymbolExtensions.GetKind<TSymbol>()} `{symbolName}` undefined in current scope");
 
     public static Message ErrorRedefinedSymbol(Symbol newSymbol, Symbol existingSymbol)
      => Create(newSymbol.SourceTokens, MessageCode.RedefinedSymbol,
-        _ => $"defining {newSymbol.GetKind()} '{existingSymbol.Name}' but a {existingSymbol.GetKind()} of the same name is already defined in the current scope");
+        _ => $"{newSymbol.GetKind()} `{existingSymbol.Name}` is a redefinition (a {existingSymbol.GetKind()} already exists)");
 
     public static Message ErrorRedefinedMainProgram(Node.Declaration.MainProgram mainProgram)
      => Create(mainProgram.SourceTokens, MessageCode.RedefinedMainProgram,
@@ -76,7 +73,7 @@ internal sealed record Message(
 
     public static Message ErrorSignatureMismatch<TSymbol>(TSymbol actualSig, TSymbol expectedSig) where TSymbol : Symbol
      => Create(actualSig.SourceTokens, MessageCode.SignatureMismatch,
-        input => $"this signature of {SymbolExtensions.GetKind<TSymbol>()} {actualSig.Name} differs from previous signature ('{expectedSig.SourceTokens.GetSourceCode(input)}')");
+        input => $"this signature of {SymbolExtensions.GetKind<TSymbol>()} {actualSig.Name} differs from previous signature (`{expectedSig.SourceTokens.GetSourceCode(input)}`)");
 
     public static Message ErrorCallParameterMismatch(CallNode callNode)
      => Create(callNode.SourceTokens, MessageCode.CallParameterMismatch,
@@ -84,7 +81,7 @@ internal sealed record Message(
 
     public static Message ErrorConstantAssignment(Node.Statement.Assignment assignment, Symbol.Constant constant)
      => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
-        _ => $"reassigning constant '{constant.Name}'");
+        _ => $"reassigning constant `{constant.Name}`");
 
     public static Message ErrorDeclaredInferredTypeMismatch(IEnumerable<Token> sourceTokens, EvaluatedType declaredType, EvaluatedType inferredType)
      => Create(sourceTokens, MessageCode.DeclaredInferredTypeMismatch,
@@ -96,11 +93,11 @@ internal sealed record Message(
 
     public static Message ErrorStructureDuplicateComponent(IEnumerable<Token> sourceTokens, string componentName)
      => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
-        _ => $"duplicate component '{componentName}' in structure");
+        _ => $"duplicate component `{componentName}` in structure");
 
     public static Message WarningInputParameterAssignment(Node.Statement.Assignment assignment)
      => Create(assignment.SourceTokens, MessageCode.InputParameterAssignment,
-        _ => $"reassinging input parameter '{assignment.Target}'");
+        _ => $"reassinging input parameter `{assignment.Target}`");
     public static Message WarningDivisionByZero(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.DivisionByZero,
         _ => "division by zero (will cause runtime error)");

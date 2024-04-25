@@ -116,6 +116,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
     #region Statements
 
     private StringBuilder AppendStatement(StringBuilder output, ReadOnlyScope parentScope, Node.Statement stmt) => stmt switch {
+        Node.Statement.Nop => Indent(output).AppendLine(";"),
         Node.Statement.Alternative alternative => AppendAlternative(output, alternative),
         Node.Statement.Assignment assignment => AppendAssignment(output, assignment),
         Node.Statement.DoWhileLoop doWhileLoop => AppendDoWhileLoop(output, doWhileLoop),

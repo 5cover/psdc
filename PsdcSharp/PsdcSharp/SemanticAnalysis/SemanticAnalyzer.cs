@@ -15,7 +15,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
 {
     public SemanticAst AnalyzeSemantics()
     {
-        Dictionary<ScopedNode, Scope> scopes = new();
+        Dictionary<ScopedNode, Scope> scopes = [];
         bool seenMainProgram = false;
 
         AddScope(null, root);
@@ -110,6 +110,8 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             AddScopeIfNecessary(parentScope, stmt);
 
             switch (stmt) {
+            case Node.Statement.Nop nop:
+                break;
             case Node.Statement.Alternative alternative:
                 AnalyzeExpression(parentScope, alternative.If.Condition);
                 AddScope(parentScope, alternative.If);
@@ -341,7 +343,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
 
         Option<EvaluatedType.Structure> CreateStructureOrError(ReadOnlyScope scope, Node.Type.StructureDefinition structure)
         {
-            Dictionary<string, EvaluatedType> components = new();
+            Dictionary<string, EvaluatedType> components = [];
             bool atLeastOneNameWasntAdded = false;
             foreach (var comp in structure.Components) {
                 CreateTypeOrError(scope, comp.Type).Match(type => {

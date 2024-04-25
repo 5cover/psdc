@@ -8,7 +8,7 @@ internal sealed class IncludeSet
     public const string StdIo = "<stdio.h>";
     public const string StdLib = "<stdlib.h>";
 
-    private readonly HashSet<string> _headers = new();
+    private readonly HashSet<string> _headers = [];
 
     public void Ensure(string name) => _headers.Add(name);
 

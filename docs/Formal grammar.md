@@ -93,13 +93,14 @@ $$
     \text{retourne} ⟨Expression⟩;\\
     \text{assigner}(⟨Expression⟩, ⟨Expression⟩);\\
     \text{écrire}(⟨Expression⟩, ⟨Expression⟩);\\
-    \text{écrireÉcran}(⟨Expression⟩^{+|,});\\
+    \text{écrireÉcran}(⟨Expression⟩^{*|,});\\
     \text{fermer}(⟨Expression⟩);\\
     \text{lire}(⟨Expression⟩, ⟨Expression⟩);\\
     \text{lireClavier}(⟨Expression⟩);\\
     \text{ouvrirAjout}(⟨Expression⟩);\\
     \text{ouvrirÉcriture}(⟨Expression⟩);\\
     \text{ouvrirLecture}(⟨Expression⟩);\\
+    ;\\
 \end{cases}
 \\
 ⟨Alternative⟩ &\to ⟨Alternative.Si⟩ ⟨Alternative.SinonSi⟩^* ⟨Alternative.Sinon⟩^? \text{finsi}

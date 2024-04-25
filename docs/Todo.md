@@ -17,6 +17,7 @@ Project roadmap:
 - ~~Functions~~
 - ~~Structures~~
 - ~~Selon~~
+- Fix errors
 - Lvalues
 - Files
 - CLI

@@ -9,7 +9,7 @@ internal partial class CodeGeneratorC
     private (string format, IReadOnlyList<Node.Expression> arguments) BuildFormatString(
         ReadOnlyScope scope, IEnumerable<Node.Expression> parts)
     {
-        List<Node.Expression> arguments = new();
+        List<Node.Expression> arguments = [];
         StringBuilder format = new();
 
         foreach (var part in parts) {

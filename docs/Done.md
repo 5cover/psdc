@@ -371,3 +371,25 @@ currently Scope has a `Scope? ParentScope` field. This means it's up to the Pars
 
 - solution 1 : remove Scope from nodes and build a scope tree in the semantic analyzer (will have to be traversed in semantic analyzer & code generator)
 - **solution 2** : semantic analyzer will create the scopes
+
+## SourceTokens shouldn't contain the token that caused the error
+
+SourceTokens indicates how far we've come in the parsing.
+
+The `Token` that caused the error will now be stored in `ParseError`.
+
+The reason is that by putting too much in source tokens, we increase `_readCount` in `ParseOperation` too far ahead which causes us to miss important tokens for further parsing.
+
+Example:
+
+```text
+programme Hello c'est
+début
+    écrireÉcran("Hello")
+    écrireÉcran("Hello");
+fin
+```
+
+Here the first `écrireÉcran` misses the terminating semi-colon. This causes a syntax error. The source tokens are incomplete first statement. In the old system, we would also have had the second `écrireÉcran` keyword. This was invalid.
+
+However we will still add SourceToken of failed inbound ParseResults in `ParseOperation` methods like `Parse`.

@@ -42,32 +42,45 @@ internal static class Program
 
     private static void PrintMessages(MessageProvider step, string input)
     {
+        var stderr = Console.Error;
+
         while (step.TryDequeueMessage(out Message? message)) {
             var msgColor = message.Type.GetConsoleColor();
-            msgColor.DoInColor(() => Console.Error.Write($"[P{(int)message.Code:d4}] "));
+            msgColor.DoInColor(() => stderr.Write($"[P{(int)message.Code:d4}] "));
 
             message.SourceCodeRange.Match(range => {
-                Position startPos = input.GetPositionAt(range.Start);
-                Position endPos = input.GetPositionAt(range.End);
+                Position start = input.GetPositionAt(range.Start);
+                Position end = input.GetPositionAt(range.End);
 
-                // if the error spans over multiple lines, take the last line
-                Position errorPos = startPos.Line == endPos.Line ? startPos : endPos;
-                Console.Error.WriteLine($"{errorPos}: {message.Type.ToString().ToLower()}: {message.Content(input)}");
+                // If the error spans over multiple line, show only the last line.
+                if (start.Line != end.Line) {
+                    start = new(end.Line, 0);
+                }
 
-                ReadOnlySpan<char> faultyLine = input.GetLine(errorPos.Line);
+                stderr.WriteLine($"{start}: {message.Type.ToString().ToLower()}: {message.Content(input)}");
+
+                ReadOnlySpan<char> faultyLine = input.GetLine(start.Line);
 
                 // Part of line before error
-                Console.Error.Write($"\t---> {faultyLine[..errorPos.Column].TrimStart()}"); // trim to remove indentation
+                stderr.Write($"{GetErrorLinePrefix(start.Line)}{faultyLine[..start.Column]}");
 
                 msgColor.SetColor();
-                Console.Error.Write($"{faultyLine[errorPos.Column..endPos.Column]}");
+                stderr.Write($"{faultyLine[start.Column..end.Column]}");
                 Console.ResetColor();
 
                 // Part of line after error
-                Console.Error.WriteLine($"{faultyLine[endPos.Column..].TrimEnd()}");
+                stderr.WriteLine($"{faultyLine[end.Column..].TrimEnd()}");
+
+                // Arrow below to indicate the precise location of the error even if colors aren't available
+                stderr.Write(GetErrorLinePrefix(new string(' ', (int)Math.Log10(start.Line) + 1)));
+                var offset = Math.Max(faultyLine.GetLeadingWhitespaceCount(), start.Column);
+                stderr.WriteNTimes(offset, ' ');
+                msgColor.DoInColor(() => stderr.WriteLine('^'));
+
+                static string GetErrorLinePrefix(object lineNo) => $"    {lineNo} | ";
             },
-            none: () => Console.Error.WriteLine($"{message.Type}: {message.Content(input)}"));
-            Console.WriteLine();
+            none: () => stderr.WriteLine($"{message.Type}: {message.Content(input)}"));
+            stderr.WriteLine();
         }
     }
 }

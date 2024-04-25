@@ -18,19 +18,28 @@ internal partial class Parser
     .MapResult(resultCreator);
 
     private static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, ParseMethod<T>> parserMap)
-     => tokens.FirstOrDefault() is { } firstToken && parserMap.TryGetValue(firstToken.Type, out var parser)
-        ? parser(tokens)
-        : ParseResult.Fail<T>(new(tokens, 1), ParseError.FromExpectedTokens(parserMap.Keys));
+    {
+        var firstToken = tokens.FirstOrNone();
+        return firstToken.HasValue && parserMap.TryGetValue(firstToken.Value.Type, out var parser)
+            ? parser(tokens)
+            : ParseResult.Fail<T>(Partition.Empty(tokens), ParseError.Create<T>(firstToken, parserMap.Keys));
+    }
 
     private static ParseResult<T> GetByTokenType<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, T> map)
-     => tokens.FirstOrDefault() is { } firstToken && map.TryGetValue(firstToken.Type, out var t)
-        ? ParseResult.Ok(new(tokens, 1), t)
-        : ParseResult.Fail<T>(new(tokens, 1), ParseError.FromExpectedTokens(map.Keys));
+    {
+        var firstToken = tokens.FirstOrNone();
+        return firstToken.HasValue && map.TryGetValue(firstToken.Value.Type, out var t)
+            ? ParseResult.Ok(new(tokens, 1), t)
+            : ParseResult.Fail<T>(Partition.Empty(tokens), ParseError.Create<T>(firstToken, map.Keys));
+    }
 
     private static ParseResult<Token> ParseTokenOfType(
         IEnumerable<Token> tokens,
         IEnumerable<TokenType> allowedTokensTypes)
-     => tokens.FirstOrDefault() is { } firstToken && allowedTokensTypes.Contains(firstToken.Type)
-        ? ParseResult.Ok(new(tokens, 1), firstToken)
-        : ParseResult.Fail<Token>(new(tokens, 1), new ParseError(allowedTokensTypes.ToHashSet()));
+    {
+        var firstToken = tokens.FirstOrNone();
+        return firstToken.HasValue && allowedTokensTypes.Contains(firstToken.Value.Type)
+            ? ParseResult.Ok(new(tokens, 1), firstToken.Value)
+            : ParseResult.Fail<Token>(Partition.Empty(tokens), ParseError.Create<Token>(firstToken, allowedTokensTypes));
+    }
 }

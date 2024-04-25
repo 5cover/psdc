@@ -11,7 +11,7 @@ internal interface ReadOnlyScope
 internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
 {
     private readonly Scope? _parentScope = parentScope;
-    private readonly Dictionary<string, Symbol> _symbolTable = new();
+    private readonly Dictionary<string, Symbol> _symbolTable = [];
 
     public IReadOnlyDictionary<string, Symbol> Symbols => _symbolTable;
 

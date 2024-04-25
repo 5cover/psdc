@@ -93,6 +93,8 @@ internal interface Node
 
     internal interface Statement : Node
     {
+        internal sealed class Nop(Partition<Token> sourceTokens)
+        : NodeImpl(sourceTokens), Statement;
 
         internal sealed class Alternative(Partition<Token> sourceTokens,
             Alternative.IfClause @if,

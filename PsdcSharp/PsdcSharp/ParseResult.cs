@@ -9,12 +9,15 @@ internal interface ParseResult<out T> : Option<T, ParseError>
     ParseResult<T> WithSourceTokens(Partition<Token> newSourceTokens);
 }
 
-internal sealed record ParseError(IReadOnlySet<TokenType> ExpectedTokens)
+internal sealed record ParseError(Option<Token> ErroneousToken, IReadOnlySet<TokenType> ExpectedTokens, string ExpectedProductionName)
 {
-    public static ParseError FromExpectedTokens(IEnumerable<TokenType> expectedTokens)
-     => new(expectedTokens.ToHashSet());
-    public static ParseError FromExpectedTokens(params TokenType[] expectedTokens)
-     => FromExpectedTokens((IEnumerable<TokenType>)expectedTokens);
+
+    public static ParseError Create<T>(Option<Token> erroneousToken, IEnumerable<TokenType> expectedTokens)
+     => new(erroneousToken, expectedTokens.ToHashSet(), typeof(T).Name.ToLower());
+    public static ParseError Create<T>(Option<Token> erroneousToken, TokenType expectedTokens)
+     => new(erroneousToken, new HashSet<TokenType> { expectedTokens }, typeof(T).Name.ToLower());
+
+    public bool IsEquivalent(ParseError? other) => other is not null && other.ExpectedTokens.SetEquals(ExpectedTokens);
 }
 
 internal static class ParseResult
@@ -33,7 +36,7 @@ internal static class ParseResult
             return original;
         }
         ParseResult<T> alt = alternative();
-        return new ParseResultImpl<T>(alt.HasValue, alt.Value, alt.Error?.CombineWith(original.Error), alt.SourceTokens);
+        return new ParseResultImpl<T>(alt.HasValue, alt.Value, alt.Error?.CombineWith<T>(original.Error), alt.SourceTokens);
     }
 
     public static ParseResult<TResult> Map<T, TResult>(this ParseResult<T> original, Func<Partition<Token>, T, TResult> transform)
@@ -44,8 +47,9 @@ internal static class ParseResult
     public static ParseResult<TResult> FlatMap<T, TResult>(this ParseResult<T> pr, Func<T, ParseResult<TResult>> transform)
      => pr.HasValue ? transform(pr.Value) : Fail<TResult>(pr.SourceTokens, pr.Error);
 
-    private static ParseError CombineWith(this ParseError original, ParseError @new)
-     => new(original.ExpectedTokens.Concat(@new.ExpectedTokens).ToHashSet());
+    private static ParseError CombineWith<T>(this ParseError original, ParseError @new)
+     => new(original.ErroneousToken.Else(@new.ErroneousToken),
+            original.ExpectedTokens.Concat(@new.ExpectedTokens).ToHashSet(), typeof(T).Name.ToLower());
 
     private sealed record ParseResultImpl<T>(
         bool HasValue,

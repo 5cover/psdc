@@ -68,6 +68,11 @@ internal static class Option
     public static Option<TResult, TError> FlatMap<T, TError, TResult>(this Option<T, TError> option, Func<T, Option<TResult, TError>> transform)
      => option.HasValue ? transform(option.Value) : None<TResult, TError>(option.Error);
 
+    public static Option<T> Else<T>(this Option<T> original, Option<T> other)
+     => original.HasValue
+        ? original
+        : other;
+
     public static Option<TResult, TError> OrWithError<TResult, TError>(this Option<TResult> option, TError error)
      => new OptionImpl<TResult, TError>(option.HasValue, option.Value, option.HasValue ? default : error);
 

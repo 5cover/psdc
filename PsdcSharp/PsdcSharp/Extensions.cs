@@ -12,6 +12,11 @@ public readonly record struct Position(int Line, int Column)
     public override string ToString() => $"L {Line + 1}, col {Column + 1}";
 }
 
+public static class Partition
+{
+    public static Partition<T> Empty<T>(IEnumerable<T> source) => new(source, 0);
+}
+
 public readonly record struct Partition<T>(IEnumerable<T> Source, int Count) : IEnumerable<T>
 {
     public Partition(params T[] values) : this(values, values.Length)
@@ -110,6 +115,17 @@ internal static class Extensions
         return success ? lines.Current : throw new ArgumentOutOfRangeException(nameof(lineNumber), "Line number is out of range");
     }
 
+    public static int GetLeadingWhitespaceCount(this ReadOnlySpan<char> str)
+    {
+        var count = 0;
+        var enumerator = str.GetEnumerator();
+        while (enumerator.MoveNext() && char.IsWhiteSpace(enumerator.Current)) {
+            count++;
+        }
+
+        return count;
+    }
+
     public static void Raise(this EventHandler eventHandler, object sender)
      => eventHandler.Invoke(sender, EventArgs.Empty);
 
@@ -143,6 +159,17 @@ internal static class Extensions
     {
         var lastSourceToken = sourceTokens.Last();
         return input[sourceTokens.First().StartIndex..(lastSourceToken.StartIndex + lastSourceToken.Length)];
+    }
+
+    public static void WriteNTimes(this TextWriter writer, int n, char c)
+    {
+        if (n < 0) {
+            throw new ArgumentOutOfRangeException(nameof(n), "cannot be negative");
+        }
+        while (n > 0) {
+            n--;
+            writer.Write(c);
+        }
     }
 }
 

@@ -6,20 +6,17 @@ internal sealed class StringTokenRule : TokenRule
 {
     private readonly StringComparison _comparison;
     private readonly string _normalizedExpected;
-    private readonly TokenType _tokenType;
-    public StringTokenRule(TokenType tokenType, string expected) : this(StringComparison.OrdinalIgnoreCase, tokenType, expected)
-    {
-    }
 
-    public StringTokenRule(StringComparison comparison, TokenType tokenType, string expected)
+    public StringTokenRule(string expected, StringComparison comparison)
     {
-        (_tokenType, Expected, _normalizedExpected, _comparison) = (tokenType, expected, expected.RemoveDiacritics(), comparison);
+        (Expected, _normalizedExpected, _comparison) = (expected, expected.RemoveDiacritics(), comparison);
         // Without diacritics should be the same length
         Debug.Assert(_normalizedExpected.Length == Expected.Length);
     }
+
     public string Expected { get; }
 
-    public Option<Token> TryExtract(string input, int startIndex)
+    public Option<Token> TryExtract(TokenType tokenType, string input, int startIndex)
     {
         // Not >= as startIndex is already the index of the first character
         if (startIndex + Expected.Length > input.Length) {
@@ -30,7 +27,7 @@ internal sealed class StringTokenRule : TokenRule
 
         return target.Equals(_normalizedExpected, _comparison)
             ? new Token(
-            _tokenType,
+            tokenType,
             null,
             startIndex,
             Expected.Length).Some()
