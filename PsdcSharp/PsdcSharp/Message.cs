@@ -37,7 +37,7 @@ internal sealed record Message(
             input => $"stray `{input[range]}` in program");
 
     public static Message ErrorSyntax(Partition<Token> sourceTokens, ParseError error)
-     => Create(error.ErroneousToken.Map(token => sourceTokens.Append(token)).ValueOr(sourceTokens), MessageCode.SyntaxError, input => {
+     => Create(error.ErroneousToken.Map(Extensions.Yield).ValueOr(sourceTokens), MessageCode.SyntaxError, input => {
          StringBuilder msgContent = new("expected ");
 
          _ = error.ExpectedTokens.Count switch {

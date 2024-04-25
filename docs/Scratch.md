@@ -13,11 +13,13 @@ If ecrireEcran is mispelled, we get "expected ecrireEcran" for all tokens up to 
 
 Then we can just skip that amount of tokens next time we parse.
 
-tedious and prolly unreliable
+Unreliable since not all producton have a fixed amount of expected tokens.
 
 ### Solution 2 : who cares, it's not that big of a deal
 
-it clutters the message list
+It clutters the message list.
+
+> **Minimize *cascaded* errors.** Once a single error is found, the parser no longer really knows what’s going on. It tries to get itself back on track and keep going, but if it gets confused, it may report a slew of ghost errors that don’t indicate other real problems in the code. When the first error is fixed, those phantoms disappear, because they reflect only the parser’s own confusion. Cascaded errors are annoying because they can scare the user into thinking their code is in a worse state than it is.(*<https://craftinginterpreters.com/parsing-expressions.html>*)
 
 ### Solution 3 : skim until first token of the target node, then resume parsing
 
@@ -27,7 +29,7 @@ We need to give the multi-parsing method an answer to the question "what is the 
 
 It will need to be a params to account for cases where there may be multiple first tokens. And we will need to add a new argument to multi-parsing method. This will clutter the code and increase duplication.
 
-### Solution 4 : skim until valid or failure with different error expected tokens
+### Solution 4 : skim until valid or failure with different error expected tokens (implemented)
 
 `ParseError.IsEquivalent` because equality would incur comparison of ErroneousToken.
 
@@ -88,7 +90,9 @@ test.c:4:13: error: expected ‘;’ before ‘puts’
       |     ~~~~ 
 ```
 
-### Solution 5 : keep parsing after error in `ParseOperation` (implemented)
+**Conclusion** : this solutions works, it's not that bad, but we can so better with **solutions 6 & 7**.
+
+### Solution 5 : keep parsing after error in `ParseOperation`
 
 Right now when a `ParseOperation` switches to the failure implementation it stops reading tokens altogether.
 
@@ -172,9 +176,59 @@ So we will get 4 errors and not more since we won't be reading the next `écrire
 
 An adjustment that we should make though is keeping a list of the errors that occured in the `ParseOperation`. Since now that we don't stop on the first error we can have multiple errors.
 
+This doesn't really work. For expressions it can result in infinite recursion if we allow not to parse the stuff that comes before the nested expression (such as the opening bracket in `Bracketed`). We can add a boolean parameter to force it to always parse, but there is another problem : it gets messy as we may end up parsing tokens that were never meant to be part of this production.
+
+### Solution 6 : Panic mode synchronization productions
+
+>Of all the recovery techniques devised in yesteryear, the one that best stood the test of time is called—somewhat alarmingly—panic mode. As soon as the parser detects an error, it enters panic mode. It knows at least one token doesn’t make sense given its current state in the middle of some stack of grammar productions.
+>
+>Before it can get back to parsing, it needs to get its state and the sequence of forthcoming tokens aligned such that the next token does match the rule being parsed. This process is called synchronization.
+>
+>To do that, we select some rule in the grammar that will mark the synchronization point. The parser fixes its parsing state by jumping out of any nested productions until it gets back to that rule. Then it synchronizes the token stream by discarding tokens until it reaches one that can appear at that point in the rule.
+>
+>Any additional real syntax errors hiding in those discarded tokens aren’t reported, but it also means that any mistaken cascaded errors that are side effects of the initial error aren’t falsely reported either, which is a decent trade-off.
+>
+>The traditional place in the grammar to synchronize is between statements.. *(Mistral AI)*
+>
+>Let's define the synchronization point token types. When an error occurs in multi-parsing, we will read until a synchronization point token is encountered (including it), and resume parsing.
+>
+>The exact list of synchronization points will depend on what we're parsing. (*<https://craftinginterpreters.com/parsing-expressions.htm>*)
+
+Our synchronization points will be
+
+- `Declaration`
+- `Statement`
+
+### Solution 7 : Error productions
+
+> Another way to handle common syntax errors is with **error productions**. You augment the grammar with a rule that *successfully* matches the *erroneous* syntax. The parser safely parses it but then reports it as an error instead of producing a syntax tree. (*<https://craftinginterpreters.com/parsing-expressions.htm>*)
+
+Error productions can be useful as a bonus, used in conjunction with **Solution 6** to provide more helpful error messages.
+
+But they can't replace panic mode as it would be basically impossible to predict all possible syntax errors.
+
+We can start from a list of most common syntax errors in similar languages, but let's implement panic mode first.
+
+Another advantage of error productions that i see is the ability to provide alternative errors that the parser cannot detect on its own. For example, forgetting the effective parameter mode :
+
+```text
+proc(5);
+```
+
+Gives:
+
+```text
+[P0002] L 3, col 7: error: expected `)`, got integer literal `5`
+    2 |     d(5);
+      |       ^
+[P0002] L 3, col 7: error: expected statement, got integer literal `5`
+    2 |     d(5);
+      |       ^
+```
+
 ## identifier and word primitive obession
 
-Create a `Word` class that abstracts a string but with restrictions (`\w+`)
+Create a `Word` class that abstracts a string but with restrictions (`[\p{L}_]+`)
 
 The point would be to prevent invalid identifiers. But we already check in the tokenizer. So what's the point?
 
@@ -187,6 +241,10 @@ This could be useful for string constants.
 We know the ast is build from the bottom up, but it could be interesting to see it animated.
 
 Simply add some graph-building logic in the NodeImpl constructor.
+
+## Contextual keyword
+
+Keywords like `de`, `a` are very short. 
 
 ## Lvalue/rvalue
 
@@ -220,34 +278,5 @@ Yes. We need some sort of restriction on which expressions can be lvalues so we 
 internal interface LValue : Expression
 {
     
-}
-```
-
-## Fix ParseOperation multiparsing logic
-
-We need to cleanup the logic for multiparsing.
-
-We have two multiplicities :
-
-1. \* : zero or more
-2. \+ : one or more
-
-We have 2 strategies :
-
-2. Parse until a token type is encountered
-3. Parse separated by a token type.
-
-## Better TokenType names
-
-Currently we end up showing the type name which is dirty.
-
-```cs
-internal sealed class TokenType
-{
-    private TokenType(string displayName) => DisplayName = displayName;
-
-    public string DisplayName { get; }
-
-    public static TokenTypeNew OpenBracket { get; } = new("(");
 }
 ```

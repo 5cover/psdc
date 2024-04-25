@@ -47,8 +47,8 @@ internal abstract class TokenType
 
     internal sealed class Symbol : Ruled<StringTokenRule>
     {
-        private Symbol(string code, bool caseSensitive = false)
-        : base(code, true, new StringTokenRule(code, caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase))
+        private Symbol(string code)
+        : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
         {
 
             _instances.Add(this);
@@ -108,8 +108,8 @@ internal abstract class TokenType
 
     internal sealed class Keyword : Ruled<WordTokenRule>
     {
-        private Keyword(string word, bool caseSensitive = false)
-        : base(word, true, new WordTokenRule(word, caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase))
+        private Keyword(string word)
+        : base(word, true, new WordTokenRule(word, StringComparison.Ordinal))
         {
             _instances.Add(this);
         }
@@ -155,17 +155,16 @@ internal abstract class TokenType
 
         #region Builtins
 
-        // Builtin callable names are case sensitive.
-        public static Keyword LireClavier { get; } = new("lireClavier", true);
-        public static Keyword EcrireEcran { get; } = new("écrireEcran", true);
-        public static Keyword Assigner { get; } = new("assigner", true);
-        public static Keyword OuvrirAjout { get; } = new("ouvrirAjout", true);
-        public static Keyword OuvrirEcriture { get; } = new("ouvrirEcriture", true);
-        public static Keyword OuvrirLecture { get; } = new("ouvrirLecture", true);
-        public static Keyword Lire { get; } = new("lire", true);
-        public static Keyword Ecrire { get; } = new("écrire", true);
-        public static Keyword Fermer { get; } = new("fermer", true);
-        public static Keyword Fdf { get; } = new("fdf", true);
+        public static Keyword LireClavier { get; } = new("lireClavier");
+        public static Keyword EcrireEcran { get; } = new("écrireEcran");
+        public static Keyword Assigner { get; } = new("assigner");
+        public static Keyword OuvrirAjout { get; } = new("ouvrirAjout");
+        public static Keyword OuvrirEcriture { get; } = new("ouvrirEcriture");
+        public static Keyword OuvrirLecture { get; } = new("ouvrirLecture");
+        public static Keyword Lire { get; } = new("lire");
+        public static Keyword Ecrire { get; } = new("écrire");
+        public static Keyword Fermer { get; } = new("fermer");
+        public static Keyword Fdf { get; } = new("fdf");
 
         #endregion Builtins
 

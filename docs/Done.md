@@ -393,3 +393,24 @@ fin
 Here the first `écrireÉcran` misses the terminating semi-colon. This causes a syntax error. The source tokens are incomplete first statement. In the old system, we would also have had the second `écrireÉcran` keyword. This was invalid.
 
 However we will still add SourceToken of failed inbound ParseResults in `ParseOperation` methods like `Parse`.
+
+## Better TokenType names
+
+Currently we end up showing the type name which is dirty.
+
+```cs
+internal sealed class TokenType
+{
+    private TokenType(string displayName) => DisplayName = displayName;
+
+    public string DisplayName { get; }
+
+    public static TokenTypeNew OpenBracket { get; } = new("(");
+}
+```
+
+## ParseError production name
+
+Currently the production name is given by the `T` of the `ParseResult`. However that's innacurate as when `ParseError`s are passed around, the `T` will change and we may get inacurrate error.
+
+Fix : add a stirng property, `ProductionName` to `ParseError` and use it in `ErrorSyntax()` (which will no longer need to be generic).
