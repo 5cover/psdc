@@ -21,10 +21,12 @@
 - Two MainPrograms
 - Function/Procdeure Signature mismatch (between prototypes or between definition/prototype)
 - Reassignment of constant
+- Output parameter never assigned
 
 ## Warnings
 
-- Reassignment of input parameter
+Warning : when the code may not work because you're doing something valid but highly unusual/unsupported that is undoubtedly wrong.
+
 - Using file after close
 - Reading to write-only file
 - Writing to read-only file
@@ -38,3 +40,13 @@
 - Expected a value for return in function
 - No value was expected for return in procedure/mainprogram
 - Wrong type for return value in function
+
+## Suggestions
+
+Suggestion : style and formatting guidelines
+
+- Identifier names:
+    - constants UPPER_CASE
+    - types *t*PascalCase
+    - structre components *c_*camelCase
+    - others camelCase

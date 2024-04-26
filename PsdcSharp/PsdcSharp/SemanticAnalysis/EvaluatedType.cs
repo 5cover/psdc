@@ -45,9 +45,9 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
         };
     }
 
-    internal sealed record AliasReference(string Name, EvaluatedType Target) : EvaluatedType
+    internal sealed record AliasReference(Node.Identifier Name, EvaluatedType Target) : EvaluatedType
     {
-        public override string GetRepresentation(string input) => Name;
+        public override string GetRepresentation(string input) => Name.Name;
     }
 
 
@@ -61,7 +61,7 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
         public override string GetRepresentation(string input) => $"chaîne({Length})";
     }
 
-    internal sealed record Structure(IReadOnlyDictionary<string, EvaluatedType> Components) : EvaluatedType
+    internal sealed record Structure(IReadOnlyDictionary<Node.Identifier, EvaluatedType> Components) : EvaluatedType
     {
         public bool Equals(Structure? other) => other is not null
          && other.Components.SequenceEqual(Components);

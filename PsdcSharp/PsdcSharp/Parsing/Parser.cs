@@ -68,7 +68,7 @@ internal sealed partial class Parser : MessageProvider
     {
         var algorithm = ParseOperation.Start(this, _tokens)
         .ParseToken(Keyword.Program)
-        .ParseTokenValue(out var name, Named.Identifier)
+        .Parse(out var name, ParseIdentifier)
         .ParseToken(Keyword.Is)
         .ParseZeroOrMoreUntilToken(out var declarations, tokens => ParseByTokenType(tokens, _declarationParsers), Special.Eof)
     .MapResult(t => new Node.Algorithm(t, name, declarations));
@@ -84,7 +84,7 @@ internal sealed partial class Parser : MessageProvider
 
     private ParseResult<Node.Declaration.Alias> ParseAliasDeclaration(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(Keyword.TypeAlias)
-        .ParseTokenValue(out var name, Named.Identifier)
+        .Parse(out var name, ParseIdentifier)
         .ParseToken(Symbol.OperatorTypeAssignment)
         .Parse(out var type, tokens => ParseType(tokens)
                            .Else(() => ParseStructureDefinition(tokens)))
@@ -94,7 +94,7 @@ internal sealed partial class Parser : MessageProvider
     private ParseResult<Node.Declaration.Constant> ParseConstant(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(Keyword.Constant)
         .Parse(out var type, ParseType)
-        .ParseTokenValue(out var name, Named.Identifier)
+        .Parse(out var name, ParseIdentifier)
         .ParseToken(Symbol.OperatorAssignment)
         .Parse(out var value, ParseExpression)
         .ParseToken(Symbol.Semicolon)
@@ -132,7 +132,7 @@ internal sealed partial class Parser : MessageProvider
 
     private ParseResult<Node.FunctionSignature> ParseFunctionSignature(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(Keyword.Function)
-        .ParseTokenValue(out var name, Named.Identifier)
+        .Parse(out var name, ParseIdentifier)
         .ParseToken(Symbol.OpenBracket)
         .ParseZeroOrMoreSeparated(out var parameters, ParseFormalParameter, Symbol.Comma)
         .ParseToken(Symbol.CloseBracket)
@@ -142,7 +142,7 @@ internal sealed partial class Parser : MessageProvider
 
     private ParseResult<Node.ProcedureSignature> ParseProcedureSignature(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(Keyword.Procedure)
-        .ParseTokenValue(out var name, Named.Identifier)
+        .Parse(out var name, ParseIdentifier)
         .ParseToken(Symbol.OpenBracket)
         .ParseZeroOrMoreSeparated(out var parameters, ParseFormalParameter, Symbol.Comma)
         .ParseToken(Symbol.CloseBracket)
@@ -205,7 +205,7 @@ internal sealed partial class Parser : MessageProvider
     .MapResult(t => new Node.Statement.LireClavier(t, argument));
 
     private ParseResult<Node.Statement.VariableDeclaration> ParseVariableDeclaration(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
-        .ParseOneOrMoreSeparated(out var names, tokens => ParseTokenValue(tokens, Named.Identifier), Symbol.Comma)
+        .ParseOneOrMoreSeparated(out var names, ParseIdentifier, Symbol.Comma)
         .ParseToken(Symbol.Colon)
         .Parse(out var type, ParseCompleteType)
         .ParseToken(Symbol.Semicolon)
@@ -213,20 +213,18 @@ internal sealed partial class Parser : MessageProvider
 
     private ParseResult<Node.Statement> ParserVariableDeclarationOrAssignmentOrProcedureCall(IEnumerable<Token> tokens)
     {
-        ParseResult<Node.Statement.VariableDeclaration> FinishVariableDeclaration(ParseOperation o, IEnumerable<string> names) => o
+        ParseResult<Node.Statement.VariableDeclaration> FinishVariableDeclaration(ParseOperation o, IEnumerable<Node.Identifier> names) => o
             .Parse(out var type, ParseCompleteType)
             .MapResult(t => new Node.Statement.VariableDeclaration(t, names.ToList(), type));
 
         return ParseOperation.Start(this, tokens)
-        .ParseTokenValue(out var ident, Named.Identifier)
+        .Parse(out var ident, ParseIdentifier)
         .Branch(out Node.Statement result, new() {
             [Symbol.OperatorAssignment] = o => o
                 .Parse(out var value, ParseExpression)
             .MapResult(t => new Node.Statement.Assignment(t, ident, value)),
             [Symbol.Comma] = o => FinishVariableDeclaration(o
-                .ParseZeroOrMoreSeparated(out var names,
-                    tokens => ParseTokenValue(tokens, Named.Identifier),
-                    Symbol.Comma)
+                .ParseZeroOrMoreSeparated(out var names, ParseIdentifier, Symbol.Comma)
                 .ParseToken(Symbol.Colon), names.Prepend(ident)),
             [Symbol.Colon] = o => FinishVariableDeclaration(o, ident.Yield()),
             [Symbol.OpenBracket] = o => o
@@ -268,7 +266,7 @@ internal sealed partial class Parser : MessageProvider
 
     private ParseResult<Node.Statement.ForLoop> ParseForLoop(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .ParseToken(Keyword.For)
-        .ParseTokenValue(out var variantName, Named.Identifier)
+        .Parse(out var variantName, ParseIdentifier)
         .ParseToken(Keyword.From)
         .Parse(out var start, ParseExpression)
         .ParseToken(Keyword.To)
@@ -324,7 +322,7 @@ internal sealed partial class Parser : MessageProvider
         .MapResult(t => new Node.Type.String(t)));
 
     private ParseResult<Node.Type.AliasReference> ParseAliasReference(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
-        .ParseTokenValue(out var name, Named.Identifier)
+        .Parse(out var name, ParseIdentifier)
     .MapResult(t => new Node.Type.AliasReference(t, name));
 
     private ParseResult<Node.Type.Array> ParseArrayType(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
@@ -357,7 +355,7 @@ internal sealed partial class Parser : MessageProvider
 
     private ParseResult<Node.FormalParameter> ParseFormalParameter(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .Parse(out var mode, tokens => GetByTokenType(tokens, formalParameterModes))
-        .ParseTokenValue(out var name, Named.Identifier)
+        .Parse(out var name, ParseIdentifier)
         .ParseToken(Symbol.Colon)
         .Parse(out var type, ParseType)
     .MapResult(t => new Node.FormalParameter(t, mode, name, type));
@@ -366,6 +364,10 @@ internal sealed partial class Parser : MessageProvider
         .Parse(out var mode, tokens => GetByTokenType(tokens, effectiveParameterModes))
         .Parse(out var value, ParseExpression)
     .MapResult(t => new Node.EffectiveParameter(t, mode, value));
+
+    private ParseResult<Node.Identifier> ParseIdentifier(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+        .ParseTokenValue(out var name, Named.Identifier)
+    .MapResult(t => new Node.Identifier(t, name));
 
     #endregion Other
 

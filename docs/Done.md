@@ -414,3 +414,21 @@ internal sealed class TokenType
 Currently the production name is given by the `T` of the `ParseResult`. However that's innacurate as when `ParseError`s are passed around, the `T` will change and we may get inacurrate error.
 
 Fix : add a stirng property, `ProductionName` to `ParseError` and use it in `ErrorSyntax()` (which will no longer need to be generic).
+
+## identifier and primitive obsession
+
+Create an `Identifier` class that abstracts a string but with restrictions (`[\p{L}_][\p{L}0-9_]*`)
+
+The point would be to prevent invalid identifiers. But we already check in the tokenizer. So what's the point?
+
+Semantically, it would able us to tell if an indentifier is expected instead of any string.
+
+This could be useful for string constants.
+
+## More complex semantic analysis
+
+Problem : how to implement the "output parameter never assigned errror"
+
+We can have a boolean in the {Procedure, Function}Definition case of AnalyzeDeclaration.
+
+Add a hook parameter to HandleScopedBlock that will recieve the statement

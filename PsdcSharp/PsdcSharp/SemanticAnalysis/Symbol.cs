@@ -1,5 +1,6 @@
 using Scover.Psdc.Parsing.Nodes;
 using Scover.Psdc.Tokenization;
+using static Scover.Psdc.Parsing.Nodes.Node;
 
 namespace Scover.Psdc.SemanticAnalysis;
 
@@ -12,9 +13,9 @@ internal interface CallableSymbol : Symbol
 
 internal interface Symbol
 {
-    public string Name { get; }
+    public Identifier Name { get; }
     public Partition<Token> SourceTokens { get; }
-    internal record Variable(string Name, Partition<Token> SourceTokens,
+    internal record Variable(Identifier Name, Partition<Token> SourceTokens,
         EvaluatedType Type)
     : Symbol
     {
@@ -24,9 +25,9 @@ internal interface Symbol
         public override int GetHashCode() => HashCode.Combine(Name, Type);
     }
 
-    internal sealed record Constant(string Name, Partition<Token> SourceTokens,
+    internal sealed record Constant(Identifier Name, Partition<Token> SourceTokens,
         EvaluatedType Type,
-        Node.Expression Value)
+        Expression Value)
     : Variable(Name, SourceTokens, Type)
     {
         public bool Equals(Constant? other) => base.Equals(other)
@@ -34,7 +35,7 @@ internal interface Symbol
         public override int GetHashCode() => HashCode.Combine(Name, Type, Value);
     }
 
-    internal sealed record TypeAlias(string Name, Partition<Token> SourceTokens,
+    internal sealed record TypeAlias(Identifier Name, Partition<Token> SourceTokens,
         EvaluatedType TargetType)
     : Symbol
     {
@@ -45,7 +46,7 @@ internal interface Symbol
     }
 
 
-    internal sealed record Procedure(string Name, Partition<Token> SourceTokens,
+    internal sealed record Procedure(Identifier Name, Partition<Token> SourceTokens,
         IReadOnlyCollection<Parameter> Parameters)
     : CallableSymbol
     {
@@ -57,7 +58,7 @@ internal interface Symbol
         public override int GetHashCode() => HashCode.Combine(Name, Parameters.GetSequenceHashCode());
     }
 
-    internal sealed record Function(string Name, Partition<Token> SourceTokens,
+    internal sealed record Function(Identifier Name, Partition<Token> SourceTokens,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType)
     : CallableSymbol
@@ -72,7 +73,7 @@ internal interface Symbol
 
     }
 
-    internal sealed record Parameter(string Name, Partition<Token> SourceTokens,
+    internal sealed record Parameter(Identifier Name, Partition<Token> SourceTokens,
         EvaluatedType Type,
         ParameterMode Mode)
     : Variable(Name, SourceTokens, Type)
@@ -85,7 +86,7 @@ internal interface Symbol
 
 internal static class SymbolExtensions
 {
-    private static readonly Dictionary<Type, string> symbolKinds = new() {
+    private static readonly Dictionary<System.Type, string> symbolKinds = new() {
         [typeof(Symbol.Constant)] = "constant",
         [typeof(Symbol.Function)] = "function",
         [typeof(Symbol.Parameter)] = "parameter",

@@ -1,4 +1,6 @@
 programme HelloWorld c'est
 début
-    écrireEcran(();
+    tant que (NON 5) faire
+
+    finfaire
 fin

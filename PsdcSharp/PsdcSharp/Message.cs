@@ -55,12 +55,12 @@ internal sealed record Message(
      => Create(sourceTokens, MessageCode.CantInferType,
         _ => "can't infer type of expression");
 
-    public static Message ErrorUndefinedSymbol<TSymbol>(IEnumerable<Token> sourceTokens, string symbolName) where TSymbol : Symbol
-     => Create(sourceTokens, MessageCode.UndefinedSymbol,
-        _ => $"{SymbolExtensions.GetKind<TSymbol>()} `{symbolName}` undefined in current scope");
+    public static Message ErrorUndefinedSymbol<TSymbol>(Node.Identifier identifier) where TSymbol : Symbol
+     => Create(identifier.SourceTokens, MessageCode.UndefinedSymbol,
+            _ => $"{SymbolExtensions.GetKind<TSymbol>()} `{identifier.Name}` undefined in current scope");
 
     public static Message ErrorRedefinedSymbol(Symbol newSymbol, Symbol existingSymbol)
-     => Create(newSymbol.SourceTokens, MessageCode.RedefinedSymbol,
+     => Create(newSymbol.Name.SourceTokens, MessageCode.RedefinedSymbol,
         _ => $"{newSymbol.GetKind()} `{existingSymbol.Name}` is a redefinition (a {existingSymbol.GetKind()} already exists)");
 
     public static Message ErrorRedefinedMainProgram(Node.Declaration.MainProgram mainProgram)
@@ -91,13 +91,14 @@ internal sealed record Message(
      => Create(sourceTokens, MessageCode.ExpectedConstantExpression,
         _ => "expected constant expression");
 
-    public static Message ErrorStructureDuplicateComponent(IEnumerable<Token> sourceTokens, string componentName)
+    public static Message ErrorStructureDuplicateComponent(IEnumerable<Token> sourceTokens, Node.Identifier componentName)
      => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
         _ => $"duplicate component `{componentName}` in structure");
 
-    public static Message WarningInputParameterAssignment(Node.Statement.Assignment assignment)
-     => Create(assignment.SourceTokens, MessageCode.InputParameterAssignment,
-        _ => $"reassinging input parameter `{assignment.Target}`");
+    public static Message ErrorOutputParameterNeverAssigned(Node.Identifier parameterName)
+     => Create(parameterName.SourceTokens, MessageCode.OutputParameterNeverAssigned,
+        _ => $"output parameter `{parameterName}` never assigned");
+
     public static Message WarningDivisionByZero(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.DivisionByZero,
         _ => "division by zero (will cause runtime error)");

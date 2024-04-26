@@ -35,11 +35,11 @@ début
                                                 entE/sortE ligneCurseur,
                                                 entE/sortE colonneCurseur,
                                                 sortE partieAbandonnée);
-        tant que (non commandeRéussie)
-    tant que (non partieAbandonnée ET non estGrilleComplète(entE grilleJeu))
+        tant que (NON commandeRéussie)
+    tant que (NON partieAbandonnée ET NON estGrilleComplète(entE grilleJeu))
 
     // La partie n'a pas été abandonnée, elle s'est donc terminée par une victoire
-    si (non partieAbandonnée) alors
+    si (NON partieAbandonnée) alors
         écrireEcran("Bravo, vous avez gagné !");
     finsi
 fin

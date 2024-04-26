@@ -4,7 +4,7 @@ namespace Scover.Psdc.Parsing.Nodes;
 
 internal interface CallNode : Node
 {
-    public string Name { get; }
+    public Identifier Name { get; }
     public IReadOnlyCollection<EffectiveParameter> Parameters { get; }
 }
 
@@ -26,11 +26,11 @@ internal interface Node
 {
     Partition<Token> SourceTokens { get; }
     internal sealed class Algorithm(Partition<Token> sourceTokens,
-        string name,
+        Identifier name,
         IReadOnlyCollection<Declaration> declarations)
     : ScopedNode(sourceTokens)
     {
-        public string Name => name;
+        public Identifier Name => name;
         public IReadOnlyCollection<Declaration> Declarations => declarations;
     }
 
@@ -41,22 +41,22 @@ internal interface Node
         : BlockNode(sourceTokens, block), Declaration;
 
         internal sealed class Alias(Partition<Token> sourceTokens,
-            string name,
+            Identifier name,
             Type type)
         : NodeImpl(sourceTokens), Declaration
         {
-            public string Name => name;
+            public Identifier Name => name;
             public Type Type => type;
         }
 
         internal sealed class Constant(Partition<Token> sourceTokens,
             Type type,
-            string name,
+            Identifier name,
             Expression value)
         : NodeImpl(sourceTokens), Declaration
         {
             public Type Type => type;
-            public string Name => name;
+            public Identifier Name => name;
             public Expression Value => value;
         }
 
@@ -140,7 +140,8 @@ internal interface Node
             internal sealed class Case(Partition<Token> sourceTokens,
                 Expression when,
                 IReadOnlyCollection<Statement> block)
-            : BlockNode(sourceTokens, block) {
+            : BlockNode(sourceTokens, block)
+            {
                 public Expression When => when;
             }
 
@@ -150,11 +151,11 @@ internal interface Node
         }
 
         internal sealed class Assignment(Partition<Token> sourceTokens,
-            string target,
+            Identifier target,
             Expression value)
         : NodeImpl(sourceTokens), Statement
         {
-            public string Target => target;
+            public Identifier Target => target;
             public Expression Value => value;
         }
 
@@ -183,14 +184,14 @@ internal interface Node
         }
 
         internal sealed class ForLoop(Partition<Token> sourceTokens,
-            string variantName,
+            Identifier variantName,
             Expression start,
             Expression end,
             Option<Expression> step,
             IReadOnlyCollection<Statement> block)
         : BlockNode(sourceTokens, block), Statement
         {
-            public string VariantName => variantName;
+            public Identifier VariantName => variantName;
             public Expression Start => start;
             public Expression End => end;
             public Option<Expression> Step => step;
@@ -227,11 +228,11 @@ internal interface Node
         }
 
         internal sealed class ProcedureCall(Partition<Token> sourceTokens,
-            string name,
+            Identifier name,
             IReadOnlyCollection<EffectiveParameter> parameters)
         : NodeImpl(sourceTokens), Statement, CallNode
         {
-            public string Name => name;
+            public Identifier Name => name;
             public IReadOnlyCollection<EffectiveParameter> Parameters => parameters;
         }
 
@@ -265,11 +266,11 @@ internal interface Node
         }
 
         internal sealed class VariableDeclaration(Partition<Token> sourceTokens,
-            IReadOnlyCollection<string> names,
+            IReadOnlyCollection<Identifier> names,
             Type type)
         : NodeImpl(sourceTokens), Statement, IEquatable<VariableDeclaration?>
         {
-            public IReadOnlyCollection<string> Names => names;
+            public IReadOnlyCollection<Identifier> Names => names;
             public Type Type => type;
 
             public override bool Equals(object? obj) => Equals(obj as VariableDeclaration);
@@ -336,11 +337,11 @@ internal interface Node
         }
 
         internal sealed class FunctionCall(Partition<Token> sourceTokens,
-            string name,
+            Identifier name,
             IReadOnlyCollection<EffectiveParameter> parameters)
         : Expression(sourceTokens), CallNode
         {
-            public string Name => name;
+            public Identifier Name => name;
             public IReadOnlyCollection<EffectiveParameter> Parameters => parameters;
 
             public override bool Equals(Expression? other) => other is FunctionCall o
@@ -351,11 +352,11 @@ internal interface Node
 
         internal sealed class ComponentAccess(Partition<Token> sourceTokens,
             Expression structure,
-            string componentName)
+            Identifier componentName)
         : Expression(sourceTokens)
         {
             public Expression Structure => structure;
-            public string ComponentName => componentName;
+            public Identifier ComponentName => componentName;
 
             public override bool Equals(Expression? other) => other is ComponentAccess o
              && o.Structure.Equals(Structure)
@@ -389,10 +390,10 @@ internal interface Node
         }
 
         internal sealed class VariableReference(Partition<Token> sourceTokens,
-            string name)
+            Identifier name)
         : Expression(sourceTokens)
         {
-            public string Name => name;
+            public Identifier Name => name;
 
             public override bool Equals(Expression? other) => other is VariableReference o
              && o.Name.Equals(Name);
@@ -473,10 +474,10 @@ internal interface Node
         }
 
         internal sealed class AliasReference(Partition<Token> sourceTokens,
-            string name)
+            Identifier name)
         : Type(sourceTokens)
         {
-            public string Name => name;
+            public Identifier Name => name;
             public override bool Equals(Type? other) => other is AliasReference o
              && o.Name.Equals(Name);
             public override int GetHashCode() => Name.GetHashCode();
@@ -516,12 +517,12 @@ internal interface Node
 
     internal sealed class FormalParameter(Partition<Token> sourceTokens,
         ParameterMode mode,
-        string name,
+        Identifier name,
         Type type)
     : NodeImpl(sourceTokens), IEquatable<FormalParameter?>
     {
         public ParameterMode Mode => mode;
-        public string Name => name;
+        public Identifier Name => name;
         public Type Type => type;
 
         public override bool Equals(object? obj) => Equals(obj as FormalParameter);
@@ -533,11 +534,11 @@ internal interface Node
     }
 
     internal sealed class ProcedureSignature(Partition<Token> sourceTokens,
-        string name,
+        Identifier name,
         IReadOnlyCollection<FormalParameter> parameters)
     : NodeImpl(sourceTokens), IEquatable<ProcedureSignature?>
     {
-        public string Name => name;
+        public Identifier Name => name;
         public IReadOnlyCollection<FormalParameter> Parameters => parameters;
 
         public override bool Equals(object? other) => Equals(other as ProcedureSignature);
@@ -549,12 +550,12 @@ internal interface Node
     }
 
     internal sealed class FunctionSignature(Partition<Token> sourceTokens,
-        string name,
+        Identifier name,
         IReadOnlyCollection<FormalParameter> parameters,
         Type returnType)
     : NodeImpl(sourceTokens), IEquatable<FunctionSignature?>
     {
-        public string Name => name;
+        public Identifier Name => name;
         public IReadOnlyCollection<FormalParameter> Parameters => parameters;
         public Type ReturnType => returnType;
 
@@ -565,6 +566,33 @@ internal interface Node
             && other.ReturnType.Equals(ReturnType);
 
         public override int GetHashCode() => HashCode.Combine(Name, Parameters.GetSequenceHashCode(), ReturnType);
+    }
+
+    internal sealed class Identifier : NodeImpl, IEquatable<Identifier?>
+    {
+        public Identifier(Partition<Token> sourceTokens, string name) : base(sourceTokens)
+        {
+#if DEBUG
+            if (!IsValidIdentifier(name)) {
+                throw new ArgumentException($"`{name}` is not a valid identifier", nameof(name));
+            }
+#endif
+            Name = name;
+        }
+
+        public string Name { get; }
+
+        public override bool Equals(object? obj) => Equals(obj as Identifier);
+        public override string ToString() => Name;
+        public bool Equals(Identifier? other) => other is not null
+         && other.Name.Equals(Name);
+
+        public override int GetHashCode() => Name.GetHashCode();
+
+        private static bool IsValidIdentifier(string name) => name.Length > 0
+             && (name[0] == '_' || char.IsLetter(name[0]))
+             && name.Skip(1).All(c => c == '_' || char.IsLetterOrDigit(c));
+
     }
 
     #endregion Other

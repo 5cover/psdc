@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Parsing.Nodes;
 using Scover.Psdc.Tokenization;
@@ -63,16 +64,12 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 break;
 
             case Node.Declaration.FunctionDefinition funcDef:
-                CreateTypeOrError(parentScope, funcDef.Signature.ReturnType).MatchSome(returnType => {
-                    var parameters = CreateParameters(parentScope, funcDef.Signature.Parameters);
-                    HandleCallableDefinition(parentScope, new Symbol.Function(
-                                            funcDef.Signature.Name,
-                                            funcDef.Signature.SourceTokens,
-                                            parameters,
-                                            returnType));
-                    AddParameters(scopes[funcDef], parameters);
-                    HandleScopedBlock(funcDef);
-                });
+                CreateTypeOrError(parentScope, funcDef.Signature.ReturnType).MatchSome(returnType
+                 => AnalyzeCallableDefinition(parentScope, funcDef, new Symbol.Function(
+                        funcDef.Signature.Name,
+                        funcDef.Signature.SourceTokens,
+                        CreateParameters(parentScope, funcDef.Signature.Parameters),
+                        returnType)));
                 break;
 
             case Node.Declaration.MainProgram mainProgram:
@@ -80,7 +77,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                     AddMessage(Message.ErrorRedefinedMainProgram(mainProgram));
                 }
                 seenMainProgram = true;
-                HandleScopedBlock(mainProgram);
+                AnalyzeScopedBlock(mainProgram);
                 break;
 
             case Node.Declaration.Procedure proc:
@@ -91,13 +88,10 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 break;
 
             case Node.Declaration.ProcedureDefinition procDef:
-                var parameters = CreateParameters(parentScope, procDef.Signature.Parameters);
-                HandleCallableDefinition(parentScope, new Symbol.Procedure(
+                AnalyzeCallableDefinition(parentScope, procDef, new Symbol.Procedure(
                     procDef.Signature.Name,
                     procDef.Signature.SourceTokens,
-                    parameters));
-                AddParameters(scopes[procDef], parameters);
-                HandleScopedBlock(procDef);
+                    CreateParameters(parentScope, procDef.Signature.Parameters)));
                 break;
 
             default:
@@ -115,29 +109,27 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             case Node.Statement.Alternative alternative:
                 AnalyzeExpression(parentScope, alternative.If.Condition);
                 AddScope(parentScope, alternative.If);
-                HandleScopedBlock(alternative.If);
+                AnalyzeScopedBlock(alternative.If);
                 foreach (var elseIf in alternative.ElseIfs) {
                     AnalyzeExpression(parentScope, elseIf.Condition);
                     AddScope(parentScope, elseIf);
-                    HandleScopedBlock(elseIf);
+                    AnalyzeScopedBlock(elseIf);
                 }
                 alternative.Else.MatchSome(@else => {
                     AddScope(parentScope, @else);
-                    HandleScopedBlock(@else);
+                    AnalyzeScopedBlock(@else);
                 });
                 break;
             case Node.Statement.Assignment assignment:
-                if (TryGetSymbolOrError<Symbol.Variable>(parentScope, assignment.SourceTokens, assignment.Target, out var targetVariable)) {
-                    if (targetVariable is Symbol.Parameter parameter && parameter.Mode is ParameterMode.In) {
-                        AddMessage(Message.WarningInputParameterAssignment(assignment));
-                    } else if (targetVariable is Symbol.Constant constant) {
+                if (TryGetSymbolOrError<Symbol.Variable>(parentScope, assignment.Target, out var targetVariable)) {
+                    if (targetVariable is Symbol.Constant constant) {
                         AddMessage(Message.ErrorConstantAssignment(assignment, constant));
                     }
                 }
                 AnalyzeExpression(parentScope, assignment.Value);
                 break;
             case Node.Statement.DoWhileLoop doWhileLoop:
-                HandleScopedBlock(doWhileLoop);
+                AnalyzeScopedBlock(doWhileLoop);
                 AnalyzeExpression(parentScope, doWhileLoop.Condition);
                 break;
             case Node.Statement.Ecrire ecrire:
@@ -151,7 +143,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 AnalyzeExpression(parentScope, forLoop.Start);
                 forLoop.Step.MatchSome(step => AnalyzeExpression(parentScope, step));
                 AnalyzeExpression(parentScope, forLoop.End);
-                HandleScopedBlock(forLoop);
+                AnalyzeScopedBlock(forLoop);
                 break;
             case Node.Statement.Lire lire:
                 AnalyzeExpression(parentScope, lire.Argument1);
@@ -178,7 +170,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 AnalyzeExpression(parentScope, lireClavier.Argument);
                 break;
             case Node.Statement.RepeatLoop repeatLoop:
-                HandleScopedBlock(repeatLoop);
+                AnalyzeScopedBlock(repeatLoop);
                 break;
             case Node.Statement.Return ret:
                 AnalyzeExpression(parentScope, ret.Value);
@@ -191,18 +183,18 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 });
                 break;
             case Node.Statement.WhileLoop whileLoop:
-                HandleScopedBlock(whileLoop);
+                AnalyzeScopedBlock(whileLoop);
                 break;
             case Node.Statement.Switch switchCase:
                 AnalyzeExpression(parentScope, switchCase.Expression);
                 foreach (var @case in switchCase.Cases) {
                     AnalyzeExpression(parentScope, @case.When);
                     AddScope(parentScope, @case);
-                    HandleScopedBlock(@case);
+                    AnalyzeScopedBlock(@case);
                 }
                 switchCase.Default.MatchSome(@default => {
                     AddScope(parentScope, @default);
-                    HandleScopedBlock(@default);
+                    AnalyzeScopedBlock(@default);
                 });
                 break;
 
@@ -247,7 +239,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 AnalyzeExpression(parentScope, opUn.Operand);
                 break;
             case Node.Expression.VariableReference varRef:
-                _ = GetSymbolOrError<Symbol.Variable>(parentScope, varRef.SourceTokens, varRef.Name);
+                _ = GetSymbolOrError<Symbol.Variable>(parentScope, varRef.Name);
                 break;
             default:
                 throw expr.ToUnmatchedException();
@@ -281,7 +273,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
 
         void HandleCall<TSymbol>(Scope parentScope, CallNode call) where TSymbol : CallableSymbol
         {
-            GetSymbolOrError<TSymbol>(parentScope, call.SourceTokens, call.Name).MatchSome(callee => {
+            GetSymbolOrError<TSymbol>(parentScope, call.Name).MatchSome(callee => {
                 if (!call.Parameters.ZipStrict(callee.Parameters, (effective, formal)
                     => effective.Mode.Equals(formal.Mode)
                     && EvaluateTypeOrError(parentScope, effective.Value).Map(type => formal.Type.Equals(type)).ValueOr(false))
@@ -307,6 +299,24 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             }
         }
 
+        void AnalyzeCallableDefinition<T>(Scope parentScope, BlockNode node, T sub) where T : CallableSymbol, IEquatable<T?>
+        {
+            HandleCallableDefinition(parentScope, sub);
+            AddParameters(scopes[node], sub.Parameters);
+
+            Dictionary<Node.Identifier, bool> outputParametersAssigned = sub.Parameters
+                .Where(param => param.Mode is ParameterMode.Out)
+                .ToDictionary(keySelector: param => param.Name, elementSelector: _ => false);
+
+            AnalyzeScopedBlock(node, hook: stmt => {
+                // todo 
+            });
+
+            /*foreach (var unassignedOutParam in outputParametersAssigned.Where(kv => !kv.Value).Select(kv => kv.Key)) {
+                AddMessage(Message.ErrorOutputParameterNeverAssigned(unassignedOutParam));
+            }*/
+        }
+
         void HandleCallableDefinition<T>(Scope parentScope, T sub) where T : CallableSymbol, IEquatable<T?>
         {
             if (parentScope.TryAdd(sub, out var existingSymbol)) {
@@ -322,9 +332,10 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             }
         }
 
-        void HandleScopedBlock(BlockNode scopedBlock)
+        void AnalyzeScopedBlock(BlockNode scopedBlock, Action<Node.Statement>? hook = null)
         {
             foreach (var stmt in scopedBlock.Block) {
+                hook?.Invoke(stmt);
                 AnalyzeStatement(scopes[scopedBlock], stmt);
             }
         }
@@ -332,7 +343,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         Option<EvaluatedType> CreateTypeOrError(ReadOnlyScope scope, Node.Type type) => type switch {
             Node.Type.String => EvaluatedType.String.Instance.Some(),
             Node.Type.Primitive p => new EvaluatedType.Primitive(p.Type).Some(),
-            Node.Type.AliasReference alias => GetSymbolOrError<Symbol.TypeAlias>(scope, alias.SourceTokens, alias.Name)
+            Node.Type.AliasReference alias => GetSymbolOrError<Symbol.TypeAlias>(scope, alias.Name)
                     .Map(aliasType => new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType)),
             Node.Type.Array array => CreateTypeOrError(scope, array.Type).Map(elementType
             => new EvaluatedType.Array(elementType, array.Dimensions)),
@@ -343,7 +354,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
 
         Option<EvaluatedType.Structure> CreateStructureOrError(ReadOnlyScope scope, Node.Type.StructureDefinition structure)
         {
-            Dictionary<string, EvaluatedType> components = [];
+            Dictionary<Node.Identifier, EvaluatedType> components = [];
             bool atLeastOneNameWasntAdded = false;
             foreach (var comp in structure.Components) {
                 CreateTypeOrError(scope, comp.Type).Match(type => {
@@ -370,20 +381,20 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             return type.DiscardError();
         }
 
-        Option<T> GetSymbolOrError<T>(ReadOnlyScope scope, Partition<Token> sourceTokens, string name) where T : Symbol
+        Option<T> GetSymbolOrError<T>(ReadOnlyScope scope, Node.Identifier identifier) where T : Symbol
         {
-            var ret = scope.GetSymbol<T>(name);
+            var ret = scope.GetSymbol<T>(identifier);
             if (!ret.HasValue) {
-                AddMessage(Message.ErrorUndefinedSymbol<T>(sourceTokens, name));
+                AddMessage(Message.ErrorUndefinedSymbol<T>(identifier));
             }
             return ret;
         }
 
-        bool TryGetSymbolOrError<T>(ReadOnlyScope scope, Partition<Token> sourceTokens, string name, out T? symbol) where T : Symbol
+        bool TryGetSymbolOrError<T>(ReadOnlyScope scope, Node.Identifier identifier, out T? symbol) where T : Symbol
         {
-            bool found = scope.TryGetSymbol<T>(name, out symbol);
+            bool found = scope.TryGetSymbol<T>(identifier, out symbol);
             if (!found) {
-                AddMessage(Message.ErrorUndefinedSymbol<T>(sourceTokens, name));
+                AddMessage(Message.ErrorUndefinedSymbol<T>(identifier));
             }
             return found;
         }

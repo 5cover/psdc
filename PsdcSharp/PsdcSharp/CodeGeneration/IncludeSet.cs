@@ -12,11 +12,11 @@ internal sealed class IncludeSet
 
     public void Ensure(string name) => _headers.Add(name);
 
-    public StringBuilder AppendTo(StringBuilder output)
+    public StringBuilder AppendIncludeSection(StringBuilder output)
     {
         foreach (string header in _headers) {
             output.AppendLine($"#include {header}");
         }
-        return output;
+        return output.AppendLine();
     }
 }

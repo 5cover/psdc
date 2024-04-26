@@ -26,6 +26,7 @@ internal abstract class ParseOperation
     public abstract ParseOperation Branch<T>(out T result, IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches);
 
     public abstract ParseResult<T> MapResult<T>(ResultCreator<T> resultCreator);
+
     public abstract ParseOperation Parse<T>(out T result, ParseMethod<T> parse);
     public abstract ParseOperation ParseOptional<T>(out Option<T> result, ParseMethod<T> parse);
     public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, TokenType separator);

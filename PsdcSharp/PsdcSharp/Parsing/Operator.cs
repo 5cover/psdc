@@ -15,7 +15,7 @@ internal enum BinaryOperator
     NotEqual,
     Or,
     Plus,
-
+    Xor,
 }
 
 internal enum UnaryOperator

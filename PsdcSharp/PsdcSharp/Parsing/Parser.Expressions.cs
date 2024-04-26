@@ -72,7 +72,7 @@ internal partial class Parser
      => ParseBracketed(tokens)
      .Else(() => ParseByTokenType(tokens, _literalParsers))
      .Else(() => ParseFunctionCall(tokens))
-     .Else(() => ParseTokenValue(tokens, Named.Identifier)
+     .Else(() => ParseIdentifier(tokens)
         .Map((t, name) => new Node.Expression.VariableReference(t, name)));
 
     private ParseResult<Node.Expression> ParseBracketed(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
@@ -82,7 +82,7 @@ internal partial class Parser
     .MapResult(t => new Node.Expression.Bracketed(t, expression));
 
     private ParseResult<Node.Expression> ParseFunctionCall(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
-        .ParseTokenValue(out var name, Named.Identifier)
+        .Parse(out var name, ParseIdentifier)
         .ParseToken(Symbol.OpenBracket)
         .ParseZeroOrMoreSeparated(out var parameters, ParseEffectiveParameter, Symbol.Comma)
         .ParseToken(Symbol.CloseBracket)

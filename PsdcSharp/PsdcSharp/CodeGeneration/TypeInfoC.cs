@@ -25,7 +25,7 @@ internal sealed class TypeInfoC : TypeInfo
             return new("char", "%s", preModifier: "*");
         case EvaluatedType.AliasReference alias:
             var target = Create(alias.Target, generateExpression, indent);
-            return new(alias.Name, target.FormatComponent, target.RequiredHeaders);
+            return new(alias.Name.Name, target.FormatComponent, target.RequiredHeaders);
         case EvaluatedType.Array array:
             var arrayType = Create(array.Type, generateExpression, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
@@ -84,8 +84,8 @@ internal sealed class TypeInfoC : TypeInfo
      => new(_typeName, FormatComponent, RequiredHeaders, _preModifier, _postModifier,
         "const");
 
-    public string GenerateDeclaration(IEnumerable<string> names)
-     => $"{_typeName}{_typeQualifier} {string.Join(", ", names.Select(name => _preModifier + name + _postModifier))}";
+    public string GenerateDeclaration(IEnumerable<Node.Identifier> names)
+     => $"{_typeName}{_typeQualifier} {string.Join(", ", names.Select(name => _preModifier + name.Name + _postModifier))}";
 
     public string Generate() => $"{_typeName}{_preModifier}{_postModifier}{_typeQualifier}";
 

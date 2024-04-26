@@ -12,22 +12,13 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
     public override string Generate()
     {
         StringBuilder output = new();
-        AppendAlgorithm(output, _ast.Root);
 
-        StringBuilder head = new();
-        _includes.AppendTo(head);
-
-        return head.Append(output).ToString();
-    }
-
-    private StringBuilder AppendAlgorithm(StringBuilder output, Node.Algorithm algorithm)
-    {
-        Indent(output).AppendLine($"// {algorithm.Name}");
-        foreach (Node.Declaration declaration in algorithm.Declarations) {
-            AppendDeclaration(output, _ast.Scopes[algorithm], declaration);
+        foreach (Node.Declaration declaration in _ast.Root.Declarations) {
+            AppendDeclaration(output, _ast.Scopes[_ast.Root], declaration);
         }
 
-        return output;
+        return _includes.AppendIncludeSection(AppendFileHeader(new()))
+            .Append(output).ToString();
     }
 
     #region Declarations
@@ -57,7 +48,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
 
     private StringBuilder AppendMainProgram(StringBuilder output, Node.Declaration.MainProgram mainProgram)
     {
-        output.AppendLine("int main() ");
+        output.AppendLine().Append("int main() ");
 
         return AppendBlock(output, mainProgram,
             sb => Indent(sb).AppendLine("return 0;"))
@@ -66,13 +57,13 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
 
     private StringBuilder AppendFunctionDefinition(StringBuilder output, ReadOnlyScope parentScope, Node.Declaration.FunctionDefinition funcDef)
     {
-        AppendFunctionSignature(output, parentScope.GetSymbol<Symbol.Function>(funcDef.Signature.Name).Unwrap());
-        return AppendBlock(output, funcDef);
+        AppendFunctionSignature(output.AppendLine(), parentScope.GetSymbol<Symbol.Function>(funcDef.Signature.Name).Unwrap());
+        return AppendBlock(output.Append(' '), funcDef).AppendLine();
     }
     private StringBuilder AppendProcedureDefinition(StringBuilder output, ReadOnlyScope parentScope, Node.Declaration.ProcedureDefinition procDef)
     {
-        AppendProcedureSignature(output, parentScope.GetSymbol<Symbol.Procedure>(procDef.Signature.Name).Unwrap());
-        return AppendBlock(output, procDef);
+        AppendProcedureSignature(output.AppendLine(), parentScope.GetSymbol<Symbol.Procedure>(procDef.Signature.Name).Unwrap());
+        return AppendBlock(output.Append(' '), procDef).AppendLine();
     }
 
     private StringBuilder AppendFunctionDeclaration(StringBuilder output, ReadOnlyScope parentScope, Node.Declaration.Function func)
@@ -85,7 +76,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
     private StringBuilder AppendProcedureSignature(StringBuilder output, Symbol.Procedure proc)
      => AppendSignature(output, "void", proc.Name, proc.Parameters);
 
-    private StringBuilder AppendSignature(StringBuilder output, string cReturnType, string name, IEnumerable<Symbol.Parameter> parameters)
+    private StringBuilder AppendSignature(StringBuilder output, string cReturnType, Node.Identifier name, IEnumerable<Symbol.Parameter> parameters)
     {
         output.Append($"{cReturnType} {name}(");
         if (parameters.Any()) {
@@ -251,7 +242,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
         return AppendVariableDeclaration(output, CreateTypeInfo(variable.Type), varDecl.Names).AppendLine(";");
     }
 
-    private StringBuilder AppendVariableDeclaration(StringBuilder output, TypeInfoC type, IEnumerable<string> names)
+    private StringBuilder AppendVariableDeclaration(StringBuilder output, TypeInfoC type, IEnumerable<Node.Identifier> names)
     {
         foreach (string header in type.RequiredHeaders) {
             _includes.Ensure(header);
@@ -376,6 +367,14 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
 
     #region Helpers
 
+    private StringBuilder AppendFileHeader(StringBuilder output) => output
+        .AppendLine($"/** @file")
+        .AppendLine($" * @brief {_ast.Root.Name}")
+        .AppendLine($" * @author {Environment.UserName}")
+        .AppendLine($" * @date {DateOnly.FromDateTime(DateTime.Now)}")
+        .AppendLine($" */")
+        .AppendLine();
+
     private StringBuilder AppendCall(StringBuilder output, CallNode call)
     {
         output.Append($"{call.Name}(");
@@ -421,6 +420,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
         BinaryOperator.NotEqual => "!=",
         BinaryOperator.Or => "||",
         BinaryOperator.Plus => "+",
+        BinaryOperator.Xor => "^",
         _ => throw op.ToUnmatchedException(),
     };
 

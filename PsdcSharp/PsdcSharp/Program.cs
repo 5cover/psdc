@@ -75,7 +75,7 @@ internal static class Program
                 stderr.Write(GetErrorLinePrefix(new string(' ', (int)Math.Log10(start.Line) + 1)));
                 var offset = Math.Max(faultyLine.GetLeadingWhitespaceCount(), start.Column);
                 stderr.WriteNTimes(offset, ' ');
-                msgColor.DoInColor(() => stderr.WriteNTimes(end.Column - start.Column, '^'));
+                msgColor.DoInColor(() => stderr.WriteNTimes(end.Column - offset, '^'));
 
                 static string GetErrorLinePrefix(object lineNo) => $"    {lineNo} | ";
             },

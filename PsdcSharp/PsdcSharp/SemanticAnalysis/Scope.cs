@@ -1,21 +1,22 @@
 using System.Diagnostics.CodeAnalysis;
+using Scover.Psdc.Parsing.Nodes;
 
 namespace Scover.Psdc.SemanticAnalysis;
 
 internal interface ReadOnlyScope
 {
-    Option<T> GetSymbol<T>(string name) where T : Symbol;
-    bool TryGetSymbol<T>(string name, [NotNullWhen(true)] out T? symbol) where T : Symbol;
+    Option<T> GetSymbol<T>(Node.Identifier name) where T : Symbol;
+    bool TryGetSymbol<T>(Node.Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol;
 }
 
 internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
 {
     private readonly Scope? _parentScope = parentScope;
-    private readonly Dictionary<string, Symbol> _symbolTable = [];
+    private readonly Dictionary<Node.Identifier, Symbol> _symbolTable = [];
 
-    public IReadOnlyDictionary<string, Symbol> Symbols => _symbolTable;
+    public IReadOnlyDictionary<Node.Identifier, Symbol> Symbols => _symbolTable;
 
-    public Option<T> GetSymbol<T>(string name) where T : Symbol
+    public Option<T> GetSymbol<T>(Node.Identifier name) where T : Symbol
      => TryGetSymbol(name, out T? symbol)
         ? symbol.Some()
         : Option.None<T>();
@@ -28,7 +29,7 @@ internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
         return added;
     }
 
-    public bool TryGetSymbol<T>(string name, [NotNullWhen(true)] out T? symbol) where T : Symbol
+    public bool TryGetSymbol<T>(Node.Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol
     {
         for (Scope? scope = this; scope is not null; scope = scope._parentScope) {
             if (!scope._symbolTable.TryGetValue(name, out var foundSymbol)) {

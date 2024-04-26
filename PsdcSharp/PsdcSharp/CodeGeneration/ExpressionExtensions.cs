@@ -27,7 +27,7 @@ internal static class ExpressionExtensions
         Node.Expression.Bracketed b => EvaluateType(b.Expression, scope),
         Node.Expression.VariableReference variable
          => scope.GetSymbol<Symbol.Variable>(variable.Name)
-            .Map(var => var.Type).OrWithError((ErrorProvider)(tokens => Message.ErrorUndefinedSymbol<Symbol.Variable>(tokens, variable.Name))),
+            .Map(var => var.Type).OrWithError((ErrorProvider)(tokens => Message.ErrorUndefinedSymbol<Symbol.Variable>(variable.Name))),
         Node.Expression.Literal.True or Node.Expression.Literal.False
          => new EvaluatedType.Primitive(PrimitiveType.Boolean).Some<EvaluatedType, ErrorProvider>(),
         Node.Expression.Literal.Character
@@ -40,7 +40,8 @@ internal static class ExpressionExtensions
          => new EvaluatedType.StringLengthedKnown(str.Value.Length).Some<EvaluatedType, ErrorProvider>(),
         Node.Expression.FunctionCall call
          => scope.GetSymbol<Symbol.Function>(call.Name)
-            .Map(func => func.ReturnType).OrWithError((ErrorProvider)(tokens => Message.ErrorUndefinedSymbol<Symbol.Function>(tokens, call.Name))),
+            .Map(func => func.ReturnType).OrWithError(
+                (ErrorProvider)(tokens => Message.ErrorUndefinedSymbol<Symbol.Function>( call.Name))),
         _ => throw expression.ToUnmatchedException(),
     };
 

@@ -226,15 +226,12 @@ Gives:
       |       ^
 ```
 
-## identifier and word primitive obession
+Ideas for error productions :
 
-Create a `Word` class that abstracts a string but with restrictions (`[\p{L}_]+`)
-
-The point would be to prevent invalid identifiers. But we already check in the tokenizer. So what's the point?
-
-Semantically, it would able us to tell if an indentifier is expected instead of any string.
-
-This could be useful for string constants.
+- Statment without semicolon
+- Function/procedure signature without formal parameter modes
+- Function/procedure call without effective parameter modes
+- ...
 
 ## Create a representation of the AST being built
 
@@ -244,7 +241,19 @@ Simply add some graph-building logic in the NodeImpl constructor.
 
 ## Contextual keyword
 
-Keywords like `de`, `a` are very short. 
+Keywords like `de`, `à`, `pas` are very short and only used in specific contexts.
+
+They can use up useful symbol names.
+
+We should make them contextal, ie. have them become identifier when outside of a designated context.
+
+- `de` : array types, for loop begin part
+- `à` : for loop end part
+- `pas` : for loop step part
+
+Maybe we could tokenize them as identifiers always and expect an identifier of a specific name in ParseOperation? (`ParseContextualKeyword`)
+
+That seems like an easy way to implement this feature.
 
 ## Lvalue/rvalue
 

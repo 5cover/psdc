@@ -16,11 +16,11 @@ internal enum MessageCode
     DeclaredInferredTypeMismatch,
     ExpectedConstantExpression,
     StructureDuplicateComponent,
+    OutputParameterNeverAssigned,
 
     #endregion Errors
 
     #region Warnings
-    InputParameterAssignment = 1000,
     DivisionByZero,
     #endregion Warnings
 }

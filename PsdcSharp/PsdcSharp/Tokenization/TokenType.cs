@@ -86,9 +86,10 @@ internal abstract class TokenType
 
         #region Logical
 
-        public static Symbol OperatorAnd { get; } = new("et");
-        public static Symbol OperatorNot { get; } = new("!");
-        public static Symbol OperatorOr { get; } = new("ou");
+        public static Symbol OperatorAnd { get; } = new("ET");
+        public static Symbol OperatorNot { get; } = new("NON");
+        public static Symbol OperatorOr { get; } = new("OU");
+        public static Symbol OperatorXor { get; } = new("XOR");
 
         #endregion Logical
 
