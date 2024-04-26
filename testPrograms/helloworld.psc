@@ -1,6 +1,4 @@
 programme HelloWorld c'est
 début
-    tant que (NON 5) faire
-
-    finfaire
+    tNotes[1] := 5.4;
 fin

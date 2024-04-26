@@ -8,8 +8,6 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
 
-internal delegate Message ErrorProvider(IEnumerable<Token> sourceTokens);
-
 internal enum MessageSeverity
 {
     Error = 0,
@@ -57,7 +55,7 @@ internal sealed record Message(
 
     public static Message ErrorUndefinedSymbol<TSymbol>(Node.Identifier identifier) where TSymbol : Symbol
      => Create(identifier.SourceTokens, MessageCode.UndefinedSymbol,
-            _ => $"{SymbolExtensions.GetKind<TSymbol>()} `{identifier.Name}` undefined in current scope");
+            _ => $"{SymbolExtensions.GetKind<TSymbol>()} `{identifier}` undefined in current scope");
 
     public static Message ErrorRedefinedSymbol(Symbol newSymbol, Symbol existingSymbol)
      => Create(newSymbol.Name.SourceTokens, MessageCode.RedefinedSymbol,
@@ -83,7 +81,8 @@ internal sealed record Message(
      => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
         _ => $"reassigning constant `{constant.Name}`");
 
-    public static Message ErrorDeclaredInferredTypeMismatch(IEnumerable<Token> sourceTokens, EvaluatedType declaredType, EvaluatedType inferredType)
+    public static Message ErrorDeclaredInferredTypeMismatch(IEnumerable<Token> sourceTokens,
+        EvaluatedType declaredType, EvaluatedType inferredType)
      => Create(sourceTokens, MessageCode.DeclaredInferredTypeMismatch,
         input => $"declared type ({declaredType.GetRepresentation(input)}) differs from inferred type ({inferredType.GetRepresentation(input)})");
 
@@ -99,6 +98,25 @@ internal sealed record Message(
      => Create(parameterName.SourceTokens, MessageCode.OutputParameterNeverAssigned,
         _ => $"output parameter `{parameterName}` never assigned");
 
+    public static Message ErrorStructureComponentDoesntExist(Node.Expression.LValue.ComponentAccess compAccess,
+        Option<Node.Identifier> structureName)
+     => Create(compAccess.ComponentName.SourceTokens, MessageCode.StructureComponentDoesntExist,
+            structureName.Match<Node.Identifier, Func<string, string>>(
+                some: structName => _ => $"`{structName}` has no component named `{compAccess.ComponentName}`",
+                none: () => _ => $"no component named `{compAccess.ComponentName}` in structure"));
+
+    public static Message ErrrorComponentAccessOfNonStruct(Node.Expression.LValue.ComponentAccess compAccess)
+     => Create(compAccess.SourceTokens, MessageCode.ComponentAccessOfNonStruct,
+        _ => $"request for component `{compAccess.ComponentName}` in something not a structure");
+
+    public static Message ErrorSubscriptOfNonArray(Node.Expression.LValue.ArraySubscript arraySub)
+     => Create(arraySub.SourceTokens, MessageCode.SubscriptOfNonArray,
+        _ => $"subscripted value is not an array");
+
+    public static Message UnsupportedOperandTypesForBinaryOperation(IEnumerable<Token> sourceTokens,
+        EvaluatedType operand1Type, EvaluatedType operand2Type)
+     => Create(sourceTokens, MessageCode.UnsupportedOperandTypesForBinaryOperation,
+        input => $"unsupported operand types for binary operation: `{operand1Type.GetRepresentation(input)}` and `{operand2Type.GetRepresentation(input)}`");
     public static Message WarningDivisionByZero(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.DivisionByZero,
         _ => "division by zero (will cause runtime error)");

@@ -40,13 +40,22 @@ internal interface Node
             IReadOnlyCollection<Statement> block)
         : BlockNode(sourceTokens, block), Declaration;
 
-        internal sealed class Alias(Partition<Token> sourceTokens,
+        internal sealed class TypeAlias(Partition<Token> sourceTokens,
             Identifier name,
             Type type)
         : NodeImpl(sourceTokens), Declaration
         {
             public Identifier Name => name;
             public Type Type => type;
+        }
+
+        internal sealed class CompleteTypeAlias(Partition<Token> sourceTokens,
+            Identifier name,
+            Type.Complete type)
+        : NodeImpl(sourceTokens), Declaration
+        {
+            public Identifier Name => name;
+            public Type.Complete Type => type;
         }
 
         internal sealed class Constant(Partition<Token> sourceTokens,
@@ -151,11 +160,11 @@ internal interface Node
         }
 
         internal sealed class Assignment(Partition<Token> sourceTokens,
-            Identifier target,
+            Expression.LValue target,
             Expression value)
         : NodeImpl(sourceTokens), Statement
         {
-            public Identifier Target => target;
+            public Expression.LValue Target => target;
             public Expression Value => value;
         }
 
@@ -167,64 +176,64 @@ internal interface Node
             public Expression Condition => condition;
         }
 
-        internal sealed class Ecrire(Partition<Token> sourceTokens,
-            Expression argument1,
-            Expression argument2)
+        internal sealed class BuiltinEcrire(Partition<Token> sourceTokens,
+            Expression argumentNomLog,
+            Expression argumentExpression)
         : NodeImpl(sourceTokens), Statement
         {
-            public Expression Argument1 => argument1;
-            public Expression Argument2 => argument2;
+            public Expression ArgumentNomLog => argumentNomLog;
+            public Expression ArgumentExpression => argumentExpression;
         }
 
-        internal sealed class Fermer(Partition<Token> sourceTokens,
-            Expression argument)
+        internal sealed class BuiltinFermer(Partition<Token> sourceTokens,
+            Expression argumentNomLog)
         : NodeImpl(sourceTokens), Statement
         {
-            public Expression Argument => argument;
+            public Expression ArgumentNomLog => argumentNomLog;
         }
 
         internal sealed class ForLoop(Partition<Token> sourceTokens,
-            Identifier variantName,
+            Expression.LValue variant,
             Expression start,
             Expression end,
             Option<Expression> step,
             IReadOnlyCollection<Statement> block)
         : BlockNode(sourceTokens, block), Statement
         {
-            public Identifier VariantName => variantName;
+            public Expression.LValue Variant => variant;
             public Expression Start => start;
             public Expression End => end;
             public Option<Expression> Step => step;
         }
 
-        internal sealed class Lire(Partition<Token> sourceTokens,
-            Expression argument1,
-            Expression argument2)
+        internal sealed class BuiltinLire(Partition<Token> sourceTokens,
+            Expression argumentNomLog,
+            Expression.LValue argumentVariable)
         : NodeImpl(sourceTokens), Statement
         {
-            public Expression Argument1 => argument1;
-            public Expression Argument2 => argument2;
+            public Expression ArgumentNomLog => argumentNomLog;
+            public Expression ArgumentVariable => argumentVariable;
         }
 
-        internal sealed class OuvrirAjout(Partition<Token> sourceTokens,
-            Expression argument)
+        internal sealed class BuiltinOuvrirAjout(Partition<Token> sourceTokens,
+            Expression argumentNomLog)
         : NodeImpl(sourceTokens), Statement
         {
-            public Expression Argument => argument;
+            public Expression ArgumentNomLog => argumentNomLog;
         }
 
-        internal sealed class OuvrirEcriture(Partition<Token> sourceTokens,
-            Expression argument)
+        internal sealed class BuiltinOuvrirEcriture(Partition<Token> sourceTokens,
+            Expression argumentNomLog)
         : NodeImpl(sourceTokens), Statement
         {
-            public Expression Argument => argument;
+            public Expression ArgumentNomLog => argumentNomLog;
         }
 
-        internal sealed class OuvrirLecture(Partition<Token> sourceTokens,
-            Expression argument)
+        internal sealed class BuiltinOuvrirLecture(Partition<Token> sourceTokens,
+            Expression argumentNomLog)
         : NodeImpl(sourceTokens), Statement
         {
-            public Expression Argument => argument;
+            public Expression ArgumentNomLog => argumentNomLog;
         }
 
         internal sealed class ProcedureCall(Partition<Token> sourceTokens,
@@ -236,18 +245,27 @@ internal interface Node
             public IReadOnlyCollection<EffectiveParameter> Parameters => parameters;
         }
 
-        internal sealed class EcrireEcran(Partition<Token> sourceTokens,
+        internal sealed class BuiltinAssigner(Partition<Token> sourceTokens,
+            Expression.LValue argumentNomLog,
+            Expression argumentNomExt)
+        : NodeImpl(sourceTokens), Statement
+        {
+            public Expression.LValue ArgumentNomLog => argumentNomLog;
+            public Expression ArgumentNomExt => argumentNomExt;
+        }
+
+        internal sealed class BuiltinEcrireEcran(Partition<Token> sourceTokens,
             IReadOnlyCollection<Expression> arguments)
         : NodeImpl(sourceTokens), Statement
         {
             public IReadOnlyCollection<Expression> Arguments => arguments;
         }
 
-        internal sealed class LireClavier(Partition<Token> sourceTokens,
-            Expression argument)
+        internal sealed class BuiltinLireClavier(Partition<Token> sourceTokens,
+            Expression.LValue argumentVariable)
         : NodeImpl(sourceTokens), Statement
         {
-            public Expression Argument => argument;
+            public Expression ArgumentVariable => argumentVariable;
         }
 
         internal sealed class RepeatLoop(Partition<Token> sourceTokens,
@@ -265,16 +283,16 @@ internal interface Node
             public Expression Value => value;
         }
 
-        internal sealed class VariableDeclaration(Partition<Token> sourceTokens,
+        internal sealed class LocalVariable(Partition<Token> sourceTokens,
             IReadOnlyCollection<Identifier> names,
-            Type type)
-        : NodeImpl(sourceTokens), Statement, IEquatable<VariableDeclaration?>
+            Type.Complete type)
+        : NodeImpl(sourceTokens), Statement, IEquatable<LocalVariable?>
         {
             public IReadOnlyCollection<Identifier> Names => names;
             public Type Type => type;
 
-            public override bool Equals(object? obj) => Equals(obj as VariableDeclaration);
-            public bool Equals(VariableDeclaration? other) => other is not null
+            public override bool Equals(object? obj) => Equals(obj as LocalVariable);
+            public bool Equals(LocalVariable? other) => other is not null
              && other.Names.SequenceEqual(Names)
              && other.Type.Equals(Type);
             public override int GetHashCode() => HashCode.Combine(Names.GetSequenceHashCode(), Type);
@@ -293,6 +311,60 @@ internal interface Node
         public override bool Equals(object? obj) => Equals(obj as Expression);
         public abstract bool Equals(Expression? other);
         public abstract override int GetHashCode();
+
+        internal abstract class LValue(Partition<Token> sourceTokens) : Expression(sourceTokens)
+        {
+            internal sealed class ComponentAccess(Partition<Token> sourceTokens,
+                Expression structure,
+                Identifier componentName)
+            : LValue(sourceTokens)
+            {
+                public Expression Structure => structure;
+                public Identifier ComponentName => componentName;
+
+                public override bool Equals(Expression? other) => other is ComponentAccess o
+                 && o.Structure.Equals(Structure)
+                 && o.ComponentName.Equals(ComponentName);
+                public override int GetHashCode() => HashCode.Combine(Structure, ComponentName);
+            }
+
+            internal sealed new class Bracketed(Partition<Token> sourceTokens,
+                LValue lvalue)
+            : LValue(sourceTokens)
+            {
+                public new LValue LValue => lvalue;
+
+                public override bool Equals(Expression? other) => other is Bracketed o
+                 && o.LValue.Equals(LValue);
+
+                public override int GetHashCode() => LValue.GetHashCode();
+            }
+
+            internal sealed class ArraySubscript(Partition<Token> sourceTokens,
+                Expression array,
+                IReadOnlyCollection<Expression> indices)
+            : LValue(sourceTokens)
+            {
+                public Expression Array => array;
+                public IReadOnlyCollection<Expression> Indexes => indices;
+
+                public override bool Equals(Expression? other) => other is ArraySubscript o
+                 && o.Array.Equals(Array)
+                 && o.Indexes.SequenceEqual(Indexes);
+                public override int GetHashCode() => HashCode.Combine(Array, Indexes.GetSequenceHashCode());
+            }
+
+            internal sealed class VariableReference(Partition<Token> sourceTokens,
+                Identifier name)
+            : LValue(sourceTokens)
+            {
+                public Identifier Name => name;
+
+                public override bool Equals(Expression? other) => other is VariableReference o
+                 && o.Name.Equals(Name);
+                public override int GetHashCode() => Name.GetHashCode();
+            }
+        }
 
         internal sealed class OperationUnary(Partition<Token> sourceTokens,
             UnaryOperator @operator,
@@ -326,14 +398,14 @@ internal interface Node
         }
 
         internal sealed class BuiltinFdf(Partition<Token> sourceTokens,
-            Expression argument)
+            Expression argumentNomLog)
         : Expression(sourceTokens)
         {
-            public Expression Argument => argument;
+            public Expression ArgumentNomLog => argumentNomLog;
 
             public override bool Equals(Expression? other) => other is BuiltinFdf o
-             && o.Argument.Equals(Argument);
-            public override int GetHashCode() => Argument.GetHashCode();
+             && o.ArgumentNomLog.Equals(ArgumentNomLog);
+            public override int GetHashCode() => ArgumentNomLog.GetHashCode();
         }
 
         internal sealed class FunctionCall(Partition<Token> sourceTokens,
@@ -350,20 +422,6 @@ internal interface Node
             public override int GetHashCode() => HashCode.Combine(Name, Parameters.GetSequenceHashCode());
         }
 
-        internal sealed class ComponentAccess(Partition<Token> sourceTokens,
-            Expression structure,
-            Identifier componentName)
-        : Expression(sourceTokens)
-        {
-            public Expression Structure => structure;
-            public Identifier ComponentName => componentName;
-
-            public override bool Equals(Expression? other) => other is ComponentAccess o
-             && o.Structure.Equals(Structure)
-             && o.ComponentName.Equals(ComponentName);
-            public override int GetHashCode() => HashCode.Combine(Structure, ComponentName);
-        }
-
         internal sealed class Bracketed(Partition<Token> sourceTokens,
             Expression expression)
         : Expression(sourceTokens)
@@ -373,31 +431,6 @@ internal interface Node
             public override bool Equals(Expression? other) => other is Bracketed o
              && o.Expression.Equals(Expression);
             public override int GetHashCode() => Expression.GetHashCode();
-        }
-
-        internal sealed class ArraySubscript(Partition<Token> sourceTokens,
-            Expression array,
-            IReadOnlyCollection<Expression> indices)
-        : Expression(sourceTokens)
-        {
-            public Expression Array => array;
-            public IReadOnlyCollection<Expression> Indexes => indices;
-
-            public override bool Equals(Expression? other) => other is ArraySubscript o
-             && o.Array.Equals(Array)
-             && o.Indexes.SequenceEqual(Indexes);
-            public override int GetHashCode() => HashCode.Combine(Array, Indexes.GetSequenceHashCode());
-        }
-
-        internal sealed class VariableReference(Partition<Token> sourceTokens,
-            Identifier name)
-        : Expression(sourceTokens)
-        {
-            public Identifier Name => name;
-
-            public override bool Equals(Expression? other) => other is VariableReference o
-             && o.Name.Equals(Name);
-            public override int GetHashCode() => Name.GetHashCode();
         }
 
         internal abstract class Literal : Expression
@@ -442,40 +475,9 @@ internal interface Node
         public abstract bool Equals(Type? other);
         public abstract override int GetHashCode();
 
-        internal sealed class String(Partition<Token> sourceTokens)
-        : Type(sourceTokens)
-        {
-            public override bool Equals(Type? other) => true;
-            public override int GetHashCode() => 0;
-        }
-
-        internal sealed class Array(Partition<Token> sourceTokens,
-            Type type,
-            IReadOnlyCollection<Expression> dimensions)
-        : Type(sourceTokens)
-        {
-            public Type Type => type;
-            public IReadOnlyCollection<Expression> Dimensions => dimensions;
-            public override bool Equals(Type? other) => other is Array o
-             && o.Type.Equals(Type)
-             && o.Dimensions.SequenceEqual(o.Dimensions);
-
-            public override int GetHashCode() => HashCode.Combine(Type, Dimensions.GetSequenceHashCode());
-        }
-
-        internal sealed class Primitive(Partition<Token> sourceTokens,
-            PrimitiveType type)
-        : Type(sourceTokens)
-        {
-            public PrimitiveType Type => type;
-            public override bool Equals(Type? other) => other is Primitive o
-             && o.Type.Equals(Type);
-            public override int GetHashCode() => Type.GetHashCode();
-        }
-
         internal sealed class AliasReference(Partition<Token> sourceTokens,
             Identifier name)
-        : Type(sourceTokens)
+        : Complete(sourceTokens)
         {
             public Identifier Name => name;
             public override bool Equals(Type? other) => other is AliasReference o
@@ -483,24 +485,69 @@ internal interface Node
             public override int GetHashCode() => Name.GetHashCode();
         }
 
-        internal sealed class StringLengthed(Partition<Token> sourceTokens,
-            Expression length)
+        internal sealed class String(Partition<Token> sourceTokens)
         : Type(sourceTokens)
         {
-            public Expression Length => length;
-            public override bool Equals(Type? other) => other is StringLengthed o
-             && o.Length.Equals(length);
-            public override int GetHashCode() => Length.GetHashCode();
+            public override bool Equals(Type? other) => true;
+            public override int GetHashCode() => 0;
         }
 
-        internal sealed class StructureDefinition(Partition<Token> sourceTokens,
-            IReadOnlyCollection<Statement.VariableDeclaration> components)
+        internal abstract class Complete(Partition<Token> sourceTokens)
         : Type(sourceTokens)
         {
-            public IReadOnlyCollection<Statement.VariableDeclaration> Components => components;
-            public override bool Equals(Type? other) => other is StructureDefinition o
-             && o.Components.SequenceEqual(Components);
-            public override int GetHashCode() => Components.GetSequenceHashCode();
+            internal sealed class Array(Partition<Token> sourceTokens,
+                Type type,
+                IReadOnlyCollection<Expression> dimensions)
+            : Complete(sourceTokens)
+            {
+                public Type Type => type;
+                public IReadOnlyCollection<Expression> Dimensions => dimensions;
+                public override bool Equals(Type? other) => other is Array o
+                 && o.Type.Equals(Type)
+                 && o.Dimensions.SequenceEqual(o.Dimensions);
+
+                public override int GetHashCode() => HashCode.Combine(Type, Dimensions.GetSequenceHashCode());
+            }
+
+            internal sealed class Primitive(Partition<Token> sourceTokens,
+                PrimitiveType type)
+            : Complete(sourceTokens)
+            {
+                public PrimitiveType Type => type;
+                public override bool Equals(Type? other) => other is Primitive o
+                 && o.Type.Equals(Type);
+                public override int GetHashCode() => Type.GetHashCode();
+            }
+
+            internal sealed new class AliasReference(Partition<Token> sourceTokens,
+                Identifier name)
+            : Complete(sourceTokens)
+            {
+                public Identifier Name => name;
+                public override bool Equals(Type? other) => other is AliasReference o
+                 && o.Name.Equals(Name);
+                public override int GetHashCode() => Name.GetHashCode();
+            }
+
+            internal sealed class LengthedString(Partition<Token> sourceTokens,
+                Expression length)
+            : Complete(sourceTokens)
+            {
+                public Expression Length => length;
+                public override bool Equals(Type? other) => other is LengthedString o
+                 && o.Length.Equals(length);
+                public override int GetHashCode() => Length.GetHashCode();
+            }
+
+            internal sealed class Structure(Partition<Token> sourceTokens,
+                IReadOnlyCollection<Statement.LocalVariable> components)
+            : Complete(sourceTokens)
+            {
+                public IReadOnlyCollection<Statement.LocalVariable> Components => components;
+                public override bool Equals(Type? other) => other is Structure o
+                 && o.Components.SequenceEqual(Components);
+                public override int GetHashCode() => Components.GetSequenceHashCode();
+            }
         }
     }
 

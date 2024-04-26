@@ -27,6 +27,14 @@ internal static class Option
     public static Option<T> DiscardError<T, TError>(this Option<T, TError> option)
      => new OptionImpl<T>(option.HasValue, option.Value);
 
+    public static Option<T> DiscardError<T, TError>(this Option<T, TError> option, Action<TError> actionWithError)
+    {
+        if (!option.HasValue) {
+            actionWithError?.Invoke(option.Error);
+        }
+        return new OptionImpl<T>(option.HasValue, option.Value);
+    }
+
     public static T ValueOr<T>(this Option<T> option, T defaultValue)
      => option.HasValue ? option.Value : defaultValue;
     public static T ValueOr<T>(this Option<T> option, Func<T> defaultValue)
@@ -65,8 +73,13 @@ internal static class Option
 
     public static Option<TResult> FlatMap<T, TResult>(this Option<T> option, Func<T, Option<TResult>> transform)
      => option.HasValue ? transform(option.Value) : None<TResult>();
-    public static Option<TResult, TError> FlatMap<T, TError, TResult>(this Option<T, TError> option, Func<T, Option<TResult, TError>> transform)
+    public static Option<TResult, TError> FlatMap<T, TError, TResult>(this Option<T, TError> option,
+        Func<T, Option<TResult, TError>> transform)
      => option.HasValue ? transform(option.Value) : None<TResult, TError>(option.Error);
+
+    public static Option<TResult, TError> FlatMap<T1, T2, TError, TResult>(this Option<(T1, T2), TError> option,
+        Func<T1, T2, Option<TResult, TError>> transform)
+        => option.HasValue ? transform(option.Value.Item1, option.Value.Item2) : None<TResult, TError>(option.Error);
 
     public static Option<T> Else<T>(this Option<T> original, Option<T> other)
      => original.HasValue
@@ -126,11 +139,16 @@ internal static class Option
             action(option.Value.Item1, option.Value.Item2);
         }
     }
-
+    
     public static Option<(T1, T2)> Combine<T1, T2>(this Option<T1> option1, Option<T2> option2)
      => (option1.HasValue && option2.HasValue)
         ? Some((option1.Value, option2.Value))
         : None<(T1, T2)>();
+
+    public static Option<(T1, T2), TError> Combine<T1, T2, TError>(this Option<T1, TError> option1, Option<T2, TError> option2)
+     => (option1.HasValue && option2.HasValue)
+        ? Some<(T1, T2), TError>((option1.Value, option2.Value))
+        : None<(T1, T2), TError>(option1.Error ?? option2.Error.NotNull());
 
     private sealed record OptionImpl<T>(bool HasValue, T? Value) : Option<T>;
 

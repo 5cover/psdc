@@ -22,6 +22,10 @@
 - Function/Procdeure Signature mismatch (between prototypes or between definition/prototype)
 - Reassignment of constant
 - Output parameter never assigned
+- `lire[Clavier]`, `ecrire[Ecran]` to/of an expression of a type for which it doesn't make sense to do so (`nomFichierLog`). We won't define custom IO logic that C doesn't natively support, it would be up to the user to do so.
+
+- Reading unassigned variable
+- Array index out of range
 
 ## Warnings
 
@@ -43,10 +47,12 @@ Warning : when the code may not work because you're doing something valid but hi
 
 ## Suggestions
 
-Suggestion : style and formatting guidelines
+Suggestion : style and formatting guidelines, code quality fixes, harmless mistakes
 
 - Identifier names:
     - constants UPPER_CASE
     - types *t*PascalCase
     - structre components *c_*camelCase
     - others camelCase
+
+- useless assignment (`1 := 1`)

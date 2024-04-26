@@ -48,12 +48,12 @@ In variable declarations we allow only complete types because that's when we all
 This distinction also exists in C:
 
 ```c
-char str[10]; // complete
-char *str; // incomplete
+char str[10]; // complete : ok
+char str[]; // incomplete : error
 
 void func(
-    char str[10],
-    char *str // incomplete
+    char str[10], // complete : ok
+    char str[] // incomplete : ok
 )
 {
     // ...
@@ -79,6 +79,24 @@ In a way parameters are consumers and variables are providers.
 We do differ between complete and incomplete types, not in the types of nodes, but in the parsing.
 
 The set of complete types is a subset of all types.
+
+There is an issue though. What about aliases? They can contain either a complete or incomplete type. And we can't define separate productions for a `CompleteTypeAlias` and a `TypeAlias` as the reference productions (`CompleteTypeAliasReference` and `TypeAliasReference`) would have the same source tokens?
+
+I think there's a way. Anything that we can do in the parser will be less clutter in the semantic analyzer. Let's make a tree.
+
+```mermaid
+flowchart LR
+Type --> String
+Type --> TypeAliasReference
+Type --> CompleteType
+CompleteType --> Array
+CompleteType --> CompleteTypeAliasReference
+CompleteType --> Primitive
+CompleteType --> StringLengthed
+CompleteType --> Structure
+```
+
+When we need a Type, we will first parse a CompleteType (since it can do more than an incomplete type), which includes CompleteTypeAliasReference. It that fails, we will `.Else()` to TypeAliasReference and lastly String.
 
 ## For loops
 
@@ -431,4 +449,99 @@ Problem : how to implement the "output parameter never assigned errror"
 
 We can have a boolean in the {Procedure, Function}Definition case of AnalyzeDeclaration.
 
-Add a hook parameter to HandleScopedBlock that will recieve the statement
+Add a hook parameter to `HandleScopedBlock` that will recieve the statement
+
+## Lvalue/rvalue
+
+We need to differenciate between lvalues and rvalues in the formal grammar, the ast and the parser.
+
+So we don't allow things like `lireClavier(69)`
+
+Also we need to change our formal grammar with assignment, currently it only allows identifiers as the left operands :
+
+`target := value`
+
+However arrays exist:
+
+`array[5] := value`
+
+`array[indice / 2 + 4] := value`
+
+And structures:
+
+`bar.c_foo := value`
+
+---
+
+I can no longer postpone this
+
+Representing Rvalues with Node.Expressions and Lvalues with strings is no longer enough as structure component access and array subscript expressions may be used as Lvalues.
+
+Should we update our formal grammar?
+
+Yes. We need some sort of restriction on which expressions can be lvalues so we don't allow horrors such as
+
+`1 + 1 := 3;`
+
+The problem is for bracketed expressions. `lireClavier((val))` is just as valid as `lireClavier(val)`.
+
+So a `Bracketed` can contain either an lvalue or rvalue, what it is it defined on its contents. I guess we can add an abstract boolean property `IsLValue` on `Expression`. This property will be used by the semantic analyzer?
+
+So the parser will allow assigning to lvalues but it's the semantic analyzer that will catch the error. Is this a good idea?
+
+Since there's not only assignments to worry about, there's also `lireClavier` and effective output parameters.
+
+But at the same time it would be better to use types, and the custom error message can be given by an error production.
+
+I'm having trouble organizing the formal grammar. I have to put these below `Expression_1`:
+
+- bracketed
+- call
+- fdf
+- literal
+- lvalue
+    - bracketed lvalue
+    - array subscript
+    - component access
+    - identifier
+
+But there's a catch : array subscript and component access start with any expression, so they will recurse infinitely if they can parse themselves.
+
+Let's show it with a tree based on the AST (solid arrow is identity, dotted arrow is first composition, dotted circle is other compisitons)
+
+To ensure every parsing siutation works, **any node must be linked \[in\]directly to any other node on the right.**
+
+```mermaid
+flowchart LR
+Expression_1 --> Bracketed
+Expression_1 --> Call .-> Identifier
+Expression_1 --> Fdf .-> Identifier
+Expression_1 --> Literal
+Expression_1 --> LValue --> IdentifierReference .-> Identifier
+LValue --> BracketedLValue 
+LValue --> ArraySubscript .-> Expression_1
+LValue --> ComponentAccess .-> Expression_1
+```
+
+How do we eliminate those 2 cycles?
+
+```mermaid
+flowchart LR
+Expression_1 --> TerminalRValue
+TerminalRValue --> Bracketed
+TerminalRValue --> Literal
+TerminalRValue --> Call .-> Identifier
+TerminalRValue --> Fdf .-> Identifier
+TerminalRValue --> TerminalLValue
+Expression_1 --> LValue --> TerminalLValue
+TerminalLValue --> BracktedLValue
+TerminalLValue --> IdentifierReference .-> Identifier   
+LValue --> ArraySubscript .-> TerminalRValue
+LValue --> ComponentAccess .-> TerminalRValue
+```
+
+Nice.
+
+## Structure definitions should be types
+
+Just like in C.

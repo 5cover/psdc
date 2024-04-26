@@ -17,6 +17,10 @@ internal enum MessageCode
     ExpectedConstantExpression,
     StructureDuplicateComponent,
     OutputParameterNeverAssigned,
+    StructureComponentDoesntExist,
+    ComponentAccessOfNonStruct,
+    SubscriptOfNonArray,
+    UnsupportedOperandTypesForBinaryOperation,
 
     #endregion Errors
 

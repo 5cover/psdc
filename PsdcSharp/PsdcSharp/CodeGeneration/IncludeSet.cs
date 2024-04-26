@@ -14,6 +14,11 @@ internal sealed class IncludeSet
 
     public StringBuilder AppendIncludeSection(StringBuilder output)
     {
+        if (_headers.Count == 0) {
+            return output;
+        }
+
+        output.AppendLine();
         foreach (string header in _headers) {
             output.AppendLine($"#include {header}");
         }

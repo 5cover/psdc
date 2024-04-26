@@ -27,7 +27,7 @@ internal sealed class TypeInfoC : TypeInfo
             var target = Create(alias.Target, generateExpression, indent);
             return new(alias.Name.Name, target.FormatComponent, target.RequiredHeaders);
         case EvaluatedType.Array array:
-            var arrayType = Create(array.Type, generateExpression, indent);
+            var arrayType = Create(array.ElementType, generateExpression, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
             foreach (var dimension in array.Dimensions) {
                 postModifier.Append($"[{generateExpression(dimension)}]");
@@ -36,7 +36,7 @@ internal sealed class TypeInfoC : TypeInfo
                 requiredHeaders: arrayType.RequiredHeaders,
                 preModifier: arrayType._preModifier,
                 postModifier: postModifier.ToString());
-        case EvaluatedType.StringLengthed lengthedString:
+        case EvaluatedType.LengthedString lengthedString:
             return new("char", "%s", postModifier: $"[{generateExpression(lengthedString.Length)}]");
         case EvaluatedType.StringLengthedKnown slk:
             return new("char", "%s", postModifier: $"[{slk.Length}]");

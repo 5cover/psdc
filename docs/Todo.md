@@ -2,9 +2,9 @@
 
 Project roadmap:
 
-- Brace initialization (voir TD4 ex 1)
 - Alternative keywords
     - finPour in place of fin
+    - lowercase boolean operators
 - Numeroted control stuctures? si1, si2, si3
 
 - ~~Alternatives~~
@@ -17,14 +17,21 @@ Project roadmap:
 - ~~Functions~~
 - ~~Structures~~
 - ~~Selon~~
-- Fix errors
-- Lvalues
-- Files
-- CLI
+- ~~Fix syntax error handling~~
+- ~~Lvalues~~
+- Files and other builtins
+- Brace initialization (voir TD4 ex 1)
+- CLI (use nuget package)
+    - customize header?
+    - special behaviors (ecrireEcran newlines...)
 - Tests?
-- Command arguments (use nuget package)
-- Release
+    - Errors
+    - Valid code
 - Documentation
+- Release
+- More semantic analysis
+
+- Have formal grammar follow parsing order in choices.
 
 ## Sample programs
 

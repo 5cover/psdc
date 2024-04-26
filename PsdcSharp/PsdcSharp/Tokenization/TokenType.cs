@@ -25,98 +25,96 @@ internal abstract class TokenType
         TokenRule Ruled.Rule => rule;
     }
 
-    internal sealed class Named : Ruled<RegexTokenRule>
+    internal sealed class Valued : Ruled<RegexTokenRule>
     {
-        private Named(string name, string pattern, RegexOptions options = RegexOptions.None)
-        : base(name, false, new(pattern, options))
-        {
-            _instances.Add(this);
-        }
+        private Valued(string name, string pattern, RegexOptions options = RegexOptions.None)
+        : base(name, false, new(pattern, options)) => instances.Add(this);
 
-        private static List<Named> _instances = [];
-        public static IReadOnlyCollection<Named> Instances => _instances;
+        private static readonly List<Valued> instances = [];
+        public static IReadOnlyCollection<Valued> Instances => instances;
 
-        public static Named CommentMultiline { get; } = new("multiline comment", @"/\*(.*?)\*/", RegexOptions.Singleline);
-        public static Named CommentSingleline { get; } = new("singleline comment", "//(.*)$", RegexOptions.Multiline);
-        public static Named Identifier { get; } = new("identifier", @"([\p{L}_][\p{L}_0-9]*)");
-        public static Named LiteralCharacter { get; } = new("character literal", "'(.)'");
-        public static Named LiteralInteger { get; } = new("integer literal", @"(\d+)");
-        public static Named LiteralReal { get; } = new("real literal", @"(\d*\.\d+)");
-        public static Named LiteralString { get; } = new("string literal", @"""(.*?)""");
+        public static Valued CommentMultiline { get; } = new("multiline comment", @"/\*(.*?)\*/", RegexOptions.Singleline);
+        public static Valued CommentSingleline { get; } = new("singleline comment", "//(.*)$", RegexOptions.Multiline);
+        public static Valued Identifier { get; } = new("identifier", @"([\p{L}_][\p{L}_0-9]*)");
+        public static Valued LiteralCharacter { get; } = new("character literal", "'(.)'");
+        public static Valued LiteralInteger { get; } = new("integer literal", @"(\d+)");
+        public static Valued LiteralReal { get; } = new("real literal", @"(\d*\.\d+)");
+        public static Valued LiteralString { get; } = new("string literal", @"""(.*?)""");
     }
 
-    internal sealed class Symbol : Ruled<StringTokenRule>
+    internal sealed class Operator : Ruled<StringTokenRule>
     {
-        private Symbol(string code)
+        private Operator(string code)
         : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
-        {
+         => instances.Add(this);
 
-            _instances.Add(this);
-        }
+        private static readonly List<Operator> instances = [];
+        public static IReadOnlyCollection<Operator> Instances => instances;
 
-        private static List<Symbol> _instances = [];
-        public static IReadOnlyCollection<Symbol> Instances => _instances;
-
-        public static Symbol CloseBrace { get; } = new("}");
-        public static Symbol CloseBracket { get; } = new(")");
-        public static Symbol CloseSquareBracket { get; } = new("]");
-        public static Symbol OpenBrace { get; } = new("{");
-        public static Symbol OpenBracket { get; } = new("(");
-        public static Symbol OpenSquareBracket { get; } = new("[");
-        public static Symbol Arrow { get; } = new("=>");
-        public static Symbol Colon { get; } = new(":");
-        public static Symbol Comma { get; } = new(",");
-        public static Symbol Semicolon { get; } = new(";");
-
-        #region Operators
-
-        public static Symbol OperatorAssignment { get; } = new(":=");
-        public static Symbol OperatorMemberAccess { get; } = new(".");
-        public static Symbol OperatorTypeAssignment { get; } = new("=");
+        public static Operator Assignment { get; } = new(":=");
+        public static Operator ComponentAccess { get; } = new(".");
+        public static Operator TypeAssignment { get; } = new("=");
 
         #region Arithmetic
 
-        public static Symbol OperatorDivide { get; } = new("/");
-        public static Symbol OperatorMinus { get; } = new("-");
-        public static Symbol OperatorModulus { get; } = new("%");
-        public static Symbol OperatorMultiply { get; } = new("*");
-        public static Symbol OperatorPlus { get; } = new("+");
+        public static Operator Divide { get; } = new("/");
+        public static Operator Minus { get; } = new("-");
+        public static Operator Modulus { get; } = new("%");
+        public static Operator Multiply { get; } = new("*");
+        public static Operator Plus { get; } = new("+");
 
         #endregion Arithmetic
 
         #region Logical
 
-        public static Symbol OperatorAnd { get; } = new("ET");
-        public static Symbol OperatorNot { get; } = new("NON");
-        public static Symbol OperatorOr { get; } = new("OU");
-        public static Symbol OperatorXor { get; } = new("XOR");
+        public static Operator And { get; } = new("ET");
+        public static Operator Not { get; } = new("NON");
+        public static Operator Or { get; } = new("OU");
+        public static Operator Xor { get; } = new("XOR");
 
         #endregion Logical
 
         #region Comparison
 
-        public static Symbol OperatorEqual { get; } = new("==");
-        public static Symbol OperatorGreaterThan { get; } = new(">");
-        public static Symbol OperatorGreaterThanOrEqual { get; } = new(">=");
-        public static Symbol OperatorLessThan { get; } = new("<");
-        public static Symbol OperatorLessThanOrEqual { get; } = new("<=");
-        public static Symbol OperatorNotEqual { get; } = new("!=");
+        public static Operator Equal { get; } = new("==");
+        public static Operator GreaterThan { get; } = new(">");
+        public static Operator GreaterThanOrEqual { get; } = new(">=");
+        public static Operator LessThan { get; } = new("<");
+        public static Operator LessThanOrEqual { get; } = new("<=");
+        public static Operator NotEqual { get; } = new("!=");
 
         #endregion Comparison
+    }
 
-        #endregion Operators
+    internal sealed class Punctuation : Ruled<StringTokenRule>
+    {
+        private Punctuation(string code)
+        : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
+         => instances.Add(this);
+
+        private static List<Punctuation> instances = [];
+        public static IReadOnlyCollection<Punctuation> Instances => instances;
+
+        public static Punctuation CloseBrace { get; } = new("}");
+        public static Punctuation CloseBracket { get; } = new(")");
+        public static Punctuation CloseSquareBracket { get; } = new("]");
+        public static Punctuation OpenBrace { get; } = new("{");
+        public static Punctuation OpenBracket { get; } = new("(");
+        public static Punctuation OpenSquareBracket { get; } = new("[");
+        public static Punctuation Arrow { get; } = new("=>");
+        public static Punctuation Colon { get; } = new(":");
+        public static Punctuation Comma { get; } = new(",");
+        public static Punctuation Semicolon { get; } = new(";");
     }
 
     internal sealed class Keyword : Ruled<WordTokenRule>
     {
         private Keyword(string word)
         : base(word, true, new WordTokenRule(word, StringComparison.Ordinal))
-        {
-            _instances.Add(this);
-        }
+         => instances.Add(this);
 
-        private static List<Keyword> _instances = [];
-        public static IReadOnlyCollection<Keyword> Instances => _instances;
+        private static readonly List<Keyword> instances = [];
+        public static IReadOnlyCollection<Keyword> Instances => instances;
 
         public static Keyword Begin { get; } = new("début");
         public static Keyword End { get; } = new("fin");
@@ -165,7 +163,7 @@ internal abstract class TokenType
         public static Keyword Lire { get; } = new("lire");
         public static Keyword Ecrire { get; } = new("écrire");
         public static Keyword Fermer { get; } = new("fermer");
-        public static Keyword Fdf { get; } = new("fdf");
+        public static Keyword Fdf { get; } = new("FdF");
 
         #endregion Builtins
 

@@ -6,14 +6,6 @@ Détermine l'aspect syntaxique (et non pas sémantique) d'un programme.
 
 **Non-terminal** : groupes de symboles terminaux déterminés par les règles de production.
 
-3 types of rules :
-
-- Case rules : only a list of choice
-    - Pixeled C++ : variant
-    - My C++ : union?
-    - C# : inherit empty base class
-- Terminals : rules that don't reference any other rules (leaves)
-
 ## Règles de production
 
 symbole|légende
@@ -40,156 +32,122 @@ $$
 
 &\textbf{Général}\notag\\
 
-⟨Algorithme⟩ &\to \text{programme}\ identifiant\ \text{c'est} ⟨Déclaration⟩^*
+⟨Algorithm⟩ &\to \text{programme}\ Identifier\ \text{c'est} ⟨Declaration⟩^*
 \\
-⟨Bloc⟩ &\to ⟨Instruction⟩^*
+⟨Block⟩ &\to ⟨Statement⟩^*
 
-\\&\textbf{Déclarations}\notag\\
+\\&\textbf{Declarations}\notag\\
 
-⟨Déclaration⟩ &\to \begin{cases}
-    ⟨DéclarationAlias⟩\\
-    ⟨DéclarationConstante⟩\\
-    ⟨ProgrammePrincipal⟩\\
-    ⟨SignatureFonction⟩ \text{c'est\ début} ⟨Bloc⟩ \text{fin}\\
-    ⟨SignatureFonction⟩;\\
-    ⟨SignatureProcédure⟩ \text{c'est\ début} ⟨Bloc⟩ \text{fin}\\
-    ⟨SignatureProcédure⟩;\\
-    \text{début} ⟨Bloc⟩ \text{fin}\\
+⟨Declaration⟩ &\to \begin{cases}
+    ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier = ⟨Type⟩
+    ⟨DeclarationCompleteTypeAlias⟩ \to \text{type}\ Identifier = ⟨TypeComplete⟩
+    \\
+    ⟨DeclarationConstant⟩ \to \text{constante} ⟨TypeComplete⟩ Identifier \text{:=} ⟨Expression⟩;
+    \\
+    ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin}
+    \\
+    ⟨FunctionSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin}
+    \\
+    ⟨FunctionSignature⟩;
+    \\
+    ⟨ProcedureSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin}
+    \\
+    ⟨ProcedureSignature⟩;
+    \\
+    \text{début} ⟨Block⟩ \text{fin}
+    \\
+\end{cases}
+
+\\&\textbf{Statements}\notag\\
+
+⟨Statement⟩ &\to \begin{cases}
+    ⟨Alternative⟩ \to \begin{split}
+    &   ⟨Alternative.If⟩\\
+    &   ⟨Alternative.ElseIf⟩^*\\
+    &   ⟨Alternative.Else⟩^?\\
+    &   \text{finsi}\\
+    \end{split}
+    \\
+    ⟨ProcedureCall⟩ \to ⟨Call⟩;
+    \\
+    ⟨Assignment⟩ \to ⟨LValue⟩ = ⟨Expression⟩;
+    \\
+    ⟨ForLoop⟩ \to \begin{split}
+    \\
+    &   \text{pour}\ Identifier
+        \ \text{de} ⟨Expression⟩ \text{à} ⟨Expression⟩
+        \{\text{pas} ⟨Expression⟩\}^?
+        \text{faire} \\
+    &   ⟨Block⟩ \\
+    &   \text{finfaire}
+    \end{split}
+    \\
+    ⟨RepeatLoop⟩ \to \text{répéter} ⟨Block⟩ \text{jusqu'à} (⟨Expression⟩)
+    \\
+    ⟨DoWhileLoop⟩ \to \text{faire} ⟨Block⟩ \text{tant\ que} (⟨Expression⟩)
+    \\
+    ⟨WhileLoop⟩ \to \text{tant\ que} (⟨Expression⟩) \text{faire} ⟨Block⟩ \text{finfaire}
+    \\
+    ⟨Switch⟩ \to \begin{split}
+    &   \text{selon} ⟨Expression⟩ \text{c'est}\\
+    &   ⟨Switch.Case⟩^*\\
+    &   ⟨Switch.Default⟩^?\\
+    &   \text{finselon}\\
+    \end{split}
+    \\
+    ⟨LocalVariable⟩ \to Identifier^{+|,} : ⟨TypeComplete⟩;
+    \\
+    ⟨Return⟩ \to \text{retourne} ⟨Expression⟩;
+    \\
+    ⟨BuiltinAssigner⟩ \to \text{assigner}(⟨LValue⟩,⟨Expression⟩);
+    \\
+    ⟨BuiltinEcrire⟩ \to \text{écrire}(⟨Expression⟩, ⟨Expression⟩);
+    \\
+    ⟨BuiltinEcrireEcran⟩ \to \text{écrireÉcran}(⟨Expression⟩^{*|,});
+    \\
+    ⟨BuiltinFermer⟩ \to \text{fermer}(⟨Expression⟩);
+    \\
+    ⟨BuiltinLire⟩ \to \text{lire}(⟨Expression⟩,⟨LValue⟩);
+    \\
+    ⟨BuiltinLireClavier⟩ \to \text{lireClavier}(⟨LValue⟩);
+    \\
+    ⟨BuiltinOuvrirAjout⟩ \to \text{ouvrirAjout}(⟨Expression⟩)
+    \\
+    ⟨BuiltinOuvrirEcriture⟩ \to \text{ouvrirÉcriture}(⟨Expression⟩);
+    \\
+    ⟨BuiltinOuvrirLecture⟩ \to \text{ouvrirLecture}(⟨Expression⟩);
+    \\
+    ⟨Nop⟩ \to ;
 \end{cases}
 \\
-⟨DéclarationAlias⟩ &\to \text{type}\ identifiant =\begin{cases}
-    ⟨TypeComplet⟩\\
-    ⟨DéfinitionStructure⟩\\
-\end{cases};
+⟨Alternative.If⟩ &\to \text{si} (⟨Expression⟩) \text{alors} ⟨Block⟩
 \\
-⟨DéclarationConstante⟩ &\to \text{constante} ⟨TypeComplet⟩ identifiant \text{:=} ⟨Expression⟩;
+⟨Alternative.ElseIf⟩ &\to \text{sinonsi} (⟨Expression⟩) \text{alors} ⟨Block⟩\
 \\
-⟨DéfinitionStructure⟩ &\to \text{structure\ début} ⟨DéclarationVariable⟩^+ \text{fin}
+⟨Alternative.Else⟩ &\to \text{sinon} ⟨Block⟩
 \\
-⟨ProgrammePrincpal⟩ &\to \text{début} ⟨Bloc⟩ \text{fin}
+⟨Switch.Case⟩ &\to \text{quand} ⟨Expression⟩ => ⟨Statement⟩^+\
 \\
-⟨SignatureFonction⟩ &\to \text{fonction}\ identifiant(⟨ParamètreFormel⟩^{*|,}) \text{délivre} ⟨Type⟩
-\\
-⟨SignatureProcédure⟩ &\to \text{procédure}\ identifiant(⟨ParamètreFormel⟩^{*|,})
-\\
-⟨ParamètreFormel⟩ &\to \begin{cases}
-    \text{entF}\\
-    \text{sortF}\\
-    \text{entF/sortF}\\
-\end{cases} identifiant : ⟨Type⟩
-
-\\&\textbf{Instructions}\notag\\
-
-⟨Instruction⟩ &\to \begin{cases}
-    ⟨Alternative⟩\\
-    ⟨Appel⟩;\\
-    ⟨Assignation⟩\\
-    ⟨BouclePour⟩\\
-    ⟨BoucleRépéter⟩\\
-    ⟨BoucleFaireTantQue⟩\\
-    ⟨BoucleTantQue⟩\\
-    ⟨Selon⟩\\
-    ⟨DéclarationVariable⟩\\
-    \text{retourne} ⟨Expression⟩;\\
-    \text{assigner}(⟨Expression⟩, ⟨Expression⟩);\\
-    \text{écrire}(⟨Expression⟩, ⟨Expression⟩);\\
-    \text{écrireÉcran}(⟨Expression⟩^{*|,});\\
-    \text{fermer}(⟨Expression⟩);\\
-    \text{lire}(⟨Expression⟩, ⟨Expression⟩);\\
-    \text{lireClavier}(⟨Expression⟩);\\
-    \text{ouvrirAjout}(⟨Expression⟩);\\
-    \text{ouvrirÉcriture}(⟨Expression⟩);\\
-    \text{ouvrirLecture}(⟨Expression⟩);\\
-    ;\\
-\end{cases}
-\\
-⟨Alternative⟩ &\to ⟨Alternative.Si⟩ ⟨Alternative.SinonSi⟩^* ⟨Alternative.Sinon⟩^? \text{finsi}
-\\
-⟨Alternative.Si⟩ &\to \text{si} (⟨Expression⟩) \text{alors} ⟨Bloc⟩
-\\
-⟨Alternative.SinonSi⟩ &\to \text{sinonsi} (⟨Expression⟩) \text{alors} ⟨Bloc⟩\
-\\
-⟨Alternative.Sinon⟩ &\to \text{sinon} ⟨Bloc⟩
-\\
-⟨Assignation⟩ &\to ⟨ExpressionLvalue⟩ = ⟨Expression⟩;
-\\
-⟨BouclePour⟩ &\to \begin{split}
-&    \text{pour}\ identifiant
-    \ \text{de} ⟨Expression⟩ \text{à} ⟨Expression⟩
-    \{\text{pas} ⟨Expression⟩\}^?
-    \text{faire} \\
-&   ⟨Bloc⟩ \\
-&   \text{finfaire}
-\end{split}
-\\
-⟨BoucleRépéter⟩ &\to \text{répéter} ⟨Bloc⟩ \text{jusqu'à} (⟨Expression⟩)
-\\
-⟨BoucleFaireTantQue⟩ &\to \text{faire} ⟨Bloc⟩ \text{tant\ que} (⟨Expression⟩)
-\\
-⟨BoucleTantQue⟩ &\to \text{tant\ que} (⟨Expression⟩) \text{faire} ⟨Bloc⟩ \text{finfaire}
-\\
-⟨DéclarationVariable⟩ &\to identifiant^{+|,} : ⟨TypeComplet⟩;
-\\
-⟨Selon⟩ &\to \begin{split}
-&   \text{selon} ⟨Expression⟩ \text{c'est}\\
-&   ⟨Selon.Quand⟩^*\\
-&   ⟨Selon.QuandAutre⟩^?\\
-&   \text{finselon}\\
-\end{split}
-\\
-⟨Selon.Quand⟩ &\to \text{quand} ⟨Expression⟩ => ⟨Instruction⟩^+\
-\\
-⟨Selon.QuandAutre⟩ &\to \text{quand\ autre} => ⟨Instruction⟩^+\
+⟨Switch.Default⟩ &\to \text{quand\ autre} => ⟨Statement⟩^+\
 
 \\&\textbf{Expressions}\notag\\
 
-⟨Appel⟩ &\to identifiant(\{\begin{cases}
-    \text{entE}\\
-    \text{sortE}\\
-    \text{entE/sortE}\\
-\end{cases} ⟨Expression⟩\}^{*|,})
-
-\\&\textbf{Opérations}\notag\\
-
-⟨ExpressionLvalue⟩ &\to \begin{cases}
-    (⟨ExpressionLvalue⟩)\\
-    identifiant\\
-    ⟨Expression⟩.identifiant\\
-    ⟨Expression⟩[⟨Expression⟩^{+|,}]\\
+⟨Expression⟩ &\to \begin{cases}
+    ⟨Expression⟩ \text{OU} ⟨Expression_7⟩\\
+    ⟨Expression_7⟩
 \end{cases}
 \\
-⟨Expression_1⟩ &\to \begin{cases}
-    ⟨ExpressionLvalue⟩\\
-    (⟨Expression⟩)\\
-    ⟨Appel⟩\\
-    ⟨Littéral⟩\\
-    \text{FdF}(⟨Expression⟩)\\
+⟨Expression_7⟩ &\to \begin{cases}
+    ⟨Expression_7⟩ \text{ET} ⟨Expression_6⟩\\
+    ⟨Expression_6⟩
 \end{cases}
 \\
-⟨Expression_2⟩ &\to \begin{cases}
-    \begin{cases}
-        -\\
-        +\\
-        \text{NON}\\
-    \end{cases} ⟨Expression_1⟩\\
-    ⟨Expression_1⟩
-\end{cases}
-\\
-⟨Expression_3⟩ &\to \begin{cases}
-    ⟨Expression_3⟩ \begin{cases}
-        *\\
-        /\\
-        \%\\
-    \end{cases} ⟨Expression_2⟩\\
-    ⟨Expression_2⟩
-\end{cases}
-\\
-⟨Expression_4⟩ &\to \begin{cases}
-    ⟨Expression_4⟩ \begin{cases}
-        -\\
-        +\\
-    \end{cases} ⟨Expression_3⟩\\
-    ⟨Expression_3⟩
+⟨Expression_6⟩ &\to \begin{cases}
+    ⟨Expression_6⟩ \begin{cases}
+        !=\\
+        ==\\
+    \end{cases} ⟨Expression_5⟩\\
+    ⟨Expression_5⟩
 \end{cases}
 \\
 ⟨Expression_5⟩ &\to \begin{cases}
@@ -202,58 +160,119 @@ $$
     ⟨Expression_4⟩
 \end{cases}
 \\
-⟨Expression_6⟩ &\to \begin{cases}
-    ⟨Expression_6⟩ \begin{cases}
-        !=\\
-        ==\\
-    \end{cases} ⟨Expression_5⟩\\
-    ⟨Expression_5⟩
+⟨Expression_4⟩ &\to \begin{cases}
+    ⟨Expression_4⟩ \begin{cases}
+        -\\
+        +\\
+    \end{cases} ⟨Expression_3⟩\\
+    ⟨Expression_3⟩
 \end{cases}
 \\
-⟨Expression_7⟩ &\to \begin{cases}
-    ⟨Expression_7⟩ \text{ET} ⟨Expression_6⟩\\
-    ⟨Expression_6⟩
+⟨Expression_3⟩ &\to \begin{cases}
+    ⟨Expression_3⟩ \begin{cases}
+        *\\
+        /\\
+        \%\\
+    \end{cases} ⟨Expression_2⟩\\
+    ⟨Expression_2⟩
 \end{cases}
 \\
-⟨Expression⟩ &\to \begin{cases}
-    ⟨Expression⟩ \text{OU} ⟨Expression_7⟩\\
-    ⟨Expression_7⟩
+⟨Expression_2⟩ &\to \begin{cases}
+    \begin{cases}
+        -\\
+        +\\
+        \text{NON}\\
+    \end{cases} ⟨Expression_1⟩\\
+    ⟨Expression_1⟩
 \end{cases}
+\\
+⟨Expression_1⟩ &\to \begin{cases}
+    ⟨TerminalRValue⟩\\
+    ⟨LValue⟩\\
+\end{cases}
+\\
+⟨TerminalRValue⟩ &\to \begin{cases}
+    ⟨Bracketed⟩ \to (⟨Expression⟩)
+    \\
+    ⟨Literal⟩ \to \begin{cases}
+        LiteralString\\
+        LiteralCharacter\\
+        LiteralInteger\\
+        LiteralReal\\
+        \text{vrai}\\
+        \text{faux}\\
+    \end{cases}
+    \\
+    ⟨Call⟩
+    \\
+    ⟨BuiltinFdf⟩ \to \text{FdF}(⟨Expression⟩)
+    \\
+    ⟨TerminalLValue⟩
+\end{cases}
+\\
+⟨LValue⟩ &\to \begin{cases}
+    ⟨ArraySubscript⟩\\
+    ⟨ComponentAccess⟩\\
+    ⟨TerminalLValue⟩\\
+\end{cases}
+\\
+⟨ArraySubscript⟩ &\to ⟨TerminalRValue⟩[⟨Expression⟩^{+|,}]
+\\
+⟨ComponentAccess⟩ &\to ⟨TerminalRValue⟩.Identifier
+\\
+⟨TerminalLValue⟩ &\to \begin{cases}
+    ⟨BracketedLValue⟩ \to (⟨LValue⟩)
+    \\
+    ⟨IdentifierReference⟩ \to Identifier
+\end{cases}
+\\
+⟨Call⟩ &\to Identifier(⟨EffectiveParameter⟩^{*|,})
 
 \\&\textbf{Types}\notag\\
 
 ⟨Type⟩ &\to \begin{cases}
-    \text{chaîne}\\
-    ⟨TypeComplet⟩\\
+    ⟨TypeComplete⟩
+    \\
+    ⟨TypeAliasReference⟩ \to Identifier
+    \\
+    ⟨String⟩ &\to \text{chaîne}
 \end{cases}
 \\
-⟨TypeComplet⟩ &\to \begin{cases}
-    \text{chaîne}(⟨Expression⟩)\\
-    ⟨TypePrimitif⟩\\
-    ⟨TypeTableau⟩\\
-    identifiant\\
+⟨TypeComplete⟩ &\to \begin{cases}
+    ⟨TypeCompleteAliasReference⟩ \to Identifier
+    \\
+    ⟨TypePrimitive⟩ \to \begin{cases}
+        \text{booléen}\\
+        \text{caractère}\\
+        \text{entier}\\
+        \text{nomFichierLog}\\
+        \text{réel}\\
+    \\
+    ⟨StringLengthed⟩ \to \text{chaîne}(⟨Expression⟩)
+    \\
+    ⟨Structure⟩ \to \text{structure\ début} ⟨LocalVariable⟩^+ \text{fin}
+    \\
+    ⟨TypeArray⟩ \to \text{tableau} [⟨Expression⟩]^+ \text{de} ⟨TypeComplete⟩
+    \end{cases}
 \end{cases}
-\\
-⟨TypeTableau⟩ &\to \text{tableau} [⟨Expression⟩]^+ \text{de} ⟨TypeComplet⟩
 
-\\&\textbf{Terminaux}\notag\\
+\\&\textbf{Other}\notag\\
 
-⟨Littéral⟩ &\to \begin{cases}
-    \text{littéralChaîne}\\
-    \text{littéralCaractère}\\
-    \text{littéralEntier}\\
-    \text{littéralRéel}\\
-    \text{vrai}\\
-    \text{faux}\\
-\end{cases}
+⟨FormalParameter⟩ &\to \begin{cases}
+    \text{entF}\\
+    \text{sortF}\\
+    \text{entF/sortF}\\
+\end{cases} Identifier : ⟨Type⟩
 \\
-⟨TypePrimitif⟩ &\to \begin{cases}
-    \text{booléen}\\
-    \text{caractère}\\
-    \text{entier}\\
-    \text{nomFichierLog}\\
-    \text{réel}\\
-\end{cases}
+⟨EffectiveParameter⟩ &\to \begin{cases}
+    \text{entE}\\
+    \text{sortE}\\
+    \text{entE/sortE}\\
+\end{cases} ⟨Expression⟩\
+\\
+⟨FunctionSignature⟩ &\to \text{fonction}\ Identifier(⟨FormalParameter⟩^{*|,}) \text{délivre} ⟨Type⟩
+\\
+⟨ProcedureSignature⟩ &\to \text{procédure}\ Identifier(⟨FormalParameter⟩^{*|,})
 
 \end{align*}
 $$

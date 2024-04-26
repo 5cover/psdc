@@ -25,8 +25,8 @@ début
         lireClavier(step);
     tant que (step == 0)
 
-    si step > 0 et start > end
-    ou step < 0 et start < end alors
+    si (step > 0 ET start > end
+    OU step < 0 ET start < end) alors
         écrireEcran("Invalid values");
     sinon
         // for

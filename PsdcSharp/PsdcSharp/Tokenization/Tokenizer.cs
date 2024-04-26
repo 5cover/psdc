@@ -1,6 +1,6 @@
 
 using static Scover.Psdc.Tokenization.TokenType;
-using static Scover.Psdc.Tokenization.TokenType.Named;
+using static Scover.Psdc.Tokenization.TokenType.Valued;
 using static Scover.Psdc.Tokenization.TokenType.Special;
 
 namespace Scover.Psdc.Tokenization;
@@ -16,7 +16,8 @@ internal sealed class Tokenizer(string input) : MessageProvider
         LiteralCharacter,
     }
         .Concat(Keyword.Instances.OrderByDescending(type => type.Rule.Expected.Length))
-        .Concat(Symbol.Instances.OrderByDescending(type => type.Rule.Expected.Length))
+        .Concat(Enumerable.Concat<Ruled<StringTokenRule>>(Punctuation.Instances, Operator.Instances)
+                .OrderByDescending(type => type.Rule.Expected.Length))
         .Append(Identifier)
         .ToList();
 

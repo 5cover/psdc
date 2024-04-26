@@ -10,37 +10,37 @@ internal partial class Parser
 
     private static readonly IReadOnlyList<IReadOnlyDictionary<TokenType, BinaryOperator>> binaryOperations = new List<Dictionary<TokenType, BinaryOperator>> {
         new() {
-            [Symbol.OperatorOr] = BinaryOperator.Or,
+            [Operator.Or] = BinaryOperator.Or,
         },
         new() {
-            [Symbol.OperatorAnd] = BinaryOperator.And,
+            [Operator.And] = BinaryOperator.And,
         },
         new() {
-            [Symbol.OperatorEqual] = BinaryOperator.Equal,
-            [Symbol.OperatorNotEqual] = BinaryOperator.NotEqual,
+            [Operator.Equal] = BinaryOperator.Equal,
+            [Operator.NotEqual] = BinaryOperator.NotEqual,
         },
         new() {
-            [Symbol.OperatorLessThan] = BinaryOperator.LessThan,
-            [Symbol.OperatorLessThanOrEqual] = BinaryOperator.LessThanOrEqual,
-            [Symbol.OperatorGreaterThan] = BinaryOperator.GreaterThan,
-            [Symbol.OperatorGreaterThanOrEqual] = BinaryOperator.GreaterThanOrEqual,
+            [Operator.LessThan] = BinaryOperator.LessThan,
+            [Operator.LessThanOrEqual] = BinaryOperator.LessThanOrEqual,
+            [Operator.GreaterThan] = BinaryOperator.GreaterThan,
+            [Operator.GreaterThanOrEqual] = BinaryOperator.GreaterThanOrEqual,
         },
         new() {
-            [Symbol.OperatorPlus] = BinaryOperator.Plus,
-            [Symbol.OperatorMinus] = BinaryOperator.Minus,
+            [Operator.Plus] = BinaryOperator.Plus,
+            [Operator.Minus] = BinaryOperator.Minus,
         },
         new() {
-            [Symbol.OperatorMultiply] = BinaryOperator.Multiply,
-            [Symbol.OperatorDivide] = BinaryOperator.Divide,
-            [Symbol.OperatorModulus] = BinaryOperator.Modulus,
+            [Operator.Multiply] = BinaryOperator.Multiply,
+            [Operator.Divide] = BinaryOperator.Divide,
+            [Operator.Modulus] = BinaryOperator.Modulus,
         },
     };
 
     private const string NameUnaryOperator = "unary operator";
     private static readonly IReadOnlyDictionary<TokenType, UnaryOperator> unaryOperators = new Dictionary<TokenType, UnaryOperator>() {
-        [Symbol.OperatorMinus] = UnaryOperator.Minus,
-        [Symbol.OperatorNot] = UnaryOperator.Not,
-        [Symbol.OperatorPlus] = UnaryOperator.Plus,
+        [Operator.Minus] = UnaryOperator.Minus,
+        [Operator.Not] = UnaryOperator.Not,
+        [Operator.Plus] = UnaryOperator.Plus,
     };
 
     private ParseResult<Node.Expression> ParseExpression(IEnumerable<Token> tokens)
@@ -65,39 +65,65 @@ internal partial class Parser
      => ParseUnaryOperation(tokens, ParseExpression1, unaryOperators);
 
     private ParseResult<Node.Expression> ParseExpression1(IEnumerable<Token> tokens)
-     => ParseTerminalExpression(tokens)
-        .Else(() => ParseArraySubscript(tokens));
+     => ParseAnyOf(tokens, ParseArraySubscriptOrComponentAccess, ParseTerminalRValue);
 
-    private ParseResult<Node.Expression> ParseTerminalExpression(IEnumerable<Token> tokens)
-     => ParseBracketed(tokens)
-     .Else(() => ParseByTokenType(tokens, _literalParsers))
-     .Else(() => ParseFunctionCall(tokens))
-     .Else(() => ParseIdentifier(tokens)
-        .Map((t, name) => new Node.Expression.VariableReference(t, name)));
+    private ParseResult<Node.Expression.LValue> ParseLValue(IEnumerable<Token> tokens)
+     => ParseAnyOf(tokens, ParseArraySubscriptOrComponentAccess, ParseTerminalLValue);
+
+    private ParseResult<Node.Expression.LValue> ParseArraySubscriptOrComponentAccess(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+        .Parse(out var rvalue, ParseTerminalRValue)
+        .Branch<Node.Expression.LValue>(new() {
+            [Punctuation.OpenSquareBracket] = o => o
+                .ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma)
+                .ParseToken(Punctuation.CloseSquareBracket)
+            .MapResult(t => new Node.Expression.LValue.ArraySubscript(t, rvalue, indexes)),
+            [Operator.ComponentAccess] = o => o
+                .Parse(out var component, ParseIdentifier)
+            .MapResult(t => new Node.Expression.LValue.ComponentAccess(t, rvalue, component)),
+        });
+
+    private ParseResult<Node.Expression> ParseTerminalRValue(IEnumerable<Token> tokens)
+     => ParseAnyOf(tokens,
+            ParseFunctionCall,
+            ParseBuiltinFdf,
+            ParseBracketed,
+            ParseTerminalLValue,
+            t => ParseByTokenType(t, _literalParsers));
+
+    private ParseResult<Node.Expression.LValue> ParseTerminalLValue(IEnumerable<Token> tokens)
+     => ParseAnyOf(tokens, ParseBracketedLValue,
+        t => ParseIdentifier(tokens).Map((t, name) => new Node.Expression.LValue.VariableReference(t, name)));
+
+    private ParseResult<Node.Expression.LValue> ParseBracketedLValue(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+        .ParseToken(Punctuation.OpenBracket)
+        .Parse(out var expression, ParseLValue)
+        .ParseToken(Punctuation.CloseBracket)
+    .MapResult(t => new Node.Expression.LValue.Bracketed(t, expression));
 
     private ParseResult<Node.Expression> ParseBracketed(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
-        .ParseToken(Symbol.OpenBracket)
+        .ParseToken(Punctuation.OpenBracket)
         .Parse(out var expression, ParseExpression)
-        .ParseToken(Symbol.CloseBracket)
+        .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Node.Expression.Bracketed(t, expression));
 
-    private ParseResult<Node.Expression> ParseFunctionCall(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+    private ParseResult<Node.Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
         .Parse(out var name, ParseIdentifier)
-        .ParseToken(Symbol.OpenBracket)
-        .ParseZeroOrMoreSeparated(out var parameters, ParseEffectiveParameter, Symbol.Comma)
-        .ParseToken(Symbol.CloseBracket)
+        .ParseToken(Punctuation.OpenBracket)
+        .ParseZeroOrMoreSeparated(out var parameters, ParseEffectiveParameter, Punctuation.Comma)
+        .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Node.Expression.FunctionCall(t, name, parameters));
 
-    private ParseResult<Node.Expression> ParseArraySubscript(IEnumerable<Token> tokens)
-     => ParseOperation.Start(this, tokens)
-        .Parse(out var array, ParseTerminalExpression)
-        .Parse(out var indexes, ParseIndexes)
-        .MapResult(t => new Node.Expression.ArraySubscript(t, array, indexes));
+    private ParseResult<Node.Expression.BuiltinFdf> ParseBuiltinFdf(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+        .ParseToken(Keyword.Fdf)
+        .ParseToken(Punctuation.OpenBracket)
+        .Parse(out var argNomLog, ParseExpression)
+        .ParseToken(Punctuation.CloseBracket)
+    .MapResult(t => new Node.Expression.BuiltinFdf(t, argNomLog));
 
     private ParseResult<IReadOnlyCollection<Node.Expression>> ParseIndexes(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
-        .ParseToken(Symbol.OpenSquareBracket)
-        .ParseOneOrMoreSeparated(out var indexes, ParseExpression, Symbol.Comma)
-        .ParseToken(Symbol.CloseSquareBracket)
+        .ParseToken(Punctuation.OpenSquareBracket)
+        .ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma)
+        .ParseToken(Punctuation.CloseSquareBracket)
     .MapResult(_ => indexes);
 
     private static ParseResult<Node.Expression> ParseBinaryOperation(

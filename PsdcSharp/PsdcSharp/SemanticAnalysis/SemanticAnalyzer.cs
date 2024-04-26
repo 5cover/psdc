@@ -1,7 +1,5 @@
-using System.Diagnostics;
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Parsing.Nodes;
-using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.SemanticAnalysis;
 
@@ -35,9 +33,9 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             AddScopeIfNecessary(parentScope, decl);
 
             switch (decl) {
-            case Node.Declaration.Alias alias:
+            case Node.Declaration.TypeAlias alias:
                 CreateTypeOrError(parentScope, alias.Type).MatchSome(type
-                 => AddSymbolOrError(parentScope, new Symbol.TypeAlias(alias.Name, alias.SourceTokens, type)));
+                 => parentScope.AddSymbolOrError(this, new Symbol.TypeAlias(alias.Name, alias.SourceTokens, type)));
                 break;
 
             case Node.Declaration.Constant constant:
@@ -50,7 +48,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                     if (!constant.Value.IsConstant(parentScope)) {
                         AddMessage(Message.ErrorExpectedConstantExpression(constant.SourceTokens));
                     }
-                    AddSymbolOrError(parentScope, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, constant.Value));
+                    parentScope.AddSymbolOrError(this, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, constant.Value));
                 });
                 break;
 
@@ -99,7 +97,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             }
         }
 
-        void AnalyzeStatement(Scope parentScope, Node.Statement stmt)
+        void AnalyzeStatement(Scope parentScope, Node.Statement stmt, Action<Node.Expression>? hookExpr = null)
         {
             AddScopeIfNecessary(parentScope, stmt);
 
@@ -107,11 +105,11 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             case Node.Statement.Nop nop:
                 break;
             case Node.Statement.Alternative alternative:
-                AnalyzeExpression(parentScope, alternative.If.Condition);
+                AnalyzeExpression(parentScope, alternative.If.Condition, hookExpr);
                 AddScope(parentScope, alternative.If);
                 AnalyzeScopedBlock(alternative.If);
                 foreach (var elseIf in alternative.ElseIfs) {
-                    AnalyzeExpression(parentScope, elseIf.Condition);
+                    AnalyzeExpression(parentScope, elseIf.Condition, hookExpr);
                     AddScope(parentScope, elseIf);
                     AnalyzeScopedBlock(elseIf);
                 }
@@ -121,64 +119,66 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 });
                 break;
             case Node.Statement.Assignment assignment:
-                if (TryGetSymbolOrError<Symbol.Variable>(parentScope, assignment.Target, out var targetVariable)) {
-                    if (targetVariable is Symbol.Constant constant) {
+                AnalyzeExpression(parentScope, assignment.Target, hookExpr);
+                if (assignment.Target is Node.Expression.LValue.VariableReference varRef
+                    && parentScope.TryGetSymbolOrError<Symbol.Variable>(this, varRef.Name, out var targetVar)) {
+                    if (targetVar is Symbol.Constant constant) {
                         AddMessage(Message.ErrorConstantAssignment(assignment, constant));
                     }
                 }
-                AnalyzeExpression(parentScope, assignment.Value);
+                AnalyzeExpression(parentScope, assignment.Value, hookExpr);
                 break;
             case Node.Statement.DoWhileLoop doWhileLoop:
                 AnalyzeScopedBlock(doWhileLoop);
-                AnalyzeExpression(parentScope, doWhileLoop.Condition);
+                AnalyzeExpression(parentScope, doWhileLoop.Condition, hookExpr);
                 break;
-            case Node.Statement.Ecrire ecrire:
-                AnalyzeExpression(parentScope, ecrire.Argument1);
-                AnalyzeExpression(parentScope, ecrire.Argument2);
+            case Node.Statement.BuiltinEcrire ecrire:
+                AnalyzeExpression(parentScope, ecrire.ArgumentNomLog, hookExpr);
+                AnalyzeExpression(parentScope, ecrire.ArgumentExpression, hookExpr);
                 break;
-            case Node.Statement.Fermer fermer:
-                AnalyzeExpression(parentScope, fermer.Argument);
+            case Node.Statement.BuiltinFermer fermer:
+                AnalyzeExpression(parentScope, fermer.ArgumentNomLog, hookExpr);
                 break;
             case Node.Statement.ForLoop forLoop:
-                AnalyzeExpression(parentScope, forLoop.Start);
-                forLoop.Step.MatchSome(step => AnalyzeExpression(parentScope, step));
-                AnalyzeExpression(parentScope, forLoop.End);
+                AnalyzeExpression(parentScope, forLoop.Start, hookExpr);
+                forLoop.Step.MatchSome(step => AnalyzeExpression(parentScope, step, hookExpr));
+                AnalyzeExpression(parentScope, forLoop.End, hookExpr);
                 AnalyzeScopedBlock(forLoop);
                 break;
-            case Node.Statement.Lire lire:
-                AnalyzeExpression(parentScope, lire.Argument1);
-                AnalyzeExpression(parentScope, lire.Argument2);
+            case Node.Statement.BuiltinLire lire:
+                AnalyzeExpression(parentScope, lire.ArgumentNomLog, hookExpr);
+                AnalyzeExpression(parentScope, lire.ArgumentVariable, hookExpr);
                 break;
-            case Node.Statement.OuvrirAjout ouvrirAjout:
-                AnalyzeExpression(parentScope, ouvrirAjout.Argument);
+            case Node.Statement.BuiltinOuvrirAjout ouvrirAjout:
+                AnalyzeExpression(parentScope, ouvrirAjout.ArgumentNomLog, hookExpr);
                 break;
-            case Node.Statement.OuvrirEcriture ouvrirEcriture:
-                AnalyzeExpression(parentScope, ouvrirEcriture.Argument);
+            case Node.Statement.BuiltinOuvrirEcriture ouvrirEcriture:
+                AnalyzeExpression(parentScope, ouvrirEcriture.ArgumentNomLog, hookExpr);
                 break;
-            case Node.Statement.OuvrirLecture ouvrirLecture:
-                AnalyzeExpression(parentScope, ouvrirLecture.Argument);
+            case Node.Statement.BuiltinOuvrirLecture ouvrirLecture:
+                AnalyzeExpression(parentScope, ouvrirLecture.ArgumentNomLog, hookExpr);
                 break;
             case Node.Statement.ProcedureCall call:
                 HandleCall<Symbol.Procedure>(parentScope, call);
                 break;
-            case Node.Statement.EcrireEcran ecrireEcran:
+            case Node.Statement.BuiltinEcrireEcran ecrireEcran:
                 foreach (var arg in ecrireEcran.Arguments) {
-                    AnalyzeExpression(parentScope, arg);
+                    AnalyzeExpression(parentScope, arg, hookExpr);
                 }
                 break;
-            case Node.Statement.LireClavier lireClavier:
-                AnalyzeExpression(parentScope, lireClavier.Argument);
+            case Node.Statement.BuiltinLireClavier lireClavier:
+                AnalyzeExpression(parentScope, lireClavier.ArgumentVariable, hookExpr);
                 break;
             case Node.Statement.RepeatLoop repeatLoop:
                 AnalyzeScopedBlock(repeatLoop);
                 break;
             case Node.Statement.Return ret:
-                AnalyzeExpression(parentScope, ret.Value);
+                AnalyzeExpression(parentScope, ret.Value, hookExpr);
                 break;
-            case Node.Statement.VariableDeclaration varDecl:
+            case Node.Statement.LocalVariable varDecl:
                 CreateTypeOrError(parentScope, varDecl.Type).MatchSome(type => {
                     foreach (var name in varDecl.Names) {
-                        AddSymbolOrError(parentScope, new Symbol.Variable(name, varDecl.SourceTokens, type));
+                        parentScope.AddSymbolOrError(this, new Symbol.Variable(name, varDecl.SourceTokens, type));
                     }
                 });
                 break;
@@ -186,9 +186,9 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 AnalyzeScopedBlock(whileLoop);
                 break;
             case Node.Statement.Switch switchCase:
-                AnalyzeExpression(parentScope, switchCase.Expression);
+                AnalyzeExpression(parentScope, switchCase.Expression, hookExpr);
                 foreach (var @case in switchCase.Cases) {
-                    AnalyzeExpression(parentScope, @case.When);
+                    AnalyzeExpression(parentScope, @case.When, hookExpr);
                     AddScope(parentScope, @case);
                     AnalyzeScopedBlock(@case);
                 }
@@ -203,43 +203,48 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             }
         }
 
-        void AnalyzeExpression(Scope parentScope, Node.Expression expr)
+        void AnalyzeExpression(Scope parentScope, Node.Expression expr, Action<Node.Expression>? hookExpr = null)
         {
             AddScopeIfNecessary(parentScope, expr);
+            hookExpr?.Invoke(expr);
 
             switch (expr) {
-            case Node.Expression.ArraySubscript arraySub:
-                AnalyzeExpression(parentScope, arraySub.Array);
-                foreach (var i in arraySub.Indexes) {
-                    AnalyzeExpression(parentScope, i);
-                }
-                break;
             case Node.Expression.Bracketed bracketed:
-                AnalyzeExpression(parentScope, bracketed.Expression);
+                AnalyzeExpression(parentScope, bracketed.Expression, hookExpr);
+                break;
+            case Node.Expression.LValue.Bracketed bracketed:
+                AnalyzeExpression(parentScope, bracketed.LValue, hookExpr);
                 break;
             case Node.Expression.BuiltinFdf fdf:
-                AnalyzeExpression(parentScope, fdf.Argument);
+                AnalyzeExpression(parentScope, fdf.ArgumentNomLog, hookExpr);
                 break;
             case Node.Expression.FunctionCall call:
                 HandleCall<Symbol.Function>(parentScope, call);
                 break;
-            case Node.Expression.ComponentAccess componentAccess:
-                break;
             case Node.Expression.Literal literal:
                 break;
             case Node.Expression.OperationBinary opBin:
-                AnalyzeExpression(parentScope, opBin.Operand1);
+                AnalyzeExpression(parentScope, opBin.Operand1, hookExpr);
                 if (opBin.Operator is Parsing.BinaryOperator.Divide
                  && opBin.Operand2.EvaluateValue(parentScope).FlatMap(Parse.ToInt32).Map(val => val == 0).ValueOr(false)) {
                     AddMessage(Message.WarningDivisionByZero(opBin.SourceTokens));
                 }
-                AnalyzeExpression(parentScope, opBin.Operand2);
+                AnalyzeExpression(parentScope, opBin.Operand2, hookExpr);
                 break;
             case Node.Expression.OperationUnary opUn:
-                AnalyzeExpression(parentScope, opUn.Operand);
+                AnalyzeExpression(parentScope, opUn.Operand, hookExpr);
                 break;
-            case Node.Expression.VariableReference varRef:
-                _ = GetSymbolOrError<Symbol.Variable>(parentScope, varRef.Name);
+            case Node.Expression.LValue.ArraySubscript arraySub:
+                AnalyzeExpression(parentScope, arraySub.Array, hookExpr);
+                foreach (var i in arraySub.Indexes) {
+                    AnalyzeExpression(parentScope, i, hookExpr);
+                }
+                break;
+            case Node.Expression.LValue.ComponentAccess componentAccess:
+                AnalyzeExpression(parentScope, componentAccess.Structure, hookExpr);
+                break;
+            case Node.Expression.LValue.VariableReference varRef:
+                _ = parentScope.GetSymbolOrError<Symbol.Variable>(varRef.Name).DiscardError(AddMessage);
                 break;
             default:
                 throw expr.ToUnmatchedException();
@@ -273,7 +278,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
 
         void HandleCall<TSymbol>(Scope parentScope, CallNode call) where TSymbol : CallableSymbol
         {
-            GetSymbolOrError<TSymbol>(parentScope, call.Name).MatchSome(callee => {
+            parentScope.GetSymbolOrError<TSymbol>(call.Name).DiscardError(AddMessage).MatchSome(callee => {
                 if (!call.Parameters.ZipStrict(callee.Parameters, (effective, formal)
                     => effective.Mode.Equals(formal.Mode)
                     && EvaluateTypeOrError(parentScope, effective.Value).Map(type => formal.Type.Equals(type)).ValueOr(false))
@@ -308,13 +313,16 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 .Where(param => param.Mode is ParameterMode.Out)
                 .ToDictionary(keySelector: param => param.Name, elementSelector: _ => false);
 
-            AnalyzeScopedBlock(node, hook: stmt => {
-                // todo 
+            AnalyzeScopedBlock(node, hookExpr: expr => {
+                if (expr is Node.Expression.LValue.VariableReference varRef
+                 && outputParametersAssigned.ContainsKey(varRef.Name)) {
+                    outputParametersAssigned[varRef.Name] = true;
+                }
             });
 
-            /*foreach (var unassignedOutParam in outputParametersAssigned.Where(kv => !kv.Value).Select(kv => kv.Key)) {
+            foreach (var unassignedOutParam in outputParametersAssigned.Where(kv => !kv.Value).Select(kv => kv.Key)) {
                 AddMessage(Message.ErrorOutputParameterNeverAssigned(unassignedOutParam));
-            }*/
+            }
         }
 
         void HandleCallableDefinition<T>(Scope parentScope, T sub) where T : CallableSymbol, IEquatable<T?>
@@ -332,27 +340,30 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             }
         }
 
-        void AnalyzeScopedBlock(BlockNode scopedBlock, Action<Node.Statement>? hook = null)
+        void AnalyzeScopedBlock(BlockNode scopedBlock, Action<Node.Expression>? hookExpr = null)
         {
             foreach (var stmt in scopedBlock.Block) {
-                hook?.Invoke(stmt);
-                AnalyzeStatement(scopes[scopedBlock], stmt);
+                AnalyzeStatement(scopes[scopedBlock], stmt, hookExpr);
             }
         }
 
         Option<EvaluatedType> CreateTypeOrError(ReadOnlyScope scope, Node.Type type) => type switch {
             Node.Type.String => EvaluatedType.String.Instance.Some(),
-            Node.Type.Primitive p => new EvaluatedType.Primitive(p.Type).Some(),
-            Node.Type.AliasReference alias => GetSymbolOrError<Symbol.TypeAlias>(scope, alias.Name)
+            Node.Type.AliasReference alias
+             => scope.GetSymbolOrError<Symbol.TypeAlias>(alias.Name).DiscardError(AddMessage)
                     .Map(aliasType => new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType)),
-            Node.Type.Array array => CreateTypeOrError(scope, array.Type).Map(elementType
+            Node.Type.Complete.AliasReference alias
+             => scope.GetSymbolOrError<Symbol.TypeAlias>(alias.Name).DiscardError(AddMessage)
+                    .Map(aliasType => new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType)),
+            Node.Type.Complete.Array array => CreateTypeOrError(scope, array.Type).Map(elementType
             => new EvaluatedType.Array(elementType, array.Dimensions)),
-            Node.Type.StringLengthed str => new EvaluatedType.StringLengthed(str.Length).Some(),
-            Node.Type.StructureDefinition structure => CreateStructureOrError(scope, structure),
+            Node.Type.Complete.LengthedString str => new EvaluatedType.LengthedString(str.Length).Some(),
+            Node.Type.Complete.Structure structure => CreateStructureOrError(scope, structure),
+            Node.Type.Complete.Primitive p => new EvaluatedType.Primitive(p.Type).Some(),
             _ => throw type.ToUnmatchedException(),
         };
 
-        Option<EvaluatedType.Structure> CreateStructureOrError(ReadOnlyScope scope, Node.Type.StructureDefinition structure)
+        Option<EvaluatedType.Structure> CreateStructureOrError(ReadOnlyScope scope, Node.Type.Complete.Structure structure)
         {
             Dictionary<Node.Identifier, EvaluatedType> components = [];
             bool atLeastOneNameWasntAdded = false;
@@ -373,37 +384,6 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         }
 
         Option<EvaluatedType> EvaluateTypeOrError(ReadOnlyScope scope, Node.Expression expr)
-        {
-            var type = expr.EvaluateType(scope);
-            if (!type.HasValue) {
-                AddMessage(type.Error(expr.SourceTokens));
-            }
-            return type.DiscardError();
-        }
-
-        Option<T> GetSymbolOrError<T>(ReadOnlyScope scope, Node.Identifier identifier) where T : Symbol
-        {
-            var ret = scope.GetSymbol<T>(identifier);
-            if (!ret.HasValue) {
-                AddMessage(Message.ErrorUndefinedSymbol<T>(identifier));
-            }
-            return ret;
-        }
-
-        bool TryGetSymbolOrError<T>(ReadOnlyScope scope, Node.Identifier identifier, out T? symbol) where T : Symbol
-        {
-            bool found = scope.TryGetSymbol<T>(identifier, out symbol);
-            if (!found) {
-                AddMessage(Message.ErrorUndefinedSymbol<T>(identifier));
-            }
-            return found;
-        }
-
-        void AddSymbolOrError(Scope scope, Symbol symbol)
-        {
-            if (!scope.TryAdd(symbol, out var existingSymbol)) {
-                AddMessage(Message.ErrorRedefinedSymbol(symbol, existingSymbol));
-            }
-        }
+         => expr.EvaluateType(scope).DiscardError(AddMessage);
     }
 }

@@ -45,7 +45,6 @@ internal interface Symbol
         public override int GetHashCode() => HashCode.Combine(Name, TargetType);
     }
 
-
     internal sealed record Procedure(Identifier Name, Partition<Token> SourceTokens,
         IReadOnlyCollection<Parameter> Parameters)
     : CallableSymbol

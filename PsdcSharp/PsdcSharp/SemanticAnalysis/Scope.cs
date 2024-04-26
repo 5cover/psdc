@@ -3,12 +3,6 @@ using Scover.Psdc.Parsing.Nodes;
 
 namespace Scover.Psdc.SemanticAnalysis;
 
-internal interface ReadOnlyScope
-{
-    Option<T> GetSymbol<T>(Node.Identifier name) where T : Symbol;
-    bool TryGetSymbol<T>(Node.Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol;
-}
-
 internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
 {
     private readonly Scope? _parentScope = parentScope;
@@ -16,11 +10,28 @@ internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
 
     public IReadOnlyDictionary<Node.Identifier, Symbol> Symbols => _symbolTable;
 
+    public void AddSymbolOrError(MessageProvider msgProvider, Symbol symbol)
+    {
+        if (!TryAdd(symbol, out var existingSymbol)) {
+            msgProvider.AddMessage(Message.ErrorRedefinedSymbol(symbol, existingSymbol));
+        }
+    }
+
     public Option<T> GetSymbol<T>(Node.Identifier name) where T : Symbol
      => TryGetSymbol(name, out T? symbol)
         ? symbol.Some()
         : Option.None<T>();
+    public Option<T, Message> GetSymbolOrError<T>(Node.Identifier identifier) where T : Symbol
+    => GetSymbol<T>(identifier).OrWithError(Message.ErrorUndefinedSymbol<T>(identifier));
 
+    public bool TryGetSymbolOrError<T>(MessageProvider msgProvider, Node.Identifier identifier, out T? symbol) where T : Symbol
+    {
+        bool found = TryGetSymbol<T>(identifier, out symbol);
+        if (!found) {
+            msgProvider.AddMessage(Message.ErrorUndefinedSymbol<T>(identifier));
+        }
+        return found;
+    }
     public bool TryAdd(Symbol symbol) => _symbolTable.TryAdd(symbol.Name, symbol);
     public bool TryAdd(Symbol symbol, [NotNullWhen(false)] out Symbol? existingSymbol)
     {

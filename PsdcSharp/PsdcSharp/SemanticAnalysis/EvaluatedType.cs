@@ -21,16 +21,16 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
         public override string GetRepresentation(string input) => "chaîne";
     }
 
-    internal sealed record Array(EvaluatedType Type, IReadOnlyCollection<Node.Expression> Dimensions) : EvaluatedType
+    internal sealed record Array(EvaluatedType ElementType, IReadOnlyCollection<Node.Expression> Dimensions) : EvaluatedType
     {
         public bool Equals(Array? other) => other is not null
-         && other.Type.Equals(Type)
+         && other.ElementType.Equals(ElementType)
          && other.Dimensions.SequenceEqual(Dimensions);
 
-        public override int GetHashCode() => HashCode.Combine(Type, Dimensions.GetSequenceHashCode());
+        public override int GetHashCode() => HashCode.Combine(ElementType, Dimensions.GetSequenceHashCode());
 
         public override string GetRepresentation(string input)
-         => $"tableau [{string.Join(", ", Dimensions.Select(dim => dim.SourceTokens.GetSourceCode(input)))}] de {Type.GetRepresentation(input)}";
+         => $"tableau [{string.Join(", ", Dimensions.Select(dim => dim.SourceTokens.GetSourceCode(input)))}] de {ElementType.GetRepresentation(input)}";
     }
 
     internal sealed record Primitive(PrimitiveType Type) : EvaluatedType(Type is not PrimitiveType.File)
@@ -50,8 +50,7 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
         public override string GetRepresentation(string input) => Name.Name;
     }
 
-
-    internal sealed record StringLengthed(Node.Expression Length) : EvaluatedType
+    internal sealed record LengthedString(Node.Expression Length) : EvaluatedType
     {
         public override string GetRepresentation(string input) => $"chaîne({Length.SourceTokens.GetSourceCode(input)})";
     }

@@ -255,37 +255,8 @@ Maybe we could tokenize them as identifiers always and expect an identifier of a
 
 That seems like an easy way to implement this feature.
 
-## Lvalue/rvalue
+## Unified solution for operator precedence
 
-We need to differenciate between lvalues and rvalues in the formal grammar, the ast and the parser.
+For each code generator associate each operator with a precedence. So we always know whether to bracket an expression in non-terminal expressions.
 
-So we don't allow things like `lireClavier(69)`
-
-Also we need to change our FG with assigment, currently it only allows identifiers as the left operands :
-
-`target := value`
-
-However arrays exist:
-
-`array[5] := value`
-
-`array[indice / 2 + 4] := value`
-
----
-
-I can no longer postpone this
-
-Representing Rvalues with Node.Expressions and Lvalues with strings is no longer enough as structure component access expressions may be used as Lvalues.
-
-Should we update our formal grammar?
-
-Yes. We need some sort of restriction on which expressions can be lvalues so we don't allow horrors such as
-
-`1 + 1 := 3;`
-
-```cs
-internal interface LValue : Expression
-{
-    
-}
-```
+Also add boolean argument `bracketed` to appendexpression so we don't need `AppendBracketedExpression`.
