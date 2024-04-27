@@ -1,22 +1,14 @@
 # Formal grammar
 
-Détermine l'aspect syntaxique (et non pas sémantique) d'un programme.
-
-**Terminal** : symboles élémentaires du langage
-
-**Non-terminal** : groupes de symboles terminaux déterminés par les règles de production.
-
-## Règles de production
-
-symbole|légende
+symbol|legend
 -|-
-⟨PascalCalse⟩|règle de production
-camelCase|token
-*camelCase*|match
-\*|zéro ou plus
-\+|un ou plus
-\?|facultatif
-\|x|séparé par x
+⟨PascalCalse⟩|non-terminal (reference to other crule)
+camelCase|terminal (token)
+*camelCase*|terminal (valued token)
+\*|zero or more
+\+|one or more
+\?|optional
+\|x|separated by *x*
 
 |typography
 |-

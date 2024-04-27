@@ -7,17 +7,14 @@ namespace Scover.Psdc.Tokenization;
 
 internal sealed class Tokenizer(Messenger messenger, string input)
 {
-    private static readonly IReadOnlyList<Ruled> types = new List<Ruled> {
-        CommentMultiline,
-        CommentSingleline,
-        LiteralReal,
-        LiteralInteger,
-        LiteralString,
-        LiteralCharacter,
-    }
+    private static readonly IReadOnlyList<Ruled> rules =
+        // Variable length
+        new List<Ruled> { CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter, }
+        // Maximal munch
         .Concat(Keyword.Instances.OrderByDescending(type => type.Rule.Expected.Length))
         .Concat(Enumerable.Concat<Ruled<StringTokenRule>>(Punctuation.Instances, Operator.Instances)
                 .OrderByDescending(type => type.Rule.Expected.Length))
+        // Identifiers last
         .Append(Identifier)
         .ToList();
 
@@ -65,5 +62,5 @@ internal sealed class Tokenizer(Messenger messenger, string input)
      => messenger.Report(Message.ErrorUnknownToken(invalidStart..index));
 
     private Option<Token> ReadToken(int offset)
-     => types.Select(t => t.TryExtract(_input, offset)).FirstOrNone(t => t.HasValue);
+     => rules.Select(t => t.TryExtract(_input, offset)).FirstOrNone(t => t.HasValue);
 }
