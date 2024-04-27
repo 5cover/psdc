@@ -1,5 +1,5 @@
 using Scover.Psdc.Parsing.Nodes;
-using Scover.Psdc.SemanticAnalysis;
+using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.CodeGeneration;
 
@@ -37,10 +37,10 @@ internal static class ExpressionExtensions
          => compAccess.Structure.EvaluateType(scope).FlatMap(outerType
             => outerType is not EvaluatedType.Structure structType
                 ? Option.None<EvaluatedType, Message>(Message.ErrrorComponentAccessOfNonStruct(compAccess))
-                
+
                 : structType.Components.TryGetValue(compAccess.ComponentName, out var compType)
                 ? compType.Some<EvaluatedType, Message>()
-                
+
                 : Option.None<EvaluatedType, Message>(Message.ErrorStructureComponentDoesntExist(compAccess,
                     scope.Symbols.Values.OfType<Symbol.TypeAlias>()
                     .FirstOrNone(alias => alias.TargetType.Equals(structType))

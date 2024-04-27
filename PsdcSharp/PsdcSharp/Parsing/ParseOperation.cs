@@ -12,8 +12,8 @@ internal abstract class ParseOperation
 
     private ParseOperation(IEnumerable<Token> tokens, int readCount)
      => (_tokens, _readCount) = (tokens, readCount);
-    public static ParseOperation Start(MessageProvider syntaxErrorReciever, IEnumerable<Token> tokens)
-     => new SuccessfulSoFarOperation(tokens, syntaxErrorReciever);
+    public static ParseOperation Start(Messenger messenger, IEnumerable<Token> tokens)
+     => new SuccessfulSoFarOperation(tokens, messenger);
 
     protected Partition<Token> ReadTokens => new(_tokens, _readCount);
 
@@ -36,9 +36,8 @@ internal abstract class ParseOperation
     public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, TokenType separator);
     public abstract ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, ParseMethod<T> parse, params TokenType[] endTokens);
 
-    private sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, MessageProvider syntaxErrorReciever) : ParseOperation(tokens, 0)
+    private sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, Messenger messenger) : ParseOperation(tokens, 0)
     {
-        private readonly MessageProvider _syntaxErrorReciever = syntaxErrorReciever;
         private IEnumerable<Token> ParsingTokens => _tokens.Skip(_readCount);
 
         public override ParseResult<T> Branch<T>(IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches)
@@ -229,7 +228,7 @@ internal abstract class ParseOperation
         private void AddOrSyntaxError<T>(ICollection<T> items, ParseResult<T> item)
          => item.Match(
                 some: items.Add,
-                none: error => _syntaxErrorReciever.AddMessage(Message.ErrorSyntax(item.SourceTokens, error))
+                none: error => messenger.Report(Message.ErrorSyntax(item.SourceTokens, error))
             );
 
         private FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error);

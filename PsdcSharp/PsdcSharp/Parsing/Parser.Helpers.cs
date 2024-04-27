@@ -11,7 +11,7 @@ internal partial class Parser
     {
         var result = firstParser(tokens);
         var enumParser = parsers.GetGenericEnumerator();
-        
+
         while (enumParser.MoveNext() && !result.HasValue) {
             result = enumParser.Current(tokens);
         }
@@ -25,15 +25,15 @@ internal partial class Parser
      => tokens => ParseResult.Ok(makeNodeWithValue(new(tokens, 1), tokens.First().Value.NotNull()));
 
     private ParseResult<string> ParseTokenValue(IEnumerable<Token> tokens, TokenType expectedType)
-     => ParseOperation.Start(this, tokens)
+     => ParseOperation.Start(_messenger, tokens)
         .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => value);
 
-    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<Partition<Token>, string, T> resultCreator) => ParseOperation.Start(this, tokens)
+    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<Partition<Token>, string, T> resultCreator) => ParseOperation.Start(_messenger, tokens)
         .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => resultCreator(tokens, value));
 
-    private ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator) => ParseOperation.Start(this, tokens)
+    private ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(expectedType)
     .MapResult(resultCreator);
 

@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Scover.Psdc.Parsing.Nodes;
 
-namespace Scover.Psdc.SemanticAnalysis;
+namespace Scover.Psdc.StaticAnalysis;
 
 internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
 {
@@ -10,10 +10,10 @@ internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
 
     public IReadOnlyDictionary<Node.Identifier, Symbol> Symbols => _symbolTable;
 
-    public void AddSymbolOrError(MessageProvider msgProvider, Symbol symbol)
+    public void AddSymbolOrError(Messenger messenger, Symbol symbol)
     {
         if (!TryAdd(symbol, out var existingSymbol)) {
-            msgProvider.AddMessage(Message.ErrorRedefinedSymbol(symbol, existingSymbol));
+            messenger.Report(Message.ErrorRedefinedSymbol(symbol, existingSymbol));
         }
     }
 
@@ -24,11 +24,11 @@ internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
     public Option<T, Message> GetSymbolOrError<T>(Node.Identifier identifier) where T : Symbol
     => GetSymbol<T>(identifier).OrWithError(Message.ErrorUndefinedSymbol<T>(identifier));
 
-    public bool TryGetSymbolOrError<T>(MessageProvider msgProvider, Node.Identifier identifier, out T? symbol) where T : Symbol
+    public bool TryGetSymbolOrError<T>(Messenger messenger, Node.Identifier identifier, out T? symbol) where T : Symbol
     {
         bool found = TryGetSymbol<T>(identifier, out symbol);
         if (!found) {
-            msgProvider.AddMessage(Message.ErrorUndefinedSymbol<T>(identifier));
+            messenger.Report(Message.ErrorUndefinedSymbol<T>(identifier));
         }
         return found;
     }

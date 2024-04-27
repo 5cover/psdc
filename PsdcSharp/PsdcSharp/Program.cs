@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Parsing;
-using Scover.Psdc.SemanticAnalysis;
+using Scover.Psdc.StaticAnalysis;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
@@ -16,37 +16,36 @@ internal static class Program
 
         string input = File.ReadAllText($"../../testPrograms/{args[0]}");
 
-        Tokenizer tokenizer = new(input);
-        var tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToImmutableArray());
-        PrintMessages(tokenizer, input);
+        PrintMessenger messenger = new(input);
 
-        Parser parser = new(tokens);
+        Tokenizer tokenizer = new(messenger, input);
+        var tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToImmutableArray());
+
+        Parser parser = new(messenger, tokens);
         var ast = "Parsing".LogOperation(parser.Parse).Value;
-        PrintMessages(parser, input);
 
         if (ast is null) {
             return;
         }
 
-        SemanticAnalyzer semanticAnalyzer = new(ast);
-        var semanticAst = "Analyzing semantics".LogOperation(semanticAnalyzer.AnalyzeSemantics);
-        PrintMessages(semanticAnalyzer, input);
+        StaticAnalyzer semanticAnalyzer = new(messenger, ast);
+        var semanticAst = "Analyzing".LogOperation(semanticAnalyzer.AnalyzeSemantics);
 
         CodeGeneratorC codeGenerator = new(semanticAst);
         string cCode = "Generating code".LogOperation(codeGenerator.Generate);
-        PrintMessages(codeGenerator, input);
 
         Console.Error.WriteLine("Generated C : ");
         Console.WriteLine(cCode);
     }
 
-    private static void PrintMessages(MessageProvider step, string input)
+    private sealed class PrintMessenger(string input) : Messenger
     {
-        var stderr = Console.Error;
+        private static TextWriter Stderr => Console.Error;
 
-        while (step.TryDequeueMessage(out Message? message)) {
+        public void Report(Message message)
+        {
             var msgColor = message.Type.GetConsoleColor();
-            msgColor.DoInColor(() => stderr.Write($"[P{(int)message.Code:d4}] "));
+            msgColor.DoInColor(() => Stderr.Write($"[P{(int)message.Code:d4}] "));
 
             message.SourceCodeRange.Match(range => {
                 Position start = input.GetPositionAt(range.Start);
@@ -57,30 +56,30 @@ internal static class Program
                     start = new(end.Line, 0);
                 }
 
-                stderr.WriteLine($"{start}: {message.Type.ToString().ToLower()}: {message.Content(input)}");
+                Stderr.WriteLine($"{start}: {message.Type.ToString().ToLower()}: {message.Content(input)}");
 
                 ReadOnlySpan<char> faultyLine = input.GetLine(start.Line);
 
                 // Part of line before error
-                stderr.Write($"{GetErrorLinePrefix(start.Line)}{faultyLine[..start.Column]}");
+                Stderr.Write($"{GetErrorLinePrefix(start.Line)}{faultyLine[..start.Column]}");
 
                 msgColor.SetColor();
-                stderr.Write($"{faultyLine[start.Column..end.Column]}");
+                Stderr.Write($"{faultyLine[start.Column..end.Column]}");
                 Console.ResetColor();
 
                 // Part of line after error
-                stderr.WriteLine($"{faultyLine[end.Column..].TrimEnd()}");
+                Stderr.WriteLine($"{faultyLine[end.Column..].TrimEnd()}");
 
                 // Arrow below to indicate the precise location of the error even if colors aren't available
-                stderr.Write(GetErrorLinePrefix(new string(' ', (int)Math.Log10(start.Line) + 1)));
+                Stderr.Write(GetErrorLinePrefix(new string(' ', (int)Math.Log10(start.Line) + 1)));
                 var offset = Math.Max(faultyLine.GetLeadingWhitespaceCount(), start.Column);
-                stderr.WriteNTimes(offset, ' ');
-                msgColor.DoInColor(() => stderr.WriteNTimes(end.Column - offset, '^'));
+                Stderr.WriteNTimes(offset, ' ');
+                msgColor.DoInColor(() => Stderr.WriteNTimes(end.Column - offset, '^'));
 
                 static string GetErrorLinePrefix(object lineNo) => $"    {lineNo} | ";
             },
-            none: () => stderr.WriteLine($"{message.Type}: {message.Content(input)}"));
-            stderr.WriteLine();
+            none: () => Stderr.WriteLine($"{message.Type}: {message.Content(input)}"));
+            Stderr.WriteLine();
         }
     }
 }

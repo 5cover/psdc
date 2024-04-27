@@ -1,7 +1,6 @@
 # PSDC (WIP)
 
-Pseudocode compiler.
-Translates Pseudocode to C and compiles it.
+Pseudocode &rarr; C transpiler.
 
 Fully configurable.
 
@@ -25,7 +24,7 @@ Short name | Long name | Description | Expected value | Default value
 
 Short name | Long name | Description
 -|-|-
-N/A | --ecrire-noNewline | Changes the behavior of the `ecrireEcran` callable so it doesn't print a newline | switch parameter
+N/A | --ecrire-nonewline | Changes the behavior of the `ecrireEcran` callable so it doesn't print a newline | switch parameter
 
 ## Tools
 

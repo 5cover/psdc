@@ -1,7 +1,7 @@
 using System.Text;
 
 using Scover.Psdc.Parsing.Nodes;
-using Scover.Psdc.SemanticAnalysis;
+using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.CodeGeneration;
 

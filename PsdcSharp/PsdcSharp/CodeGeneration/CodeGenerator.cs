@@ -1,8 +1,8 @@
-using Scover.Psdc.SemanticAnalysis;
+using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.CodeGeneration;
 
-internal abstract partial class CodeGenerator(SemanticAst semanticAst) : MessageProvider
+internal abstract partial class CodeGenerator(SemanticAst semanticAst)
 {
     protected readonly SemanticAst _ast = semanticAst;
     protected readonly Indentation _indent = new();

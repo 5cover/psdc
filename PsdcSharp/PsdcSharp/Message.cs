@@ -3,7 +3,7 @@ using System.Text;
 
 using Scover.Psdc.Parsing;
 using Scover.Psdc.Parsing.Nodes;
-using Scover.Psdc.SemanticAnalysis;
+using Scover.Psdc.StaticAnalysis;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;

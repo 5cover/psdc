@@ -82,7 +82,7 @@ The set of complete types is a subset of all types.
 
 There is an issue though. What about aliases? They can contain either a complete or incomplete type. And we can't define separate productions for a `CompleteTypeAlias` and a `TypeAlias` as the reference productions (`CompleteTypeAliasReference` and `TypeAliasReference`) would have the same source tokens?
 
-I think there's a way. Anything that we can do in the parser will be less clutter in the semantic analyzer. Let's make a tree.
+I think there's a way. Anything that we can do in the parser will be less clutter in the static analyzer. Let's make a tree.
 
 ```mermaid
 flowchart LR
@@ -237,7 +237,7 @@ Note that each node in this tree corresponds to a specific type of node in the A
 
 This means we could associate symbol tables with such nodes by having them implement an interface, like `ScopedNode`
 
-Now in semantic analysis we can populate these symbol tables and consume them in the code generator.
+Now in static analysis we can populate these symbol tables and consume them in the code generator.
 
 ## ~~Node~~ Symbol equality
 
@@ -245,9 +245,9 @@ Node equality doesn't depend on SourceTokens.
 
 actually we didn't need it, we need **Symbol Equality** (which need Node.Expression equality so it's ok)
 
-## semantic analysis pass
+## static analysis pass
 
-Semantic analysis that will perform the following before code generation (so code generation needs no matchsome)
+Static analysis that will perform the following before code generation (so code generation needs no matchsome)
 
 - create Symbols and register errors
     - redefined symbol
@@ -273,7 +273,7 @@ i think i should not worry about writing abstracted code so compilation to anoth
 AST is traversed in
 
 - code generator
-- semantic analysis
+- static analysis
 
 define abstract class AstTraverser. Defines traversal logic and abstract methods.
 
@@ -303,7 +303,7 @@ So it serves no purpose? Does it? Not really. It can't do anything useful.
 
 ## a Node should have SourceTokens
 
-this is needed for errors in Semantic analysis
+this is needed for errors in Static analysis
 
 ## TypeInfo and primitive obsession
 
@@ -387,8 +387,8 @@ the issue is that we need access to the parent scope to retrieve symbols.
 
 currently Scope has a `Scope? ParentScope` field. This means it's up to the Parser to create the scope hierarchy. This is wrong.
 
-- solution 1 : remove Scope from nodes and build a scope tree in the semantic analyzer (will have to be traversed in semantic analyzer & code generator)
-- **solution 2** : semantic analyzer will create the scopes
+- solution 1 : remove Scope from nodes and build a scope tree in the static analyzer (will have to be traversed in static analyzer & code generator)
+- **solution 2** : static analyzer will create the scopes
 
 ## SourceTokens shouldn't contain the token that caused the error
 
@@ -443,7 +443,7 @@ Semantically, it would able us to tell if an indentifier is expected instead of 
 
 This could be useful for string constants.
 
-## More complex semantic analysis
+## More complex static analysis
 
 Problem : how to implement the "output parameter never assigned errror"
 
@@ -485,9 +485,9 @@ Yes. We need some sort of restriction on which expressions can be lvalues so we 
 
 The problem is for bracketed expressions. `lireClavier((val))` is just as valid as `lireClavier(val)`.
 
-So a `Bracketed` can contain either an lvalue or rvalue, what it is it defined on its contents. I guess we can add an abstract boolean property `IsLValue` on `Expression`. This property will be used by the semantic analyzer?
+So a `Bracketed` can contain either an lvalue or rvalue, what it is it defined on its contents. I guess we can add an abstract boolean property `IsLValue` on `Expression`. This property will be used by the static analyzer?
 
-So the parser will allow assigning to lvalues but it's the semantic analyzer that will catch the error. Is this a good idea?
+So the parser will allow assigning to lvalues but it's the static analyzer that will catch the error. Is this a good idea?
 
 Since there's not only assignments to worry about, there's also `lireClavier` and effective output parameters.
 

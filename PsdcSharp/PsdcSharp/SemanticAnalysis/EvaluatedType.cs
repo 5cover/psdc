@@ -1,7 +1,7 @@
 using System.Text;
 using Scover.Psdc.Parsing.Nodes;
 
-namespace Scover.Psdc.SemanticAnalysis;
+namespace Scover.Psdc.StaticAnalysis;
 
 internal abstract record EvaluatedType(bool IsNumeric = false)
 {
@@ -71,8 +71,7 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
         {
             StringBuilder sb = new();
             sb.AppendLine("structure début");
-            foreach (var comp in Components)
-            {
+            foreach (var comp in Components) {
                 sb.AppendLine($"{comp.Key} : {comp.Value.GetRepresentation(input)};");
             }
             sb.Append("fin");

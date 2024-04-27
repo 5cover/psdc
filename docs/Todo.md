@@ -29,7 +29,7 @@ Project roadmap:
     - Valid code
 - Documentation
 - Release
-- More semantic analysis
+- More static analysis
 
 - Have formal grammar follow parsing order in choices.
 

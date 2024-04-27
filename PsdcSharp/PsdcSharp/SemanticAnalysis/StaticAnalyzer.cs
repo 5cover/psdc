@@ -1,7 +1,7 @@
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Parsing.Nodes;
 
-namespace Scover.Psdc.SemanticAnalysis;
+namespace Scover.Psdc.StaticAnalysis;
 
 internal sealed class SemanticAst(Node.Algorithm root, IReadOnlyDictionary<ScopedNode, Scope> scopes)
 {
@@ -10,7 +10,7 @@ internal sealed class SemanticAst(Node.Algorithm root, IReadOnlyDictionary<Scope
     public IReadOnlyDictionary<ScopedNode, Scope> Scopes => scopes;
 }
 
-internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
+internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
 {
     public SemanticAst AnalyzeSemantics()
     {
@@ -23,7 +23,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         }
 
         if (!seenMainProgram) {
-            AddMessage(Message.ErrorMissingMainProgram(root.SourceTokens));
+            messenger.Report(Message.ErrorMissingMainProgram(root.SourceTokens));
         }
 
         return new(root, scopes);
@@ -35,7 +35,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             switch (decl) {
             case Node.Declaration.TypeAlias alias:
                 CreateTypeOrError(parentScope, alias.Type).MatchSome(type
-                 => parentScope.AddSymbolOrError(this, new Symbol.TypeAlias(alias.Name, alias.SourceTokens, type)));
+                 => parentScope.AddSymbolOrError(messenger, new Symbol.TypeAlias(alias.Name, alias.SourceTokens, type)));
                 break;
 
             case Node.Declaration.Constant constant:
@@ -43,12 +43,12 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 .Combine(EvaluateTypeOrError(parentScope, constant.Value))
                 .MatchSome((declaredType, inferredType) => {
                     if (!declaredType.Equals(inferredType)) {
-                        AddMessage(Message.ErrorDeclaredInferredTypeMismatch(constant.SourceTokens, declaredType, inferredType));
+                        messenger.Report(Message.ErrorDeclaredInferredTypeMismatch(constant.SourceTokens, declaredType, inferredType));
                     }
                     if (!constant.Value.IsConstant(parentScope)) {
-                        AddMessage(Message.ErrorExpectedConstantExpression(constant.SourceTokens));
+                        messenger.Report(Message.ErrorExpectedConstantExpression(constant.SourceTokens));
                     }
-                    parentScope.AddSymbolOrError(this, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, constant.Value));
+                    parentScope.AddSymbolOrError(messenger, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, constant.Value));
                 });
                 break;
 
@@ -72,7 +72,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
 
             case Node.Declaration.MainProgram mainProgram:
                 if (seenMainProgram) {
-                    AddMessage(Message.ErrorRedefinedMainProgram(mainProgram));
+                    messenger.Report(Message.ErrorRedefinedMainProgram(mainProgram));
                 }
                 seenMainProgram = true;
                 AnalyzeScopedBlock(mainProgram);
@@ -121,9 +121,9 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             case Node.Statement.Assignment assignment:
                 AnalyzeExpression(parentScope, assignment.Target, hookExpr);
                 if (assignment.Target is Node.Expression.LValue.VariableReference varRef
-                    && parentScope.TryGetSymbolOrError<Symbol.Variable>(this, varRef.Name, out var targetVar)) {
+                    && parentScope.TryGetSymbolOrError<Symbol.Variable>(messenger, varRef.Name, out var targetVar)) {
                     if (targetVar is Symbol.Constant constant) {
-                        AddMessage(Message.ErrorConstantAssignment(assignment, constant));
+                        messenger.Report(Message.ErrorConstantAssignment(assignment, constant));
                     }
                 }
                 AnalyzeExpression(parentScope, assignment.Value, hookExpr);
@@ -178,7 +178,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             case Node.Statement.LocalVariable varDecl:
                 CreateTypeOrError(parentScope, varDecl.Type).MatchSome(type => {
                     foreach (var name in varDecl.Names) {
-                        parentScope.AddSymbolOrError(this, new Symbol.Variable(name, varDecl.SourceTokens, type));
+                        parentScope.AddSymbolOrError(messenger, new Symbol.Variable(name, varDecl.SourceTokens, type));
                     }
                 });
                 break;
@@ -227,7 +227,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 AnalyzeExpression(parentScope, opBin.Operand1, hookExpr);
                 if (opBin.Operator is Parsing.BinaryOperator.Divide
                  && opBin.Operand2.EvaluateValue(parentScope).FlatMap(Parse.ToInt32).Map(val => val == 0).ValueOr(false)) {
-                    AddMessage(Message.WarningDivisionByZero(opBin.SourceTokens));
+                    messenger.Report(Message.WarningDivisionByZero(opBin.SourceTokens));
                 }
                 AnalyzeExpression(parentScope, opBin.Operand2, hookExpr);
                 break;
@@ -244,7 +244,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 AnalyzeExpression(parentScope, componentAccess.Structure, hookExpr);
                 break;
             case Node.Expression.LValue.VariableReference varRef:
-                _ = parentScope.GetSymbolOrError<Symbol.Variable>(varRef.Name).DiscardError(AddMessage);
+                _ = parentScope.GetSymbolOrError<Symbol.Variable>(varRef.Name).DiscardError(messenger.Report);
                 break;
             default:
                 throw expr.ToUnmatchedException();
@@ -267,7 +267,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         {
             foreach (var param in parameters) {
                 if (!scope.TryAdd(param, out var existingSymbol)) {
-                    AddMessage(Message.ErrorRedefinedSymbol(param, existingSymbol));
+                    messenger.Report(Message.ErrorRedefinedSymbol(param, existingSymbol));
                 }
             }
         }
@@ -278,12 +278,12 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
 
         void HandleCall<TSymbol>(Scope parentScope, CallNode call) where TSymbol : CallableSymbol
         {
-            parentScope.GetSymbolOrError<TSymbol>(call.Name).DiscardError(AddMessage).MatchSome(callee => {
+            parentScope.GetSymbolOrError<TSymbol>(call.Name).DiscardError(messenger.Report).MatchSome(callee => {
                 if (!call.Parameters.ZipStrict(callee.Parameters, (effective, formal)
                     => effective.Mode.Equals(formal.Mode)
                     && EvaluateTypeOrError(parentScope, effective.Value).Map(type => formal.Type.Equals(type)).ValueOr(false))
                  .All(b => b)) {
-                    AddMessage(Message.ErrorCallParameterMismatch(call));
+                    messenger.Report(Message.ErrorCallParameterMismatch(call));
                 }
             });
             foreach (var effective in call.Parameters) {
@@ -296,10 +296,10 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             if (!parentScope.TryAdd(sub, out var existingSymbol)) {
                 if (existingSymbol is T existingSub) {
                     if (!sub.Equals(existingSub)) {
-                        AddMessage(Message.ErrorSignatureMismatch(sub, existingSub));
+                        messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
                     }
                 } else {
-                    AddMessage(Message.ErrorRedefinedSymbol(sub, existingSymbol));
+                    messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
                 }
             }
         }
@@ -321,7 +321,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
             });
 
             foreach (var unassignedOutParam in outputParametersAssigned.Where(kv => !kv.Value).Select(kv => kv.Key)) {
-                AddMessage(Message.ErrorOutputParameterNeverAssigned(unassignedOutParam));
+                messenger.Report(Message.ErrorOutputParameterNeverAssigned(unassignedOutParam));
             }
         }
 
@@ -331,12 +331,12 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 sub.MarkAsDefined();
             } else if (existingSymbol is T existingSub) {
                 if (existingSub.HasBeenDefined) {
-                    AddMessage(Message.ErrorRedefinedSymbol(sub, existingSub));
+                    messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSub));
                 } else if (!sub.Equals(existingSub)) {
-                    AddMessage(Message.ErrorSignatureMismatch(sub, existingSub));
+                    messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
                 }
             } else {
-                AddMessage(Message.ErrorRedefinedSymbol(sub, existingSymbol));
+                messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
             }
         }
 
@@ -350,10 +350,10 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         Option<EvaluatedType> CreateTypeOrError(ReadOnlyScope scope, Node.Type type) => type switch {
             Node.Type.String => EvaluatedType.String.Instance.Some(),
             Node.Type.AliasReference alias
-             => scope.GetSymbolOrError<Symbol.TypeAlias>(alias.Name).DiscardError(AddMessage)
+             => scope.GetSymbolOrError<Symbol.TypeAlias>(alias.Name).DiscardError(messenger.Report)
                     .Map(aliasType => new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType)),
             Node.Type.Complete.AliasReference alias
-             => scope.GetSymbolOrError<Symbol.TypeAlias>(alias.Name).DiscardError(AddMessage)
+             => scope.GetSymbolOrError<Symbol.TypeAlias>(alias.Name).DiscardError(messenger.Report)
                     .Map(aliasType => new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType)),
             Node.Type.Complete.Array array => CreateTypeOrError(scope, array.Type).Map(elementType
             => new EvaluatedType.Array(elementType, array.Dimensions)),
@@ -371,7 +371,7 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
                 CreateTypeOrError(scope, comp.Type).Match(type => {
                     foreach (var name in comp.Names) {
                         if (!components.TryAdd(name, type)) {
-                            AddMessage(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
+                            messenger.Report(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
                         }
                     }
                 }, none: () => atLeastOneNameWasntAdded = true);
@@ -384,6 +384,6 @@ internal sealed class SemanticAnalyzer(Node.Algorithm root) : MessageProvider
         }
 
         Option<EvaluatedType> EvaluateTypeOrError(ReadOnlyScope scope, Node.Expression expr)
-         => expr.EvaluateType(scope).DiscardError(AddMessage);
+         => expr.EvaluateType(scope).DiscardError(messenger.Report);
     }
 }

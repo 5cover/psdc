@@ -139,7 +139,7 @@ internal static class Option
             action(option.Value.Item1, option.Value.Item2);
         }
     }
-    
+
     public static Option<(T1, T2)> Combine<T1, T2>(this Option<T1> option1, Option<T2> option2)
      => (option1.HasValue && option2.HasValue)
         ? Some((option1.Value, option2.Value))

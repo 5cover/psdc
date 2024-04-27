@@ -70,7 +70,7 @@ internal partial class Parser
     private ParseResult<Node.Expression.LValue> ParseLValue(IEnumerable<Token> tokens)
      => ParseAnyOf(tokens, ParseArraySubscriptOrComponentAccess, ParseTerminalLValue);
 
-    private ParseResult<Node.Expression.LValue> ParseArraySubscriptOrComponentAccess(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+    private ParseResult<Node.Expression.LValue> ParseArraySubscriptOrComponentAccess(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .Parse(out var rvalue, ParseTerminalRValue)
         .Branch<Node.Expression.LValue>(new() {
             [Punctuation.OpenSquareBracket] = o => o
@@ -94,33 +94,33 @@ internal partial class Parser
      => ParseAnyOf(tokens, ParseBracketedLValue,
         t => ParseIdentifier(tokens).Map((t, name) => new Node.Expression.LValue.VariableReference(t, name)));
 
-    private ParseResult<Node.Expression.LValue> ParseBracketedLValue(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+    private ParseResult<Node.Expression.LValue> ParseBracketedLValue(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var expression, ParseLValue)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Node.Expression.LValue.Bracketed(t, expression));
 
-    private ParseResult<Node.Expression> ParseBracketed(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+    private ParseResult<Node.Expression> ParseBracketed(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var expression, ParseExpression)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Node.Expression.Bracketed(t, expression));
 
-    private ParseResult<Node.Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+    private ParseResult<Node.Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Punctuation.OpenBracket)
         .ParseZeroOrMoreSeparated(out var parameters, ParseEffectiveParameter, Punctuation.Comma)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Node.Expression.FunctionCall(t, name, parameters));
 
-    private ParseResult<Node.Expression.BuiltinFdf> ParseBuiltinFdf(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+    private ParseResult<Node.Expression.BuiltinFdf> ParseBuiltinFdf(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(Keyword.Fdf)
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var argNomLog, ParseExpression)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Node.Expression.BuiltinFdf(t, argNomLog));
 
-    private ParseResult<IReadOnlyCollection<Node.Expression>> ParseIndexes(IEnumerable<Token> tokens) => ParseOperation.Start(this, tokens)
+    private ParseResult<IReadOnlyCollection<Node.Expression>> ParseIndexes(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(Punctuation.OpenSquareBracket)
         .ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma)
         .ParseToken(Punctuation.CloseSquareBracket)

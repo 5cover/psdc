@@ -2,7 +2,7 @@ using Scover.Psdc.Parsing.Nodes;
 using Scover.Psdc.Tokenization;
 using static Scover.Psdc.Parsing.Nodes.Node;
 
-namespace Scover.Psdc.SemanticAnalysis;
+namespace Scover.Psdc.StaticAnalysis;
 
 internal interface CallableSymbol : Symbol
 {

@@ -5,7 +5,7 @@ using static Scover.Psdc.Tokenization.TokenType.Special;
 
 namespace Scover.Psdc.Tokenization;
 
-internal sealed class Tokenizer(string input) : MessageProvider
+internal sealed class Tokenizer(Messenger messenger, string input)
 {
     private static readonly IReadOnlyList<Ruled> types = new List<Ruled> {
         CommentMultiline,
@@ -60,8 +60,9 @@ internal sealed class Tokenizer(string input) : MessageProvider
 
         yield return new Token(Eof, null, index, 0);
     }
+
     private void AddUnknownTokenMessage(int invalidStart, int index)
-     => AddMessage(Message.ErrorUnknownToken(invalidStart..index));
+     => messenger.Report(Message.ErrorUnknownToken(invalidStart..index));
 
     private Option<Token> ReadToken(int offset)
      => types.Select(t => t.TryExtract(_input, offset)).FirstOrNone(t => t.HasValue);
