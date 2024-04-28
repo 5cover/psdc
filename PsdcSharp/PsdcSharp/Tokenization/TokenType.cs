@@ -14,13 +14,13 @@ internal abstract class TokenType
     internal interface Ruled
     {
         public TokenRule Rule { get; }
-        public Option<Token> TryExtract(string input, int startIndex);
+        public Option<Token> TryExtract(string code, int startIndex);
     }
 
     internal abstract class Ruled<T>(string repr, bool isStatic, T rule)
     : TokenType(repr, isStatic), Ruled where T : TokenRule
     {
-        public Option<Token> TryExtract(string input, int startIndex) => rule.TryExtract(this, input, startIndex);
+        public Option<Token> TryExtract(string code, int startIndex) => rule.TryExtract(this, code, startIndex);
         public T Rule => rule;
         TokenRule Ruled.Rule => rule;
     }

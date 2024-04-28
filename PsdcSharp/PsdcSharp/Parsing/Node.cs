@@ -3,17 +3,22 @@ namespace Scover.Psdc.Parsing;
 
 #region Node traits
 
-internal interface CallNode : Node
+internal interface NodeCall : Node
 {
     public Identifier Name { get; }
     public IReadOnlyCollection<ParameterActual> Parameters { get; }
 }
 
-internal interface ScopedNode : Node;
+internal interface NodeScoped : Node;
 
-internal abstract class BlockNode(Partition<Token> sourceTokens,
+internal interface NodeAliasReference : Node
+{
+    public Identifier Name { get; }
+}
+
+internal abstract class BlockNode(SourceTokens sourceTokens,
     IReadOnlyCollection<Node.Statement> block)
-: NodeImpl(sourceTokens), ScopedNode
+: NodeImpl(sourceTokens), NodeScoped
 {
     public IReadOnlyCollection<Node.Statement> Block => block;
 }
@@ -23,11 +28,11 @@ internal abstract class BlockNode(Partition<Token> sourceTokens,
 internal interface Node
 {
     bool SemanticsEqual(Node other);
-    Partition<Token> SourceTokens { get; }
-    internal sealed class Algorithm(Partition<Token> sourceTokens,
+    SourceTokens SourceTokens { get; }
+    internal sealed class Algorithm(SourceTokens sourceTokens,
         Identifier name,
         IReadOnlyCollection<Declaration> declarations)
-    : NodeImpl(sourceTokens), ScopedNode
+    : NodeImpl(sourceTokens), NodeScoped
     {
         public Identifier Name => name;
         public IReadOnlyCollection<Declaration> Declarations => declarations;
@@ -38,7 +43,7 @@ internal interface Node
 
     internal interface Declaration : Node
     {
-        internal sealed class MainProgram(Partition<Token> sourceTokens,
+        internal sealed class MainProgram(SourceTokens sourceTokens,
             IReadOnlyCollection<Statement> block)
         : BlockNode(sourceTokens, block), Declaration
         {
@@ -46,7 +51,7 @@ internal interface Node
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class TypeAlias(Partition<Token> sourceTokens,
+        internal sealed class TypeAlias(SourceTokens sourceTokens,
             Identifier name,
             Type type)
         : NodeImpl(sourceTokens), Declaration
@@ -58,7 +63,7 @@ internal interface Node
              && o.Type.SemanticsEqual(Type);
         }
 
-        internal sealed class CompleteTypeAlias(Partition<Token> sourceTokens,
+        internal sealed class CompleteTypeAlias(SourceTokens sourceTokens,
             Identifier name,
             Type.Complete type)
         : NodeImpl(sourceTokens), Declaration
@@ -70,7 +75,7 @@ internal interface Node
              && o.Type.SemanticsEqual(Type);
         }
 
-        internal sealed class Constant(Partition<Token> sourceTokens,
+        internal sealed class Constant(SourceTokens sourceTokens,
             Type type,
             Identifier name,
             Expression value)
@@ -85,7 +90,7 @@ internal interface Node
              && o.Value.SemanticsEqual(Value);
         }
 
-        internal sealed class Procedure(Partition<Token> sourceTokens,
+        internal sealed class Procedure(SourceTokens sourceTokens,
             ProcedureSignature signature)
         : NodeImpl(sourceTokens), Declaration
         {
@@ -94,7 +99,7 @@ internal interface Node
              && o.Signature.SemanticsEqual(Signature);
         }
 
-        internal sealed class ProcedureDefinition(Partition<Token> sourceTokens,
+        internal sealed class ProcedureDefinition(SourceTokens sourceTokens,
             ProcedureSignature signature,
             IReadOnlyCollection<Statement> block)
         : BlockNode(sourceTokens, block), Declaration
@@ -105,7 +110,7 @@ internal interface Node
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class Function(Partition<Token> sourceTokens,
+        internal sealed class Function(SourceTokens sourceTokens,
             FunctionSignature signature)
         : NodeImpl(sourceTokens), Declaration
         {
@@ -114,7 +119,7 @@ internal interface Node
  && o.Signature.SemanticsEqual(Signature);
         }
 
-        internal sealed class FunctionDefinition(Partition<Token> sourceTokens,
+        internal sealed class FunctionDefinition(SourceTokens sourceTokens,
             FunctionSignature signature,
             IReadOnlyCollection<Statement> block)
         : BlockNode(sourceTokens, block), Declaration
@@ -128,13 +133,13 @@ internal interface Node
 
     internal interface Statement : Node
     {
-        internal sealed class Nop(Partition<Token> sourceTokens)
+        internal sealed class Nop(SourceTokens sourceTokens)
         : NodeImpl(sourceTokens), Statement
         {
             public override bool SemanticsEqual(Node other) => other is Nop;
         }
 
-        internal sealed class Alternative(Partition<Token> sourceTokens,
+        internal sealed class Alternative(SourceTokens sourceTokens,
             Alternative.IfClause @if,
             IReadOnlyCollection<Alternative.ElseIfClause> elseIf,
             Option<Alternative.ElseClause> @else)
@@ -147,7 +152,7 @@ internal interface Node
              && o.If.SemanticsEqual(If)
              && o.ElseIfs.AllSemanticsEqual(ElseIfs)
              && o.Else.OptionSemanticsEqual(Else);
-            internal sealed class IfClause(Partition<Token> sourceTokens,
+            internal sealed class IfClause(SourceTokens sourceTokens,
                 Expression condition,
                 IReadOnlyCollection<Statement> block)
             : BlockNode(sourceTokens, block)
@@ -158,7 +163,7 @@ internal interface Node
                  && o.Block.AllSemanticsEqual(Block);
             }
 
-            internal sealed class ElseIfClause(Partition<Token> sourceTokens,
+            internal sealed class ElseIfClause(SourceTokens sourceTokens,
                 Expression condition,
                 IReadOnlyCollection<Statement> block)
             : BlockNode(sourceTokens, block)
@@ -169,7 +174,7 @@ internal interface Node
                  && o.Block.AllSemanticsEqual(Block);
             }
 
-            internal sealed class ElseClause(Partition<Token> sourceTokens,
+            internal sealed class ElseClause(SourceTokens sourceTokens,
                 IReadOnlyCollection<Statement> block)
             : BlockNode(sourceTokens, block)
             {
@@ -178,7 +183,7 @@ internal interface Node
             }
         }
 
-        internal sealed class Switch(Partition<Token> sourceTokens,
+        internal sealed class Switch(SourceTokens sourceTokens,
             Expression expression,
             IReadOnlyCollection<Switch.Case> cases,
             Option<Switch.DefaultCase> @default)
@@ -191,7 +196,7 @@ internal interface Node
                  && o.Expression.SemanticsEqual(Expression)
                  && o.Cases.AllSemanticsEqual(Cases)
                  && o.Default.OptionSemanticsEqual(Default);
-            internal sealed class Case(Partition<Token> sourceTokens,
+            internal sealed class Case(SourceTokens sourceTokens,
                 Expression when,
                 IReadOnlyCollection<Statement> block)
             : BlockNode(sourceTokens, block)
@@ -202,7 +207,7 @@ internal interface Node
                  && o.Block.AllSemanticsEqual(Block);
             }
 
-            internal sealed class DefaultCase(Partition<Token> sourceTokens,
+            internal sealed class DefaultCase(SourceTokens sourceTokens,
                 IReadOnlyCollection<Statement> block)
             : BlockNode(sourceTokens, block)
             {
@@ -211,7 +216,7 @@ internal interface Node
             }
         }
 
-        internal sealed class Assignment(Partition<Token> sourceTokens,
+        internal sealed class Assignment(SourceTokens sourceTokens,
             Expression.Lvalue target,
             Expression value)
         : NodeImpl(sourceTokens), Statement
@@ -223,7 +228,7 @@ internal interface Node
              && o.Value.SemanticsEqual(Value);
         }
 
-        internal sealed class DoWhileLoop(Partition<Token> sourceTokens,
+        internal sealed class DoWhileLoop(SourceTokens sourceTokens,
             Expression condition,
             IReadOnlyCollection<Statement> block)
         : BlockNode(sourceTokens, block), Statement
@@ -234,7 +239,7 @@ internal interface Node
                 && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class BuiltinEcrire(Partition<Token> sourceTokens,
+        internal sealed class BuiltinEcrire(SourceTokens sourceTokens,
             Expression argumentNomLog,
             Expression argumentExpression)
         : NodeImpl(sourceTokens), Statement
@@ -246,7 +251,7 @@ internal interface Node
              && o.ArgumentExpression.SemanticsEqual(ArgumentExpression);
         }
 
-        internal sealed class BuiltinFermer(Partition<Token> sourceTokens,
+        internal sealed class BuiltinFermer(SourceTokens sourceTokens,
             Expression argumentNomLog)
         : NodeImpl(sourceTokens), Statement
         {
@@ -255,7 +260,7 @@ internal interface Node
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
         }
 
-        internal sealed class ForLoop(Partition<Token> sourceTokens,
+        internal sealed class ForLoop(SourceTokens sourceTokens,
             Expression.Lvalue variant,
             Expression start,
             Expression end,
@@ -275,7 +280,7 @@ internal interface Node
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class BuiltinLire(Partition<Token> sourceTokens,
+        internal sealed class BuiltinLire(SourceTokens sourceTokens,
             Expression argumentNomLog,
             Expression.Lvalue argumentVariable)
         : NodeImpl(sourceTokens), Statement
@@ -287,7 +292,7 @@ internal interface Node
              && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
         }
 
-        internal sealed class BuiltinOuvrirAjout(Partition<Token> sourceTokens,
+        internal sealed class BuiltinOuvrirAjout(SourceTokens sourceTokens,
             Expression argumentNomLog)
         : NodeImpl(sourceTokens), Statement
         {
@@ -296,7 +301,7 @@ internal interface Node
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
         }
 
-        internal sealed class BuiltinOuvrirEcriture(Partition<Token> sourceTokens,
+        internal sealed class BuiltinOuvrirEcriture(SourceTokens sourceTokens,
             Expression argumentNomLog)
         : NodeImpl(sourceTokens), Statement
         {
@@ -305,7 +310,7 @@ internal interface Node
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
         }
 
-        internal sealed class BuiltinOuvrirLecture(Partition<Token> sourceTokens,
+        internal sealed class BuiltinOuvrirLecture(SourceTokens sourceTokens,
             Expression argumentNomLog)
         : NodeImpl(sourceTokens), Statement
         {
@@ -314,10 +319,10 @@ internal interface Node
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
         }
 
-        internal sealed class ProcedureCall(Partition<Token> sourceTokens,
+        internal sealed class ProcedureCall(SourceTokens sourceTokens,
             Identifier name,
             IReadOnlyCollection<ParameterActual> parameters)
-        : NodeImpl(sourceTokens), Statement, CallNode
+        : NodeImpl(sourceTokens), Statement, NodeCall
         {
             public Identifier Name => name;
             public IReadOnlyCollection<ParameterActual> Parameters => parameters;
@@ -326,7 +331,7 @@ internal interface Node
              && o.Parameters.AllSemanticsEqual(Parameters);
         }
 
-        internal sealed class BuiltinAssigner(Partition<Token> sourceTokens,
+        internal sealed class BuiltinAssigner(SourceTokens sourceTokens,
             Expression.Lvalue argumentNomLog,
             Expression argumentNomExt)
         : NodeImpl(sourceTokens), Statement
@@ -338,7 +343,7 @@ internal interface Node
              && o.ArgumentNomExt.SemanticsEqual(ArgumentNomExt);
         }
 
-        internal sealed class BuiltinEcrireEcran(Partition<Token> sourceTokens,
+        internal sealed class BuiltinEcrireEcran(SourceTokens sourceTokens,
             IReadOnlyCollection<Expression> arguments)
         : NodeImpl(sourceTokens), Statement
         {
@@ -347,7 +352,7 @@ internal interface Node
              && o.Arguments.AllSemanticsEqual(Arguments);
         }
 
-        internal sealed class BuiltinLireClavier(Partition<Token> sourceTokens,
+        internal sealed class BuiltinLireClavier(SourceTokens sourceTokens,
             Expression.Lvalue argumentVariable)
         : NodeImpl(sourceTokens), Statement
         {
@@ -356,7 +361,7 @@ internal interface Node
              && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
         }
 
-        internal sealed class RepeatLoop(Partition<Token> sourceTokens,
+        internal sealed class RepeatLoop(SourceTokens sourceTokens,
             Expression condition,
             IReadOnlyCollection<Statement> block)
         : BlockNode(sourceTokens, block), Statement
@@ -367,7 +372,7 @@ internal interface Node
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class Return(Partition<Token> sourceTokens,
+        internal sealed class Return(SourceTokens sourceTokens,
             Expression value)
         : NodeImpl(sourceTokens), Statement
         {
@@ -376,7 +381,7 @@ internal interface Node
              && o.Value.SemanticsEqual(Value);
         }
 
-        internal sealed class LocalVariable(Partition<Token> sourceTokens,
+        internal sealed class LocalVariable(SourceTokens sourceTokens,
             IReadOnlyCollection<Identifier> names,
             Type.Complete type)
         : NodeImpl(sourceTokens), Statement
@@ -388,7 +393,7 @@ internal interface Node
              && o.Type.SemanticsEqual(Type);
         }
 
-        internal sealed class WhileLoop(Partition<Token> sourceTokens,
+        internal sealed class WhileLoop(SourceTokens sourceTokens,
             Expression condition,
             IReadOnlyCollection<Statement> block)
         : BlockNode(sourceTokens, block), Statement
@@ -404,7 +409,7 @@ internal interface Node
     {
         internal interface Lvalue : Expression
         {
-            internal sealed class ComponentAccess(Partition<Token> sourceTokens,
+            internal sealed class ComponentAccess(SourceTokens sourceTokens,
                 Expression structure,
                 Identifier componentName)
             : NodeImpl(sourceTokens), Lvalue
@@ -416,7 +421,7 @@ internal interface Node
                  && o.ComponentName.SemanticsEqual(ComponentName);
             }
 
-            internal sealed new class Bracketed(Partition<Token> sourceTokens,
+            internal sealed new class Bracketed(SourceTokens sourceTokens,
                 Lvalue lvalue)
             : NodeImpl(sourceTokens), Lvalue
             {
@@ -425,7 +430,7 @@ internal interface Node
                  && o.Lvalue.SemanticsEqual(Lvalue);
             }
 
-            internal sealed class ArraySubscript(Partition<Token> sourceTokens,
+            internal sealed class ArraySubscript(SourceTokens sourceTokens,
                 Expression array,
                 IReadOnlyCollection<Expression> indices)
             : NodeImpl(sourceTokens), Lvalue
@@ -437,7 +442,7 @@ internal interface Node
                  && o.Indexes.AllSemanticsEqual(Indexes);
             }
 
-            internal sealed class VariableReference(Partition<Token> sourceTokens,
+            internal sealed class VariableReference(SourceTokens sourceTokens,
                 Identifier name)
             : NodeImpl(sourceTokens), Lvalue
             {
@@ -447,7 +452,7 @@ internal interface Node
             }
         }
 
-        internal sealed class OperationUnary(Partition<Token> sourceTokens,
+        internal sealed class OperationUnary(SourceTokens sourceTokens,
             UnaryOperator @operator,
             Expression operand)
         : NodeImpl(sourceTokens), Expression
@@ -459,7 +464,7 @@ internal interface Node
              && o.Operand.SemanticsEqual(Operand);
         }
 
-        internal sealed class OperationBinary(Partition<Token> sourceTokens,
+        internal sealed class OperationBinary(SourceTokens sourceTokens,
             Expression operand1,
             BinaryOperator @operator,
             Expression operand2)
@@ -474,7 +479,7 @@ internal interface Node
              && o.Operand2.SemanticsEqual(Operand2);
         }
 
-        internal sealed class BuiltinFdf(Partition<Token> sourceTokens,
+        internal sealed class BuiltinFdf(SourceTokens sourceTokens,
             Expression argumentNomLog)
         : NodeImpl(sourceTokens), Expression
         {
@@ -483,10 +488,10 @@ internal interface Node
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
         }
 
-        internal sealed class FunctionCall(Partition<Token> sourceTokens,
+        internal sealed class FunctionCall(SourceTokens sourceTokens,
             Identifier name,
             IReadOnlyCollection<ParameterActual> parameters)
-        : NodeImpl(sourceTokens), Expression, CallNode
+        : NodeImpl(sourceTokens), Expression, NodeCall
         {
             public Identifier Name => name;
             public IReadOnlyCollection<ParameterActual> Parameters => parameters;
@@ -495,7 +500,7 @@ internal interface Node
              && o.Parameters.AllSemanticsEqual(Parameters);
         }
 
-        internal sealed class Bracketed(Partition<Token> sourceTokens,
+        internal sealed class Bracketed(SourceTokens sourceTokens,
             Expression expression)
         : NodeImpl(sourceTokens), Expression
         {
@@ -504,13 +509,13 @@ internal interface Node
              && o.Expression.SemanticsEqual(Expression);
         }
 
-        internal sealed class True(Partition<Token> sourceTokens)
+        internal sealed class True(SourceTokens sourceTokens)
         : NodeImpl(sourceTokens), Expression
         {
             public override bool SemanticsEqual(Node other) => other is True;
         }
 
-        internal sealed class False(Partition<Token> sourceTokens)
+        internal sealed class False(SourceTokens sourceTokens)
         : NodeImpl(sourceTokens), Expression
         {
             public override bool SemanticsEqual(Node other) => other is False;
@@ -519,7 +524,7 @@ internal interface Node
         internal interface Literal : Expression
         {
             public string Value { get; }
-            internal sealed class Character(Partition<Token> sourceTokens,
+            internal sealed class Character(SourceTokens sourceTokens,
                 string value)
             : NodeImpl(sourceTokens), Literal
             {
@@ -528,7 +533,7 @@ internal interface Node
                  && o.Value.Equals(Value);
             }
 
-            internal sealed class Integer(Partition<Token> sourceTokens,
+            internal sealed class Integer(SourceTokens sourceTokens,
                 string value)
             : NodeImpl(sourceTokens), Literal
             {
@@ -537,7 +542,7 @@ internal interface Node
                  && o.Value.Equals(Value);
             }
 
-            internal sealed class Real(Partition<Token> sourceTokens,
+            internal sealed class Real(SourceTokens sourceTokens,
                 string value)
             : NodeImpl(sourceTokens), Literal
             {
@@ -546,7 +551,7 @@ internal interface Node
                  && o.Value.Equals(Value);
             }
 
-            internal sealed class String(Partition<Token> sourceTokens,
+            internal sealed class String(SourceTokens sourceTokens,
                 string value)
             : NodeImpl(sourceTokens), Literal
             {
@@ -559,16 +564,16 @@ internal interface Node
 
     internal interface Type : Node
     {
-        internal sealed class AliasReference(Partition<Token> sourceTokens,
+        internal sealed class AliasReference(SourceTokens sourceTokens,
             Identifier name)
-        : NodeImpl(sourceTokens), Type
+        : NodeImpl(sourceTokens), Type, NodeAliasReference
         {
             public Identifier Name => name;
             public override bool SemanticsEqual(Node other) => other is AliasReference o
              && o.Name.SemanticsEqual(Name);
         }
 
-        internal sealed class String(Partition<Token> sourceTokens)
+        internal sealed class String(SourceTokens sourceTokens)
         : NodeImpl(sourceTokens), Type
         {
             public override bool SemanticsEqual(Node other) => other is String;
@@ -576,7 +581,7 @@ internal interface Node
 
         internal interface Complete : Type
         {
-            internal sealed class Array(Partition<Token> sourceTokens,
+            internal sealed class Array(SourceTokens sourceTokens,
                 Type type,
                 IReadOnlyCollection<Expression> dimensions)
             : NodeImpl(sourceTokens), Complete
@@ -588,12 +593,12 @@ internal interface Node
                  && o.Dimensions.AllSemanticsEqual(Dimensions);
             }
 
-            internal sealed class File(Partition<Token> sourceTokens)
+            internal sealed class File(SourceTokens sourceTokens)
             : NodeImpl(sourceTokens), Complete {
                 public override bool SemanticsEqual(Node other) => other is File;
             }
 
-            internal sealed class Numeric(Partition<Token> sourceTokens,
+            internal sealed class Numeric(SourceTokens sourceTokens,
                 NumericType type)
             : NodeImpl(sourceTokens), Complete
             {
@@ -602,16 +607,16 @@ internal interface Node
                  && o.Type.Equals(Type);
             }
 
-            internal sealed new class AliasReference(Partition<Token> sourceTokens,
+            internal sealed new class AliasReference(SourceTokens sourceTokens,
                 Identifier name)
-            : NodeImpl(sourceTokens), Complete
+            : NodeImpl(sourceTokens), Complete, NodeAliasReference
             {
                 public Identifier Name => name;
                 public override bool SemanticsEqual(Node other) => other is AliasReference o
                  && o.Name.SemanticsEqual(Name);
             }
 
-            internal sealed class LengthedString(Partition<Token> sourceTokens,
+            internal sealed class LengthedString(SourceTokens sourceTokens,
                 Expression length)
             : NodeImpl(sourceTokens), Complete
             {
@@ -620,7 +625,7 @@ internal interface Node
                  && o.Length.SemanticsEqual(Length);
             }
 
-            internal sealed class Structure(Partition<Token> sourceTokens,
+            internal sealed class Structure(SourceTokens sourceTokens,
                 IReadOnlyCollection<Statement.LocalVariable> components)
             : NodeImpl(sourceTokens), Complete
             {
@@ -631,7 +636,7 @@ internal interface Node
         }
     }
 
-    internal sealed class ParameterActual(Partition<Token> sourceTokens,
+    internal sealed class ParameterActual(SourceTokens sourceTokens,
         ParameterMode mode,
         Expression value)
     : NodeImpl(sourceTokens)
@@ -643,7 +648,7 @@ internal interface Node
          && o.Value.SemanticsEqual(Value);
     }
 
-    internal sealed class ParameterFormal(Partition<Token> sourceTokens,
+    internal sealed class ParameterFormal(SourceTokens sourceTokens,
         ParameterMode mode,
         Identifier name,
         Type type)
@@ -658,7 +663,7 @@ internal interface Node
          && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed class ProcedureSignature(Partition<Token> sourceTokens,
+    internal sealed class ProcedureSignature(SourceTokens sourceTokens,
         Identifier name,
         IReadOnlyCollection<ParameterFormal> parameters)
     : NodeImpl(sourceTokens)
@@ -670,7 +675,7 @@ internal interface Node
          && o.Parameters.AllSemanticsEqual(Parameters);
     }
 
-    internal sealed class FunctionSignature(Partition<Token> sourceTokens,
+    internal sealed class FunctionSignature(SourceTokens sourceTokens,
         Identifier name,
         IReadOnlyCollection<ParameterFormal> parameters,
         Type returnType)
@@ -704,7 +709,7 @@ internal enum NumericType
 
 internal sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 {
-    public Identifier(Partition<Token> sourceTokens, string name) : base(sourceTokens)
+    public Identifier(SourceTokens sourceTokens, string name) : base(sourceTokens)
     {
         Name = name;
 #if DEBUG
@@ -728,8 +733,8 @@ internal sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 
 #endregion Terminals
 
-internal abstract class NodeImpl(Partition<Token> sourceTokens) : Node
+internal abstract class NodeImpl(SourceTokens sourceTokens) : Node
 {
-    public Partition<Token> SourceTokens => sourceTokens;
+    public SourceTokens SourceTokens => sourceTokens;
     public abstract bool SemanticsEqual(Node other);
 }

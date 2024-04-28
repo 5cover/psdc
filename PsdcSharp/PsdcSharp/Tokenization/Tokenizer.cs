@@ -5,7 +5,7 @@ using static Scover.Psdc.Tokenization.TokenType.Special;
 
 namespace Scover.Psdc.Tokenization;
 
-internal sealed class Tokenizer(Messenger messenger, string input)
+internal sealed class Tokenizer(Messenger messenger, string code)
 {
     private static readonly IReadOnlyList<Ruled> rules =
         // Variable length
@@ -20,7 +20,7 @@ internal sealed class Tokenizer(Messenger messenger, string input)
 
     private static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
 
-    private readonly string _input = input;
+    private readonly string _code = code;
 
     public IEnumerable<Token> Tokenize()
     {
@@ -28,8 +28,8 @@ internal sealed class Tokenizer(Messenger messenger, string input)
 
         int? invalidStart = null;
 
-        while (index < _input.Length) {
-            if (char.IsWhiteSpace(_input[index])) {
+        while (index < _code.Length) {
+            if (char.IsWhiteSpace(_code[index])) {
                 index++;
                 continue;
             }
@@ -62,5 +62,5 @@ internal sealed class Tokenizer(Messenger messenger, string input)
      => messenger.Report(Message.ErrorUnknownToken(invalidStart..index));
 
     private Option<Token> ReadToken(int offset)
-     => rules.Select(t => t.TryExtract(_input, offset)).FirstOrNone(t => t.HasValue);
+     => rules.Select(t => t.TryExtract(_code, offset)).FirstOrNone(t => t.HasValue);
 }

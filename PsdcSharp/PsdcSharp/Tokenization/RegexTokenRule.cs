@@ -9,9 +9,9 @@ internal sealed class RegexTokenRule : TokenRule
     public RegexTokenRule(string pattern, RegexOptions flags = RegexOptions.None)
      => _pattern = new($@"\G{pattern}", flags);
 
-    public Option<Token> TryExtract(TokenType tokenType, string input, int startIndex)
+    public Option<Token> TryExtract(TokenType tokenType, string code, int startIndex)
     {
-        Match match = _pattern.Match(input, startIndex);
+        Match match = _pattern.Match(code, startIndex);
         return match.Success
             ? new Token(
             tokenType,

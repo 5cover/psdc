@@ -33,7 +33,7 @@ fin
 
 procédure swap(entF/sortF p1 : entier, entF/sortF p2 : entier) c'est
 début
-    tmp : t_personne;
+    tmp : entier;
     tmp := p1;
     p1 := p2;
     p2 := tmp;

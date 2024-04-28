@@ -11,6 +11,8 @@ internal sealed class TypeInfoC : TypeInfo
     private static TypeInfoC Create(EvaluatedType type, Func<Node.Expression, string> generateExpression, Indentation indent)
     {
         switch (type) {
+        case EvaluatedType.Unknown u:
+            return new(u.SourceTokens.SourceCode);
         case EvaluatedType.File file:
             return new("FILE", preModifier: "*", requiredHeaders: IncludeSet.StdIo.Yield());
         case EvaluatedType.Numeric numeric:
@@ -18,7 +20,7 @@ internal sealed class TypeInfoC : TypeInfo
                 NumericType.Boolean => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
                 NumericType.Character => new("char", "%c"),
                 NumericType.Integer => new("int", "%d"),
-                NumericType.Real => new("double", "%g"),
+                NumericType.Real => new("float", "%g"),
                 _ => throw numeric.Type.ToUnmatchedException(),
             };
         case EvaluatedType.String:

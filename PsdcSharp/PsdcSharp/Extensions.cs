@@ -13,21 +13,28 @@ internal readonly record struct Position(int Line, int Column)
     public override string ToString() => $"L {Line + 1}, col {Column + 1}";
 }
 
-internal static class Partition
+internal class SourceTokens : IEnumerable<Token>
 {
-    public static Partition<T> Empty<T>(IEnumerable<T> source) => new(source, 0);
-}
-
-internal readonly record struct Partition<T>(IEnumerable<T> Source, int Count) : IEnumerable<T>
-{
-    public Partition(params T[] values) : this(values, values.Length)
+    private readonly Lazy<string> _sourceCode;
+    private readonly IEnumerable<Token> _tokens;
+    public SourceTokens(IEnumerable<Token> tokens, int count)
     {
+        Count = count;
+        _tokens = tokens.Take(count);
+        _sourceCode = new(() => {
+            var lastSourceToken = _tokens.Last();
+            return Globals.Input[_tokens.First().StartIndex..(lastSourceToken.StartIndex + lastSourceToken.Length)];
+        });
     }
 
-    private IEnumerable<T> Values => Source.Take(Count);
+    public static SourceTokens Empty { get; } = new([], 0);
 
-    public IEnumerator<T> GetEnumerator() => Values.GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)Values).GetEnumerator();
+    public int Count { get; }
+
+    public string SourceCode => _sourceCode.Value;
+
+    public IEnumerator<Token> GetEnumerator() => _tokens.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_tokens).GetEnumerator();
 }
 
 internal static class Parse
@@ -167,12 +174,6 @@ internal static class Extensions
      => first.HasValue && second.HasValue
         ? first.Value.SemanticsEqual(second.Value)
         : first.HasValue == second.HasValue;
-
-    public static string GetSourceCode(this IEnumerable<Token> sourceTokens, string input)
-    {
-        var lastSourceToken = sourceTokens.Last();
-        return input[sourceTokens.First().StartIndex..(lastSourceToken.StartIndex + lastSourceToken.Length)];
-    }
 
     public static void WriteNTimes(this TextWriter writer, int n, char c)
     {

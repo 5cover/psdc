@@ -16,14 +16,14 @@ internal sealed class StringTokenRule : TokenRule
 
     public string Expected { get; }
 
-    public Option<Token> TryExtract(TokenType tokenType, string input, int startIndex)
+    public Option<Token> TryExtract(TokenType tokenType, string code, int startIndex)
     {
         // Not >= as startIndex is already the index of the first character
-        if (startIndex + Expected.Length > input.Length) {
+        if (startIndex + Expected.Length > code.Length) {
             return Option.None<Token>();
         }
 
-        string target = input.Substring(startIndex, Expected.Length).RemoveDiacritics();
+        string target = code.Substring(startIndex, Expected.Length).RemoveDiacritics();
 
         return target.Equals(_normalizedExpected, _comparison)
             ? new Token(

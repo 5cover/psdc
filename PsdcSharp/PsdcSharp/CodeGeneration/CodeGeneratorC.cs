@@ -4,7 +4,7 @@ using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.CodeGeneration;
 
-internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGenerator(semanticAst)
+internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst) : CodeGenerator(messenger, semanticAst)
 {
     private readonly IncludeSet _includes = new();
 
@@ -376,7 +376,7 @@ internal sealed partial class CodeGeneratorC(SemanticAst semanticAst) : CodeGene
         .AppendLine($" * @date {DateOnly.FromDateTime(DateTime.Now)}")
         .AppendLine($" */");
 
-    private StringBuilder AppendCall(StringBuilder o, CallNode call)
+    private StringBuilder AppendCall(StringBuilder o, NodeCall call)
     {
         const string ParameterSeparator = ", ";
 

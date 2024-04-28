@@ -3,7 +3,7 @@ using Scover.Psdc.Tokenization;
 namespace Scover.Psdc.Parsing;
 
 internal delegate ParseResult<T> ParseMethod<out T>(IEnumerable<Token> tokens);
-internal delegate T ResultCreator<T>(Partition<Token> sourceTokens);
+internal delegate T ResultCreator<T>(SourceTokens sourceTokens);
 
 internal abstract class ParseOperation
 {
@@ -15,7 +15,7 @@ internal abstract class ParseOperation
     public static ParseOperation Start(Messenger messenger, IEnumerable<Token> tokens)
      => new SuccessfulSoFarOperation(tokens, messenger);
 
-    protected Partition<Token> ReadTokens => new(_tokens, _readCount);
+    protected SourceTokens ReadTokens => new(_tokens, _readCount);
 
     public ParseResult<T> Branch<T>(Dictionary<TokenType, Func<ParseOperation, ParseResult<T>>> branches)
      => Branch((IReadOnlyDictionary<TokenType, Func<ParseOperation, ParseResult<T>>>)branches);

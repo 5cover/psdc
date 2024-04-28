@@ -19,9 +19,9 @@ internal partial class Parser
         return result;
     }
 
-    private static ParseMethod<T> MakeAlwaysOkParser<T>(int tokenCount, Func<Partition<Token>, T> makeNode) where T : Node
+    private static ParseMethod<T> MakeAlwaysOkParser<T>(int tokenCount, Func<SourceTokens, T> makeNode) where T : Node
      => tokens => ParseResult.Ok(makeNode(new(tokens, tokenCount)));
-    private static ParseMethod<T> MakeAlwaysOkParser<T>(Func<Partition<Token>, string, T> makeNodeWithValue) where T : Node
+    private static ParseMethod<T> MakeAlwaysOkParser<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
      => tokens => ParseResult.Ok(makeNodeWithValue(new(tokens, 1), tokens.First().Value.NotNull()));
 
     private ParseResult<string> ParseTokenValue(IEnumerable<Token> tokens, TokenType expectedType)
@@ -29,7 +29,7 @@ internal partial class Parser
         .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => value);
 
-    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<Partition<Token>, string, T> resultCreator) => ParseOperation.Start(_messenger, tokens)
+    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator) => ParseOperation.Start(_messenger, tokens)
         .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => resultCreator(tokens, value));
 
@@ -42,7 +42,7 @@ internal partial class Parser
         var firstToken = tokens.FirstOrNone();
         return firstToken.HasValue && parserMap.TryGetValue(firstToken.Value.Type, out var parser)
             ? parser(tokens)
-            : ParseResult.Fail<T>(Partition.Empty(tokens), ParseError.Create<T>(firstToken, parserMap.Keys));
+            : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.Create<T>(firstToken, parserMap.Keys));
     }
 
     private static ParseResult<T> GetByTokenType<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, T> map)
@@ -50,7 +50,7 @@ internal partial class Parser
         var firstToken = tokens.FirstOrNone();
         return firstToken.HasValue && map.TryGetValue(firstToken.Value.Type, out var t)
             ? ParseResult.Ok(new(tokens, 1), t)
-            : ParseResult.Fail<T>(Partition.Empty(tokens), ParseError.Create<T>(firstToken, map.Keys));
+            : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.Create<T>(firstToken, map.Keys));
     }
 
     private static ParseResult<Token> ParseTokenOfType(
@@ -60,6 +60,6 @@ internal partial class Parser
         var firstToken = tokens.FirstOrNone();
         return firstToken.HasValue && allowedTokensTypes.Contains(firstToken.Value.Type)
             ? ParseResult.Ok(new(tokens, 1), firstToken.Value)
-            : ParseResult.Fail<Token>(Partition.Empty(tokens), ParseError.Create<Token>(firstToken, allowedTokensTypes));
+            : ParseResult.Fail<Token>(SourceTokens.Empty, ParseError.Create<Token>(firstToken, allowedTokensTypes));
     }
 }

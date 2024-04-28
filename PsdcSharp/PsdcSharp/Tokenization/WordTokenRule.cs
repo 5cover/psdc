@@ -6,11 +6,11 @@ internal sealed class WordTokenRule(string word, StringComparison comparison) : 
 
     public string Expected => _stringRule.Expected;
 
-    public Option<Token> TryExtract(TokenType tokenType, string input, int startIndex)
+    public Option<Token> TryExtract(TokenType tokenType, string code, int startIndex)
     {
         int indexAfter = startIndex + Expected.Length;
-        return indexAfter < input.Length && (char.IsLetterOrDigit(input, indexAfter) || input[indexAfter] == '_')
+        return indexAfter < code.Length && (char.IsLetterOrDigit(code, indexAfter) || code[indexAfter] == '_')
             ? Option.None<Token>()
-            : _stringRule.TryExtract(tokenType, input, startIndex);
+            : _stringRule.TryExtract(tokenType, code, startIndex);
     }
 }

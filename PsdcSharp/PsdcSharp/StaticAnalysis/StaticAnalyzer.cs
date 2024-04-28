@@ -2,18 +2,18 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-internal sealed class SemanticAst(Node.Algorithm root, IReadOnlyDictionary<ScopedNode, Scope> scopes)
+internal sealed class SemanticAst(Node.Algorithm root, IReadOnlyDictionary<NodeScoped, Scope> scopes)
 {
     public Node.Algorithm Root => root;
 
-    public IReadOnlyDictionary<ScopedNode, Scope> Scopes => scopes;
+    public IReadOnlyDictionary<NodeScoped, Scope> Scopes => scopes;
 }
 
 internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
 {
     public SemanticAst AnalyzeSemantics()
     {
-        Dictionary<ScopedNode, Scope> scopes = [];
+        Dictionary<NodeScoped, Scope> scopes = [];
         bool seenMainProgram = false;
 
         SetParentScope(root, null);
@@ -33,14 +33,14 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
 
             switch (decl) {
             case Node.Declaration.TypeAlias alias:
-                alias.Type.CreateTypeOrError(scope, messenger).MatchSome(type
-                 => scope.AddSymbolOrError(messenger, new Symbol.TypeAlias(alias.Name, alias.SourceTokens, type)));
+                scope.AddSymbolOrError(messenger, new Symbol.TypeAlias(alias.Name, alias.SourceTokens,
+                    alias.Type.CreateTypeOrError(scope, messenger)));
                 break;
 
             case Node.Declaration.Constant constant:
-                constant.Type.CreateTypeOrError(scope, messenger)
-                .Combine(constant.Value.EvaluateType(scope).MapError(messenger.Report))
-                .MatchSome((declaredType, inferredType) => {
+                constant.Value.EvaluateType(scope).MapError(messenger.Report).MatchSome(inferredType => {
+                    var declaredType = constant.Type.CreateTypeOrError(scope, messenger);
+
                     if (!declaredType.Equals(inferredType)) {
                         messenger.Report(Message.ErrorDeclaredInferredTypeMismatch(constant.SourceTokens, declaredType, inferredType));
                     }
@@ -52,21 +52,19 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
                 break;
 
             case Node.Declaration.Function func:
-                func.Signature.ReturnType.CreateTypeOrError(scope, messenger).MatchSome(returnType
-                 => HandleCallableDeclaration(scope, new Symbol.Function(
+                 HandleCallableDeclaration(scope, new Symbol.Function(
                        func.Signature.Name,
                        func.Signature.SourceTokens,
                        CreateParameters(scope, func.Signature.Parameters),
-                       returnType)));
+                       func.Signature.ReturnType.CreateTypeOrError(scope, messenger)));
                 break;
 
             case Node.Declaration.FunctionDefinition funcDef:
-                funcDef.Signature.ReturnType.CreateTypeOrError(scope, messenger).MatchSome(returnType
-                 => AnalyzeCallableDefinition(scope, funcDef, new Symbol.Function(
+                AnalyzeCallableDefinition(scope, funcDef, new Symbol.Function(
                         funcDef.Signature.Name,
                         funcDef.Signature.SourceTokens,
                         CreateParameters(scope, funcDef.Signature.Parameters),
-                        returnType)));
+                        funcDef.Signature.ReturnType.CreateTypeOrError(scope, messenger)));
                 break;
 
             case Node.Declaration.MainProgram mainProgram:
@@ -189,11 +187,10 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
                 break;
 
             case Node.Statement.LocalVariable varDecl:
-                varDecl.Type.CreateTypeOrError(scope, messenger).MatchSome(type => {
-                    foreach (var name in varDecl.Names) {
-                        scope.AddSymbolOrError(messenger, new Symbol.Variable(name, varDecl.SourceTokens, type));
-                    }
-                });
+                var type = varDecl.Type.CreateTypeOrError(scope, messenger);
+                foreach (var name in varDecl.Names) {
+                    scope.AddSymbolOrError(messenger, new Symbol.Variable(name, varDecl.SourceTokens, type));
+                }
                 break;
 
             case Node.Statement.WhileLoop whileLoop:
@@ -274,12 +271,12 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
 
         void SetParentScopeIfNecessary(Node node, Scope? parentScope)
         {
-            if (node is ScopedNode sn) {
+            if (node is NodeScoped sn) {
                 SetParentScope(sn, parentScope);
             }
         }
 
-        void SetParentScope(ScopedNode scopedNode, Scope? parentScope) => scopes.Add(scopedNode, new(parentScope));
+        void SetParentScope(NodeScoped scopedNode, Scope? parentScope) => scopes.Add(scopedNode, new(parentScope));
 
         void AddParameters(Scope scope, IEnumerable<Symbol.Parameter> parameters)
         {
@@ -291,18 +288,20 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
         }
 
         List<Symbol.Parameter> CreateParameters(ReadOnlyScope scope, IEnumerable<Node.ParameterFormal> parameters)
-         => parameters.Select(param => param.Type.CreateTypeOrError(scope, messenger).Map(type
-            => new Symbol.Parameter(param.Name, param.SourceTokens, type, param.Mode))).WhereSome().ToList();
+         => parameters.Select(param
+             => new Symbol.Parameter(param.Name, param.SourceTokens,
+                    param.Type.CreateTypeOrError(scope, messenger), param.Mode))
+            .ToList();
 
-        void HandleCall<TSymbol>(Scope scope, CallNode call) where TSymbol : CallableSymbol
+        void HandleCall<TSymbol>(Scope scope, NodeCall call) where TSymbol : CallableSymbol
         {
-            scope.GetSymbol<TSymbol>(call.Name).MapError(messenger.Report).MatchSome(callee => {
-                if (!call.Parameters.ZipStrict(callee.Parameters, (effective, formal)
+            scope.GetSymbol<TSymbol>(call.Name).MapError(messenger.Report).MatchSome(callable => {
+                if (!call.Parameters.ZipStrict(callable.Parameters, (effective, formal)
                     => effective.Mode.Equals(formal.Mode)
                     && effective.Value.EvaluateType(scope).MapError(messenger.Report)
                        .Map(type => formal.Type.Equals(type)).ValueOr(false))
                  .All(b => b)) {
-                    messenger.Report(Message.ErrorCallParameterMismatch(call));
+                    messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable));
                 }
             });
             foreach (var effective in call.Parameters) {

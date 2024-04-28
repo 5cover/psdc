@@ -17,8 +17,9 @@ internal static class Program
         const bool Verbose = false;
 
         string input = File.ReadAllText($"../../testPrograms/{args[0]}");
+        Globals.Initialize(input);
 
-        PrintMessenger messenger = new(input);
+        PrintMessenger messenger = new();
 
         Tokenizer tokenizer = new(messenger, input);
         var tokens = "Tokenizing".LogOperation(Verbose, () => tokenizer.Tokenize().ToImmutableArray());
@@ -33,14 +34,14 @@ internal static class Program
         StaticAnalyzer semanticAnalyzer = new(messenger, ast);
         var semanticAst = "Analyzing".LogOperation(Verbose, semanticAnalyzer.AnalyzeSemantics);
 
-        CodeGeneratorC codeGenerator = new(semanticAst);
+        CodeGeneratorC codeGenerator = new(messenger, semanticAst);
         string cCode = "Generating code".LogOperation(Verbose, codeGenerator.Generate);
 
         Console.Error.WriteLine("Generated C : ");
         Console.WriteLine(cCode);
     }
 
-    private sealed class PrintMessenger(string input) : Messenger
+    private sealed class PrintMessenger : Messenger
     {
         private static TextWriter Stderr => Console.Error;
 
@@ -50,17 +51,17 @@ internal static class Program
             msgColor.DoInColor(() => Stderr.Write($"[P{(int)message.Code:d4}] "));
 
             message.SourceCodeRange.Match(range => {
-                Position start = input.GetPositionAt(range.Start);
-                Position end = input.GetPositionAt(range.End);
+                Position start = Globals.Input.GetPositionAt(range.Start);
+                Position end = Globals.Input.GetPositionAt(range.End);
 
                 // If the error spans over multiple line, show only the last line.
                 if (start.Line != end.Line) {
                     start = new(end.Line, 0);
                 }
 
-                Stderr.WriteLine($"{start}: {message.Type.ToString().ToLower()}: {message.Content(input)}");
+                Stderr.WriteLine($"{start}: {message.Type.ToString().ToLower()}: {message.Content}");
 
-                ReadOnlySpan<char> faultyLine = input.GetLine(start.Line);
+                ReadOnlySpan<char> faultyLine = Globals.Input.GetLine(start.Line);
 
                 // Part of line before error
                 Stderr.Write($"{GetErrorLinePrefix(start.Line)}{faultyLine[..start.Column]}");
@@ -80,7 +81,7 @@ internal static class Program
 
                 static string GetErrorLinePrefix(object lineNo) => $"    {lineNo} | ";
             },
-            none: () => Stderr.WriteLine($"{message.Type}: {message.Content(input)}"));
+            none: () => Stderr.WriteLine($"{message.Type}: {message.Content}"));
             Stderr.WriteLine();
         }
     }

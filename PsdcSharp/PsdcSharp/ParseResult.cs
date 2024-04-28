@@ -5,13 +5,12 @@ namespace Scover.Psdc.Parsing;
 
 internal interface ParseResult<out T> : Option<T, ParseError>
 {
-    Partition<Token> SourceTokens { get; }
-    ParseResult<T> WithSourceTokens(Partition<Token> newSourceTokens);
+    SourceTokens SourceTokens { get; }
+    ParseResult<T> WithSourceTokens(SourceTokens newSourceTokens);
 }
 
 internal sealed record ParseError(Option<Token> ErroneousToken, IReadOnlySet<TokenType> ExpectedTokens, string ExpectedProductionName)
 {
-
     public static ParseError Create<T>(Option<Token> erroneousToken, IEnumerable<TokenType> expectedTokens)
      => new(erroneousToken, expectedTokens.ToHashSet(), typeof(T).Name.ToLower());
     public static ParseError Create<T>(Option<Token> erroneousToken, TokenType expectedTokens)
@@ -24,10 +23,10 @@ internal static class ParseResult
 {
     public static ParseResult<T> Ok<T>(T result) where T : Node
      => new ParseResultImpl<T>(true, result, null, result.SourceTokens);
-    public static ParseResult<T> Ok<T>(Partition<Token> sourceTokens, T result)
+    public static ParseResult<T> Ok<T>(SourceTokens sourceTokens, T result)
      => new ParseResultImpl<T>(true, result, null, sourceTokens);
 
-    public static ParseResult<T> Fail<T>(Partition<Token> sourceTokens, ParseError error)
+    public static ParseResult<T> Fail<T>(SourceTokens sourceTokens, ParseError error)
      => new ParseResultImpl<T>(false, default, error, sourceTokens);
 
     public static ParseResult<T> Else<T>(this ParseResult<T> original, Func<ParseResult<T>> alternative)
@@ -39,7 +38,7 @@ internal static class ParseResult
         return new ParseResultImpl<T>(alt.HasValue, alt.Value, alt.Error?.CombineWith<T>(original.Error), alt.SourceTokens);
     }
 
-    public static ParseResult<TResult> Map<T, TResult>(this ParseResult<T> original, Func<Partition<Token>, T, TResult> transform)
+    public static ParseResult<TResult> Map<T, TResult>(this ParseResult<T> original, Func<SourceTokens, T, TResult> transform)
      => original.HasValue
         ? Ok(original.SourceTokens, transform(original.SourceTokens, original.Value))
         : Fail<TResult>(original.SourceTokens, original.Error);
@@ -55,9 +54,9 @@ internal static class ParseResult
         bool HasValue,
         T? Value,
         ParseError? Error,
-        Partition<Token> SourceTokens) : ParseResult<T>
+        SourceTokens SourceTokens) : ParseResult<T>
     {
-        public ParseResult<T> WithSourceTokens(Partition<Token> newSourceTokens)
+        public ParseResult<T> WithSourceTokens(SourceTokens newSourceTokens)
          => this with { SourceTokens = newSourceTokens };
     }
 }

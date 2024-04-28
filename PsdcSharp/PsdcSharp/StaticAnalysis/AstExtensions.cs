@@ -28,13 +28,13 @@ internal static class AstExtensions
         Node.Expression.OperationUnary ou => ou.Operand.EvaluateType(scope),
         Node.Expression.Bracketed b => b.Expression.EvaluateType(scope),
         Node.Expression.Lvalue.Bracketed b => b.Lvalue.EvaluateType(scope),
-        Node.Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.EvaluateType(scope).FlatMap(arrayExprType
-         => arrayExprType is EvaluatedType.Array arrayType
+        Node.Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.EvaluateType(scope).FlatMap(outerType
+         => outerType.Unwrap() is EvaluatedType.Array arrayType
             ? arrayType.ElementType.Some<EvaluatedType, Message>()
             : Option.None<EvaluatedType, Message>(Message.ErrorSubscriptOfNonArray(arrSub))),
         Node.Expression.Lvalue.ComponentAccess compAccess
          => compAccess.Structure.EvaluateType(scope).FlatMap(outerType
-            => outerType is not EvaluatedType.Structure structType
+            => outerType.Unwrap() is not EvaluatedType.Structure structType
                 ? Option.None<EvaluatedType, Message>(Message.ErrrorComponentAccessOfNonStruct(compAccess))
 
                 : structType.Components.TryGetValue(compAccess.ComponentName, out var compType)
@@ -61,41 +61,33 @@ internal static class AstExtensions
         _ => throw expression.ToUnmatchedException(),
     };
 
-    public static Option<EvaluatedType> CreateTypeOrError(this Node.Type type, ReadOnlyScope scope, Messenger messenger) => type switch {
-        Node.Type.String => EvaluatedType.String.Instance.Some(),
-        Node.Type.AliasReference alias
+    public static EvaluatedType CreateTypeOrError(this Node.Type type, ReadOnlyScope scope, Messenger messenger) => type switch {
+        Node.Type.String => EvaluatedType.String.Instance,
+        NodeAliasReference alias
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MapError(messenger.Report)
-                .Map(aliasType => new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType)),
-        Node.Type.Complete.AliasReference alias
-         => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MapError(messenger.Report)
-                .Map(aliasType => new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType)),
-        Node.Type.Complete.Array array => array.Type.CreateTypeOrError(scope, messenger).Map(elementType
-        => new EvaluatedType.Array(elementType, array.Dimensions)),
-        Node.Type.Complete.File file => EvaluatedType.File.Instance.Some(),
-        Node.Type.Complete.LengthedString str => new EvaluatedType.LengthedString(str.Length).Some(),
+                .Map(aliasType => (EvaluatedType)new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType))
+            .ValueOr(new EvaluatedType.Unknown(type.SourceTokens)),
+        Node.Type.Complete.Array array => new EvaluatedType.Array(array.Type.CreateTypeOrError(scope, messenger), array.Dimensions),
+        Node.Type.Complete.File file => EvaluatedType.File.Instance,
+        Node.Type.Complete.LengthedString str => new EvaluatedType.LengthedString(str.Length),
         Node.Type.Complete.Structure structure => CreateStructureTypeOrError(structure, scope, messenger),
-        Node.Type.Complete.Numeric p => EvaluatedType.Numeric.GetInstance(p.Type).Some(),
+        Node.Type.Complete.Numeric p => EvaluatedType.Numeric.GetInstance(p.Type),
         _ => throw type.ToUnmatchedException(),
     };
 
-    public static Option<EvaluatedType.Structure> CreateStructureTypeOrError(Node.Type.Complete.Structure structure, ReadOnlyScope scope, Messenger messenger)
+    public static EvaluatedType.Structure CreateStructureTypeOrError(Node.Type.Complete.Structure structure, ReadOnlyScope scope, Messenger messenger)
     {
         Dictionary<Identifier, EvaluatedType> components = [];
-        bool atLeastOneNameWasntAdded = false;
         foreach (var comp in structure.Components) {
-            comp.Type.CreateTypeOrError(scope, messenger).Match(type => {
-                foreach (var name in comp.Names) {
-                    if (!components.TryAdd(name, type)) {
-                        messenger.Report(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
-                    }
+            foreach (var name in comp.Names) {
+                if (!components.TryAdd(name, comp.Type.CreateTypeOrError(scope, messenger))) {
+                    messenger.Report(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
                 }
-            }, none: () => atLeastOneNameWasntAdded = true);
+            }
         }
 
         // Don't create the structure if we weren't able to create all components names. This will prevent further errors when using the structure.
-        return atLeastOneNameWasntAdded
-         ? Option.None<EvaluatedType.Structure>()
-         : new EvaluatedType.Structure(components).Some();
+        return new EvaluatedType.Structure(components);
     }
 
     private static Option<EvaluatedType, Message> EvaluateTypeOperationBinary(Node.Expression.OperationBinary operationBinary, ReadOnlyScope scope)

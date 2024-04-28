@@ -36,6 +36,10 @@ Project roadmap:
 
 - C-specific configuration
     - non null-terminated string proof format strings : width specifier for lengthed strings (usually useless since null-terminated, but could be useful if non null-terminated strings are used)
+    - type mappings
+        - réel &rarr; float, double, long double?
+        - entier &rarr; short, int, long?
+        - caractère &rarr; char, tchar_t, wchar_t?
 
 ## Sample programs
 

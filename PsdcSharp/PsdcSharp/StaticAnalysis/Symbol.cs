@@ -15,8 +15,8 @@ internal interface CallableSymbol : Symbol
 internal interface Symbol
 {
     public Identifier Name { get; }
-    public Partition<Token> SourceTokens { get; }
-    internal record Variable(Identifier Name, Partition<Token> SourceTokens,
+    public SourceTokens SourceTokens { get; }
+    internal record Variable(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type)
     : Symbol
     {
@@ -26,7 +26,7 @@ internal interface Symbol
         public override int GetHashCode() => HashCode.Combine(Name, Type);
     }
 
-    internal sealed record Constant(Identifier Name, Partition<Token> SourceTokens,
+    internal sealed record Constant(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type,
         Expression Value)
     : Variable(Name, SourceTokens, Type)
@@ -36,7 +36,7 @@ internal interface Symbol
         public override int GetHashCode() => HashCode.Combine(Name, Type, Value);
     }
 
-    internal sealed record TypeAlias(Identifier Name, Partition<Token> SourceTokens,
+    internal sealed record TypeAlias(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType TargetType)
     : Symbol
     {
@@ -46,7 +46,7 @@ internal interface Symbol
         public override int GetHashCode() => HashCode.Combine(Name, TargetType);
     }
 
-    internal sealed record Procedure(Identifier Name, Partition<Token> SourceTokens,
+    internal sealed record Procedure(Identifier Name, SourceTokens SourceTokens,
         IReadOnlyCollection<Parameter> Parameters)
     : CallableSymbol
     {
@@ -58,7 +58,7 @@ internal interface Symbol
         public override int GetHashCode() => HashCode.Combine(Name, Parameters.GetSequenceHashCode());
     }
 
-    internal sealed record Function(Identifier Name, Partition<Token> SourceTokens,
+    internal sealed record Function(Identifier Name, SourceTokens SourceTokens,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType)
     : CallableSymbol
@@ -73,7 +73,7 @@ internal interface Symbol
 
     }
 
-    internal sealed record Parameter(Identifier Name, Partition<Token> SourceTokens,
+    internal sealed record Parameter(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type,
         ParameterMode Mode)
     : Variable(Name, SourceTokens, Type)

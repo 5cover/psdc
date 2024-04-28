@@ -18,7 +18,7 @@ internal partial class CodeGeneratorC
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
             } else {
-                part.EvaluateType(scope).MatchSome(partType => {
+                part.EvaluateType(scope).MapError(_messenger.Report).MatchSome(partType => {
                     CreateTypeInfo(partType).FormatComponent.MatchSome(c => format.Append(c));
                     arguments.Add(part);
                 });
