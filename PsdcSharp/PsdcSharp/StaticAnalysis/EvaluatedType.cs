@@ -3,22 +3,22 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-internal abstract record EvaluatedType(bool IsNumeric = false)
+internal interface EvaluatedType
 {
     /// <summary>
     /// Gets the Pseudocode representation of this evaluated type.
     /// </summary>
     /// <param name="input">The input code (used for retrieving code extracts from source tokens)</param>
     /// <returns>The Pseudocode code that would result in an equals <see cref="EvaluatedType"/> object if parsed.</returns>
-    public abstract string GetRepresentation(string input);
+    public string GetRepresentation(string input);
 
-    internal sealed record String : EvaluatedType
+    internal sealed class String : EvaluatedType
     {
-        private String() : base(false) { }
+        private String() { }
 
         public static String Instance { get; } = new();
 
-        public override string GetRepresentation(string input) => "chaîne";
+        public string GetRepresentation(string input) => "chaîne";
     }
 
     internal sealed record Array(EvaluatedType ElementType, IReadOnlyCollection<Node.Expression> Dimensions) : EvaluatedType
@@ -29,35 +29,56 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
 
         public override int GetHashCode() => HashCode.Combine(ElementType, Dimensions.GetSequenceHashCode());
 
-        public override string GetRepresentation(string input)
+        public string GetRepresentation(string input)
          => $"tableau [{string.Join(", ", Dimensions.Select(dim => dim.SourceTokens.GetSourceCode(input)))}] de {ElementType.GetRepresentation(input)}";
     }
 
-    internal sealed record Primitive(PrimitiveType Type) : EvaluatedType(Type is not PrimitiveType.File)
+    internal sealed class File : EvaluatedType
     {
-        public override string GetRepresentation(string input) => Type switch {
-            PrimitiveType.Boolean => "booléen",
-            PrimitiveType.Character => "caractère",
-            PrimitiveType.Integer => "entier",
-            PrimitiveType.File => "nomFichierLog",
-            PrimitiveType.Real => "réel",
-            _ => throw Type.ToUnmatchedException(),
-        };
+        private File() { }
+        public static File Instance { get; } = new();
+        public string GetRepresentation(string input) => "nomFichierLog";
+    }
+
+    internal sealed class Numeric : EvaluatedType
+    {
+        private readonly string _representation;
+
+        // Precision represents how many values the type can represent.
+        // The higher, the wider the value range.
+        private readonly int _precision;
+        private Numeric(NumericType type, int precision, string representation)
+         => (Type, _precision, _representation) = (type, precision, representation);
+
+        public NumericType Type { get; }
+        public static Numeric GetInstance(NumericType type) => instances.First(i => i.Type == type);
+
+        private static readonly Numeric[] instances = [
+           new(NumericType.Boolean, 0, "booléen"),
+           new(NumericType.Character, 1, "caractère"),
+           new(NumericType.Integer, 2, "entier"),
+           new(NumericType.Real, 3, "réel"),
+        ];
+
+        public static EvaluatedType GetMostPreciseType(Numeric t1, Numeric t2)
+        => t1._precision > t2._precision ? t1 : t2;
+
+        public string GetRepresentation(string input) => _representation;
     }
 
     internal sealed record AliasReference(Identifier Name, EvaluatedType Target) : EvaluatedType
     {
-        public override string GetRepresentation(string input) => Name.Name;
+        public string GetRepresentation(string input) => Name.Name;
     }
 
     internal sealed record LengthedString(Node.Expression Length) : EvaluatedType
     {
-        public override string GetRepresentation(string input) => $"chaîne({Length.SourceTokens.GetSourceCode(input)})";
+        public string GetRepresentation(string input) => $"chaîne({Length.SourceTokens.GetSourceCode(input)})";
     }
 
     internal sealed record StringLengthedKnown(int Length) : EvaluatedType
     {
-        public override string GetRepresentation(string input) => $"chaîne({Length})";
+        public string GetRepresentation(string input) => $"chaîne({Length})";
     }
 
     internal sealed record Structure(IReadOnlyDictionary<Identifier, EvaluatedType> Components) : EvaluatedType
@@ -67,7 +88,7 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
 
         public override int GetHashCode() => Components.GetSequenceHashCode();
 
-        public override string GetRepresentation(string input)
+        public string GetRepresentation(string input)
         {
             StringBuilder sb = new();
             sb.AppendLine("structure début");

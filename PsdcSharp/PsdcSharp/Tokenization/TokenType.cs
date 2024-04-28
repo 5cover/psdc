@@ -140,6 +140,7 @@ internal abstract class TokenType
         public static Keyword Character { get; } = new("caractère");
         public static Keyword String { get; } = new("chaîne");
         public static Keyword Boolean { get; } = new("booléen");
+        public static Keyword File { get; } = new("nomFichierLog");
 
         #endregion Types
 

@@ -233,19 +233,20 @@ $$
 ⟨TypeComplete⟩ &\to \begin{cases}
     ⟨TypeCompleteAliasReference⟩ \to Identifier
     \\
-    ⟨TypePrimitive⟩ \to \begin{cases}
+    ⟨TypeNumeric⟩ \to \begin{cases}
         \text{booléen}\\
         \text{caractère}\\
         \text{entier}\\
-        \text{nomFichierLog}\\
         \text{réel}\\
+    \end{cases}
+    \\
+    ⟨File⟩ \to \text{nomFichierLog}
     \\
     ⟨StringLengthed⟩ \to \text{chaîne}(⟨Expression⟩)
     \\
     ⟨Structure⟩ \to \text{structure\ début} ⟨LocalVariable⟩^+ \text{fin}
     \\
     ⟨TypeArray⟩ \to \text{tableau} [⟨Expression⟩]^+ \text{de} ⟨TypeComplete⟩
-    \end{cases}
 \end{cases}
 
 \\&\textbf{Other}\notag\\

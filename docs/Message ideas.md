@@ -1,4 +1,4 @@
-# Tests
+# Message ideas
 
 ## Syntax errors
 
@@ -22,8 +22,11 @@
 - Function/Procdeure Signature mismatch (between prototypes or between definition/prototype)
 - Reassignment of constant
 - Output parameter never assigned
-- `lire[Clavier]`, `ecrire[Ecran]` to/of an expression of a type for which it doesn't make sense to do so (`nomFichierLog`). We won't define custom IO logic that C doesn't natively support, it would be up to the user to do so.
 
+- `lire[Clavier]`, `ecrire[Ecran]` to/of an expression of a type for which it doesn't make sense to do so (`nomFichierLog`). We won't define custom IO logic that C doesn't natively support, it would be up to the user to do so.
+- Assignment types incompatible
+- Unary expression unsupported operation for type A
+- Binary expression unsupported operation for types A, B
 - Reading unassigned variable
 - Array index out of range
 
@@ -56,3 +59,14 @@ Suggestion : style and formatting guidelines, code quality fixes, harmless mista
     - others camelCase
 
 - useless assignment (`1 := 1`)
+
+## Specific to the target language
+
+### C
+
+- (ident type) `char` has been renamed to `char1` as `char` is a reserved C keyword.
+
+### Other
+
+- (ident type) `vaR` has been renamed to `var1` as the name `vaR` differs only in case from (ident type) `var`. This is not supported in language X.
+- (ident type) `vaR` has been renamed to `var1` as the `vaR` differs only in case from X keyword `var`. This is not supported in language X.

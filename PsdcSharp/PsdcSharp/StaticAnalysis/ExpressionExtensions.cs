@@ -5,13 +5,6 @@ namespace Scover.Psdc.StaticAnalysis;
 
 internal static class ExpressionExtensions
 {
-    private static readonly IReadOnlyDictionary<PrimitiveType, int> integralTypePrecisions = new Dictionary<PrimitiveType, int> {
-        [PrimitiveType.Boolean] = 0,
-        [PrimitiveType.Character] = 1,
-        [PrimitiveType.Integer] = 2,
-        [PrimitiveType.Real] = 3,
-    };
-
     public static bool IsConstant(this Node.Expression expression, ReadOnlyScope scope) => expression switch {
         Node.Expression.Bracketed b => b.Expression.IsConstant(scope),
         Node.Expression.Literal => true,
@@ -54,13 +47,13 @@ internal static class ExpressionExtensions
         Node.Expression.Lvalue.VariableReference varRef
          => scope.GetSymbol<Symbol.Variable>(varRef.Name).Map(var => var.Type),
         Node.Expression.True or Node.Expression.False
-         => new EvaluatedType.Primitive(PrimitiveType.Boolean).Some<EvaluatedType, Message>(),
+         => EvaluatedType.Numeric.GetInstance(NumericType.Boolean).Some<EvaluatedType, Message>(),
         Node.Expression.Literal.Character
-         => new EvaluatedType.Primitive(PrimitiveType.Character).Some<EvaluatedType, Message>(),
+         => EvaluatedType.Numeric.GetInstance(NumericType.Character).Some<EvaluatedType, Message>(),
         Node.Expression.Literal.Integer
-         => new EvaluatedType.Primitive(PrimitiveType.Integer).Some<EvaluatedType, Message>(),
+         => EvaluatedType.Numeric.GetInstance(NumericType.Integer).Some<EvaluatedType, Message>(),
         Node.Expression.Literal.Real
-         => new EvaluatedType.Primitive(PrimitiveType.Real).Some<EvaluatedType, Message>(),
+         => EvaluatedType.Numeric.GetInstance(NumericType.Real).Some<EvaluatedType, Message>(),
         Node.Expression.Literal.String str
          => new EvaluatedType.StringLengthedKnown(str.Value.Length).Some<EvaluatedType, Message>(),
         Node.Expression.FunctionCall call
@@ -78,9 +71,10 @@ internal static class ExpressionExtensions
                 .Map(aliasType => new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType)),
         Node.Type.Complete.Array array => array.Type.CreateTypeOrError(scope, messenger).Map(elementType
         => new EvaluatedType.Array(elementType, array.Dimensions)),
+        Node.Type.Complete.File file => EvaluatedType.File.Instance.Some(),
         Node.Type.Complete.LengthedString str => new EvaluatedType.LengthedString(str.Length).Some(),
         Node.Type.Complete.Structure structure => CreateStructureTypeOrError(structure, scope, messenger),
-        Node.Type.Complete.Primitive p => new EvaluatedType.Primitive(p.Type).Some(),
+        Node.Type.Complete.Numeric p => EvaluatedType.Numeric.GetInstance(p.Type).Some(),
         _ => throw type.ToUnmatchedException(),
     };
 
@@ -107,15 +101,8 @@ internal static class ExpressionExtensions
     private static Option<EvaluatedType, Message> EvaluateTypeOperationBinary(Node.Expression.OperationBinary operationBinary, ReadOnlyScope scope)
      => EvaluateType(operationBinary.Operand1, scope).Combine(EvaluateType(operationBinary.Operand2, scope)).FlatMap((o1, o2) => o1.Equals(o2)
         ? o1.Some<EvaluatedType, Message>()
-        : FindCommonType(o1, o2).OrWithError(
+        : o1 is EvaluatedType.Numeric n1 && o2 is EvaluatedType.Numeric n2
+        ? EvaluatedType.Numeric.GetMostPreciseType(n1, n2).Some<EvaluatedType, Message>()
+        : Option.None<EvaluatedType, Message>(
             Message.UnsupportedOperandTypesForBinaryOperation(operationBinary.SourceTokens, o1, o2)));
-
-    private static Option<EvaluatedType> FindCommonType(EvaluatedType type1, EvaluatedType type2)
-     => type1 is EvaluatedType.Primitive { IsNumeric: true } p1
-     && type2 is EvaluatedType.Primitive { IsNumeric: true } p2
-        ? (integralTypePrecisions[p1.Type] > integralTypePrecisions[p2.Type]
-            ? type1
-            : type2)
-            .Some()
-        : Option.None<EvaluatedType>();
 }

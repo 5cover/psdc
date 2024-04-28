@@ -41,11 +41,14 @@ Is it a discriminated union? A class?
 ### Psdc
 
 ```psdc
-    fonction somme(entF a : entier, entF b : entier) délivre entier c'est
-    début
-        retourne a + b;
-    fin
+programm example1 c'est
 
+fonction somme(entF a : entier, entF b : entier) délivre entier c'est
+début
+    retourne a + b;
+fin
+
+début
     variable : entier; //-> Node.Statement.VariableDeclaration("variable", Node.Type.Primitive(PrimitiveType.Integer))  
     écrire(variable);
 
@@ -55,11 +58,15 @@ Is it a discriminated union? A class?
     écrire(v);
 
     écrire("Bonjour");
+fin
 ```
 
 ### C
 
 ```psdc
+programm example2 c'est
+
+début
     int variable;
     printf("%d", variable);
 
@@ -71,16 +78,17 @@ Is it a discriminated union? A class?
     printf("%s", "Bonjour");
     // ou
     printf("Bonjour");
+fin
 ```
 
 ## Kinds of types
 
-- Primitives
+- Numeric
     - Integer
     - Real
     - Character
-    - File
     - Boolean
+- File
 - String
 - String(Length)
 - Array(Type, Dimensions)

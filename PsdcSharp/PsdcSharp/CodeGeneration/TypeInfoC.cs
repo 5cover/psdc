@@ -11,14 +11,15 @@ internal sealed class TypeInfoC : TypeInfo
     private static TypeInfoC Create(EvaluatedType type, Func<Node.Expression, string> generateExpression, Indentation indent)
     {
         switch (type) {
-        case EvaluatedType.Primitive primitive:
-            return primitive.Type switch {
-                PrimitiveType.Boolean => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
-                PrimitiveType.Character => new("char", "%c"),
-                PrimitiveType.Integer => new("int", "%d"),
-                PrimitiveType.File => new("FILE", preModifier: "*", requiredHeaders: IncludeSet.StdIo.Yield()),
-                PrimitiveType.Real => new("double", "%g"),
-                _ => throw primitive.Type.ToUnmatchedException(),
+        case EvaluatedType.File file:
+            return new("FILE", preModifier: "*", requiredHeaders: IncludeSet.StdIo.Yield());
+        case EvaluatedType.Numeric numeric:
+            return numeric.Type switch {
+                NumericType.Boolean => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
+                NumericType.Character => new("char", "%c"),
+                NumericType.Integer => new("int", "%d"),
+                NumericType.Real => new("double", "%g"),
+                _ => throw numeric.Type.ToUnmatchedException(),
             };
         case EvaluatedType.String:
             return new("char", "%s", preModifier: "*");

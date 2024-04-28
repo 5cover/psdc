@@ -41,18 +41,19 @@ internal sealed partial class Parser
         };
 
         _completeTypeParsers = new Dictionary<TokenType, ParseMethod<Node.Type.Complete>> {
-            [Keyword.Integer] = MakePrimitiveTypeParser(PrimitiveType.Integer),
-            [Keyword.Real] = MakePrimitiveTypeParser(PrimitiveType.Real),
-            [Keyword.Character] = MakePrimitiveTypeParser(PrimitiveType.Character),
-            [Keyword.Boolean] = MakePrimitiveTypeParser(PrimitiveType.Boolean),
+            [Keyword.Integer] = MakeNumericParser(NumericType.Integer),
+            [Keyword.Real] = MakeNumericParser(NumericType.Real),
+            [Keyword.Character] = MakeNumericParser(NumericType.Character),
+            [Keyword.Boolean] = MakeNumericParser(NumericType.Boolean),
+            [Keyword.File] = MakeAlwaysOkParser(1, t => new Node.Type.Complete.File(t)),
             [Keyword.String] = ParseTypeLengthedString,
             [Keyword.Array] = ParseTypeArray,
             [Valued.Identifier] = MakeAlwaysOkParser((t, val) => new Node.Type.Complete.AliasReference(t, new(t, val))),
             [Keyword.Structure] = ParseTypeStructure,
         };
 
-        ParseMethod<Node.Type.Complete.Primitive> MakePrimitiveTypeParser(PrimitiveType type)
-         => MakeAlwaysOkParser(1, t => new Node.Type.Complete.Primitive(t, type));
+        ParseMethod<Node.Type.Complete.Numeric> MakeNumericParser(NumericType type)
+         => MakeAlwaysOkParser(1, t => new Node.Type.Complete.Numeric(t, type));
 
         _literalParsers = new Dictionary<TokenType, ParseMethod<Node.Expression>> {
             [Keyword.False] = tokens

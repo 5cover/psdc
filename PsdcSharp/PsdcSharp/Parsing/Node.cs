@@ -588,12 +588,17 @@ internal interface Node
                  && o.Dimensions.AllSemanticsEqual(Dimensions);
             }
 
-            internal sealed class Primitive(Partition<Token> sourceTokens,
-                PrimitiveType type)
+            internal sealed class File(Partition<Token> sourceTokens)
+            : NodeImpl(sourceTokens), Complete {
+                public override bool SemanticsEqual(Node other) => other is File;
+            }
+
+            internal sealed class Numeric(Partition<Token> sourceTokens,
+                NumericType type)
             : NodeImpl(sourceTokens), Complete
             {
-                public PrimitiveType Type => type;
-                public override bool SemanticsEqual(Node other) => other is Primitive o
+                public NumericType Type => type;
+                public override bool SemanticsEqual(Node other) => other is Numeric o
                  && o.Type.Equals(Type);
             }
 
@@ -689,12 +694,11 @@ internal enum ParameterMode
     InOut,
 }
 
-internal enum PrimitiveType
+internal enum NumericType
 {
     Boolean,
     Character,
     Integer,
-    File,
     Real,
 }
 

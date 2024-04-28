@@ -34,6 +34,9 @@ Project roadmap:
 
 - Have formal grammar follow parsing order in choices.
 
+- C-specific configuration
+    - non null-terminated string proof format strings : width specifier for lengthed strings (usually useless since null-terminated, but could be useful if non null-terminated strings are used)
+
 ## Sample programs
 
 - Prime sieve (find nth prime)

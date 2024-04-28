@@ -278,3 +278,5 @@ Also add boolean argument `bracketed` to appendexpression so we don't need `Appe
 ```
 
 We need a way to differenciate "this variable doesn't exist" from "the type of this variable doesn't exist".
+
+We can add a special kind of evaluated type : `EvaluatedType.Unknown`

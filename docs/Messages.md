@@ -1,6 +1,6 @@
 # Compiler messages
 
-## P0* : Erreurs
+## P0* : Errors
 
 ### P0001
 
@@ -32,11 +32,11 @@ Symbole 'X' redéfini dans cette portée.
 
 Symbol 'X' redefined in current scope.
 
-## P1??? : Avertissements
+## P1??? : Warnings
 
 ## P2??? : Suggestions
 
-### P20?? : Respecter les conventions
+### P20?? : Conventions
 
 #### P2000
 
@@ -46,7 +46,7 @@ X : nom de composant de structure
 
 #### P2001
 
-'X' : convention de nommage de type non respectée : préfixer par 'c_'
+'X' : convention de nommage de type non respectée : préfixer par 't_'
 
 X : nom de type
 
