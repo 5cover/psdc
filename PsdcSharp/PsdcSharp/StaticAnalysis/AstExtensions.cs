@@ -42,7 +42,7 @@ internal static class AstExtensions
 
                 : Option.None<EvaluatedType, Message>(Message.ErrorStructureComponentDoesntExist(compAccess,
                     scope.Symbols.Values.OfType<Symbol.TypeAlias>()
-                    .FirstOrNone(alias => alias.TargetType.Equals(structType))
+                    .FirstOrNone(alias => alias.TargetType.SemanticsEqual(structType))
                         .Map(alias => alias.Name)))),
         Node.Expression.Lvalue.VariableReference varRef
          => scope.GetSymbol<Symbol.Variable>(varRef.Name).Map(var => var.Type),
@@ -91,7 +91,7 @@ internal static class AstExtensions
     }
 
     private static Option<EvaluatedType, Message> EvaluateTypeOperationBinary(Node.Expression.OperationBinary operationBinary, ReadOnlyScope scope)
-     => EvaluateType(operationBinary.Operand1, scope).Combine(EvaluateType(operationBinary.Operand2, scope)).FlatMap((o1, o2) => o1.Equals(o2)
+     => EvaluateType(operationBinary.Operand1, scope).Combine(EvaluateType(operationBinary.Operand2, scope)).FlatMap((o1, o2) => o1.SemanticsEqual(o2)
         ? o1.Some<EvaluatedType, Message>()
         : o1 is EvaluatedType.Numeric n1 && o2 is EvaluatedType.Numeric n2
         ? EvaluatedType.Numeric.GetMostPreciseType(n1, n2).Some<EvaluatedType, Message>()

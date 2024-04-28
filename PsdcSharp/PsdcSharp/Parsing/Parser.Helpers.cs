@@ -24,11 +24,6 @@ internal partial class Parser
     private static ParseMethod<T> MakeAlwaysOkParser<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
      => tokens => ParseResult.Ok(makeNodeWithValue(new(tokens, 1), tokens.First().Value.NotNull()));
 
-    private ParseResult<string> ParseTokenValue(IEnumerable<Token> tokens, TokenType expectedType)
-     => ParseOperation.Start(_messenger, tokens)
-        .ParseTokenValue(out var value, expectedType)
-    .MapResult(tokens => value);
-
     private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator) => ParseOperation.Start(_messenger, tokens)
         .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => resultCreator(tokens, value));

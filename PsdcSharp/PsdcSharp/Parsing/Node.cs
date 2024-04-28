@@ -1,4 +1,3 @@
-using Scover.Psdc.Tokenization;
 namespace Scover.Psdc.Parsing;
 
 #region Node traits
@@ -25,9 +24,8 @@ internal abstract class BlockNode(SourceTokens sourceTokens,
 
 #endregion Node traits
 
-internal interface Node
+internal interface Node : EquatableSemantics<Node>
 {
-    bool SemanticsEqual(Node other);
     SourceTokens SourceTokens { get; }
     internal sealed class Algorithm(SourceTokens sourceTokens,
         Identifier name,
@@ -460,7 +458,7 @@ internal interface Node
             public UnaryOperator Operator => @operator;
             public Expression Operand => operand;
             public override bool SemanticsEqual(Node other) => other is OperationUnary o
-             && o.Operator.Equals(Operator)
+             && o.Operator == Operator
              && o.Operand.SemanticsEqual(Operand);
         }
 
@@ -475,7 +473,7 @@ internal interface Node
             public Expression Operand2 => operand2;
             public override bool SemanticsEqual(Node other) => other is OperationBinary o
              && o.Operand1.SemanticsEqual(Operand1)
-             && o.Operator.Equals(Operator)
+             && o.Operator == Operator
              && o.Operand2.SemanticsEqual(Operand2);
         }
 
@@ -530,7 +528,7 @@ internal interface Node
             {
                 public string Value => value;
                 public override bool SemanticsEqual(Node other) => other is Character o
-                 && o.Value.Equals(Value);
+                 && o.Value == Value;
             }
 
             internal sealed class Integer(SourceTokens sourceTokens,
@@ -539,7 +537,7 @@ internal interface Node
             {
                 public string Value => value;
                 public override bool SemanticsEqual(Node other) => other is Integer o
-                 && o.Value.Equals(Value);
+                 && o.Value == Value;
             }
 
             internal sealed class Real(SourceTokens sourceTokens,
@@ -548,7 +546,7 @@ internal interface Node
             {
                 public string Value => value;
                 public override bool SemanticsEqual(Node other) => other is Real o
-                 && o.Value.Equals(Value);
+                 && o.Value == Value;
             }
 
             internal sealed class String(SourceTokens sourceTokens,
@@ -557,7 +555,7 @@ internal interface Node
             {
                 public string Value => value;
                 public override bool SemanticsEqual(Node other) => other is String o
-                 && o.Value.Equals(Value);
+                 && o.Value == Value;
             }
         }
     }
@@ -604,7 +602,7 @@ internal interface Node
             {
                 public NumericType Type => type;
                 public override bool SemanticsEqual(Node other) => other is Numeric o
-                 && o.Type.Equals(Type);
+                 && o.Type == Type;
             }
 
             internal sealed new class AliasReference(SourceTokens sourceTokens,
@@ -644,7 +642,7 @@ internal interface Node
         public ParameterMode Mode => mode;
         public Expression Value => value;
         public override bool SemanticsEqual(Node other) => other is ParameterActual o
-         && o.Mode.Equals(Mode)
+         && o.Mode == Mode
          && o.Value.SemanticsEqual(Value);
     }
 
@@ -658,7 +656,7 @@ internal interface Node
         public Identifier Name => name;
         public Type Type => type;
         public override bool SemanticsEqual(Node other) => other is ParameterFormal o
-         && o.Mode.Equals(Mode)
+         && o.Mode == Mode
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type);
     }
@@ -725,7 +723,10 @@ internal sealed class Identifier : NodeImpl, IEquatable<Identifier?>
     public string Name { get; }
     public override string ToString() => Name;
 
-    public override bool SemanticsEqual(Node other) => other is Identifier o && o.Name.Equals(Name);
+    public override bool SemanticsEqual(Node other) => other is Identifier o
+     && o.Name == Name;
+
+    // Equals and GetHashCode implementation for usage in dictionaries.
     public override bool Equals(object? obj) => Equals(obj as Identifier);
     public bool Equals(Identifier? other) => other is not null && other.Name == Name;
     public override int GetHashCode() => Name.GetHashCode();

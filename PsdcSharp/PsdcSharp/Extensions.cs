@@ -1,40 +1,14 @@
-using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using Scover.Psdc.Parsing;
-using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
 
 internal readonly record struct Position(int Line, int Column)
 {
     public override string ToString() => $"L {Line + 1}, col {Column + 1}";
-}
-
-internal class SourceTokens : IEnumerable<Token>
-{
-    private readonly Lazy<string> _sourceCode;
-    private readonly IEnumerable<Token> _tokens;
-    public SourceTokens(IEnumerable<Token> tokens, int count)
-    {
-        Count = count;
-        _tokens = tokens.Take(count);
-        _sourceCode = new(() => {
-            var lastSourceToken = _tokens.Last();
-            return Globals.Input[_tokens.First().StartIndex..(lastSourceToken.StartIndex + lastSourceToken.Length)];
-        });
-    }
-
-    public static SourceTokens Empty { get; } = new([], 0);
-
-    public int Count { get; }
-
-    public string SourceCode => _sourceCode.Value;
-
-    public IEnumerator<Token> GetEnumerator() => _tokens.GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_tokens).GetEnumerator();
 }
 
 internal static class Parse
@@ -147,27 +121,19 @@ internal static class Extensions
         return hc.ToHashCode();
     }
 
-    public static IEnumerable<TResult> ZipStrict<TFirst, TSecond, TResult>(
-        this IEnumerable<TFirst> first,
-        IEnumerable<TSecond> second,
-        Func<TFirst, TSecond, TResult> resultSelector)
+    public static bool AllZipped<T1, T2>(this IEnumerable<T1> first, IEnumerable<T2> second, Func<T1, T2, bool> predicate)
     {
         using var e1 = first.GetEnumerator();
         using var e2 = second.GetEnumerator();
-        while (e1.MoveNext()) {
-            yield return e2.MoveNext()
-                ? resultSelector(e1.Current, e2.Current)
-                : throw new InvalidOperationException("Sequences differed in length");
+
+        bool all = true;
+        while (all && e1.MoveNext()) {
+            all = e2.MoveNext() && predicate(e1.Current, e2.Current);
         }
-        if (e2.MoveNext()) {
-            throw new InvalidOperationException("Sequences differed in length");
-        }
+        return !e2.MoveNext() && all;
     }
 
-    public static bool AllZipped<T1, T2>(this IReadOnlyCollection<T1> first, IReadOnlyCollection<T2> second, Func<T1, T2, bool> predicate)
-     => first.Count == second.Count && first.ZipStrict(second, predicate).All(b => b);
-
-    public static bool AllSemanticsEqual(this IReadOnlyCollection<Node> first, IReadOnlyCollection<Node> second)
+    public static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T>
      => first.AllZipped(second, (f, s) => f.SemanticsEqual(s));
 
     public static bool OptionSemanticsEqual(this Option<Node> first, Option<Node> second)

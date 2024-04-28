@@ -1,6 +1,5 @@
 
 using Scover.Psdc.Parsing;
-using Scover.Psdc.Tokenization;
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.StaticAnalysis;
@@ -12,7 +11,7 @@ internal interface CallableSymbol : Symbol
     public void MarkAsDefined();
 }
 
-internal interface Symbol
+internal interface Symbol : EquatableSemantics<Symbol>
 {
     public Identifier Name { get; }
     public SourceTokens SourceTokens { get; }
@@ -20,10 +19,9 @@ internal interface Symbol
         EvaluatedType Type)
     : Symbol
     {
-        public virtual bool Equals(Variable? other) => other is not null
-         && other.Name.Equals(Name)
-         && other.Type.Equals(Type);
-        public override int GetHashCode() => HashCode.Combine(Name, Type);
+        public virtual bool SemanticsEqual(Symbol other) => other is Variable o
+         && o.Name.SemanticsEqual(Name)
+         && o.Type.SemanticsEqual(Type);
     }
 
     internal sealed record Constant(Identifier Name, SourceTokens SourceTokens,
@@ -31,19 +29,18 @@ internal interface Symbol
         Expression Value)
     : Variable(Name, SourceTokens, Type)
     {
-        public bool Equals(Constant? other) => base.Equals(other)
-         && other.Value.Equals(Value);
-        public override int GetHashCode() => HashCode.Combine(Name, Type, Value);
+        public override bool SemanticsEqual(Symbol other) => other is Constant o
+         && o.Value.SemanticsEqual(Value)
+         && base.SemanticsEqual(other);
     }
 
     internal sealed record TypeAlias(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType TargetType)
     : Symbol
     {
-        public bool Equals(TypeAlias? other) => other is not null
-         && other.Name.Equals(Name)
-         && other.TargetType.Equals(TargetType);
-        public override int GetHashCode() => HashCode.Combine(Name, TargetType);
+        public bool SemanticsEqual(Symbol other) => other is TypeAlias o
+         && o.Name.SemanticsEqual(Name)
+         && o.TargetType.SemanticsEqual(TargetType);
     }
 
     internal sealed record Procedure(Identifier Name, SourceTokens SourceTokens,
@@ -52,10 +49,9 @@ internal interface Symbol
     {
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
-        public bool Equals(Procedure? other) => other is not null
-         && other.Name.Equals(Name)
-         && other.Parameters.SequenceEqual(Parameters);
-        public override int GetHashCode() => HashCode.Combine(Name, Parameters.GetSequenceHashCode());
+        public bool SemanticsEqual(Symbol other) => other is Procedure o
+         && o.Name.SemanticsEqual(Name)
+         && o.Parameters.AllSemanticsEqual(Parameters);
     }
 
     internal sealed record Function(Identifier Name, SourceTokens SourceTokens,
@@ -65,11 +61,10 @@ internal interface Symbol
     {
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
-        public bool Equals(Function? other) => other is not null
-         && other.Name.Equals(Name)
-         && other.Parameters.SequenceEqual(Parameters)
-         && other.ReturnType.Equals(ReturnType);
-        public override int GetHashCode() => HashCode.Combine(Name, Parameters.GetSequenceHashCode(), ReturnType);
+        public bool SemanticsEqual(Symbol other) => other is Function o
+         && o.Name.SemanticsEqual(Name)
+         && o.Parameters.AllSemanticsEqual(Parameters)
+         && o.ReturnType.SemanticsEqual(ReturnType);
 
     }
 
@@ -78,9 +73,8 @@ internal interface Symbol
         ParameterMode Mode)
     : Variable(Name, SourceTokens, Type)
     {
-        public bool Equals(Parameter? other) => base.Equals(other)
-         && other.Mode.Equals(Mode);
-        public override int GetHashCode() => HashCode.Combine(Name, Type, Mode);
+        public override bool SemanticsEqual(Symbol other) => other is Parameter o
+         && o.Mode == Mode;
     }
 }
 

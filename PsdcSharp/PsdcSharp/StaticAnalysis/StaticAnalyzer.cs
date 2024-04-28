@@ -41,7 +41,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
                 constant.Value.EvaluateType(scope).MapError(messenger.Report).MatchSome(inferredType => {
                     var declaredType = constant.Type.CreateTypeOrError(scope, messenger);
 
-                    if (!declaredType.Equals(inferredType)) {
+                    if (!declaredType.SemanticsEqual(inferredType)) {
                         messenger.Report(Message.ErrorDeclaredInferredTypeMismatch(constant.SourceTokens, declaredType, inferredType));
                     }
                     if (!constant.Value.IsConstant(scope)) {
@@ -296,11 +296,12 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
         void HandleCall<TSymbol>(Scope scope, NodeCall call) where TSymbol : CallableSymbol
         {
             scope.GetSymbol<TSymbol>(call.Name).MapError(messenger.Report).MatchSome(callable => {
-                if (!call.Parameters.ZipStrict(callable.Parameters, (effective, formal)
-                    => effective.Mode.Equals(formal.Mode)
-                    && effective.Value.EvaluateType(scope).MapError(messenger.Report)
-                       .Map(type => formal.Type.Equals(type)).ValueOr(false))
-                 .All(b => b)) {
+
+                if (call.Parameters.AllZipped(callable.Parameters,
+                    (effective, formal) => effective.Mode == formal.Mode
+                                        && effective.Value.EvaluateType(scope).MapError(messenger.Report)
+                                           .Map(type => formal.Type.SemanticsEqual(type))
+                                           .ValueOr(false))) {
                     messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable));
                 }
             });
@@ -313,7 +314,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
         {
             if (!scope.TryAdd(sub, out var existingSymbol)) {
                 if (existingSymbol is T existingSub) {
-                    if (!sub.Equals(existingSub)) {
+                    if (!sub.SemanticsEqual(existingSub)) {
                         messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
                     }
                 } else {
@@ -350,7 +351,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
             } else if (existingSymbol is T existingSub) {
                 if (existingSub.HasBeenDefined) {
                     messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSub));
-                } else if (!sub.Equals(existingSub)) {
+                } else if (!sub.SemanticsEqual(existingSub)) {
                     messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
                 }
             } else {

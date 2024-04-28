@@ -35,8 +35,6 @@ internal partial class Parser
             [Operator.Modulus] = BinaryOperator.Modulus,
         },
     };
-
-    private const string NameUnaryOperator = "unary operator";
     private static readonly IReadOnlyDictionary<TokenType, UnaryOperator> unaryOperators = new Dictionary<TokenType, UnaryOperator>() {
         [Operator.Minus] = UnaryOperator.Minus,
         [Operator.Not] = UnaryOperator.Not,

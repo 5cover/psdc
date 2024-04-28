@@ -12,7 +12,7 @@ internal sealed class TypeInfoC : TypeInfo
     {
         switch (type) {
         case EvaluatedType.Unknown u:
-            return new(u.SourceTokens.SourceCode);
+            return new(u.Representation);
         case EvaluatedType.File file:
             return new("FILE", preModifier: "*", requiredHeaders: IncludeSet.StdIo.Yield());
         case EvaluatedType.Numeric numeric:
