@@ -29,6 +29,7 @@
 - Binary expression unsupported operation for types A, B
 - Reading unassigned variable
 - Array index out of range
+- Array dimensions mismatch (between array subscript and declaration)
 
 ## Warnings
 

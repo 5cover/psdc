@@ -18,19 +18,24 @@ internal sealed class Scope(Scope? scope) : ReadOnlyScope
     }
 
     public Option<T, Message> GetSymbol<T>(Identifier name) where T : Symbol
-     => TryGetSymbol(name, out T? symbol)
-        ? symbol.Some<T, Message>()
-        : Option.None<T, Message>(Message.ErrorUndefinedSymbol<T>(name));
+     => !TryGetSymbol(name, out var symbol)
+        ? Option.None<T, Message>(Message.ErrorUndefinedSymbol<T>(name))
+        : symbol is not T t
+        ? Option.None<T, Message>(Message.ErrorUndefinedSymbol<T>(name, symbol))
+        : t.Some<T, Message>();
 
-    public bool TryGetSymbolOrError<T>(Messenger messenger, Identifier name, out T? symbol) where T : Symbol
+    public bool TryGetSymbol<T>(Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol
     {
-        bool found = TryGetSymbol(name, out symbol);
-        if (!found) {
-            messenger.Report(Message.ErrorUndefinedSymbol<T>(name));
+        if (TryGetSymbol(name, out var foundSymbol) && foundSymbol is T t) {
+            symbol = t;
+            return true;
         }
-        return found;
+        symbol = default;
+        return false;
     }
+
     public bool TryAdd(Symbol symbol) => _symbolTable.TryAdd(symbol.Name, symbol);
+
     public bool TryAdd(Symbol symbol, [NotNullWhen(false)] out Symbol? existingSymbol)
     {
         var added = _symbolTable.TryAdd(symbol.Name, symbol);
@@ -38,18 +43,12 @@ internal sealed class Scope(Scope? scope) : ReadOnlyScope
         return added;
     }
 
-    public bool TryGetSymbol<T>(Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol
+    public bool TryGetSymbol(Identifier name, [NotNullWhen(true)] out Symbol? symbol)
     {
         for (Scope? scope = this; scope is not null; scope = scope._parentScope) {
-            if (!scope._symbolTable.TryGetValue(name, out var foundSymbol)) {
-                continue;
+            if (scope._symbolTable.TryGetValue(name, out symbol)) {
+                return true;
             }
-            if (foundSymbol is not T t) {
-                break;
-            }
-
-            symbol = t;
-            return true;
         }
 
         symbol = default;

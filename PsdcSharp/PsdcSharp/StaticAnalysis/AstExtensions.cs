@@ -3,7 +3,7 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-internal static class ExpressionExtensions
+internal static class AstExtensions
 {
     public static bool IsConstant(this Node.Expression expression, ReadOnlyScope scope) => expression switch {
         Node.Expression.Bracketed b => b.Expression.IsConstant(scope),

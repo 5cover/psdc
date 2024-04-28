@@ -55,7 +55,11 @@ internal sealed record Message(
 
     public static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier) where TSymbol : Symbol
      => Create(identifier.SourceTokens, MessageCode.UndefinedSymbol,
-            _ => $"{SymbolExtensions.GetKind<TSymbol>()} `{identifier}` undefined in current scope");
+        _ => $"undefined {SymbolExtensions.GetKind<TSymbol>()} `{identifier}`");
+
+    public static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier, Symbol existingSymbol) where TSymbol : Symbol
+     => Create(identifier.SourceTokens, MessageCode.UndefinedSymbol,
+        _ => $"`{identifier}` is a {existingSymbol.GetKind()}, {SymbolExtensions.GetKind<TSymbol>()} expected");
 
     public static Message ErrorRedefinedSymbol(Symbol newSymbol, Symbol existingSymbol)
      => Create(newSymbol.Name.SourceTokens, MessageCode.RedefinedSymbol,

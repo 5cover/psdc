@@ -89,11 +89,15 @@ internal static class Extensions
         }
     }
 
-    public static T LogOperation<T>(this string name, Func<T> operation)
+    public static T LogOperation<T>(this string name, bool verbose, Func<T> operation)
     {
-        Console.Error.Write($"{name}...");
+        if (verbose) {
+            Console.Error.Write($"{name}...");
+        }
         T t = operation();
-        Console.Error.WriteLine(" done");
+        if (verbose) {
+            Console.Error.WriteLine(" done");
+        }
         return t;
     }
 

@@ -14,25 +14,27 @@ internal static class Program
             throw new ArgumentException("Usage: <test_program_filename>");
         }
 
+        const bool Verbose = false;
+
         string input = File.ReadAllText($"../../testPrograms/{args[0]}");
 
         PrintMessenger messenger = new(input);
 
         Tokenizer tokenizer = new(messenger, input);
-        var tokens = "Tokenizing".LogOperation(() => tokenizer.Tokenize().ToImmutableArray());
+        var tokens = "Tokenizing".LogOperation(Verbose, () => tokenizer.Tokenize().ToImmutableArray());
 
         Parser parser = new(messenger, tokens);
-        var ast = "Parsing".LogOperation(parser.Parse).Value;
+        var ast = "Parsing".LogOperation(Verbose, parser.Parse).Value;
 
         if (ast is null) {
             return;
         }
 
         StaticAnalyzer semanticAnalyzer = new(messenger, ast);
-        var semanticAst = "Analyzing".LogOperation(semanticAnalyzer.AnalyzeSemantics);
+        var semanticAst = "Analyzing".LogOperation(Verbose, semanticAnalyzer.AnalyzeSemantics);
 
         CodeGeneratorC codeGenerator = new(semanticAst);
-        string cCode = "Generating code".LogOperation(codeGenerator.Generate);
+        string cCode = "Generating code".LogOperation(Verbose, codeGenerator.Generate);
 
         Console.Error.WriteLine("Generated C : ");
         Console.WriteLine(cCode);
