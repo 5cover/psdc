@@ -1,5 +1,5 @@
 using System.Text;
-using Scover.Psdc.Parsing.Nodes;
+using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.StaticAnalysis;
 
@@ -25,7 +25,7 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
     {
         public bool Equals(Array? other) => other is not null
          && other.ElementType.Equals(ElementType)
-         && other.Dimensions.SequenceEqual(Dimensions);
+         && other.Dimensions.AllSemanticsEqual(Dimensions);
 
         public override int GetHashCode() => HashCode.Combine(ElementType, Dimensions.GetSequenceHashCode());
 
@@ -45,7 +45,7 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
         };
     }
 
-    internal sealed record AliasReference(Node.Identifier Name, EvaluatedType Target) : EvaluatedType
+    internal sealed record AliasReference(Identifier Name, EvaluatedType Target) : EvaluatedType
     {
         public override string GetRepresentation(string input) => Name.Name;
     }
@@ -60,7 +60,7 @@ internal abstract record EvaluatedType(bool IsNumeric = false)
         public override string GetRepresentation(string input) => $"chaîne({Length})";
     }
 
-    internal sealed record Structure(IReadOnlyDictionary<Node.Identifier, EvaluatedType> Components) : EvaluatedType
+    internal sealed record Structure(IReadOnlyDictionary<Identifier, EvaluatedType> Components) : EvaluatedType
     {
         public bool Equals(Structure? other) => other is not null
          && other.Components.SequenceEqual(Components);

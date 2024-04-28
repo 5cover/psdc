@@ -2,7 +2,10 @@ programme functions c'est
 
 // Naive pow function
 fonction pow(entF x: réel, entF i: entier) délivre réel;
+
 procédure printNTimes(entF str: chaine, entF n: entier);
+
+procédure swap(entF/sortF p1 : entier, entF/sortF p2 : entier);
 
 fonction pow(entF x: réel, entF i: entier) délivre réel c'est début
     res : entier;
@@ -28,9 +31,21 @@ procédure incrémenter(entF/sortF n: entier) c'est début
     n := n + 1;
 fin
 
+procédure swap(entF/sortF p1 : entier, entF/sortF p2 : entier) c'est
+début
+    tmp : t_personne;
+    tmp := p1;
+    p1 := p2;
+    p2 := tmp;
+fin
+
 début
     printNTimes(entE "Bonjour", entE pow(entE 2, entE 3));
-    n : entier;
-    n := 0;
-    incrémenter(entE/sortE n);
+    x : entier;
+    x := 0;
+    y : entier;
+
+    incrémenter(entE/sortE x);
+    swap(entE/sortE x, entE/sortE y);
+
 fin

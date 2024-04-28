@@ -1,6 +1,6 @@
 programme VotreAge3000 c'est
 
-constante entier anneeActuelle := 2024;
+constante entier ANNEE_ACTUELLE := 2024;
 
 début
     age : entier;
@@ -21,11 +21,11 @@ début
         écrireEcran("Votre âge est négatif? WTF");
     finsi
 
-    si (age >= 7 et age <= 77) alors
+    si (age >= 7 ET age <= 77) alors
         écrireEcran("De 7 à 77 ans");
         si (age % 2 == 0) alors
             écrireEcran("age pair");
-            si (anneeActuelle - age % 4 == 0) alors
+            si (ANNEE_ACTUELLE - age % 4 == 0) alors
                 écrireEcran("vous êtes né lors d'une année bissextile");
             finsi
         sinon

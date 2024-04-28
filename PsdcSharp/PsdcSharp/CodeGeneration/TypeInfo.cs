@@ -1,9 +1,10 @@
-using Scover.Psdc.Parsing.Nodes;
+
+using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.CodeGeneration;
 
 internal interface TypeInfo
 {
-    string GenerateDeclaration(IEnumerable<Node.Identifier> names);
+    string GenerateDeclaration(IEnumerable<Identifier> names);
     string Generate();
 }

@@ -4,12 +4,12 @@
 
 ### Parameter modes
 
-- Effective parameter mode where formal is expected
-- Formal parameter mode where effective is expected
+- Actual parameter mode where formal is expected
+- Formal parameter mode where actual is expected
 - Missing parameter mode
     - In call
     - In procedure/function declaration/definition
-- Effective parameter mode mismatch
+- Actual parameter mode mismatch
 
 ## Semantic errors
 

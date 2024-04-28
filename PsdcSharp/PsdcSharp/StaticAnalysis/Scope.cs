@@ -1,14 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
-using Scover.Psdc.Parsing.Nodes;
+using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
+internal sealed class Scope(Scope? scope) : ReadOnlyScope
 {
-    private readonly Scope? _parentScope = parentScope;
-    private readonly Dictionary<Node.Identifier, Symbol> _symbolTable = [];
+    private readonly Scope? _parentScope = scope;
+    private readonly Dictionary<Identifier, Symbol> _symbolTable = [];
 
-    public IReadOnlyDictionary<Node.Identifier, Symbol> Symbols => _symbolTable;
+    public IReadOnlyDictionary<Identifier, Symbol> Symbols => _symbolTable;
 
     public void AddSymbolOrError(Messenger messenger, Symbol symbol)
     {
@@ -17,18 +17,16 @@ internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
         }
     }
 
-    public Option<T> GetSymbol<T>(Node.Identifier name) where T : Symbol
+    public Option<T, Message> GetSymbol<T>(Identifier name) where T : Symbol
      => TryGetSymbol(name, out T? symbol)
-        ? symbol.Some()
-        : Option.None<T>();
-    public Option<T, Message> GetSymbolOrError<T>(Node.Identifier identifier) where T : Symbol
-    => GetSymbol<T>(identifier).OrWithError(Message.ErrorUndefinedSymbol<T>(identifier));
+        ? symbol.Some<T, Message>()
+        : Option.None<T, Message>(Message.ErrorUndefinedSymbol<T>(name));
 
-    public bool TryGetSymbolOrError<T>(Messenger messenger, Node.Identifier identifier, out T? symbol) where T : Symbol
+    public bool TryGetSymbolOrError<T>(Messenger messenger, Identifier name, out T? symbol) where T : Symbol
     {
-        bool found = TryGetSymbol<T>(identifier, out symbol);
+        bool found = TryGetSymbol(name, out symbol);
         if (!found) {
-            messenger.Report(Message.ErrorUndefinedSymbol<T>(identifier));
+            messenger.Report(Message.ErrorUndefinedSymbol<T>(name));
         }
         return found;
     }
@@ -40,7 +38,7 @@ internal sealed class Scope(Scope? parentScope) : ReadOnlyScope
         return added;
     }
 
-    public bool TryGetSymbol<T>(Node.Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol
+    public bool TryGetSymbol<T>(Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol
     {
         for (Scope? scope = this; scope is not null; scope = scope._parentScope) {
             if (!scope._symbolTable.TryGetValue(name, out var foundSymbol)) {

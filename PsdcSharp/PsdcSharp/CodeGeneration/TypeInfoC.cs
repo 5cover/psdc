@@ -1,6 +1,5 @@
 using System.Text;
-
-using Scover.Psdc.Parsing.Nodes;
+using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.CodeGeneration;
@@ -84,7 +83,7 @@ internal sealed class TypeInfoC : TypeInfo
      => new(_typeName, FormatComponent, RequiredHeaders, _preModifier, _postModifier,
         "const");
 
-    public string GenerateDeclaration(IEnumerable<Node.Identifier> names)
+    public string GenerateDeclaration(IEnumerable<Identifier> names)
      => $"{_typeName}{_typeQualifier} {string.Join(", ", names.Select(name => _preModifier + name.Name + _postModifier))}";
 
     public string Generate() => $"{_typeName}{_preModifier}{_postModifier}{_typeQualifier}";

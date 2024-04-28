@@ -209,7 +209,7 @@ But they can't replace panic mode as it would be basically impossible to predict
 
 We can start from a list of most common syntax errors in similar languages, but let's implement panic mode first.
 
-Another advantage of error productions that i see is the ability to provide alternative errors that the parser cannot detect on its own. For example, forgetting the effective parameter mode :
+Another advantage of error productions that i see is the ability to provide alternative errors that the parser cannot detect on its own. For example, forgetting the actual parameter mode :
 
 ```text
 proc(5);
@@ -230,7 +230,7 @@ Ideas for error productions :
 
 - Statment without semicolon
 - Function/procedure signature without formal parameter modes
-- Function/procedure call without effective parameter modes
+- Function/procedure call without actual parameter modes
 - ...
 
 ## Create a representation of the AST being built
@@ -260,3 +260,21 @@ That seems like an easy way to implement this feature.
 For each code generator associate each operator with a precedence. So we always know whether to bracket an expression in non-terminal expressions.
 
 Also add boolean argument `bracketed` to appendexpression so we don't need `AppendBracketedExpression`.
+
+## Cascading errors in static analysis
+
+```text
+[P0004] L 36, col 11: error: type alias `t_personne` undefined in current scope
+    35 |     tmp : t_personne;
+       |           ^^^^^^^^^^
+[P0004] L 37, col 5: error: variable `tmp` undefined in current scope
+    36 |     tmp := p1;
+       |     ^^^
+[P0004] L 37, col 5: error: variable `tmp` undefined in current scope
+    36 |     tmp := p1;
+       |     ^^^
+[P0004] L 39, col 11: error: variable `tmp` undefined in current scope
+    38 |     p2 := tmp;
+```
+
+We need a way to differenciate "this variable doesn't exist" from "the type of this variable doesn't exist".

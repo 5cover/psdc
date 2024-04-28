@@ -27,7 +27,15 @@ internal static class Option
     public static Option<T> DiscardError<T, TError>(this Option<T, TError> option)
      => new OptionImpl<T>(option.HasValue, option.Value);
 
-    public static Option<T> DiscardError<T, TError>(this Option<T, TError> option, Action<TError> actionWithError)
+    public static Option<T> FlatMapError<T, TError>(this Option<Option<T>, TError> option, Action<TError> actionWithError)
+    {
+        if (!option.HasValue) {
+            actionWithError?.Invoke(option.Error);
+            return None<T>();
+        }
+        return option.Value;
+    }
+    public static Option<T> MapError<T, TError>(this Option<T, TError> option, Action<TError> actionWithError)
     {
         if (!option.HasValue) {
             actionWithError?.Invoke(option.Error);
@@ -48,11 +56,6 @@ internal static class Option
      => new OptionImpl<T>(true, value);
     public static Option<T, TError> Some<T, TError>(this T value)
      => new OptionImpl<T, TError>(true, value, default);
-
-    public static T Unwrap<T>(this Option<T> option)
-     => option.HasValue ? option.Value : throw new InvalidOperationException("Option does not have a value");
-    public static T Unwrap<T, TError>(this Option<T, TError> option)
-     => option.HasValue ? option.Value : throw new InvalidOperationException("Option does not have a value");
 
     public static Option<T> SomeNotNull<T>(this T? value) where T : class
      => value is not null ? value.Some() : None<T>();
@@ -127,6 +130,7 @@ internal static class Option
             action(option.Value);
         }
     }
+
     public static void MatchSome<T>(this Option<T> option, Action<T> action)
     {
         if (option.HasValue) {

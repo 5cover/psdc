@@ -20,7 +20,7 @@ Project roadmap:
 - ~~Fix syntax error handling~~
 - ~~Lvalues~~
 - Files and other builtins
-- Brace initialization (voir TD4 ex 1)
+- Brace initialization (voir TD14 ex 1)
 - CLI (use nuget package)
     - customize header?
     - special behaviors (ecrireEcran newlines...)
@@ -30,6 +30,7 @@ Project roadmap:
 - Documentation
 - Release
 - More static analysis
+- customize formatting
 
 - Have formal grammar follow parsing order in choices.
 

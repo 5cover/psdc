@@ -485,11 +485,11 @@ Yes. We need some sort of restriction on which expressions can be lvalues so we 
 
 The problem is for bracketed expressions. `lireClavier((val))` is just as valid as `lireClavier(val)`.
 
-So a `Bracketed` can contain either an lvalue or rvalue, what it is it defined on its contents. I guess we can add an abstract boolean property `IsLValue` on `Expression`. This property will be used by the static analyzer?
+So a `Bracketed` can contain either an lvalue or rvalue, what it is it defined on its contents. I guess we can add an abstract boolean property `IsLvalue` on `Expression`. This property will be used by the static analyzer?
 
 So the parser will allow assigning to lvalues but it's the static analyzer that will catch the error. Is this a good idea?
 
-Since there's not only assignments to worry about, there's also `lireClavier` and effective output parameters.
+Since there's not only assignments to worry about, there's also `lireClavier` and actual output parameters.
 
 But at the same time it would be better to use types, and the custom error message can be given by an error production.
 
@@ -517,27 +517,27 @@ Expression_1 --> Bracketed
 Expression_1 --> Call .-> Identifier
 Expression_1 --> Fdf .-> Identifier
 Expression_1 --> Literal
-Expression_1 --> LValue --> IdentifierReference .-> Identifier
-LValue --> BracketedLValue 
-LValue --> ArraySubscript .-> Expression_1
-LValue --> ComponentAccess .-> Expression_1
+Expression_1 --> Lvalue --> IdentifierReference .-> Identifier
+Lvalue --> BracketedLvalue 
+Lvalue --> ArraySubscript .-> Expression_1
+Lvalue --> ComponentAccess .-> Expression_1
 ```
 
 How do we eliminate those 2 cycles?
 
 ```mermaid
 flowchart LR
-Expression_1 --> TerminalRValue
-TerminalRValue --> Bracketed
-TerminalRValue --> Literal
-TerminalRValue --> Call .-> Identifier
-TerminalRValue --> Fdf .-> Identifier
-TerminalRValue --> TerminalLValue
-Expression_1 --> LValue --> TerminalLValue
-TerminalLValue --> BracktedLValue
-TerminalLValue --> IdentifierReference .-> Identifier   
-LValue --> ArraySubscript .-> TerminalRValue
-LValue --> ComponentAccess .-> TerminalRValue
+Expression_1 --> TerminalRvalue
+TerminalRvalue --> Bracketed
+TerminalRvalue --> Literal
+TerminalRvalue --> Call .-> Identifier
+TerminalRvalue --> Fdf .-> Identifier
+TerminalRvalue --> TerminalLvalue
+Expression_1 --> Lvalue --> TerminalLvalue
+TerminalLvalue --> BracktedLvalue
+TerminalLvalue --> IdentifierReference .-> Identifier   
+Lvalue --> ArraySubscript .-> TerminalRvalue
+Lvalue --> ComponentAccess .-> TerminalRvalue
 ```
 
 Nice.

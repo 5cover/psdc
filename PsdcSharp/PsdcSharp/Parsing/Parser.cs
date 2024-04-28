@@ -1,4 +1,4 @@
-using Scover.Psdc.Parsing.Nodes;
+
 using Scover.Psdc.Tokenization;
 using static Scover.Psdc.Tokenization.TokenType;
 
@@ -54,11 +54,11 @@ internal sealed partial class Parser
         ParseMethod<Node.Type.Complete.Primitive> MakePrimitiveTypeParser(PrimitiveType type)
          => MakeAlwaysOkParser(1, t => new Node.Type.Complete.Primitive(t, type));
 
-        _literalParsers = new Dictionary<TokenType, ParseMethod<Node.Expression.Literal>> {
+        _literalParsers = new Dictionary<TokenType, ParseMethod<Node.Expression>> {
             [Keyword.False] = tokens
-             => ParseToken(tokens, Keyword.False, t => new Node.Expression.Literal.False(t)),
+             => ParseToken(tokens, Keyword.False, t => new Node.Expression.False(t)),
             [Keyword.True] = tokens
-             => ParseToken(tokens, Keyword.True, t => new Node.Expression.Literal.True(t)),
+             => ParseToken(tokens, Keyword.True, t => new Node.Expression.True(t)),
             [Valued.LiteralCharacter] = tokens
              => ParseTokenValue(tokens, Valued.LiteralCharacter, (t, value) => new Node.Expression.Literal.Character(t, value)),
             [Valued.LiteralInteger] = tokens
@@ -140,7 +140,7 @@ internal sealed partial class Parser
         .ParseToken(Keyword.Function)
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Punctuation.OpenBracket)
-        .ParseZeroOrMoreSeparated(out var parameters, ParseFormalParameter, Punctuation.Comma)
+        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterFormal, Punctuation.Comma)
         .ParseToken(Punctuation.CloseBracket)
         .ParseToken(Keyword.Delivers)
         .Parse(out var returnType, ParseType)
@@ -150,7 +150,7 @@ internal sealed partial class Parser
         .ParseToken(Keyword.Procedure)
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Punctuation.OpenBracket)
-        .ParseZeroOrMoreSeparated(out var parameters, ParseFormalParameter, Punctuation.Comma)
+        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterFormal, Punctuation.Comma)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Node.ProcedureSignature(t, name, parameters));
 
@@ -205,7 +205,7 @@ internal sealed partial class Parser
     private ParseResult<Node.Statement> ParseBuiltinLireClavier(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(Keyword.LireClavier)
         .ParseToken(Punctuation.OpenBracket)
-        .Parse(out var argVariable, ParseLValue)
+        .Parse(out var argVariable, ParseLvalue)
         .ParseToken(Punctuation.CloseBracket)
         .ParseToken(Punctuation.Semicolon)
     .MapResult(t => new Node.Statement.BuiltinLireClavier(t, argVariable));
@@ -218,14 +218,14 @@ internal sealed partial class Parser
     .MapResult(t => new Node.Statement.LocalVariable(t, names, type));
 
     private ParseResult<Node.Statement.Assignment> ParseAssignment(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .Parse(out var target, ParseLValue)
+        .Parse(out var target, ParseLvalue)
         .ParseToken(Operator.Assignment)
         .Parse(out var value, ParseExpression)
     .MapResult(t => new Node.Statement.Assignment(t, target, value));
 
     private ParseResult<Node.Statement> ParserVariableDeclarationOrProcedureCall(IEnumerable<Token> tokens)
     {
-        ParseResult<Node.Statement.LocalVariable> FinishVariableDeclaration(ParseOperation o, IEnumerable<Node.Identifier> names) => o
+        ParseResult<Node.Statement.LocalVariable> FinishVariableDeclaration(ParseOperation o, IEnumerable<Identifier> names) => o
             .Parse(out var type, ParseTypeComplete)
             .MapResult(t => new Node.Statement.LocalVariable(t, names.ToList(), type));
 
@@ -237,7 +237,7 @@ internal sealed partial class Parser
                 .ParseToken(Punctuation.Colon), names.Prepend(ident)),
             [Punctuation.Colon] = o => FinishVariableDeclaration(o, ident.Yield()),
             [Punctuation.OpenBracket] = o => o
-                .ParseZeroOrMoreSeparated(out var parameters, ParseEffectiveParameter, Punctuation.Comma)
+                .ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma)
                 .ParseToken(Punctuation.CloseBracket)
             .MapResult(t => new Node.Statement.ProcedureCall(t, ident, parameters)),
         })
@@ -275,7 +275,7 @@ internal sealed partial class Parser
 
     private ParseResult<Node.Statement.ForLoop> ParseForLoop(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(Keyword.For)
-        .Parse(out var variant, ParseLValue)
+        .Parse(out var variant, ParseLvalue)
         .ParseToken(Keyword.From)
         .Parse(out var start, ParseExpression)
         .ParseToken(Keyword.To)
@@ -313,7 +313,7 @@ internal sealed partial class Parser
             .ParseToken(Keyword.WhenOther)
             .ParseToken(Punctuation.Arrow)
             .ParseZeroOrMoreUntilToken(out var block, ParseStatement, Keyword.EndSwitch)
-        .MapResult(t => new Node.Statement.Switch.CaseDefault(t, block)))
+        .MapResult(t => new Node.Statement.Switch.DefaultCase(t, block)))
 
         .ParseToken(Keyword.EndSwitch)
     .MapResult(t => new Node.Statement.Switch(t, expression, cases, @default));
@@ -360,32 +360,32 @@ internal sealed partial class Parser
 
     #region Other
 
-    private ParseResult<Node.FormalParameter> ParseFormalParameter(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .Parse(out var mode, tokens => GetByTokenType(tokens, formalParameterModes))
+    private ParseResult<Node.ParameterFormal> ParseParameterFormal(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
+        .Parse(out var mode, tokens => GetByTokenType(tokens, parameterFormalModes))
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Punctuation.Colon)
         .Parse(out var type, ParseType)
-    .MapResult(t => new Node.FormalParameter(t, mode, name, type));
+    .MapResult(t => new Node.ParameterFormal(t, mode, name, type));
 
-    private ParseResult<Node.EffectiveParameter> ParseEffectiveParameter(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .Parse(out var mode, tokens => GetByTokenType(tokens, effectiveParameterModes))
+    private ParseResult<Node.ParameterActual> ParseParameterActual(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
+        .Parse(out var mode, tokens => GetByTokenType(tokens, parameterActualModes))
         .Parse(out var value, ParseExpression)
-    .MapResult(t => new Node.EffectiveParameter(t, mode, value));
-
-    private ParseResult<Node.Identifier> ParseIdentifier(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .ParseTokenValue(out var name, Valued.Identifier)
-    .MapResult(t => new Node.Identifier(t, name));
+    .MapResult(t => new Node.ParameterActual(t, mode, value));
 
     #endregion Other
 
     #region Terminals
 
-    private static readonly IReadOnlyDictionary<TokenType, ParameterMode> formalParameterModes = new Dictionary<TokenType, ParameterMode> {
+    private ParseResult<Identifier> ParseIdentifier(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
+        .ParseTokenValue(out var name, Valued.Identifier)
+    .MapResult(t => new Identifier(t, name));
+
+    private static readonly IReadOnlyDictionary<TokenType, ParameterMode> parameterFormalModes = new Dictionary<TokenType, ParameterMode> {
         [Keyword.EntF] = ParameterMode.In,
         [Keyword.SortF] = ParameterMode.Out,
         [Keyword.EntSortF] = ParameterMode.InOut,
     };
-    private static readonly IReadOnlyDictionary<TokenType, ParameterMode> effectiveParameterModes = new Dictionary<TokenType, ParameterMode> {
+    private static readonly IReadOnlyDictionary<TokenType, ParameterMode> parameterActualModes = new Dictionary<TokenType, ParameterMode> {
         [Keyword.EntE] = ParameterMode.In,
         [Keyword.SortE] = ParameterMode.Out,
         [Keyword.EntSortE] = ParameterMode.InOut,

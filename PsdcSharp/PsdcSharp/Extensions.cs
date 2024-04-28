@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
+using Scover.Psdc.Parsing;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
@@ -151,6 +152,17 @@ internal static class Extensions
             throw new InvalidOperationException("Sequences differed in length");
         }
     }
+
+    public static bool AllZipped<T1, T2>(this IReadOnlyCollection<T1> first, IReadOnlyCollection<T2> second, Func<T1, T2, bool> predicate)
+     => first.Count == second.Count && first.ZipStrict(second, predicate).All(b => b);
+
+    public static bool AllSemanticsEqual(this IReadOnlyCollection<Node> first, IReadOnlyCollection<Node> second)
+     => first.AllZipped(second, (f, s) => f.SemanticsEqual(s));
+
+    public static bool OptionSemanticsEqual(this Option<Node> first, Option<Node> second)
+     => first.HasValue && second.HasValue
+        ? first.Value.SemanticsEqual(second.Value)
+        : first.HasValue == second.HasValue;
 
     public static string GetSourceCode(this IEnumerable<Token> sourceTokens, string input)
     {

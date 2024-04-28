@@ -62,7 +62,7 @@ $$
     \\
     ⟨ProcedureCall⟩ \to ⟨Call⟩;
     \\
-    ⟨Assignment⟩ \to ⟨LValue⟩ = ⟨Expression⟩;
+    ⟨Assignment⟩ \to ⟨Lvalue⟩ = ⟨Expression⟩;
     \\
     ⟨ForLoop⟩ \to \begin{split}
     \\
@@ -91,7 +91,7 @@ $$
     \\
     ⟨Return⟩ \to \text{retourne} ⟨Expression⟩;
     \\
-    ⟨BuiltinAssigner⟩ \to \text{assigner}(⟨LValue⟩,⟨Expression⟩);
+    ⟨BuiltinAssigner⟩ \to \text{assigner}(⟨Lvalue⟩,⟨Expression⟩);
     \\
     ⟨BuiltinEcrire⟩ \to \text{écrire}(⟨Expression⟩, ⟨Expression⟩);
     \\
@@ -99,9 +99,9 @@ $$
     \\
     ⟨BuiltinFermer⟩ \to \text{fermer}(⟨Expression⟩);
     \\
-    ⟨BuiltinLire⟩ \to \text{lire}(⟨Expression⟩,⟨LValue⟩);
+    ⟨BuiltinLire⟩ \to \text{lire}(⟨Expression⟩,⟨Lvalue⟩);
     \\
-    ⟨BuiltinLireClavier⟩ \to \text{lireClavier}(⟨LValue⟩);
+    ⟨BuiltinLireClavier⟩ \to \text{lireClavier}(⟨Lvalue⟩);
     \\
     ⟨BuiltinOuvrirAjout⟩ \to \text{ouvrirAjout}(⟨Expression⟩)
     \\
@@ -179,11 +179,11 @@ $$
 \end{cases}
 \\
 ⟨Expression_1⟩ &\to \begin{cases}
-    ⟨TerminalRValue⟩\\
-    ⟨LValue⟩\\
+    ⟨TerminalRvalue⟩\\
+    ⟨Lvalue⟩\\
 \end{cases}
 \\
-⟨TerminalRValue⟩ &\to \begin{cases}
+⟨TerminalRvalue⟩ &\to \begin{cases}
     ⟨Bracketed⟩ \to (⟨Expression⟩)
     \\
     ⟨Literal⟩ \to \begin{cases}
@@ -199,26 +199,26 @@ $$
     \\
     ⟨BuiltinFdf⟩ \to \text{FdF}(⟨Expression⟩)
     \\
-    ⟨TerminalLValue⟩
+    ⟨TerminalLvalue⟩
 \end{cases}
 \\
-⟨LValue⟩ &\to \begin{cases}
+⟨Lvalue⟩ &\to \begin{cases}
     ⟨ArraySubscript⟩\\
     ⟨ComponentAccess⟩\\
-    ⟨TerminalLValue⟩\\
+    ⟨TerminalLvalue⟩\\
 \end{cases}
 \\
-⟨ArraySubscript⟩ &\to ⟨TerminalRValue⟩[⟨Expression⟩^{+|,}]
+⟨ArraySubscript⟩ &\to ⟨TerminalRvalue⟩[⟨Expression⟩^{+|,}]
 \\
-⟨ComponentAccess⟩ &\to ⟨TerminalRValue⟩.Identifier
+⟨ComponentAccess⟩ &\to ⟨TerminalRvalue⟩.Identifier
 \\
-⟨TerminalLValue⟩ &\to \begin{cases}
-    ⟨BracketedLValue⟩ \to (⟨LValue⟩)
+⟨TerminalLvalue⟩ &\to \begin{cases}
+    ⟨BracketedLvalue⟩ \to (⟨Lvalue⟩)
     \\
     ⟨IdentifierReference⟩ \to Identifier
 \end{cases}
 \\
-⟨Call⟩ &\to Identifier(⟨EffectiveParameter⟩^{*|,})
+⟨Call⟩ &\to Identifier(⟨ParameterActual⟩^{*|,})
 
 \\&\textbf{Types}\notag\\
 
@@ -250,21 +250,21 @@ $$
 
 \\&\textbf{Other}\notag\\
 
-⟨FormalParameter⟩ &\to \begin{cases}
+⟨ParameterFormal⟩ &\to \begin{cases}
     \text{entF}\\
     \text{sortF}\\
     \text{entF/sortF}\\
 \end{cases} Identifier : ⟨Type⟩
 \\
-⟨EffectiveParameter⟩ &\to \begin{cases}
+⟨ParameterActual⟩ &\to \begin{cases}
     \text{entE}\\
     \text{sortE}\\
     \text{entE/sortE}\\
 \end{cases} ⟨Expression⟩\
 \\
-⟨FunctionSignature⟩ &\to \text{fonction}\ Identifier(⟨FormalParameter⟩^{*|,}) \text{délivre} ⟨Type⟩
+⟨FunctionSignature⟩ &\to \text{fonction}\ Identifier(⟨ParameterFormal⟩^{*|,}) \text{délivre} ⟨Type⟩
 \\
-⟨ProcedureSignature⟩ &\to \text{procédure}\ Identifier(⟨FormalParameter⟩^{*|,})
+⟨ProcedureSignature⟩ &\to \text{procédure}\ Identifier(⟨ParameterFormal⟩^{*|,})
 
 \end{align*}
 $$

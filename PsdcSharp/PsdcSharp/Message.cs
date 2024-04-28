@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Text;
 
 using Scover.Psdc.Parsing;
-using Scover.Psdc.Parsing.Nodes;
+
 using Scover.Psdc.StaticAnalysis;
 using Scover.Psdc.Tokenization;
 
@@ -53,7 +53,7 @@ internal sealed record Message(
      => Create(sourceTokens, MessageCode.CantInferType,
         _ => "can't infer type of expression");
 
-    public static Message ErrorUndefinedSymbol<TSymbol>(Node.Identifier identifier) where TSymbol : Symbol
+    public static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier) where TSymbol : Symbol
      => Create(identifier.SourceTokens, MessageCode.UndefinedSymbol,
             _ => $"{SymbolExtensions.GetKind<TSymbol>()} `{identifier}` undefined in current scope");
 
@@ -69,13 +69,13 @@ internal sealed record Message(
      => Create(sourceTokens, MessageCode.MissingMainProgram,
         _ => "main program missing");
 
-    public static Message ErrorSignatureMismatch<TSymbol>(TSymbol actualSig, TSymbol expectedSig) where TSymbol : Symbol
-     => Create(actualSig.SourceTokens, MessageCode.SignatureMismatch,
-        input => $"this signature of {SymbolExtensions.GetKind<TSymbol>()} {actualSig.Name} differs from previous signature (`{expectedSig.SourceTokens.GetSourceCode(input)}`)");
+    public static Message ErrorSignatureMismatch<TSymbol>(TSymbol newSig, TSymbol expectedSig) where TSymbol : Symbol
+     => Create(newSig.SourceTokens, MessageCode.SignatureMismatch,
+        input => $"this signature of {SymbolExtensions.GetKind<TSymbol>()} {newSig.Name} differs from previous signature (`{expectedSig.SourceTokens.GetSourceCode(input)}`)");
 
     public static Message ErrorCallParameterMismatch(CallNode callNode)
      => Create(callNode.SourceTokens, MessageCode.CallParameterMismatch,
-        _ => $"the effective parameters of the call to {SymbolExtensions.GetKind<Symbol.Function>()} {callNode.Name} do not correspond to the formal parameters of the function's signature");
+        _ => $"the actual parameters of the call to {SymbolExtensions.GetKind<Symbol.Function>()} {callNode.Name} do not correspond to the formal parameters of the function's signature");
 
     public static Message ErrorConstantAssignment(Node.Statement.Assignment assignment, Symbol.Constant constant)
      => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
@@ -90,26 +90,26 @@ internal sealed record Message(
      => Create(sourceTokens, MessageCode.ExpectedConstantExpression,
         _ => "expected constant expression");
 
-    public static Message ErrorStructureDuplicateComponent(IEnumerable<Token> sourceTokens, Node.Identifier componentName)
+    public static Message ErrorStructureDuplicateComponent(IEnumerable<Token> sourceTokens, Identifier componentName)
      => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
         _ => $"duplicate component `{componentName}` in structure");
 
-    public static Message ErrorOutputParameterNeverAssigned(Node.Identifier parameterName)
+    public static Message ErrorOutputParameterNeverAssigned(Identifier parameterName)
      => Create(parameterName.SourceTokens, MessageCode.OutputParameterNeverAssigned,
         _ => $"output parameter `{parameterName}` never assigned");
 
-    public static Message ErrorStructureComponentDoesntExist(Node.Expression.LValue.ComponentAccess compAccess,
-        Option<Node.Identifier> structureName)
+    public static Message ErrorStructureComponentDoesntExist(Node.Expression.Lvalue.ComponentAccess compAccess,
+        Option<Identifier> structureName)
      => Create(compAccess.ComponentName.SourceTokens, MessageCode.StructureComponentDoesntExist,
-            structureName.Match<Node.Identifier, Func<string, string>>(
+            structureName.Match<Identifier, Func<string, string>>(
                 some: structName => _ => $"`{structName}` has no component named `{compAccess.ComponentName}`",
                 none: () => _ => $"no component named `{compAccess.ComponentName}` in structure"));
 
-    public static Message ErrrorComponentAccessOfNonStruct(Node.Expression.LValue.ComponentAccess compAccess)
+    public static Message ErrrorComponentAccessOfNonStruct(Node.Expression.Lvalue.ComponentAccess compAccess)
      => Create(compAccess.SourceTokens, MessageCode.ComponentAccessOfNonStruct,
         _ => $"request for component `{compAccess.ComponentName}` in something not a structure");
 
-    public static Message ErrorSubscriptOfNonArray(Node.Expression.LValue.ArraySubscript arraySub)
+    public static Message ErrorSubscriptOfNonArray(Node.Expression.Lvalue.ArraySubscript arraySub)
      => Create(arraySub.SourceTokens, MessageCode.SubscriptOfNonArray,
         _ => $"subscripted value is not an array");
 

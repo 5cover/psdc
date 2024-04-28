@@ -1,6 +1,7 @@
-using Scover.Psdc.Parsing.Nodes;
+
+using Scover.Psdc.Parsing;
 using Scover.Psdc.Tokenization;
-using static Scover.Psdc.Parsing.Nodes.Node;
+using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.StaticAnalysis;
 

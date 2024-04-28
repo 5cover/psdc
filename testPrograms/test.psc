@@ -1,4 +1,5 @@
-programme Test c'est
+programme Compteur c'est
 début
-    écrireEcran(""s'f');
+    x : entier;
+    x := 1;
 fin
