@@ -45,7 +45,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
                         messenger.Report(Message.ErrorDeclaredInferredTypeMismatch(constant.SourceTokens, declaredType, inferredType));
                     }
                     if (!constant.Value.IsConstant(scope)) {
-                        messenger.Report(Message.ErrorExpectedConstantExpression(constant.SourceTokens));
+                        messenger.Report(Message.ErrorConstantExpressionExpected(constant.SourceTokens));
                     }
                     scope.AddSymbolOrError(messenger, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, constant.Value));
                 });
@@ -166,7 +166,6 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
 
             case Node.Statement.ProcedureCall call:
                 HandleCall<Symbol.Procedure>(scope, call);
-
                 break;
             case Node.Statement.BuiltinEcrireEcran ecrireEcran:
                 foreach (var arg in ecrireEcran.Arguments) {

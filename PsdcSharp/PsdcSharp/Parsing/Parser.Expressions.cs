@@ -129,12 +129,12 @@ internal partial class Parser
         Func<IEnumerable<Token>, ParseResult<Node.Expression>> descentParser,
         IReadOnlyDictionary<TokenType, BinaryOperator> operators)
     {
-        var operand1 = descentParser(tokens);
-        if (!operand1.HasValue) {
-            return operand1;
+        var prOperand1 = descentParser(tokens);
+        if (!prOperand1.HasValue) {
+            return prOperand1;
         }
-
-        int count = operand1.SourceTokens.Count;
+        int count = prOperand1.SourceTokens.Count;
+        var operand1 = prOperand1.Value;
 
         var prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
 
@@ -147,16 +147,13 @@ internal partial class Parser
                 return operand2.WithSourceTokens(new(tokens, count));
             }
 
-            operand1 = ParseResult.Ok(new(tokens, count),
-                new Node.Expression.OperationBinary(operand1.SourceTokens, operand1.Value, operators[prOperator.Value.Type], operand2.Value));
-            if (!operand1.HasValue) {
-                return operand1.WithSourceTokens(new(tokens, count));
-            }
+            operand1 = new Node.Expression.OperationBinary(new(tokens, count),
+                operand1, operators[prOperator.Value.Type], operand2.Value);
 
             prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
         }
 
-        return operand1;
+        return ParseResult.Ok(new(tokens, count), operand1);
     }
 
     private static ParseResult<Node.Expression> ParseUnaryOperation(

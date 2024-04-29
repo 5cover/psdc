@@ -110,9 +110,9 @@ internal sealed record Message(
      => Create(sourceTokens, MessageCode.DeclaredInferredTypeMismatch,
         $"declared type ({declaredType}) differs from inferred type ({inferredType})");
 
-    public static Message ErrorExpectedConstantExpression(IEnumerable<Token> sourceTokens)
-     => Create(sourceTokens, MessageCode.ExpectedConstantExpression,
-        "expected constant expression");
+    public static Message ErrorConstantExpressionExpected(IEnumerable<Token> sourceTokens)
+     => Create(sourceTokens, MessageCode.ConstantExpressionExpected,
+        "constant expression expected");
 
     public static Message ErrorStructureDuplicateComponent(IEnumerable<Token> sourceTokens, Identifier componentName)
      => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
@@ -141,9 +141,6 @@ internal sealed record Message(
         EvaluatedType operand1Type, EvaluatedType operand2Type)
      => Create(sourceTokens, MessageCode.UnsupportedOperandTypesForBinaryOperation,
         $"unsupported operand types for binary operation: {operand1Type} and {operand2Type}");
-
-    public static Message ErrorConstantExpressionExpected(IEnumerable<Token> sourceTokens)
-     => Create(sourceTokens, MessageCode.ConstantExpressionExpected, "constant expression expected");
 
     public static Message ErrorLiteralWrongType<TExpected>(Node.Expression.Literal literal) where TExpected : Node.Expression.Literal
      => Create(literal.SourceTokens, MessageCode.LiteralWrongType,

@@ -14,14 +14,13 @@ internal enum MessageCode
     ConstantAssignment,
     CallParameterMismatch,
     DeclaredInferredTypeMismatch,
-    ExpectedConstantExpression,
+    ConstantExpressionExpected,
     StructureDuplicateComponent,
     OutputParameterNeverAssigned,
     StructureComponentDoesntExist,
     ComponentAccessOfNonStruct,
     SubscriptOfNonArray,
     UnsupportedOperandTypesForBinaryOperation,
-    ConstantExpressionExpected,
     LiteralWrongType,
 
     #endregion Errors
