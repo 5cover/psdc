@@ -52,11 +52,11 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
                 break;
 
             case Node.Declaration.Function func:
-                 HandleCallableDeclaration(scope, new Symbol.Function(
-                       func.Signature.Name,
-                       func.Signature.SourceTokens,
-                       CreateParameters(scope, func.Signature.Parameters),
-                       func.Signature.ReturnType.CreateTypeOrError(scope, messenger)));
+                HandleCallableDeclaration(scope, new Symbol.Function(
+                      func.Signature.Name,
+                      func.Signature.SourceTokens,
+                      CreateParameters(scope, func.Signature.Parameters),
+                      func.Signature.ReturnType.CreateTypeOrError(scope, messenger)));
                 break;
 
             case Node.Declaration.FunctionDefinition funcDef:
@@ -296,17 +296,34 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
         void HandleCall<TSymbol>(Scope scope, NodeCall call) where TSymbol : CallableSymbol
         {
             scope.GetSymbol<TSymbol>(call.Name).MapError(messenger.Report).MatchSome(callable => {
+                List<string> problems = new();
 
-                if (call.Parameters.AllZipped(callable.Parameters,
-                    (effective, formal) => effective.Mode == formal.Mode
-                                        && effective.Value.EvaluateType(scope).MapError(messenger.Report)
-                                           .Map(type => formal.Type.SemanticsEqual(type))
-                                           .ValueOr(false))) {
-                    messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable));
+                if (call.Parameters.Count != callable.Parameters.Count) {
+                    problems.Add(Message.ProblemWrongNumberOfArguments(
+                        call.Parameters.Count, callable.Parameters.Count));
+                }
+
+                foreach (var (actual, formal) in call.Parameters.Zip(callable.Parameters)) {
+                    if (actual.Mode != formal.Mode) {
+                        problems.Add(Message.ProblemWrongArgumentMode(formal.Name,
+                            actual.Mode.RepresentationActual, formal.Mode.RepresentationFormal));
+                    }
+                    
+                    actual.Value.EvaluateType(scope).MapError(messenger.Report).MatchSome(actualType => {
+                        if (!actualType.IsAssignableTo(formal.Type)) {
+                            problems.Add(Message.ProblemWrongArgumentType(formal.Name,
+                                formal.Type, actualType));
+                        }
+                    });
+                }
+
+                if (problems.Count > 0) {
+                    messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
                 }
             });
-            foreach (var effective in call.Parameters) {
-                AnalyzeExpression(scope, effective.Value);
+
+            foreach (var actual in call.Parameters) {
+                AnalyzeExpression(scope, actual.Value);
             }
         }
 
@@ -329,7 +346,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
             AddParameters(scopes[node], sub.Parameters);
 
             Dictionary<Identifier, bool> outputParametersAssigned = sub.Parameters
-                .Where(param => param.Mode is ParameterMode.Out)
+                .Where(param => param.Mode == ParameterMode.Out)
                 .ToDictionary(keySelector: param => param.Name, elementSelector: _ => false);
 
             AnalyzeScopedBlock(node, hookExpr: expr => {

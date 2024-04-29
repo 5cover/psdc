@@ -29,12 +29,12 @@ internal static class AstExtensions
         Node.Expression.Bracketed b => b.Expression.EvaluateType(scope),
         Node.Expression.Lvalue.Bracketed b => b.Lvalue.EvaluateType(scope),
         Node.Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.EvaluateType(scope).FlatMap(outerType
-         => outerType.Unwrap() is EvaluatedType.Array arrayType
+         => outerType is EvaluatedType.Array arrayType
             ? arrayType.ElementType.Some<EvaluatedType, Message>()
             : Option.None<EvaluatedType, Message>(Message.ErrorSubscriptOfNonArray(arrSub))),
         Node.Expression.Lvalue.ComponentAccess compAccess
          => compAccess.Structure.EvaluateType(scope).FlatMap(outerType
-            => outerType.Unwrap() is not EvaluatedType.Structure structType
+            => outerType is not EvaluatedType.Structure structType
                 ? Option.None<EvaluatedType, Message>(Message.ErrrorComponentAccessOfNonStruct(compAccess))
 
                 : structType.Components.TryGetValue(compAccess.ComponentName, out var compType)
@@ -55,7 +55,7 @@ internal static class AstExtensions
         Node.Expression.Literal.Real
          => EvaluatedType.Numeric.GetInstance(NumericType.Real).Some<EvaluatedType, Message>(),
         Node.Expression.Literal.String str
-         => new EvaluatedType.StringLengthedKnown(str.Value.Length).Some<EvaluatedType, Message>(),
+         => new EvaluatedType.StringKnownLength(str.Value.Length).Some<EvaluatedType, Message>(),
         Node.Expression.FunctionCall call
          => scope.GetSymbol<Symbol.Function>(call.Name).Map(func => func.ReturnType),
         _ => throw expression.ToUnmatchedException(),
@@ -65,11 +65,11 @@ internal static class AstExtensions
         Node.Type.String => EvaluatedType.String.Instance,
         NodeAliasReference alias
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MapError(messenger.Report)
-                .Map(aliasType => (EvaluatedType)new EvaluatedType.AliasReference(alias.Name, aliasType.TargetType))
+                .Map(aliasType => aliasType.TargetType.ToAliasReference(alias.Name))
             .ValueOr(new EvaluatedType.Unknown(type.SourceTokens)),
         Node.Type.Complete.Array array => new EvaluatedType.Array(array.Type.CreateTypeOrError(scope, messenger), array.Dimensions),
         Node.Type.Complete.File file => EvaluatedType.File.Instance,
-        Node.Type.Complete.LengthedString str => new EvaluatedType.LengthedString(str.Length),
+        Node.Type.Complete.StringLengthed str => new EvaluatedType.StringLenghted(str.Length),
         Node.Type.Complete.Structure structure => CreateStructureTypeOrError(structure, scope, messenger),
         Node.Type.Complete.Numeric p => EvaluatedType.Numeric.GetInstance(p.Type),
         _ => throw type.ToUnmatchedException(),

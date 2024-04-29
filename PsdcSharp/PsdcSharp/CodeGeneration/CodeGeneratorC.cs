@@ -398,7 +398,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
 
     private StringBuilder Indent(StringBuilder o) => _indent.Indent(o);
 
-    private static bool RequiresPointer(ParameterMode mode) => mode is not ParameterMode.In;
+    private static bool RequiresPointer(ParameterMode mode) => mode != ParameterMode.In;
 
     private static bool PrecedenceRequiresBrackets(Node.Expression expr) => expr is not
         (Node.Expression.Bracketed

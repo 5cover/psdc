@@ -76,9 +76,30 @@ internal sealed record Message(
      => Create(newSig.SourceTokens, MessageCode.SignatureMismatch,
         $"this signature of {newSig.GetKind()} {newSig.Name} differs from previous signature (`{expectedSig.SourceTokens.SourceCode}`)");
 
-    public static Message ErrorCallParameterMismatch(IEnumerable<Token> sourceTokens, CallableSymbol callable)
-     => Create(sourceTokens, MessageCode.CallParameterMismatch,
-        $"call to {callable.GetKind()} `{callable.Name}` does not correspond to signature");
+    public static Message ErrorCallParameterMismatch(IEnumerable<Token> sourceTokens,
+        CallableSymbol callable, IReadOnlyCollection<string> problems)
+    {
+        Debug.Assert(problems.Count > 0);
+        StringBuilder msgContent = new();
+        msgContent.Append($"call to {callable.GetKind()} `{callable.Name}` does not correspond to signature:");
+
+        if (problems.Count == 1) {
+            msgContent.AppendLine($" {problems.Single()}");
+        } else {
+            foreach (var problem in problems) {
+                msgContent.AppendLine($"  - {problem}");
+            }
+        }
+
+        return Create(sourceTokens, MessageCode.CallParameterMismatch, msgContent.ToString());
+    }
+
+    public static string ProblemWrongNumberOfArguments(int expected, int actual)
+     => $"wrong number of arguments: expected {expected}, got {actual}";
+    public static string ProblemWrongArgumentMode(Identifier name, string expected, string actual)
+     => $"wrong mode for `{name}`: expected {expected}, got {actual}";
+    public static string ProblemWrongArgumentType(Identifier name, EvaluatedType expected, EvaluatedType actual)
+     => $"wrong mode for `{name}`: expected {expected}, got {actual}";
 
     public static Message ErrorConstantAssignment(Node.Statement.Assignment assignment, Symbol.Constant constant)
      => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
@@ -87,7 +108,7 @@ internal sealed record Message(
     public static Message ErrorDeclaredInferredTypeMismatch(IEnumerable<Token> sourceTokens,
         EvaluatedType declaredType, EvaluatedType inferredType)
      => Create(sourceTokens, MessageCode.DeclaredInferredTypeMismatch,
-        $"declared type ({declaredType.Representation}) differs from inferred type ({inferredType.Representation})");
+        $"declared type ({declaredType}) differs from inferred type ({inferredType})");
 
     public static Message ErrorExpectedConstantExpression(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.ExpectedConstantExpression,
@@ -119,7 +140,8 @@ internal sealed record Message(
     public static Message UnsupportedOperandTypesForBinaryOperation(IEnumerable<Token> sourceTokens,
         EvaluatedType operand1Type, EvaluatedType operand2Type)
      => Create(sourceTokens, MessageCode.UnsupportedOperandTypesForBinaryOperation,
-        $"unsupported operand types for binary operation: `{operand1Type.Representation}` and `{operand2Type.Representation}`");
+        $"unsupported operand types for binary operation: {operand1Type} and {operand2Type}");
+
     public static Message WarningDivisionByZero(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.DivisionByZero,
         "division by zero (will cause runtime error)");

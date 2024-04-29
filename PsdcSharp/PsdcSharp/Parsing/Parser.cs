@@ -46,7 +46,7 @@ internal sealed partial class Parser
             [Keyword.Character] = MakeNumericParser(NumericType.Character),
             [Keyword.Boolean] = MakeNumericParser(NumericType.Boolean),
             [Keyword.File] = MakeAlwaysOkParser(1, t => new Node.Type.Complete.File(t)),
-            [Keyword.String] = ParseTypeLengthedString,
+            [Keyword.String] = ParseTypeStringLengthed,
             [Keyword.Array] = ParseTypeArray,
             [Valued.Identifier] = MakeAlwaysOkParser((t, val) => new Node.Type.Complete.AliasReference(t, new(t, val))),
             [Keyword.Structure] = ParseTypeStructure,
@@ -343,12 +343,12 @@ internal sealed partial class Parser
         .Parse(out var type, ParseTypeComplete)
     .MapResult(t => new Node.Type.Complete.Array(t, type, dimensions));
 
-    private ParseResult<Node.Type.Complete.LengthedString> ParseTypeLengthedString(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
+    private ParseResult<Node.Type.Complete.StringLengthed> ParseTypeStringLengthed(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(Keyword.String)
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var length, ParseExpression)
         .ParseToken(Punctuation.CloseBracket)
-    .MapResult(t => new Node.Type.Complete.LengthedString(t, length));
+    .MapResult(t => new Node.Type.Complete.StringLengthed(t, length));
 
     private ParseResult<Node.Type.Complete.Structure> ParseTypeStructure(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(Keyword.Structure)

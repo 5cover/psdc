@@ -1,6 +1,7 @@
 # Todo list
 
-Project roadmap:
+- representation tostring
+- fix star on expressions
 
 - Alternative keywords
     - finPour in place of fin

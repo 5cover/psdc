@@ -614,12 +614,12 @@ internal interface Node : EquatableSemantics<Node>
                  && o.Name.SemanticsEqual(Name);
             }
 
-            internal sealed class LengthedString(SourceTokens sourceTokens,
+            internal sealed class StringLengthed(SourceTokens sourceTokens,
                 Expression length)
             : NodeImpl(sourceTokens), Complete
             {
                 public Expression Length => length;
-                public override bool SemanticsEqual(Node other) => other is LengthedString o
+                public override bool SemanticsEqual(Node other) => other is StringLengthed o
                  && o.Length.SemanticsEqual(Length);
             }
 
@@ -690,11 +690,17 @@ internal interface Node : EquatableSemantics<Node>
 }
 
 #region Terminals
-internal enum ParameterMode
+internal sealed class ParameterMode
 {
-    In,
-    Out,
-    InOut,
+    private ParameterMode(string formal, string actual)
+     => (RepresentationFormal, RepresentationActual) = (formal, actual);
+
+    public string RepresentationFormal { get; }
+    public string RepresentationActual { get; }
+
+    public static ParameterMode In { get; } = new("entF", "entE");
+    public static ParameterMode Out { get; } = new("sortF", "sortE");
+    public static ParameterMode InOut { get; } = new("entF/sortF", "entE/sortE");
 }
 
 internal enum NumericType

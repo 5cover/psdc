@@ -267,47 +267,10 @@ Errors may be duplicated between the static analyzer and the code generator.
 
 The issue is that we're doing duplicate work to evaluate types. So maybe we should add a types lookup table.
 
-## Cascading errors in static analysis
+## Alias reference unwrap madness
 
-```text
-[P0004] L 36, col 11: error: type alias `t_personne` undefined in current scope
-    35 |     tmp : t_personne;
-       |           ^^^^^^^^^^
-[P0004] L 37, col 5: error: variable `tmp` undefined in current scope
-    36 |     tmp := p1;
-       |     ^^^
-[P0004] L 39, col 11: error: variable `tmp` undefined in current scope
-    38 |     p2 := tmp;
-       |           ^^^
-```
+We need to prefix every operation we make with `EvaluatedType`s with Unwrap to get the true type by discarding any alias references in the way.
 
-We need a way to differenciate "this variable doesn't exist" from "the type of this variable doesn't exist".
+We need a different solution so the type of an instance is the same as its actual type (so we can perform is checks).
 
-We can add a special kind of evaluated type : `EvaluatedType.Unknown`
-
-But what do we do with it in `TypeInfoC`? If we have a variable of an unknown type, we'll have to generate its type to something.
-
-We could try to infer the type from the usage but that would be complex to implement, and there's not guarantee of success. Plus it's probably not what the user would expect.
-
-An unknown type would most likely be a non-existing type alias due to a spelling error in the typename.
-
-We could generate it to something like `<error-type>` but that would mean we have a possibility of generating invalid code.
-
-So we shouldn't generate the declaration?
-In that case we shouldn't generate usage either.
-
-No no no, this is wrong. I don't want to strip portions of the user code just because they typed a letter twice in the type of a frequently-used variable.
-
-So we **will** allow generating invalid code. The user will review it after transpilation anyways, so if there's an error they have a choice, either modify the result or the source.
-
-This can be useful in scenarios when you can't modify the source as it's from a document.
-
-But then, *what are we generating*? If we can't guarantee it will be valid code, what is it?
-
-Well, it's the closest program in the target language that matches the semantics and expected behavior (if it is correct) of the input program.
-
-Matching semantics also means matching errors.
-
-So we're back to square 1. What do we put in TypeInfo?
-
-I know. The input code.
+Maybe we can have a type remember which alias, if any it belongs to?
