@@ -161,10 +161,27 @@ internal static class Option
 
 internal static class OptionalCollectionExtensions
 {
+    /// <summary>
+    /// Accumulates the values and errors from a collection of <see cref="Option{T, TError}"/> instances.
+    /// </summary>
+    /// <typeparam name="T">The type of the value.</typeparam>
+    /// <typeparam name="TError">The type of the error.</typeparam>
+    /// <param name="options">The collection of <see cref="Option{T, TError}"/> instances.</param>
+    /// <returns>An <see cref="Option{T, TError}"/> instance containing either the accumulated values or errors.</returns>
+    public static Option<IEnumerable<T>, IEnumerable<TError>> Accumulate<T, TError>(this IEnumerable<Option<T, TError>> options)
+    {
+        var values = options.Where(o => o.HasValue).Select(o => o.Value!);
+        var errors = options.Where(o => !o.HasValue).Select(o => o.Error!);
+
+        return errors.Any()
+            ? Option.None<IEnumerable<T>, IEnumerable<TError>>(errors)
+            : Option.Some<IEnumerable<T>, IEnumerable<TError>>(values);
+    }
+
     public static IEnumerable<T> WhereSome<T>(this IEnumerable<Option<T>> options)
-     => options.Where(v => v.HasValue).Select(v => v.Value.NotNull());
+     => options.Where(v => v.HasValue).Select(v => v.Value!);
     public static T FirstSome<T>(this IEnumerable<Option<T>> options)
-     => options.First(v => v.HasValue).Value.NotNull();
+     => options.First(v => v.HasValue).Value!;
 
     public static Option<T> FirstOrNone<T>(this IEnumerable<Option<T>> options, Func<Option<T>, bool> predicate)
      => options.FirstOrDefault(predicate, Option.None<T>());

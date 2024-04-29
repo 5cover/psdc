@@ -240,9 +240,8 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
             case Node.Expression.OperationBinary opBin:
                 AnalyzeExpression(scope, opBin.Operand1, hookExpr);
                 if (opBin.Operator is BinaryOperator.Divide
-                 && opBin.Operand2.EvaluateValue(scope)
-                    .FlatMapError(messenger.Report)
-                    .FlatMap(Parse.ToInt32)
+                 && opBin.Operand2.EvaluateValue<Node.Expression.Literal.Integer, int>(scope)
+                    .MapError(messenger.Report)
                     .Map(val => val == 0)
                     .ValueOr(false)) {
                     messenger.Report(Message.WarningDivisionByZero(opBin.SourceTokens));

@@ -1,4 +1,5 @@
 
+using System.Globalization;
 using Scover.Psdc.Tokenization;
 using static Scover.Psdc.Tokenization.TokenType;
 
@@ -61,11 +62,11 @@ internal sealed partial class Parser
             [Keyword.True] = tokens
              => ParseToken(tokens, Keyword.True, t => new Node.Expression.True(t)),
             [Valued.LiteralCharacter] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralCharacter, (t, value) => new Node.Expression.Literal.Character(t, value)),
+             => ParseTokenValue(tokens, Valued.LiteralCharacter, (t, val) => new Node.Expression.Literal.Character(t, char.Parse(val))),
             [Valued.LiteralInteger] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralInteger, (t, value) => new Node.Expression.Literal.Integer(t, value)),
+             => ParseTokenValue(tokens, Valued.LiteralInteger, (t, val) => new Node.Expression.Literal.Integer(t, int.Parse(val, CultureInfo.InvariantCulture))),
             [Valued.LiteralReal] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralReal, (t, value) => new Node.Expression.Literal.Real(t, value)),
+             => ParseTokenValue(tokens, Valued.LiteralReal, (t, val) => new Node.Expression.Literal.Real(t, decimal.Parse(val, CultureInfo.InvariantCulture))),
             [Valued.LiteralString] = tokens
              => ParseTokenValue(tokens, Valued.LiteralString, (t, value) => new Node.Expression.Literal.String(t, value)),
         };

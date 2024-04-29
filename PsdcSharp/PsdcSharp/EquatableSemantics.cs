@@ -7,6 +7,5 @@ internal interface EquatableSemantics<in T>
     /// </summary>
     /// <param name="other">The object to compare this one to</param>
     /// <returns>Whether this type and <paramref name="other"/> are considered semantically equal.</returns>
-
     public bool SemanticsEqual(T other);
 }

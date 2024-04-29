@@ -28,17 +28,16 @@ internal sealed class TypeInfoC : TypeInfo
         case EvaluatedType.Array array:
             var arrayType = Create(array.ElementType, generateExpression, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
-            foreach (var dimension in array.Dimensions) {
-                postModifier.Append($"[{generateExpression(dimension)}]");
+            foreach (var dimension in array.DimensionExpressions.Select(generateExpression)) {
+                postModifier.Append($"[{dimension}]");
             }
             return new(type, arrayType._typeName,
                 requiredHeaders: arrayType.RequiredHeaders,
                 starCount: arrayType._stars.Length,
                 postModifier: postModifier.ToString());
-        case EvaluatedType.StringLenghted strlen:
-            return new(type, "char", "%s", postModifier: $"[{generateExpression(strlen.Length)}]");
-        case EvaluatedType.StringKnownLength slk:
-            return new(type, "char", "%s", postModifier: $"[{slk.Length}]");
+        case EvaluatedType.StringLengthed slk:
+            string length = slk.LengthExpression.Map(generateExpression).ValueOr(slk.Length.ToString());
+            return new(type, "char", "%s", postModifier: $"[{length}]");
         case EvaluatedType.Structure structure:
             StringBuilder sb = new("struct {");
             sb.AppendLine();

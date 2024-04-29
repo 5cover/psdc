@@ -274,3 +274,46 @@ We need to prefix every operation we make with `EvaluatedType`s with Unwrap to g
 We need a different solution so the type of an instance is the same as its actual type (so we can perform is checks).
 
 Maybe we can have a type remember which alias, if any it belongs to?
+
+## custom logic to parse and language-specific way to print literals
+
+current we use `CultureInfo.Invariant`, which seems to works but not sure if it covers all edge cases. Cleanest way is to use our own algorithms.
+
+Also specific target language may use different syntax for literals.
+
+## StringLenghted and constant folding
+
+`StringLenghted` shouldn't exist. Only `StringKnownLength` should. That's because a string length should always be a constant value. But we can't enforce that right now because we cannot evaluate all constant expressions.
+
+We will need constant folding. I didn't think we would, but we do. Hopefully it shouldn't be too hard.
+
+It's weird that i need this for such a niche part, that is, controlling assignment between different string types.
+
+```text
+s1 : chaîne(20);
+
+s2 : chaîne(10 + 10);
+
+s2 := s1;
+```
+
+```c
+char s1[20];
+char s2[10 + 20];
+
+// s1 = s2; // nope! can't reassign arrays in C.
+strcpy(s1, s2);
+strncpy(s1, s2, 20);
+```
+
+I *could* disallow reassigning lengthed strings entirely, but that feels like a pointless limitation. Considering that we've been taught to use `strcpy`, i should use it.
+
+Also this means we won't need `IsConstant` anymore, since any expression that is constant will now be able have its value evaluated.
+
+In order to generate the strcpy calls we will need something to control assignment in `TypeInfo` too.
+
+Gosh this is getting complex. And I haven't even implemented the whole language yet.
+
+I definitely will not use constant folding as an optimization though, because the objective of this whole project is to generate C code that matches the input in behavior **and** semantics.
+
+same for array dimensions

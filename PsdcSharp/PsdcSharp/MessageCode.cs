@@ -21,6 +21,8 @@ internal enum MessageCode
     ComponentAccessOfNonStruct,
     SubscriptOfNonArray,
     UnsupportedOperandTypesForBinaryOperation,
+    ConstantExpressionExpected,
+    LiteralWrongType,
 
     #endregion Errors
 

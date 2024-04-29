@@ -17,10 +17,15 @@ internal static class AstExtensions
         _ => throw expression.ToUnmatchedException(),
     };
 
-    public static Option<Option<string>, Message> EvaluateValue(this Node.Expression expr, ReadOnlyScope scope) => expr switch {
-        Node.Expression.Literal l => l.Value.Some().Some<Option<string>, Message>(),
-        Node.Expression.Lvalue.VariableReference v => scope.GetSymbol<Symbol.Constant>(v.Name).FlatMap(constant => constant.Value.EvaluateValue(scope)),
-        _ => Option.None<string>().Some<Option<string>, Message>(),
+    public static Option<TValue, Message> EvaluateValue<T, TValue>(this Node.Expression expr, ReadOnlyScope scope)
+    where T : Node.Expression.Literal<TValue>
+     => expr switch {
+        T l => l.Value.Some<TValue, Message>(),
+        Node.Expression.Literal l => Option.None<TValue, Message>(Message.ErrorLiteralWrongType<T>(l)),
+        Node.Expression.Lvalue.VariableReference v
+         => scope.GetSymbol<Symbol.Constant>(v.Name)
+            .FlatMap(constant => constant.Value.EvaluateValue<T, TValue>(scope)),
+        _ => Option.None<TValue, Message>(Message.ErrorConstantExpressionExpected(expr.SourceTokens)),
     };
 
     public static Option<EvaluatedType, Message> EvaluateType(this Node.Expression expression, ReadOnlyScope scope) => expression switch {
@@ -55,7 +60,7 @@ internal static class AstExtensions
         Node.Expression.Literal.Real
          => EvaluatedType.Numeric.GetInstance(NumericType.Real).Some<EvaluatedType, Message>(),
         Node.Expression.Literal.String str
-         => new EvaluatedType.StringKnownLength(str.Value.Length).Some<EvaluatedType, Message>(),
+         => EvaluatedType.StringLengthed.Create(str.Value.Length).Some<EvaluatedType, Message>(),
         Node.Expression.FunctionCall call
          => scope.GetSymbol<Symbol.Function>(call.Name).Map(func => func.ReturnType),
         _ => throw expression.ToUnmatchedException(),
@@ -67,9 +72,15 @@ internal static class AstExtensions
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MapError(messenger.Report)
                 .Map(aliasType => aliasType.TargetType.ToAliasReference(alias.Name))
             .ValueOr(new EvaluatedType.Unknown(type.SourceTokens)),
-        Node.Type.Complete.Array array => new EvaluatedType.Array(array.Type.CreateTypeOrError(scope, messenger), array.Dimensions),
+        Node.Type.Complete.Array array 
+            => EvaluatedType.Array.Create(array.Type.CreateTypeOrError(scope, messenger), array.Dimensions, scope)
+            .MapError(Function.Foreach<Message>(messenger.Report))
+            .ValueOr<EvaluatedType>(new EvaluatedType.Unknown(type.SourceTokens)),
         Node.Type.Complete.File file => EvaluatedType.File.Instance,
-        Node.Type.Complete.StringLengthed str => new EvaluatedType.StringLenghted(str.Length),
+        Node.Type.Complete.StringLengthed str
+         => EvaluatedType.StringLengthed.Create(str.Length, scope)
+            .MapError(messenger.Report)
+            .ValueOr<EvaluatedType>(new EvaluatedType.Unknown(type.SourceTokens)),
         Node.Type.Complete.Structure structure => CreateStructureTypeOrError(structure, scope, messenger),
         Node.Type.Complete.Numeric p => EvaluatedType.Numeric.GetInstance(p.Type),
         _ => throw type.ToUnmatchedException(),

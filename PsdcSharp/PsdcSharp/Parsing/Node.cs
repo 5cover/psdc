@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Scover.Psdc.Parsing;
 
 #region Node traits
@@ -519,43 +521,63 @@ internal interface Node : EquatableSemantics<Node>
             public override bool SemanticsEqual(Node other) => other is False;
         }
 
+        internal interface Literal<out T> : Literal
+        {
+            public T Value { get; }
+
+            static abstract T Parse(string str);
+        }
+        
         internal interface Literal : Expression
         {
-            public string Value { get; }
+            string ValueString { get; }
+
             internal sealed class Character(SourceTokens sourceTokens,
-                string value)
-            : NodeImpl(sourceTokens), Literal
+                char value)
+            : NodeImpl(sourceTokens), Literal<char>
             {
-                public string Value => value;
+                public char Value => value;
+
+                public static char Parse(string str) => char.Parse(str);
                 public override bool SemanticsEqual(Node other) => other is Character o
                  && o.Value == Value;
+                public string ValueString => Value.ToString();
             }
 
             internal sealed class Integer(SourceTokens sourceTokens,
-                string value)
-            : NodeImpl(sourceTokens), Literal
+                int value)
+            : NodeImpl(sourceTokens), Literal<int>
             {
-                public string Value => value;
+                public int Value => value;
+
+                public static int Parse(string str) => int.Parse(str, CultureInfo.InvariantCulture);
                 public override bool SemanticsEqual(Node other) => other is Integer o
                  && o.Value == Value;
+                public string ValueString => Value.ToString(CultureInfo.InvariantCulture);
             }
 
             internal sealed class Real(SourceTokens sourceTokens,
-                string value)
-            : NodeImpl(sourceTokens), Literal
+                decimal value)
+            : NodeImpl(sourceTokens), Literal<decimal>
             {
-                public string Value => value;
+                public decimal Value => value;
+
+                public static decimal Parse(string str) => decimal.Parse(str);
                 public override bool SemanticsEqual(Node other) => other is Real o
                  && o.Value == Value;
+                public string ValueString => Value.ToString(CultureInfo.InvariantCulture);
             }
 
             internal sealed class String(SourceTokens sourceTokens,
                 string value)
-            : NodeImpl(sourceTokens), Literal
+            : NodeImpl(sourceTokens), Literal<string>
             {
                 public string Value => value;
+
+                public static string Parse(string str) => str;
                 public override bool SemanticsEqual(Node other) => other is String o
                  && o.Value == Value;
+                public string ValueString => Value;
             }
         }
     }

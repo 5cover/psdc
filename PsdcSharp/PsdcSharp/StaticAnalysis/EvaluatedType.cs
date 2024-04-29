@@ -3,6 +3,9 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.StaticAnalysis;
 
+/// <summary>
+/// A type evaluated during the static analysis.
+/// </summary>
 internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedType>
 {
     public abstract EvaluatedType ToAliasReference(Identifier alias);
@@ -55,19 +58,31 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
         public override EvaluatedType ToAliasReference(Identifier alias) => new String(alias);
     }
 
-    internal sealed class Array(EvaluatedType elementType, IReadOnlyCollection<Node.Expression> dimensions, Identifier? alias = null) : EvaluatedType(alias)
+    internal sealed class Array : EvaluatedType
     {
-        public EvaluatedType ElementType => elementType;
-        public IReadOnlyCollection<Node.Expression> Dimensions => dimensions;
+        public static Option<Array, IEnumerable<Message>> Create(EvaluatedType elementType, IReadOnlyCollection<Node.Expression> dimensionsExpressions, ReadOnlyScope scope)
+         => dimensionsExpressions.Select(d => d.EvaluateValue<Node.Expression.Literal.Integer, int>(scope)).Accumulate()
+         .Map(dimensions => new Array(elementType, dimensionsExpressions, dimensions.ToList(), null));
+
+        private Array(EvaluatedType elementType, IReadOnlyCollection<Node.Expression> dimensionExprs, IReadOnlyCollection<int> dimensions, Identifier? alias) : base(alias)
+         => (ElementType, DimensionExpressions, Dimensions) = (elementType, dimensionExprs, dimensions);
+
+        public EvaluatedType ElementType { get; }
+        public IReadOnlyCollection<Node.Expression> DimensionExpressions { get; }
+        public IReadOnlyCollection<int> Dimensions { get; }
 
         public override bool SemanticsEqual(EvaluatedType other) => other is Array o
          && o.ElementType.SemanticsEqual(ElementType)
-         && o.Dimensions.AllSemanticsEqual(Dimensions);
+         && o.Dimensions.AllZipped(Dimensions, (od, d) => od == d);
 
         protected override string ActualRepresentation
-         => $"tableau [{string.Join(", ", Dimensions.Select(dim => dim.SourceTokens.SourceCode))}] de {ElementType.ActualRepresentation}";
+         => $"tableau [{string.Join(", ", Dimensions)}] de {ElementType.ActualRepresentation}";
 
-         public override EvaluatedType ToAliasReference(Identifier alias) => new Array(ElementType, Dimensions, alias);
+        public override EvaluatedType ToAliasReference(Identifier alias)
+         => new Array(ElementType, DimensionExpressions, Dimensions, alias);
+
+        // Arrays can't be reassigned.
+        public override bool IsAssignableTo(EvaluatedType other) => false;
     }
 
     internal sealed class File : EvaluatedType
@@ -83,7 +98,6 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
     internal sealed class Numeric : EvaluatedType
     {
-
         // Precision represents how many values the type can represent.
         // The higher, the wider the value range.
         private readonly int _precision;
@@ -111,30 +125,28 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
         protected override string ActualRepresentation { get; }
     }
 
-    internal sealed class StringLenghted(Node.Expression length, Identifier? alias = null) : EvaluatedType(alias)
+    internal sealed class StringLengthed : EvaluatedType
     {
-        public Node.Expression Length => length;
-        protected override string ActualRepresentation => $"chaîne({Length.SourceTokens.SourceCode})";
+        public static Option<StringLengthed, Message> Create(Node.Expression lengthExpression, ReadOnlyScope scope)
+         => lengthExpression.EvaluateValue<Node.Expression.Literal.Integer, int>(scope).Map(l => new StringLengthed(lengthExpression.Some(), l, null));
 
-        public override bool SemanticsEqual(EvaluatedType other) => other is StringLenghted o
-         && o.Length.SemanticsEqual(Length);
+        public static StringLengthed Create(int length)
+         => new(Option.None<Node.Expression>(), length, null);
 
-        public override bool IsAssignableTo(EvaluatedType other)
-         => other is String || SemanticsEqual(other);
-        public override EvaluatedType ToAliasReference(Identifier alias) => new StringLenghted(Length, alias);
-    }
+        private StringLengthed(Option<Node.Expression> lengthExpression, int length, Identifier? alias) : base(alias)
+         => (LengthExpression, Length) = (lengthExpression, length);
 
-    internal sealed class StringKnownLength(int length, Identifier? alias = null) : EvaluatedType(alias)
-    {
-        public int Length => length;
+        public Option<Node.Expression> LengthExpression { get; }
+        public int Length { get; }
+
         protected override string ActualRepresentation => $"chaîne({Length})";
 
-        public override bool SemanticsEqual(EvaluatedType other) => other is StringKnownLength o
+        public override bool SemanticsEqual(EvaluatedType other) => other is StringLengthed o
          && o.Length == Length;
 
         public override bool IsAssignableTo(EvaluatedType other)
          => other is String || SemanticsEqual(other);
-        public override EvaluatedType ToAliasReference(Identifier alias) => new StringKnownLength(Length, alias);
+        public override EvaluatedType ToAliasReference(Identifier alias) => new StringLengthed(LengthExpression, Length, alias);
     }
 
     internal sealed class Structure(IReadOnlyDictionary<Identifier, EvaluatedType> components, Identifier? alias = null) : EvaluatedType(alias)

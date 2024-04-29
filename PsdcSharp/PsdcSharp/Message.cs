@@ -142,9 +142,16 @@ internal sealed record Message(
      => Create(sourceTokens, MessageCode.UnsupportedOperandTypesForBinaryOperation,
         $"unsupported operand types for binary operation: {operand1Type} and {operand2Type}");
 
+    public static Message ErrorConstantExpressionExpected(IEnumerable<Token> sourceTokens)
+     => Create(sourceTokens, MessageCode.ConstantExpressionExpected, "constant expression expected");
+
+    public static Message ErrorLiteralWrongType<TExpected>(Node.Expression.Literal literal) where TExpected : Node.Expression.Literal
+     => Create(literal.SourceTokens, MessageCode.LiteralWrongType,
+        $"wrong type for literal: expected {typeof(TExpected).Name.ToLower()}, got {literal.GetType().Name.ToLower()}");
+
     public static Message WarningDivisionByZero(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.DivisionByZero,
-        "division by zero (will cause runtime error)");
+        "division by zero will cause runtime error");
 
     private static Message Create(IEnumerable<Token> involvedTokens, MessageCode code, string content)
      => new(code,

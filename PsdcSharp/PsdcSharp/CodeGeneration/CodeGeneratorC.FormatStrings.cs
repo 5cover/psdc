@@ -13,8 +13,8 @@ internal partial class CodeGeneratorC
         StringBuilder format = new();
 
         foreach (var part in parts) {
-            if (part is Node.Expression.Literal literal) {
-                format.Append(literal.Value
+            if (part is Node.Expression.Literal<object> literal) {
+                format.Append((literal.Value.ToString() ?? "")
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
             } else {
