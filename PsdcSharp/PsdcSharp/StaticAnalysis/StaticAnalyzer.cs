@@ -38,7 +38,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
                 break;
 
             case Node.Declaration.Constant constant:
-                constant.Value.EvaluateType(scope).MapError(messenger.Report).MatchSome(inferredType => {
+                constant.Value.EvaluateType(scope).MatchError(messenger.Report).MatchSome(inferredType => {
                     var declaredType = constant.Type.CreateTypeOrError(scope, messenger);
 
                     if (!declaredType.SemanticsEqual(inferredType)) {
@@ -219,52 +219,12 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
             SetParentScopeIfNecessary(expr, scope);
             hookExpr?.Invoke(expr);
 
-            switch (expr) {
-            case Node.Expression.Bracketed bracketed:
-                AnalyzeExpression(scope, bracketed.Expression, hookExpr);
-                break;
-            case Node.Expression.Lvalue.Bracketed bracketed:
-                AnalyzeExpression(scope, bracketed.Lvalue, hookExpr);
-                break;
-            case Node.Expression.BuiltinFdf fdf:
-                AnalyzeExpression(scope, fdf.ArgumentNomLog, hookExpr);
-                break;
-            case Node.Expression.FunctionCall call:
-                HandleCall<Symbol.Function>(scope, call);
-                break;
-            case Node.Expression.True:
-            case Node.Expression.False:
-            case Node.Expression.Literal:
-                break;
-            case Node.Expression.OperationBinary opBin:
-                AnalyzeExpression(scope, opBin.Operand1, hookExpr);
-                if (opBin.Operator is BinaryOperator.Divide
-                 && opBin.Operand2.EvaluateValue<Node.Expression.Literal.Integer, int>(scope)
-                    .MapError(messenger.Report)
-                    .Map(val => val == 0)
-                    .ValueOr(false)) {
-                    messenger.Report(Message.WarningDivisionByZero(opBin.SourceTokens));
-                }
-                AnalyzeExpression(scope, opBin.Operand2, hookExpr);
-                break;
-            case Node.Expression.OperationUnary opUn:
-                AnalyzeExpression(scope, opUn.Operand, hookExpr);
-                break;
-            case Node.Expression.Lvalue.ArraySubscript arraySub:
-                AnalyzeExpression(scope, arraySub.Array, hookExpr);
-                foreach (var i in arraySub.Indexes) {
-                    AnalyzeExpression(scope, i, hookExpr);
-                }
-                break;
-            case Node.Expression.Lvalue.ComponentAccess componentAccess:
-                AnalyzeExpression(scope, componentAccess.Structure, hookExpr);
-                break;
-            case Node.Expression.Lvalue.VariableReference varRef:
-                _ = scope.GetSymbol<Symbol.Variable>(varRef.Name).MapError(messenger.Report);
-                break;
-            default:
-                throw expr.ToUnmatchedException();
-            }
+            // Try to evaluate the expression as a constant.
+            // This will fold any constants the expression contains and perform various checks.
+            // No message is reported if the expression isn't constant.
+            // Detects indirect division by zero errors. Example : (4 / (2 + 3 - 5))
+            expr.EvaluateValue(scope)
+                .MatchError(e => e.MatchSome(messenger.Report));
         }
 
         void SetParentScopeIfNecessary(Node node, Scope? parentScope)
@@ -293,7 +253,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
 
         void HandleCall<TSymbol>(Scope scope, NodeCall call) where TSymbol : CallableSymbol
         {
-            scope.GetSymbol<TSymbol>(call.Name).MapError(messenger.Report).MatchSome(callable => {
+            scope.GetSymbol<TSymbol>(call.Name).MatchError(messenger.Report).MatchSome(callable => {
                 List<string> problems = new();
 
                 if (call.Parameters.Count != callable.Parameters.Count) {
@@ -307,7 +267,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Node.Algorithm root)
                             actual.Mode.RepresentationActual, formal.Mode.RepresentationFormal));
                     }
                     
-                    actual.Value.EvaluateType(scope).MapError(messenger.Report).MatchSome(actualType => {
+                    actual.Value.EvaluateType(scope).MatchError(messenger.Report).MatchSome(actualType => {
                         if (!actualType.IsAssignableTo(formal.Type)) {
                             problems.Add(Message.ProblemWrongArgumentType(formal.Name,
                                 formal.Type, actualType));

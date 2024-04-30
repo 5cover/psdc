@@ -20,6 +20,7 @@
 - ~~Selon~~
 - ~~Fix syntax error handling~~
 - ~~Lvalues~~
+- ~~Constant folding for type checking and division by zero~~
 - Files and other builtins
 - Brace initialization (voir TD14 ex 1)
 - CLI (use nuget package)

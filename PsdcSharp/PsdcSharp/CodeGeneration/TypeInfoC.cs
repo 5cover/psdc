@@ -13,12 +13,14 @@ internal sealed class TypeInfoC : TypeInfo
         switch (type) {
         case EvaluatedType.Unknown u:
             return new(type, u.Representation);
-        case EvaluatedType.File f:
+        case EvaluatedType.File:
             return new(type, "FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield());
+        case EvaluatedType.Boolean:
+            return new(type, "bool", requiredHeaders: IncludeSet.StdBool.Yield());
+        case EvaluatedType.Character:
+            return new(type, "char", "%c");
         case EvaluatedType.Numeric numeric:
             return numeric.Type switch {
-                NumericType.Boolean => new(type, "bool", requiredHeaders: IncludeSet.StdBool.Yield()),
-                NumericType.Character => new(type, "char", "%c"),
                 NumericType.Integer => new(type, "int", "%d"),
                 NumericType.Real => new(type, "float", "%g"),
                 _ => throw numeric.Type.ToUnmatchedException(),

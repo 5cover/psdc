@@ -27,21 +27,16 @@ internal static class Option
     public static Option<T> DiscardError<T, TError>(this Option<T, TError> option)
      => new OptionImpl<T>(option.HasValue, option.Value);
 
-    public static Option<T> FlatMapError<T, TError>(this Option<Option<T>, TError> option, Action<TError> actionWithError)
+    public static Option<T> MatchError<T, TError>(this Option<T, TError> option, Action<TError> actionWithError)
     {
         if (!option.HasValue) {
-            actionWithError?.Invoke(option.Error);
-            return None<T>();
-        }
-        return option.Value;
-    }
-    public static Option<T> MapError<T, TError>(this Option<T, TError> option, Action<TError> actionWithError)
-    {
-        if (!option.HasValue) {
-            actionWithError?.Invoke(option.Error);
+            actionWithError.Invoke(option.Error);
         }
         return new OptionImpl<T>(option.HasValue, option.Value);
     }
+
+    public static Option<T, TNewError> MapError<T, TError, TNewError>(this Option<T, TError> option, Func<TError, TNewError> errorMap)
+     => new OptionImpl<T, TNewError>(option.HasValue, option.Value, option.HasValue ? default : errorMap(option.Error));
 
     public static T ValueOr<T>(this Option<T> option, T defaultValue)
      => option.HasValue ? option.Value : defaultValue;
@@ -65,7 +60,7 @@ internal static class Option
      => value is not null ? value.Some<T, TError>() : None<T, TError>(error());
 
     public static Option<T> None<T>() => new OptionImpl<T>(false, default);
-    public static Option<T, TError> None<T, TError>(TError error) => new OptionImpl<T, TError>(false, default, error);
+    public static Option<T, TError> None<T, TError>(this TError error) => new OptionImpl<T, TError>(false, default, error);
 
     public static Option<TResult> Map<T, TResult>(this Option<T> option, Func<T, TResult> transform)
      => option.HasValue ? transform(option.Value).Some() : None<TResult>();
@@ -154,9 +149,9 @@ internal static class Option
         ? Some<(T1, T2), TError>((option1.Value, option2.Value))
         : None<(T1, T2), TError>(option1.Error ?? option2.Error.NotNull());
 
-    private sealed record OptionImpl<T>(bool HasValue, T? Value) : Option<T>;
+    private readonly record struct OptionImpl<T>(bool HasValue, T? Value) : Option<T>;
 
-    private sealed record OptionImpl<T, TError>(bool HasValue, T? Value, TError? Error) : Option<T, TError>;
+    private readonly record struct OptionImpl<T, TError>(bool HasValue, T? Value, TError? Error) : Option<T, TError>;
 }
 
 internal static class OptionalCollectionExtensions
@@ -174,8 +169,8 @@ internal static class OptionalCollectionExtensions
         var errors = options.Where(o => !o.HasValue).Select(o => o.Error!);
 
         return errors.Any()
-            ? Option.None<IEnumerable<T>, IEnumerable<TError>>(errors)
-            : Option.Some<IEnumerable<T>, IEnumerable<TError>>(values);
+            ? errors.None<IEnumerable<T>, IEnumerable<TError>>()
+            : values.Some<IEnumerable<T>, IEnumerable<TError>>();
     }
 
     public static IEnumerable<T> WhereSome<T>(this IEnumerable<Option<T>> options)

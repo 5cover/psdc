@@ -1,4 +1,5 @@
 using System.Globalization;
+using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.Parsing;
 
@@ -509,75 +510,57 @@ internal interface Node : EquatableSemantics<Node>
              && o.Expression.SemanticsEqual(Expression);
         }
 
-        internal sealed class True(SourceTokens sourceTokens)
-        : NodeImpl(sourceTokens), Expression
-        {
-            public override bool SemanticsEqual(Node other) => other is True;
-        }
-
-        internal sealed class False(SourceTokens sourceTokens)
-        : NodeImpl(sourceTokens), Expression
-        {
-            public override bool SemanticsEqual(Node other) => other is False;
-        }
-
-        internal interface Literal<out T> : Literal
-        {
-            public T Value { get; }
-
-            static abstract T Parse(string str);
-        }
-        
         internal interface Literal : Expression
         {
-            string ValueString { get; }
+            public ConstantValue Value { get; }
+            internal sealed class True(SourceTokens sourceTokens)
+    : NodeImpl(sourceTokens), Expression, Literal
+            {
+                public ConstantValue Value { get; } = new ConstantValue.Boolean(true);
+                public override bool SemanticsEqual(Node other) => other is True;
+            }
+
+            internal sealed class False(SourceTokens sourceTokens)
+            : NodeImpl(sourceTokens), Expression, Literal
+            {
+                public ConstantValue Value { get; } = new ConstantValue.Boolean(false);
+                public override bool SemanticsEqual(Node other) => other is False;
+            }
 
             internal sealed class Character(SourceTokens sourceTokens,
-                char value)
-            : NodeImpl(sourceTokens), Literal<char>
+                string valueStr)
+            : NodeImpl(sourceTokens), Literal
             {
-                public char Value => value;
-
-                public static char Parse(string str) => char.Parse(str);
+                public ConstantValue Value { get; } = new ConstantValue.Character(char.Parse(valueStr));
                 public override bool SemanticsEqual(Node other) => other is Character o
                  && o.Value == Value;
-                public string ValueString => Value.ToString();
             }
 
             internal sealed class Integer(SourceTokens sourceTokens,
-                int value)
-            : NodeImpl(sourceTokens), Literal<int>
+                string valueStr)
+            : NodeImpl(sourceTokens), Literal
             {
-                public int Value => value;
-
-                public static int Parse(string str) => int.Parse(str, CultureInfo.InvariantCulture);
+                public ConstantValue Value { get; } = new ConstantValue.Integer(int.Parse(valueStr, CultureInfo.InvariantCulture));
                 public override bool SemanticsEqual(Node other) => other is Integer o
                  && o.Value == Value;
-                public string ValueString => Value.ToString(CultureInfo.InvariantCulture);
             }
 
             internal sealed class Real(SourceTokens sourceTokens,
-                decimal value)
-            : NodeImpl(sourceTokens), Literal<decimal>
+                string valueStr)
+            : NodeImpl(sourceTokens), Literal
             {
-                public decimal Value => value;
-
-                public static decimal Parse(string str) => decimal.Parse(str);
+                public ConstantValue Value { get; } = new ConstantValue.Real(decimal.Parse(valueStr, CultureInfo.InvariantCulture));
                 public override bool SemanticsEqual(Node other) => other is Real o
                  && o.Value == Value;
-                public string ValueString => Value.ToString(CultureInfo.InvariantCulture);
             }
 
             internal sealed class String(SourceTokens sourceTokens,
-                string value)
-            : NodeImpl(sourceTokens), Literal<string>
+                string valueStr)
+            : NodeImpl(sourceTokens), Literal
             {
-                public string Value => value;
-
-                public static string Parse(string str) => str;
+                public ConstantValue Value { get; } = new ConstantValue.String(valueStr);
                 public override bool SemanticsEqual(Node other) => other is String o
                  && o.Value == Value;
-                public string ValueString => Value;
             }
         }
     }
@@ -614,8 +597,21 @@ internal interface Node : EquatableSemantics<Node>
             }
 
             internal sealed class File(SourceTokens sourceTokens)
-            : NodeImpl(sourceTokens), Complete {
+            : NodeImpl(sourceTokens), Complete
+            {
                 public override bool SemanticsEqual(Node other) => other is File;
+            }
+
+            internal sealed class Character(SourceTokens sourceTokens)
+             : NodeImpl(sourceTokens), Complete
+            {
+                public override bool SemanticsEqual(Node other) => other is Character;
+            }
+
+            internal sealed class Boolean(SourceTokens sourceTokens)
+             : NodeImpl(sourceTokens), Complete
+            {
+                public override bool SemanticsEqual(Node other) => other is Boolean;
             }
 
             internal sealed class Numeric(SourceTokens sourceTokens,
@@ -727,8 +723,6 @@ internal sealed class ParameterMode
 
 internal enum NumericType
 {
-    Boolean,
-    Character,
     Integer,
     Real,
 }

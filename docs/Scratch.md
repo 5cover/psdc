@@ -231,7 +231,7 @@ Ideas for error productions :
 - Statment without semicolon
 - Function/procedure signature without formal parameter modes
 - Function/procedure call without actual parameter modes
-- ...
+- Incomplete type where complete type was expected
 
 ## Create a representation of the AST being built
 
@@ -317,3 +317,52 @@ Gosh this is getting complex. And I haven't even implemented the whole language 
 I definitely will not use constant folding as an optimization though, because the objective of this whole project is to generate C code that matches the input in behavior **and** semantics.
 
 same for array dimensions
+
+We need to think about which operations we allow for which types.
+
+Row header is the result type
+
+Cells contain operand types. If there's only one it's the type of all operands. One supported operation per line.
+
+arity|operator|booléen|caractère|chaîne|entier|réel
+-|-|-|-|-|-|-
+2|And|booléen|||||
+2|Divide||||entier|réel|
+2|Equal|booléen<br>caractère<br>chaîne<br>entier<br>réel|||||
+2|GreaterThan|entier<br>réel|||||
+2|GreaterThanOrEqual|entier<br>réel|||||
+2|LessThan|entier<br>réel|||||
+2|LessThanOrEqual|entier<br>réel|||||
+2|Minus||||entier|réel|
+2|Modulus||||entier|réel|
+2|Multiply||||entier|réel|
+2|NotEqual|booléen<br>caractère<br>chaîne<br>entier<br>réel|||||
+2|Or|booléen|||||
+2|Plus||||entier|réel|
+1|UnaryMinus||||entier|réel|
+1|UnaryNot|booléen|||||
+1|UnaryPlus||||entier|réel|
+2|Xor|booléen|||||
+
+The Pseudocode type system is safe, albeit rather limited.
+
+Strings only support equality. It wouldn't be hard to add support for comparision, but it gets confusing. What do we mean by `"foo" > "bar"`? The lexicographical comparison provided by `strcmp` is not obvious. And what about empty strings or strings of different lengths? Too many edge cases and choices to make. The user can implement string comparison themselves.
+But it would be nice to have a `strcmp` standard library function available, so we have one way to compare strings without resorting to a custom implementation. Maybe one day.
+
+Since we don't have casting, we must avoid arbitrary restrictions.
+
+### Implicit conversions
+
+```mermaid
+flowchart TD
+booléen
+caractère
+chaîneLenghted["chaîne(<i>N</i>)"] --> chaîne
+entier --> réel
+```
+
+**Characters are not integers**. Yes, they are represented by integers, but that's an implementation detail. Pseudocode focuses on semantics, not technicalities.
+
+Strings with a known length are considered unlenghted strings. The length is specified at declaration but is not needed for consumption since the strings are null-terminated.
+
+Booleans are not considered integers, as this is a behavior inherited from C and it doesn't make sense to perform arithmetic operations on booleans. The true/false concept is separate from integers, and the fact that it maps to 0/1 is an implementation detail.

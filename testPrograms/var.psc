@@ -1,4 +1,5 @@
 programme Variables c'est
+// Showcasing different variable types and their formatting
 
 début
     bol : booléen;

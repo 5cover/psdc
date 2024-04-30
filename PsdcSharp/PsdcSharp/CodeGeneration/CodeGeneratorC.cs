@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
@@ -35,9 +36,9 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
 
     private StringBuilder AppendAliasDeclaration(StringBuilder o, ReadOnlyScope scope, Node.Declaration.TypeAlias alias)
      => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).Map(alias => {
-        var type = CreateTypeInfo(alias.TargetType);
-        return Indent(o).AppendLine($"typedef {type.GenerateDeclaration(alias.Name.Yield())};");
-    }).ValueOr(o);
+         var type = CreateTypeInfo(alias.TargetType);
+         return Indent(o.AppendLine()).AppendLine($"typedef {type.GenerateDeclaration(alias.Name.Yield())};");
+     }).ValueOr(o);
 
     private StringBuilder AppendConstant(StringBuilder o, Node.Declaration.Constant constant)
     {
@@ -47,8 +48,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
 
     private StringBuilder AppendMainProgram(StringBuilder o, Node.Declaration.MainProgram mainProgram)
     {
-        o.AppendLine().Append("int main() ");
-
+        Indent(o.AppendLine()).Append("int main() ");
         return AppendBlock(o, mainProgram,
             sb => Indent(sb).AppendLine("return 0;"))
         .AppendLine();
@@ -240,9 +240,9 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
 
     private StringBuilder AppendVariableDeclaration(StringBuilder o, ReadOnlyScope scope, Node.Statement.LocalVariable varDecl)
      => scope.GetSymbol<Symbol.Variable>(varDecl.Names.First()).Map(variable => {
-        Indent(o);
-        return AppendVariableDeclaration(o, CreateTypeInfo(variable.Type), varDecl.Names).AppendLine(";");
-    }).ValueOr(o);
+         Indent(o);
+         return AppendVariableDeclaration(o, CreateTypeInfo(variable.Type), varDecl.Names).AppendLine(";");
+     }).ValueOr(o);
 
     private StringBuilder AppendVariableDeclaration(StringBuilder o, TypeInfoC type, IEnumerable<Identifier> names)
     {
@@ -311,26 +311,30 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         }
         _ = expr switch {
             Node.Expression.FunctionCall call => AppendCall(o, call),
-            Node.Expression.True => AppendLiteralBoolean(o, true),
-            Node.Expression.False => AppendLiteralBoolean(o, false),
-            Node.Expression.Literal.Character litChar => o.Append($"'{litChar.ValueString}'"),
-            Node.Expression.Literal.String litStr => o.Append($"\"{litStr.ValueString}\""),
-            Node.Expression.Literal literal => o.Append(literal.ValueString),
+            Node.Expression.Literal.Character litChar => o.Append($"'{FormatValue(litChar.Value)}'"),
+            Node.Expression.Literal.String litStr => o.Append($"\"{FormatValue(litStr.Value)}\""),
+            Node.Expression.Literal.True l => AppendLiteralBoolean(l),
+            Node.Expression.Literal.False l => AppendLiteralBoolean(l),
+            Node.Expression.Literal literal => o.Append(FormatValue(literal.Value)),
             Node.Expression.OperationBinary opBin => AppendOperationBinary(o, opBin),
             Node.Expression.OperationUnary opUn => AppendOperationUnary(o, opUn),
             Node.Expression.Bracketed b => AppendExpression(o, b.Expression, true),
-            Node.Expression.Lvalue.Bracketed b => AppendExpression(o, b.Lvalue, true),
             Node.Expression.Lvalue.ArraySubscript arraySub => AppendArraySubscript(o, arraySub),
+            Node.Expression.Lvalue.Bracketed b => AppendExpression(o, b.Lvalue, true),
             Node.Expression.Lvalue.VariableReference variable => o.Append(variable.Name),
-            Node.Expression.Lvalue.ComponentAccess compAccess
-                => AppendExpression(o, compAccess.Structure, PrecedenceRequiresBrackets(compAccess.Structure))
-                    .Append('.').Append(compAccess.ComponentName),
+            Node.Expression.Lvalue.ComponentAccess compAccess => AppendExpression(o, compAccess.Structure, PrecedenceRequiresBrackets(compAccess.Structure))
+                            .Append('.').Append(compAccess.ComponentName),
             _ => throw expr.ToUnmatchedException(),
         };
         if (bracketed) {
             o.Append(')');
         }
         return o;
+
+        StringBuilder AppendLiteralBoolean(Node.Expression.Literal l) {
+            _includes.Ensure(IncludeSet.StdBool);
+            return o.Append(FormatValue(l.Value));
+        }
     }
 
     private StringBuilder AppendArraySubscript(StringBuilder o, Node.Expression.Lvalue.ArraySubscript arraySub)
@@ -344,23 +348,17 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         return o;
     }
 
-    private StringBuilder AppendLiteralBoolean(StringBuilder o, bool isTrue)
-    {
-        _includes.Ensure(IncludeSet.StdBool);
-        return o.Append(isTrue ? "true" : "false");
-    }
-
     private StringBuilder AppendOperationBinary(StringBuilder o, Node.Expression.OperationBinary opBin)
     {
         AppendExpression(o, opBin.Operand1);
-        o.Append($" {GetOperator(opBin.Operator)} ");
+        o.Append($" {binaryOperators[opBin.Operator]} ");
         AppendExpression(o, opBin.Operand2);
         return o;
     }
 
     private StringBuilder AppendOperationUnary(StringBuilder o, Node.Expression.OperationUnary opUn)
     {
-        o.Append(GetOperator(opUn.Operator));
+        o.Append(unaryOperators[opUn.Operator]);
         AppendExpression(o, opUn.Operand);
         return o;
     }
@@ -411,29 +409,29 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
 
     #region Terminals
 
-    private static string GetOperator(BinaryOperator op) => op switch {
-        BinaryOperator.And => "&&",
-        BinaryOperator.Divide => "/",
-        BinaryOperator.Equal => "==",
-        BinaryOperator.GreaterThan => ">",
-        BinaryOperator.GreaterThanOrEqual => ">=",
-        BinaryOperator.LessThan => "<",
-        BinaryOperator.LessThanOrEqual => "<=",
-        BinaryOperator.Minus => "-",
-        BinaryOperator.Modulus => "%",
-        BinaryOperator.Multiply => "*",
-        BinaryOperator.NotEqual => "!=",
-        BinaryOperator.Or => "||",
-        BinaryOperator.Plus => "+",
-        BinaryOperator.Xor => "^",
-        _ => throw op.ToUnmatchedException(),
+    private static readonly IReadOnlyDictionary<BinaryOperator, string> binaryOperators
+        = new Dictionary<BinaryOperator, string>() {
+        [BinaryOperator.And] = "&&",
+        [BinaryOperator.Divide] = "/",
+        [BinaryOperator.Equal] = "==",
+        [BinaryOperator.GreaterThan] = ">",
+        [BinaryOperator.GreaterThanOrEqual] = ">=",
+        [BinaryOperator.LessThan] = "<",
+        [BinaryOperator.LessThanOrEqual] = "<=",
+        [BinaryOperator.Minus] = "-",
+        [BinaryOperator.Modulus] = "%",
+        [BinaryOperator.Multiply] = "*",
+        [BinaryOperator.NotEqual] = "!=",
+        [BinaryOperator.Or] = "||",
+        [BinaryOperator.Plus] = "+",
+        [BinaryOperator.Xor] = "^",
     };
 
-    private static string GetOperator(UnaryOperator op) => op switch {
-        UnaryOperator.Minus => "-",
-        UnaryOperator.Not => "!",
-        UnaryOperator.Plus => "+",
-        _ => throw op.ToUnmatchedException(),
+    private static readonly IReadOnlyDictionary<UnaryOperator, string> unaryOperators
+        = new Dictionary<UnaryOperator, string>() {
+        [UnaryOperator.Minus] = "-",
+        [UnaryOperator.Not] = "!",
+        [UnaryOperator.Plus] = "+",
     };
 
     #endregion Terminals

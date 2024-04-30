@@ -3,7 +3,7 @@ namespace Scover.Psdc;
 internal enum MessageCode
 {
     #region Errors
-    UnknownToken = 1,
+    UnknownToken = 0,
     SyntaxError,
     CantInferType,
     UndefinedSymbol,
@@ -20,12 +20,12 @@ internal enum MessageCode
     StructureComponentDoesntExist,
     ComponentAccessOfNonStruct,
     SubscriptOfNonArray,
-    UnsupportedOperandTypesForBinaryOperation,
-    LiteralWrongType,
+    UnsupportedOperation,
+    ConstantExpressionWrongType,
 
     #endregion Errors
 
     #region Warnings
-    DivisionByZero,
+    DivisionByZero = 1000,
     #endregion Warnings
 }

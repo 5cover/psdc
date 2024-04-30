@@ -44,8 +44,8 @@ internal sealed partial class Parser
         _completeTypeParsers = new Dictionary<TokenType, ParseMethod<Node.Type.Complete>> {
             [Keyword.Integer] = MakeNumericParser(NumericType.Integer),
             [Keyword.Real] = MakeNumericParser(NumericType.Real),
-            [Keyword.Character] = MakeNumericParser(NumericType.Character),
-            [Keyword.Boolean] = MakeNumericParser(NumericType.Boolean),
+            [Keyword.Character] = MakeAlwaysOkParser(1, t => new Node.Type.Complete.Character(t)),
+            [Keyword.Boolean] = MakeAlwaysOkParser(1, t => new Node.Type.Complete.Boolean(t)),
             [Keyword.File] = MakeAlwaysOkParser(1, t => new Node.Type.Complete.File(t)),
             [Keyword.String] = ParseTypeStringLengthed,
             [Keyword.Array] = ParseTypeArray,
@@ -58,17 +58,17 @@ internal sealed partial class Parser
 
         _literalParsers = new Dictionary<TokenType, ParseMethod<Node.Expression>> {
             [Keyword.False] = tokens
-             => ParseToken(tokens, Keyword.False, t => new Node.Expression.False(t)),
+             => ParseToken(tokens, Keyword.False, t => new Node.Expression.Literal.False(t)),
             [Keyword.True] = tokens
-             => ParseToken(tokens, Keyword.True, t => new Node.Expression.True(t)),
+             => ParseToken(tokens, Keyword.True, t => new Node.Expression.Literal.True(t)),
             [Valued.LiteralCharacter] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralCharacter, (t, val) => new Node.Expression.Literal.Character(t, char.Parse(val))),
+             => ParseTokenValue(tokens, Valued.LiteralCharacter, (t, val) => new Node.Expression.Literal.Character(t, val)),
             [Valued.LiteralInteger] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralInteger, (t, val) => new Node.Expression.Literal.Integer(t, int.Parse(val, CultureInfo.InvariantCulture))),
+             => ParseTokenValue(tokens, Valued.LiteralInteger, (t, val) => new Node.Expression.Literal.Integer(t, val)),
             [Valued.LiteralReal] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralReal, (t, val) => new Node.Expression.Literal.Real(t, decimal.Parse(val, CultureInfo.InvariantCulture))),
+             => ParseTokenValue(tokens, Valued.LiteralReal, (t, val) => new Node.Expression.Literal.Real(t, val)),
             [Valued.LiteralString] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralString, (t, value) => new Node.Expression.Literal.String(t, value)),
+             => ParseTokenValue(tokens, Valued.LiteralString, (t, val) => new Node.Expression.Literal.String(t, val)),
         };
     }
 

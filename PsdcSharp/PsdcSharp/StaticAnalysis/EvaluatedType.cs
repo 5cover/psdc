@@ -26,14 +26,17 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
     /// <value>The alias used to refer to this type indirectly or <see langword="null"/> if this type is not aliased.</value>
     public Identifier? Alias { get; } = alias;
 
-    public abstract bool SemanticsEqual(EvaluatedType other);
+    public bool SemanticsEqual(EvaluatedType other)
+     => ActualSemanticsEqual(other) || other.ActualSemanticsEqual(this);
+
+    protected abstract bool ActualSemanticsEqual(EvaluatedType other);
 
     /// <summary>
     /// Determines whether a value of this type can be assigned to a variable of type <paramref name="other"/>.
     /// </summary>
     /// <param name="other">The type to compare with the current type</param>
     /// <returns>Whether a value of this type can be assigned to a variable of type <paramref name="other"/>.</returns>
-    public virtual bool IsAssignableTo(EvaluatedType other) => SemanticsEqual(other);
+    public virtual bool IsAssignableTo(EvaluatedType other) => ActualSemanticsEqual(other);
 
     internal sealed class Unknown(SourceTokens sourceTokens, Identifier? alias = null) : EvaluatedType(alias)
     {
@@ -41,7 +44,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
         // Unknown types are semantically equal to every other type.
         // This is to prevent cascading errors when an object of an unknown type is used.
-        public override bool SemanticsEqual(EvaluatedType other) => true;
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => true;
         public override EvaluatedType ToAliasReference(Identifier alias) => new Unknown(sourceTokens, alias);
     }
 
@@ -53,7 +56,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
         protected override string ActualRepresentation => "chaîne";
 
-        public override bool SemanticsEqual(EvaluatedType other) => other is String;
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is String || other.ActualSemanticsEqual(this);
 
         public override EvaluatedType ToAliasReference(Identifier alias) => new String(alias);
     }
@@ -61,8 +64,10 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
     internal sealed class Array : EvaluatedType
     {
         public static Option<Array, IEnumerable<Message>> Create(EvaluatedType elementType, IReadOnlyCollection<Node.Expression> dimensionsExpressions, ReadOnlyScope scope)
-         => dimensionsExpressions.Select(d => d.EvaluateValue<Node.Expression.Literal.Integer, int>(scope)).Accumulate()
-         .Map(dimensions => new Array(elementType, dimensionsExpressions, dimensions.ToList(), null));
+         => dimensionsExpressions.Select(d
+             => d.EvaluateConstantValue<ConstantValue.Integer>(scope, Numeric.GetInstance(NumericType.Integer))).Accumulate()
+            .Map(dimensions => new Array(elementType, dimensionsExpressions,
+                                          dimensions.Select(d => d.Value).ToList(), null));
 
         private Array(EvaluatedType elementType, IReadOnlyCollection<Node.Expression> dimensionExprs, IReadOnlyCollection<int> dimensions, Identifier? alias) : base(alias)
          => (ElementType, DimensionExpressions, Dimensions) = (elementType, dimensionExprs, dimensions);
@@ -71,8 +76,8 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
         public IReadOnlyCollection<Node.Expression> DimensionExpressions { get; }
         public IReadOnlyCollection<int> Dimensions { get; }
 
-        public override bool SemanticsEqual(EvaluatedType other) => other is Array o
-         && o.ElementType.SemanticsEqual(ElementType)
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Array o
+         && o.ElementType.ActualSemanticsEqual(ElementType)
          && o.Dimensions.AllZipped(Dimensions, (od, d) => od == d);
 
         protected override string ActualRepresentation
@@ -91,9 +96,33 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
         public static File Instance { get; } = new(null);
         protected override string ActualRepresentation => "nomFichierLog";
 
-        public override bool SemanticsEqual(EvaluatedType other) => other is File;
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is File;
 
         public override EvaluatedType ToAliasReference(Identifier alias) => new File(alias);
+    }
+
+    internal sealed class Boolean : EvaluatedType
+    {
+        private Boolean(Identifier? alias) : base(alias) { }
+
+        public static Boolean Instance { get; } = new(null);
+
+        protected override string ActualRepresentation => "booléen";
+
+        public override EvaluatedType ToAliasReference(Identifier alias) => new Boolean(alias);
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Boolean;
+    }
+
+    internal sealed class Character : EvaluatedType
+    {
+        private Character(Identifier? alias) : base(alias) { }
+
+        public static Character Instance { get; } = new(null);
+
+        protected override string ActualRepresentation => "caractère";
+
+        public override EvaluatedType ToAliasReference(Identifier alias) => new Character(alias);
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Character;
     }
 
     internal sealed class Numeric : EvaluatedType
@@ -108,15 +137,13 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
         public static Numeric GetInstance(NumericType type) => instances.First(i => i.Type == type);
 
         private static readonly Numeric[] instances = [
-           new(NumericType.Boolean, 0, "booléen"),
-           new(NumericType.Character, 1, "caractère"),
            new(NumericType.Integer, 2, "entier"),
            new(NumericType.Real, 3, "réel"),
         ];
 
         public static EvaluatedType GetMostPreciseType(Numeric t1, Numeric t2)
         => t1._precision > t2._precision ? t1 : t2;
-        public override bool SemanticsEqual(EvaluatedType other) => other is Numeric o
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Numeric o
          && o.Type == Type;
         public override bool IsAssignableTo(EvaluatedType other) => other is Numeric o
          && o._precision >= _precision;
@@ -128,7 +155,8 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
     internal sealed class StringLengthed : EvaluatedType
     {
         public static Option<StringLengthed, Message> Create(Node.Expression lengthExpression, ReadOnlyScope scope)
-         => lengthExpression.EvaluateValue<Node.Expression.Literal.Integer, int>(scope).Map(l => new StringLengthed(lengthExpression.Some(), l, null));
+         => lengthExpression.EvaluateConstantValue<ConstantValue.Integer>(scope, Numeric.GetInstance(NumericType.Integer))
+            .Map(l => new StringLengthed(lengthExpression.Some(), l.Value, null));
 
         public static StringLengthed Create(int length)
          => new(Option.None<Node.Expression>(), length, null);
@@ -141,18 +169,19 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
         protected override string ActualRepresentation => $"chaîne({Length})";
 
-        public override bool SemanticsEqual(EvaluatedType other) => other is StringLengthed o
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is StringLengthed o
          && o.Length == Length;
 
         public override bool IsAssignableTo(EvaluatedType other)
-         => other is String || SemanticsEqual(other);
+         => other is String || ActualSemanticsEqual(other);
         public override EvaluatedType ToAliasReference(Identifier alias) => new StringLengthed(LengthExpression, Length, alias);
     }
 
     internal sealed class Structure(IReadOnlyDictionary<Identifier, EvaluatedType> components, Identifier? alias = null) : EvaluatedType(alias)
     {
         public IReadOnlyDictionary<Identifier, EvaluatedType> Components => components;
-        private readonly Lazy<string> _representation = new(() => {
+
+        private readonly Lazy<string> _representation = alias is null ? new(() => {
             StringBuilder sb = new();
             sb.AppendLine("structure début");
             foreach (var comp in components) {
@@ -160,9 +189,11 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
             }
             sb.Append("fin");
             return sb.ToString();
-        });
+        })
+        // To avoid long type representations, use the alias name if available.
+        : new(alias.Name);
 
-        public override bool SemanticsEqual(EvaluatedType other) => other is Structure o
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Structure o
          && o.Components.Keys.AllSemanticsEqual(Components.Keys)
          && o.Components.Values.AllSemanticsEqual(Components.Values);
         public override EvaluatedType ToAliasReference(Identifier alias) => new Structure(Components, alias);

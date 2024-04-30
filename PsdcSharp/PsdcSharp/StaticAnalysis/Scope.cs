@@ -19,9 +19,9 @@ internal sealed class Scope(Scope? scope) : ReadOnlyScope
 
     public Option<T, Message> GetSymbol<T>(Identifier name) where T : Symbol
      => !TryGetSymbol(name, out var symbol)
-        ? Option.None<T, Message>(Message.ErrorUndefinedSymbol<T>(name))
+        ? Message.ErrorUndefinedSymbol<T>(name).None<T, Message>()
         : symbol is not T t
-        ? Option.None<T, Message>(Message.ErrorUndefinedSymbol<T>(name, symbol))
+        ? Message.ErrorUndefinedSymbol<T>(name, symbol).None<T, Message>()
         : t.Some<T, Message>();
 
     public bool TryGetSymbol<T>(Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol

@@ -74,7 +74,7 @@ internal sealed record Message(
 
     public static Message ErrorSignatureMismatch<TSymbol>(TSymbol newSig, TSymbol expectedSig) where TSymbol : Symbol
      => Create(newSig.SourceTokens, MessageCode.SignatureMismatch,
-        $"this signature of {newSig.GetKind()} {newSig.Name} differs from previous signature (`{expectedSig.SourceTokens.SourceCode}`)");
+        $"this signature of {newSig.GetKind()} `{newSig.Name}` differs from previous signature (`{expectedSig.SourceTokens.SourceCode}`)");
 
     public static Message ErrorCallParameterMismatch(IEnumerable<Token> sourceTokens,
         CallableSymbol callable, IReadOnlyCollection<string> problems)
@@ -99,7 +99,7 @@ internal sealed record Message(
     public static string ProblemWrongArgumentMode(Identifier name, string expected, string actual)
      => $"wrong mode for `{name}`: expected {expected}, got {actual}";
     public static string ProblemWrongArgumentType(Identifier name, EvaluatedType expected, EvaluatedType actual)
-     => $"wrong mode for `{name}`: expected {expected}, got {actual}";
+     => $"wrong type for `{name}`: expected {expected}, got {actual}";
 
     public static Message ErrorConstantAssignment(Node.Statement.Assignment assignment, Symbol.Constant constant)
      => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
@@ -108,7 +108,7 @@ internal sealed record Message(
     public static Message ErrorDeclaredInferredTypeMismatch(IEnumerable<Token> sourceTokens,
         EvaluatedType declaredType, EvaluatedType inferredType)
      => Create(sourceTokens, MessageCode.DeclaredInferredTypeMismatch,
-        $"declared type ({declaredType}) differs from inferred type ({inferredType})");
+        $"declared type '{declaredType}' differs from inferred type '{inferredType}'");
 
     public static Message ErrorConstantExpressionExpected(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.ConstantExpressionExpected,
@@ -137,14 +137,17 @@ internal sealed record Message(
      => Create(arraySub.SourceTokens, MessageCode.SubscriptOfNonArray,
         $"subscripted value is not an array");
 
-    public static Message UnsupportedOperandTypesForBinaryOperation(IEnumerable<Token> sourceTokens,
-        EvaluatedType operand1Type, EvaluatedType operand2Type)
-     => Create(sourceTokens, MessageCode.UnsupportedOperandTypesForBinaryOperation,
-        $"unsupported operand types for binary operation: {operand1Type} and {operand2Type}");
+    public static Message ErrorUnsupportedOperation(Node.Expression.OperationBinary opBin, EvaluatedType operand1Type, EvaluatedType operand2Type)
+     => Create(opBin.SourceTokens, MessageCode.UnsupportedOperation,
+        $"unsupported operand types for {opBin.Operator.GetRepresentation()}: '{operand1Type}' and '{operand2Type}'");    
+    
+    public static Message ErrorUnsupportedOperation(Node.Expression.OperationUnary opUn, EvaluatedType operandType)
+     => Create(opUn.SourceTokens, MessageCode.UnsupportedOperation,
+        $"unsupported operand type for {opUn.Operator.GetRepresentation()}: '{operandType}'");
 
-    public static Message ErrorLiteralWrongType<TExpected>(Node.Expression.Literal literal) where TExpected : Node.Expression.Literal
-     => Create(literal.SourceTokens, MessageCode.LiteralWrongType,
-        $"wrong type for literal: expected {typeof(TExpected).Name.ToLower()}, got {literal.GetType().Name.ToLower()}");
+    public static Message ErrorConstantExpressionWrongType(Node.Expression expr, EvaluatedType expected, EvaluatedType actual)
+     => Create(expr.SourceTokens, MessageCode.ConstantExpressionWrongType,
+        $"wrong type for literal: expected '{expected}', got '{actual}'");
 
     public static Message WarningDivisionByZero(IEnumerable<Token> sourceTokens)
      => Create(sourceTokens, MessageCode.DivisionByZero,
