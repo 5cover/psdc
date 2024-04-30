@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 
 using Scover.Psdc.Parsing;
+using static Scover.Psdc.Parsing.Node;
 
 using Scover.Psdc.StaticAnalysis;
 using Scover.Psdc.Tokenization;
@@ -64,7 +65,7 @@ internal sealed record Message(
      => Create(newSymbol.Name.SourceTokens, MessageCode.RedefinedSymbol,
         $"{newSymbol.GetKind()} `{existingSymbol.Name}` is a redefinition (a {existingSymbol.GetKind()} already exists)");
 
-    public static Message ErrorRedefinedMainProgram(Node.Declaration.MainProgram mainProgram)
+    public static Message ErrorRedefinedMainProgram(Declaration.MainProgram mainProgram)
      => Create(mainProgram.SourceTokens, MessageCode.RedefinedMainProgram,
         $"more than one main program");
 
@@ -101,7 +102,7 @@ internal sealed record Message(
     public static string ProblemWrongArgumentType(Identifier name, EvaluatedType expected, EvaluatedType actual)
      => $"wrong type for `{name}`: expected {expected}, got {actual}";
 
-    public static Message ErrorConstantAssignment(Node.Statement.Assignment assignment, Symbol.Constant constant)
+    public static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
         $"reassigning constant `{constant.Name}`");
 
@@ -122,30 +123,30 @@ internal sealed record Message(
      => Create(parameterName.SourceTokens, MessageCode.OutputParameterNeverAssigned,
         $"output parameter `{parameterName}` never assigned");
 
-    public static Message ErrorStructureComponentDoesntExist(Node.Expression.Lvalue.ComponentAccess compAccess,
+    public static Message ErrorStructureComponentDoesntExist(Expression.Lvalue.ComponentAccess compAccess,
         Option<Identifier> structureName)
      => Create(compAccess.ComponentName.SourceTokens, MessageCode.StructureComponentDoesntExist,
             structureName.Match(
                 some: structName => $"`{structName}` has no component named `{compAccess.ComponentName}`",
                 none: () => $"no component named `{compAccess.ComponentName}` in structure"));
 
-    public static Message ErrrorComponentAccessOfNonStruct(Node.Expression.Lvalue.ComponentAccess compAccess)
+    public static Message ErrrorComponentAccessOfNonStruct(Expression.Lvalue.ComponentAccess compAccess)
      => Create(compAccess.SourceTokens, MessageCode.ComponentAccessOfNonStruct,
         $"request for component `{compAccess.ComponentName}` in something not a structure");
 
-    public static Message ErrorSubscriptOfNonArray(Node.Expression.Lvalue.ArraySubscript arraySub)
+    public static Message ErrorSubscriptOfNonArray(Expression.Lvalue.ArraySubscript arraySub)
      => Create(arraySub.SourceTokens, MessageCode.SubscriptOfNonArray,
         $"subscripted value is not an array");
 
-    public static Message ErrorUnsupportedOperation(Node.Expression.OperationBinary opBin, EvaluatedType operand1Type, EvaluatedType operand2Type)
+    public static Message ErrorUnsupportedOperation(Expression.OperationBinary opBin, EvaluatedType operand1Type, EvaluatedType operand2Type)
      => Create(opBin.SourceTokens, MessageCode.UnsupportedOperation,
         $"unsupported operand types for {opBin.Operator.GetRepresentation()}: '{operand1Type}' and '{operand2Type}'");    
     
-    public static Message ErrorUnsupportedOperation(Node.Expression.OperationUnary opUn, EvaluatedType operandType)
+    public static Message ErrorUnsupportedOperation(Expression.OperationUnary opUn, EvaluatedType operandType)
      => Create(opUn.SourceTokens, MessageCode.UnsupportedOperation,
         $"unsupported operand type for {opUn.Operator.GetRepresentation()}: '{operandType}'");
 
-    public static Message ErrorConstantExpressionWrongType(Node.Expression expr, EvaluatedType expected, EvaluatedType actual)
+    public static Message ErrorConstantExpressionWrongType(Expression expr, EvaluatedType expected, EvaluatedType actual)
      => Create(expr.SourceTokens, MessageCode.ConstantExpressionWrongType,
         $"wrong type for literal: expected '{expected}', got '{actual}'");
 

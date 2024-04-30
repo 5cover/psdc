@@ -1,5 +1,6 @@
 using System.Text;
 using Scover.Psdc.Parsing;
+using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.StaticAnalysis;
 
@@ -63,17 +64,17 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
     internal sealed class Array : EvaluatedType
     {
-        public static Option<Array, IEnumerable<Message>> Create(EvaluatedType elementType, IReadOnlyCollection<Node.Expression> dimensionsExpressions, ReadOnlyScope scope)
+        public static Option<Array, IEnumerable<Message>> Create(EvaluatedType elementType, IReadOnlyCollection<Expression> dimensionsExpressions, ReadOnlyScope scope)
          => dimensionsExpressions.Select(d
              => d.EvaluateConstantValue<ConstantValue.Integer>(scope, Numeric.GetInstance(NumericType.Integer))).Accumulate()
             .Map(dimensions => new Array(elementType, dimensionsExpressions,
                                           dimensions.Select(d => d.Value).ToList(), null));
 
-        private Array(EvaluatedType elementType, IReadOnlyCollection<Node.Expression> dimensionExprs, IReadOnlyCollection<int> dimensions, Identifier? alias) : base(alias)
+        private Array(EvaluatedType elementType, IReadOnlyCollection<Expression> dimensionExprs, IReadOnlyCollection<int> dimensions, Identifier? alias) : base(alias)
          => (ElementType, DimensionExpressions, Dimensions) = (elementType, dimensionExprs, dimensions);
 
         public EvaluatedType ElementType { get; }
-        public IReadOnlyCollection<Node.Expression> DimensionExpressions { get; }
+        public IReadOnlyCollection<Expression> DimensionExpressions { get; }
         public IReadOnlyCollection<int> Dimensions { get; }
 
         protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Array o
@@ -154,17 +155,17 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
     internal sealed class StringLengthed : EvaluatedType
     {
-        public static Option<StringLengthed, Message> Create(Node.Expression lengthExpression, ReadOnlyScope scope)
+        public static Option<StringLengthed, Message> Create(Expression lengthExpression, ReadOnlyScope scope)
          => lengthExpression.EvaluateConstantValue<ConstantValue.Integer>(scope, Numeric.GetInstance(NumericType.Integer))
             .Map(l => new StringLengthed(lengthExpression.Some(), l.Value, null));
 
         public static StringLengthed Create(int length)
-         => new(Option.None<Node.Expression>(), length, null);
+         => new(Option.None<Expression>(), length, null);
 
-        private StringLengthed(Option<Node.Expression> lengthExpression, int length, Identifier? alias) : base(alias)
+        private StringLengthed(Option<Expression> lengthExpression, int length, Identifier? alias) : base(alias)
          => (LengthExpression, Length) = (lengthExpression, length);
 
-        public Option<Node.Expression> LengthExpression { get; }
+        public Option<Expression> LengthExpression { get; }
         public int Length { get; }
 
         protected override string ActualRepresentation => $"chaîne({Length})";

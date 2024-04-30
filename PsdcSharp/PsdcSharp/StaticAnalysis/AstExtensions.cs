@@ -1,22 +1,24 @@
 
 using Scover.Psdc.Parsing;
+using static Scover.Psdc.Parsing.Node;
+using Type = Scover.Psdc.Parsing.Node.Type;
 
 namespace Scover.Psdc.StaticAnalysis;
 
 internal static partial class AstExtensions
 {
-    public static Option<EvaluatedType, Message> EvaluateType(this Node.Expression expression, ReadOnlyScope scope) => expression switch {
-        Node.Expression.OperationBinary ob => EvaluateTypeOperationBinary(ob, scope),
-        Node.Expression.OperationUnary ou => ou.Operand.EvaluateType(scope),
-        Node.Expression.Bracketed b => b.Expression.EvaluateType(scope),
-        Node.Expression.Lvalue.Bracketed b => b.Lvalue.EvaluateType(scope),
-        Node.Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.EvaluateType(scope).FlatMap(outerType
+    public static Option<EvaluatedType, Message> EvaluateType(this Expression expression, ReadOnlyScope scope) => expression switch {
+        Expression.OperationBinary ob => EvaluateTypeOperationBinary(ob, scope),
+        Expression.OperationUnary ou => ou.Operand.EvaluateType(scope),
+        Expression.Bracketed b => b.Expression.EvaluateType(scope),
+        Expression.Lvalue.Bracketed b => b.Lvalue.EvaluateType(scope),
+        Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.EvaluateType(scope).FlatMap(outerType
          => outerType is EvaluatedType.Array arrayType
             ? arrayType.ElementType.Some<EvaluatedType, Message>()
             : Message.ErrorSubscriptOfNonArray(arrSub)
                 .None<EvaluatedType, Message>()),
 
-        Node.Expression.Lvalue.ComponentAccess compAccess
+        Expression.Lvalue.ComponentAccess compAccess
          => compAccess.Structure.EvaluateType(scope).FlatMap(outerType
             => outerType is not EvaluatedType.Structure structType
                 ? Message.ErrrorComponentAccessOfNonStruct(compAccess).None<EvaluatedType, Message>()
@@ -28,38 +30,38 @@ internal static partial class AstExtensions
                     .Map(alias => alias.Name))
                 .None<EvaluatedType, Message>()),
 
-        Node.Expression.Lvalue.VariableReference varRef
+        Expression.Lvalue.VariableReference varRef
          => scope.GetSymbol<Symbol.Variable>(varRef.Name).Map(var => var.Type),
 
-        Node.Expression.FunctionCall call
+        Expression.FunctionCall call
          => scope.GetSymbol<Symbol.Function>(call.Name).Map(func => func.ReturnType),
-        Node.Expression.Literal lit => lit.Value.Type.Some<EvaluatedType, Message>(),
+        Expression.Literal lit => lit.Value.Type.Some<EvaluatedType, Message>(),
         _ => throw expression.ToUnmatchedException(),
     };
 
-    public static EvaluatedType CreateTypeOrError(this Node.Type type, ReadOnlyScope scope, Messenger messenger) => type switch {
-        Node.Type.String => EvaluatedType.String.Instance,
+    public static EvaluatedType CreateTypeOrError(this Type type, ReadOnlyScope scope, Messenger messenger) => type switch {
+        Type.String => EvaluatedType.String.Instance,
         NodeAliasReference alias
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MatchError(messenger.Report)
                 .Map(aliasType => aliasType.TargetType.ToAliasReference(alias.Name))
             .ValueOr(new EvaluatedType.Unknown(type.SourceTokens)),
-        Node.Type.Complete.Array array 
+        Type.Complete.Array array 
             => EvaluatedType.Array.Create(array.Type.CreateTypeOrError(scope, messenger), array.Dimensions, scope)
             .MatchError(Function.Foreach<Message>(messenger.Report))
             .ValueOr<EvaluatedType>(new EvaluatedType.Unknown(type.SourceTokens)),
-        Node.Type.Complete.File file => EvaluatedType.File.Instance,
-        Node.Type.Complete.Boolean => EvaluatedType.Boolean.Instance,
-        Node.Type.Complete.Character => EvaluatedType.Character.Instance,
-        Node.Type.Complete.StringLengthed str
+        Type.Complete.File file => EvaluatedType.File.Instance,
+        Type.Complete.Boolean => EvaluatedType.Boolean.Instance,
+        Type.Complete.Character => EvaluatedType.Character.Instance,
+        Type.Complete.StringLengthed str
          => EvaluatedType.StringLengthed.Create(str.Length, scope)
             .MatchError(messenger.Report)
             .ValueOr<EvaluatedType>(new EvaluatedType.Unknown(type.SourceTokens)),
-        Node.Type.Complete.Structure structure => CreateStructureTypeOrError(structure, scope, messenger),
-        Node.Type.Complete.Numeric p => EvaluatedType.Numeric.GetInstance(p.Type),
+        Type.Complete.Structure structure => CreateStructureTypeOrError(structure, scope, messenger),
+        Type.Complete.Numeric p => EvaluatedType.Numeric.GetInstance(p.Type),
         _ => throw type.ToUnmatchedException(),
     };
 
-    public static EvaluatedType.Structure CreateStructureTypeOrError(Node.Type.Complete.Structure structure, ReadOnlyScope scope, Messenger messenger)
+    public static EvaluatedType.Structure CreateStructureTypeOrError(Type.Complete.Structure structure, ReadOnlyScope scope, Messenger messenger)
     {
         Dictionary<Identifier, EvaluatedType> components = [];
         foreach (var comp in structure.Components) {
@@ -72,7 +74,7 @@ internal static partial class AstExtensions
         return new EvaluatedType.Structure(components);
     }
 
-    private static Option<EvaluatedType, Message> EvaluateTypeOperationBinary(Node.Expression.OperationBinary operationBinary, ReadOnlyScope scope)
+    private static Option<EvaluatedType, Message> EvaluateTypeOperationBinary(Expression.OperationBinary operationBinary, ReadOnlyScope scope)
      => EvaluateType(operationBinary.Operand1, scope)
         .Combine(EvaluateType(operationBinary.Operand2, scope))
         .FlatMap((o1, o2) => o1.SemanticsEqual(o2)

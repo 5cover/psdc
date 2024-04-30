@@ -240,25 +240,97 @@ internal interface Node : EquatableSemantics<Node>
                 && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class BuiltinEcrire(SourceTokens sourceTokens,
-            Expression argumentNomLog,
-            Expression argumentExpression)
-        : NodeImpl(sourceTokens), Statement
+        internal interface Builtin : Statement
         {
-            public Expression ArgumentNomLog => argumentNomLog;
-            public Expression ArgumentExpression => argumentExpression;
-            public override bool SemanticsEqual(Node other) => other is BuiltinEcrire o
-             && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
-             && o.ArgumentExpression.SemanticsEqual(ArgumentExpression);
-        }
+            internal sealed class Ecrire(SourceTokens sourceTokens,
+                Expression argumentNomLog,
+                Expression argumentExpression)
+            : NodeImpl(sourceTokens), Builtin
+            {
+                public Expression ArgumentNomLog => argumentNomLog;
+                public Expression ArgumentExpression => argumentExpression;
+                public override bool SemanticsEqual(Node other) => other is Ecrire o
+                 && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
+                 && o.ArgumentExpression.SemanticsEqual(ArgumentExpression);
+            }
 
-        internal sealed class BuiltinFermer(SourceTokens sourceTokens,
-            Expression argumentNomLog)
-        : NodeImpl(sourceTokens), Statement
-        {
-            public Expression ArgumentNomLog => argumentNomLog;
-            public override bool SemanticsEqual(Node other) => other is BuiltinFermer o
-             && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
+            internal sealed class Fermer(SourceTokens sourceTokens,
+                Expression argumentNomLog)
+            : NodeImpl(sourceTokens), Builtin
+            {
+                public Expression ArgumentNomLog => argumentNomLog;
+                public override bool SemanticsEqual(Node other) => other is Fermer o
+                 && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
+            }
+
+            internal sealed class Lire(SourceTokens sourceTokens,
+                Expression argumentNomLog,
+                Expression.Lvalue argumentVariable)
+            : NodeImpl(sourceTokens), Builtin
+            {
+                public Expression ArgumentNomLog => argumentNomLog;
+                public Expression ArgumentVariable => argumentVariable;
+                public override bool SemanticsEqual(Node other) => other is Lire o
+                 && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
+                 && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
+            }
+
+            internal sealed class OuvrirAjout(SourceTokens sourceTokens,
+                Expression argumentNomLog)
+            : NodeImpl(sourceTokens), Builtin
+            {
+                public Expression ArgumentNomLog => argumentNomLog;
+                public override bool SemanticsEqual(Node other) => other is OuvrirAjout o
+                 && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
+            }
+
+            internal sealed class OuvrirEcriture(SourceTokens sourceTokens,
+                Expression argumentNomLog)
+            : NodeImpl(sourceTokens), Builtin
+            {
+                public Expression ArgumentNomLog => argumentNomLog;
+                public override bool SemanticsEqual(Node other) => other is OuvrirEcriture o
+                 && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
+            }
+
+            internal sealed class OuvrirLecture(SourceTokens sourceTokens,
+                Expression argumentNomLog)
+            : NodeImpl(sourceTokens), Builtin
+            {
+                public Expression ArgumentNomLog => argumentNomLog;
+                public override bool SemanticsEqual(Node other) => other is OuvrirLecture o
+                 && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
+            }
+
+            internal sealed class Assigner(SourceTokens sourceTokens,
+                Expression.Lvalue argumentNomLog,
+                Expression argumentNomExt)
+            : NodeImpl(sourceTokens), Builtin
+            {
+                public Expression.Lvalue ArgumentNomLog => argumentNomLog;
+                public Expression ArgumentNomExt => argumentNomExt;
+                public override bool SemanticsEqual(Node other) => other is Assigner o
+                 && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
+                 && o.ArgumentNomExt.SemanticsEqual(ArgumentNomExt);
+            }
+
+            internal sealed class EcrireEcran(SourceTokens sourceTokens,
+                IReadOnlyCollection<Expression> arguments)
+            : NodeImpl(sourceTokens), Builtin
+            {
+                public IReadOnlyCollection<Expression> Arguments => arguments;
+                public override bool SemanticsEqual(Node other) => other is EcrireEcran o
+                 && o.Arguments.AllSemanticsEqual(Arguments);
+            }
+
+            internal sealed class LireClavier(SourceTokens sourceTokens,
+                Expression.Lvalue argumentVariable)
+            : NodeImpl(sourceTokens), Builtin
+            {
+                public Expression ArgumentVariable => argumentVariable;
+                public override bool SemanticsEqual(Node other) => other is LireClavier o
+                 && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
+            }
         }
 
         internal sealed class ForLoop(SourceTokens sourceTokens,
@@ -280,46 +352,6 @@ internal interface Node : EquatableSemantics<Node>
              && o.Step.OptionSemanticsEqual(Step)
              && o.Block.AllSemanticsEqual(Block);
         }
-
-        internal sealed class BuiltinLire(SourceTokens sourceTokens,
-            Expression argumentNomLog,
-            Expression.Lvalue argumentVariable)
-        : NodeImpl(sourceTokens), Statement
-        {
-            public Expression ArgumentNomLog => argumentNomLog;
-            public Expression ArgumentVariable => argumentVariable;
-            public override bool SemanticsEqual(Node other) => other is BuiltinLire o
-             && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
-             && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
-        }
-
-        internal sealed class BuiltinOuvrirAjout(SourceTokens sourceTokens,
-            Expression argumentNomLog)
-        : NodeImpl(sourceTokens), Statement
-        {
-            public Expression ArgumentNomLog => argumentNomLog;
-            public override bool SemanticsEqual(Node other) => other is BuiltinOuvrirAjout o
-             && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
-        }
-
-        internal sealed class BuiltinOuvrirEcriture(SourceTokens sourceTokens,
-            Expression argumentNomLog)
-        : NodeImpl(sourceTokens), Statement
-        {
-            public Expression ArgumentNomLog => argumentNomLog;
-            public override bool SemanticsEqual(Node other) => other is BuiltinOuvrirEcriture o
-             && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
-        }
-
-        internal sealed class BuiltinOuvrirLecture(SourceTokens sourceTokens,
-            Expression argumentNomLog)
-        : NodeImpl(sourceTokens), Statement
-        {
-            public Expression ArgumentNomLog => argumentNomLog;
-            public override bool SemanticsEqual(Node other) => other is BuiltinOuvrirLecture o
-             && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
-        }
-
         internal sealed class ProcedureCall(SourceTokens sourceTokens,
             Identifier name,
             IReadOnlyCollection<ParameterActual> parameters)
@@ -330,36 +362,6 @@ internal interface Node : EquatableSemantics<Node>
             public override bool SemanticsEqual(Node other) => other is ProcedureCall o
              && o.Name.SemanticsEqual(Name)
              && o.Parameters.AllSemanticsEqual(Parameters);
-        }
-
-        internal sealed class BuiltinAssigner(SourceTokens sourceTokens,
-            Expression.Lvalue argumentNomLog,
-            Expression argumentNomExt)
-        : NodeImpl(sourceTokens), Statement
-        {
-            public Expression.Lvalue ArgumentNomLog => argumentNomLog;
-            public Expression ArgumentNomExt => argumentNomExt;
-            public override bool SemanticsEqual(Node other) => other is BuiltinAssigner o
-             && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
-             && o.ArgumentNomExt.SemanticsEqual(ArgumentNomExt);
-        }
-
-        internal sealed class BuiltinEcrireEcran(SourceTokens sourceTokens,
-            IReadOnlyCollection<Expression> arguments)
-        : NodeImpl(sourceTokens), Statement
-        {
-            public IReadOnlyCollection<Expression> Arguments => arguments;
-            public override bool SemanticsEqual(Node other) => other is BuiltinEcrireEcran o
-             && o.Arguments.AllSemanticsEqual(Arguments);
-        }
-
-        internal sealed class BuiltinLireClavier(SourceTokens sourceTokens,
-            Expression.Lvalue argumentVariable)
-        : NodeImpl(sourceTokens), Statement
-        {
-            public Expression ArgumentVariable => argumentVariable;
-            public override bool SemanticsEqual(Node other) => other is BuiltinLireClavier o
-             && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
         }
 
         internal sealed class RepeatLoop(SourceTokens sourceTokens,

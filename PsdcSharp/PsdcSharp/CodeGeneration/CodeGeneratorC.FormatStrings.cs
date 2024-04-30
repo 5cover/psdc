@@ -2,19 +2,20 @@
 using System.Text;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
+using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration;
 
 internal partial class CodeGeneratorC
 {
-    private (string format, IReadOnlyList<Node.Expression> arguments) BuildFormatString(
-        ReadOnlyScope scope, IEnumerable<Node.Expression> parts)
+    private (string format, IReadOnlyList<Expression> arguments) BuildFormatString(
+        ReadOnlyScope scope, IEnumerable<Expression> parts)
     {
-        List<Node.Expression> arguments = [];
+        List<Expression> arguments = [];
         StringBuilder format = new();
 
         foreach (var part in parts) {
-            if (part is Node.Expression.Literal literal) {
+            if (part is Expression.Literal literal) {
                 format.Append(FormatValue(literal.Value)
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
