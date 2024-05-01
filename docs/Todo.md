@@ -42,6 +42,8 @@
         - réel &rarr; float, double, long double?
         - entier &rarr; short, int, long?
         - caractère &rarr; char, tchar_t, wchar_t?
+    - parameter names in prototypes?
+    - doxygen documentation skeleton?
 
 ## Sample programs
 

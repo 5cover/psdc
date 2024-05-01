@@ -116,7 +116,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         // In addition we make get them as a result of parsing errors.
         Statement.Nop => o,
         Statement.Alternative alternative => AppendAlternative(o, alternative),
-        Statement.Builtin builtin => AppendBuiltinProcedure(o, builtin, scope),
+        Statement.Builtin builtin => AppendBuiltin(o, builtin, scope),
         Statement.Assignment assignment => AppendAssignment(o, assignment),
         Statement.DoWhileLoop doWhileLoop => AppendDoWhileLoop(o, doWhileLoop),
         Statement.ForLoop forLoop => AppendForLoop(o, forLoop),
@@ -129,7 +129,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         _ => throw stmt.ToUnmatchedException(),
     };
 
-    private StringBuilder AppendBuiltinProcedure(StringBuilder o, Statement.Builtin builtin, ReadOnlyScope scope) => builtin switch {
+    private StringBuilder AppendBuiltin(StringBuilder o, Statement.Builtin builtin, ReadOnlyScope scope) => builtin switch {
         Statement.Builtin.EcrireEcran ee => AppendEcrireEcran(o, scope, ee),
         Statement.Builtin.LireClavier lc => AppendLireClavier(o, scope, lc),
         _ => throw builtin.ToUnmatchedException(),

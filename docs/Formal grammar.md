@@ -34,7 +34,7 @@ $$
     ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier = ⟨Type⟩
     ⟨DeclarationCompleteTypeAlias⟩ \to \text{type}\ Identifier = ⟨TypeComplete⟩
     \\
-    ⟨DeclarationConstant⟩ \to \text{constante} ⟨TypeComplete⟩ Identifier \text{:=} ⟨Expression⟩;
+    ⟨DeclarationConstant⟩ \to \text{constante} ⟨TypeComplete⟩ Identifier \text{:=} ⟨Expr⟩;
     \\
     ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin}
     \\
@@ -62,26 +62,26 @@ $$
     \\
     ⟨ProcedureCall⟩ \to ⟨Call⟩;
     \\
-    ⟨Assignment⟩ \to ⟨Lvalue⟩ = ⟨Expression⟩;
+    ⟨Assignment⟩ \to ⟨Lvalue⟩ = ⟨Expr⟩;
     \\
     ⟨ForLoop⟩ \to \begin{split}
     \\
     &   \text{pour}\ Identifier
-        \ \text{de} ⟨Expression⟩ \text{à} ⟨Expression⟩
-        \{\text{pas} ⟨Expression⟩\}^?
+        \ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩
+        \{\text{pas} ⟨Expr⟩\}^?
         \text{faire} \\
     &   ⟨Block⟩ \\
     &   \text{finfaire}
     \end{split}
     \\
-    ⟨RepeatLoop⟩ \to \text{répéter} ⟨Block⟩ \text{jusqu'à} (⟨Expression⟩)
+    ⟨RepeatLoop⟩ \to \text{répéter} ⟨Block⟩ \text{jusqu'à} (⟨Expr⟩)
     \\
-    ⟨DoWhileLoop⟩ \to \text{faire} ⟨Block⟩ \text{tant\ que} (⟨Expression⟩)
+    ⟨DoWhileLoop⟩ \to \text{faire} ⟨Block⟩ \text{tant\ que} (⟨Expr⟩)
     \\
-    ⟨WhileLoop⟩ \to \text{tant\ que} (⟨Expression⟩) \text{faire} ⟨Block⟩ \text{finfaire}
+    ⟨WhileLoop⟩ \to \text{tant\ que} (⟨Expr⟩) \text{faire} ⟨Block⟩ \text{finfaire}
     \\
     ⟨Switch⟩ \to \begin{split}
-    &   \text{selon} ⟨Expression⟩ \text{c'est}\\
+    &   \text{selon} ⟨Expr⟩ \text{c'est}\\
     &   ⟨Switch.Case⟩^*\\
     &   ⟨Switch.Default⟩^?\\
     &   \text{finselon}\\
@@ -89,102 +89,102 @@ $$
     \\
     ⟨LocalVariable⟩ \to Identifier^{+|,} : ⟨TypeComplete⟩;
     \\
-    ⟨Return⟩ \to \text{retourne} ⟨Expression⟩;
+    ⟨Return⟩ \to \text{retourne} ⟨Expr⟩;
     \\
-    ⟨BuiltinAssigner⟩ \to \text{assigner}(⟨Lvalue⟩,⟨Expression⟩);
+    ⟨BuiltinAssigner⟩ \to \text{assigner}(⟨Lvalue⟩,⟨Expr⟩);
     \\
-    ⟨BuiltinEcrire⟩ \to \text{écrire}(⟨Expression⟩, ⟨Expression⟩);
+    ⟨BuiltinEcrire⟩ \to \text{écrire}(⟨Expr⟩, ⟨Expr⟩);
     \\
-    ⟨BuiltinEcrireEcran⟩ \to \text{écrireÉcran}(⟨Expression⟩^{*|,});
+    ⟨BuiltinEcrireEcran⟩ \to \text{écrireÉcran}(⟨Expr⟩^{*|,});
     \\
-    ⟨BuiltinFermer⟩ \to \text{fermer}(⟨Expression⟩);
+    ⟨BuiltinFermer⟩ \to \text{fermer}(⟨Expr⟩);
     \\
-    ⟨BuiltinLire⟩ \to \text{lire}(⟨Expression⟩,⟨Lvalue⟩);
+    ⟨BuiltinLire⟩ \to \text{lire}(⟨Expr⟩,⟨Lvalue⟩);
     \\
     ⟨BuiltinLireClavier⟩ \to \text{lireClavier}(⟨Lvalue⟩);
     \\
-    ⟨BuiltinOuvrirAjout⟩ \to \text{ouvrirAjout}(⟨Expression⟩)
+    ⟨BuiltinOuvrirAjout⟩ \to \text{ouvrirAjout}(⟨Expr⟩)
     \\
-    ⟨BuiltinOuvrirEcriture⟩ \to \text{ouvrirÉcriture}(⟨Expression⟩);
+    ⟨BuiltinOuvrirEcriture⟩ \to \text{ouvrirÉcriture}(⟨Expr⟩);
     \\
-    ⟨BuiltinOuvrirLecture⟩ \to \text{ouvrirLecture}(⟨Expression⟩);
+    ⟨BuiltinOuvrirLecture⟩ \to \text{ouvrirLecture}(⟨Expr⟩);
     \\
     ⟨Nop⟩ \to ;
 \end{cases}
 \\
-⟨Alternative.If⟩ &\to \text{si} (⟨Expression⟩) \text{alors} ⟨Block⟩
+⟨Alternative.If⟩ &\to \text{si} (⟨Expr⟩) \text{alors} ⟨Block⟩
 \\
-⟨Alternative.ElseIf⟩ &\to \text{sinonsi} (⟨Expression⟩) \text{alors} ⟨Block⟩\
+⟨Alternative.ElseIf⟩ &\to \text{sinonsi} (⟨Expr⟩) \text{alors} ⟨Block⟩\
 \\
 ⟨Alternative.Else⟩ &\to \text{sinon} ⟨Block⟩
 \\
-⟨Switch.Case⟩ &\to \text{quand} ⟨Expression⟩ => ⟨Statement⟩^+\
+⟨Switch.Case⟩ &\to \text{quand} ⟨Expr⟩ => ⟨Statement⟩^+\
 \\
 ⟨Switch.Default⟩ &\to \text{quand\ autre} => ⟨Statement⟩^+\
 
-\\&\textbf{Expressions}\notag\\
+\\&\textbf{Exprs}\notag\\
 
-⟨Expression⟩ &\to \begin{cases}
-    ⟨Expression⟩ \text{OU} ⟨Expression_7⟩\\
-    ⟨Expression_7⟩
-\end{cases}
+⟨Expr⟩ &\to ⟨Expr_{Or}⟩
 \\
-⟨Expression_7⟩ &\to \begin{cases}
-    ⟨Expression_7⟩ \text{ET} ⟨Expression_6⟩\\
-    ⟨Expression_6⟩
-\end{cases}
+⟨Expr_{Or}⟩ &\to ⟨Expr_{And}⟩\{
+\text{OU}
+⟨Expr_{And}⟩\}^*
 \\
-⟨Expression_6⟩ &\to \begin{cases}
-    ⟨Expression_6⟩ \begin{cases}
-        !=\\
-        ==\\
-    \end{cases} ⟨Expression_5⟩\\
-    ⟨Expression_5⟩
-\end{cases}
+⟨Expr_{And}⟩ &\to ⟨Expr_{Xor}⟩\{
+\text{ET}
+⟨Expr_{Xor}⟩\}^*
 \\
-⟨Expression_5⟩ &\to \begin{cases}
-    ⟨Expression_5⟩ \begin{cases}
-        <\\
-        <=\\
-        >\\
-        >=\\
-    \end{cases} ⟨Expression_4⟩\\
-    ⟨Expression_4⟩
-\end{cases}
+⟨Expr_{Xor}⟩ &\to ⟨Expr_{Equality}⟩\{
+\text{XOR}
+⟨Expr_{Equality}⟩\}^*
 \\
-⟨Expression_4⟩ &\to \begin{cases}
-    ⟨Expression_4⟩ \begin{cases}
-        -\\
-        +\\
-    \end{cases} ⟨Expression_3⟩\\
-    ⟨Expression_3⟩
+⟨Expr_{Equality}⟩ &\to ⟨Expr_{Comparison}⟩\{
+\begin{cases}
+    !=\\
+    ==\\
 \end{cases}
+⟨Expr_{Comparison}⟩\}^*
 \\
-⟨Expression_3⟩ &\to \begin{cases}
-    ⟨Expression_3⟩ \begin{cases}
-        *\\
-        /\\
-        \%\\
-    \end{cases} ⟨Expression_2⟩\\
-    ⟨Expression_2⟩
+⟨Expr_{Comparison}⟩ &\to ⟨Expr_{AddSub}⟩\{
+\begin{cases}
+    <\\
+    <=\\
+    >\\
+    >=\\
 \end{cases}
+⟨Expr_{AddSub}⟩\}^*
 \\
-⟨Expression_2⟩ &\to \begin{cases}
+⟨Expr_{AddSub}⟩ &\to ⟨Expr_{MulDivMod}⟩\{
+\begin{cases}
+    -\\
+    +\\
+\end{cases}
+⟨Expr_{MulDivMod}⟩\}^*
+\\
+⟨Expr_{MulDivMod}⟩ &\to ⟨Expr_{Unary}⟩\{
+\begin{cases}
+    *\\
+    /\\
+    \%\\
+\end{cases}
+⟨Expr_{Unary}⟩\}^*
+\\
+⟨Expr_{Unary}⟩ &\to \begin{cases}
     \begin{cases}
         -\\
         +\\
         \text{NON}\\
-    \end{cases} ⟨Expression_1⟩\\
-    ⟨Expression_1⟩
+    \end{cases} ⟨Expr_{Unary}⟩\\
+    ⟨Expr_{Primary}⟩\\
 \end{cases}
 \\
-⟨Expression_1⟩ &\to \begin{cases}
+⟨Expr_{Primary}⟩ &\to \begin{cases}
     ⟨TerminalRvalue⟩\\
     ⟨Lvalue⟩\\
 \end{cases}
 \\
 ⟨TerminalRvalue⟩ &\to \begin{cases}
-    ⟨Bracketed⟩ \to (⟨Expression⟩)
+    ⟨Bracketed⟩ \to (⟨Expr⟩)
     \\
     ⟨Literal⟩ \to \begin{cases}
         LiteralString\\
@@ -197,7 +197,7 @@ $$
     \\
     ⟨Call⟩
     \\
-    ⟨BuiltinFdf⟩ \to \text{FdF}(⟨Expression⟩)
+    ⟨BuiltinFdf⟩ \to \text{FdF}(⟨Expr⟩)
     \\
     ⟨TerminalLvalue⟩
 \end{cases}
@@ -208,7 +208,7 @@ $$
     ⟨TerminalLvalue⟩\\
 \end{cases}
 \\
-⟨ArraySubscript⟩ &\to ⟨TerminalRvalue⟩[⟨Expression⟩^{+|,}]
+⟨ArraySubscript⟩ &\to ⟨TerminalRvalue⟩[⟨Expr⟩^{+|,}]
 \\
 ⟨ComponentAccess⟩ &\to ⟨TerminalRvalue⟩.Identifier
 \\
@@ -242,11 +242,11 @@ $$
     \\
     ⟨File⟩ \to \text{nomFichierLog}
     \\
-    ⟨StringLengthed⟩ \to \text{chaîne}(⟨Expression⟩)
+    ⟨StringLengthed⟩ \to \text{chaîne}(⟨Expr⟩)
     \\
     ⟨Structure⟩ \to \text{structure\ début} ⟨LocalVariable⟩^+ \text{fin}
     \\
-    ⟨TypeArray⟩ \to \text{tableau} [⟨Expression⟩]^+ \text{de} ⟨TypeComplete⟩
+    ⟨TypeArray⟩ \to \text{tableau} [⟨Expr⟩]^+ \text{de} ⟨TypeComplete⟩
 \end{cases}
 
 \\&\textbf{Other}\notag\\
@@ -261,7 +261,7 @@ $$
     \text{entE}\\
     \text{sortE}\\
     \text{entE/sortE}\\
-\end{cases} ⟨Expression⟩\
+\end{cases} ⟨Expr⟩\
 \\
 ⟨FunctionSignature⟩ &\to \text{fonction}\ Identifier(⟨ParameterFormal⟩^{*|,}) \text{délivre} ⟨Type⟩
 \\

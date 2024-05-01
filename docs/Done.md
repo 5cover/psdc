@@ -602,3 +602,9 @@ Maybe we can add them as notes?
 - wrong mode for `name`: expected `entE`, got `sortE`
 - wrong type for `name`: expected `entier`, got `réel`
 - incorrect number of arguments: expected X, got X
+
+## Parsing trees
+
+Currently, our overload of `Branch` that returns a `ParseOperation` so the parsing doesn't work, as it fails to account for tokens parsed after the merge.
+
+Changed the forking system to fix that.

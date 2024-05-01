@@ -9,62 +9,52 @@ internal partial class Parser
 {
     private readonly IReadOnlyDictionary<TokenType, Parser<Expression>> _literalParsers;
 
-    private static readonly IReadOnlyList<IReadOnlyDictionary<TokenType, BinaryOperator>> binaryOperations = new List<Dictionary<TokenType, BinaryOperator>> {
-        new() {
+    private static readonly Dictionary<TokenType, BinaryOperator>
+        operatorsOr = new() {
             [Operator.Or] = BinaryOperator.Or,
         },
-        new() {
+        operatorsAnd = new() {
             [Operator.And] = BinaryOperator.And,
         },
-        new() {
+        operatorsXor = new() {
+            [Operator.Xor] = BinaryOperator.Xor,
+        },
+        operatorsEquality = new() {
             [Operator.Equal] = BinaryOperator.Equal,
             [Operator.NotEqual] = BinaryOperator.NotEqual,
         },
-        new() {
+        operatorsComparison = new() {
             [Operator.LessThan] = BinaryOperator.LessThan,
             [Operator.LessThanOrEqual] = BinaryOperator.LessThanOrEqual,
             [Operator.GreaterThan] = BinaryOperator.GreaterThan,
             [Operator.GreaterThanOrEqual] = BinaryOperator.GreaterThanOrEqual,
         },
-        new() {
+        operatorsAddSub = new() {
             [Operator.Plus] = BinaryOperator.Plus,
             [Operator.Minus] = BinaryOperator.Minus,
         },
-        new() {
+        operatorsMulDivMod = new() {
             [Operator.Multiply] = BinaryOperator.Multiply,
             [Operator.Divide] = BinaryOperator.Divide,
             [Operator.Modulus] = BinaryOperator.Modulus,
-        },
-    };
-    private static readonly IReadOnlyDictionary<TokenType, UnaryOperator> unaryOperators = new Dictionary<TokenType, UnaryOperator>() {
-        [Operator.Minus] = UnaryOperator.Minus,
-        [Operator.Not] = UnaryOperator.Not,
-        [Operator.Plus] = UnaryOperator.Plus,
-    };
+        };
+
+    private static readonly Dictionary<TokenType, UnaryOperator>
+        operatorsUnary = new() {
+            [Operator.Minus] = UnaryOperator.Minus,
+            [Operator.Not] = UnaryOperator.Not,
+            [Operator.Plus] = UnaryOperator.Plus,
+        };
 
     private ParseResult<Expression> ParseExpression(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression7, binaryOperations[0]);
-
-    private ParseResult<Expression> ParseExpression7(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression6, binaryOperations[1]);
-
-    private ParseResult<Expression> ParseExpression6(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression5, binaryOperations[2]);
-
-    private ParseResult<Expression> ParseExpression5(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression4, binaryOperations[3]);
-
-    private ParseResult<Expression> ParseExpression4(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression3, binaryOperations[4]);
-
-    private ParseResult<Expression> ParseExpression3(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(tokens, ParseExpression2, binaryOperations[5]);
-
-    private ParseResult<Expression> ParseExpression2(IEnumerable<Token> tokens)
-     => ParseUnaryOperation(tokens, ParseExpression1, unaryOperators);
-
-    private ParseResult<Expression> ParseExpression1(IEnumerable<Token> tokens)
-     => ParseAnyOf(ParseArraySubscriptOrComponentAccess, ParseTerminalRvalue)(tokens);
+     => ParseBinaryOperation(operatorsOr,
+        ParseBinaryOperation(operatorsAnd,
+        ParseBinaryOperation(operatorsXor,
+        ParseBinaryOperation(operatorsEquality,
+        ParseBinaryOperation(operatorsComparison,
+        ParseBinaryOperation(operatorsAddSub,
+        ParseBinaryOperation(operatorsMulDivMod,
+        ParseUnaryOperation(operatorsUnary, ParseAnyOf(ParseArraySubscriptOrComponentAccess, ParseTerminalRvalue)))))))))(tokens);
 
     private ParseResult<Expression.Lvalue> ParseLvalue(IEnumerable<Token> tokens)
      => ParseAnyOf(ParseArraySubscriptOrComponentAccess, ParseTerminalLvalue)(tokens);
@@ -128,50 +118,49 @@ internal partial class Parser
         .ParseToken(Punctuation.CloseSquareBracket)
     .MapResult(_ => indexes);
 
-    private static ParseResult<Expression> ParseBinaryOperation(
-        IEnumerable<Token> tokens,
-        Func<IEnumerable<Token>, ParseResult<Expression>> descentParser,
-        IReadOnlyDictionary<TokenType, BinaryOperator> operators)
-    {
-        var prOperand1 = descentParser(tokens);
-        if (!prOperand1.HasValue) {
-            return prOperand1;
-        }
-        int count = prOperand1.SourceTokens.Count;
-        var operand1 = prOperand1.Value;
+    private static Parser<Expression> ParseBinaryOperation(
+        IReadOnlyDictionary<TokenType, BinaryOperator> operators,
+        Parser<Expression> descentParser)
+     => tokens => {
+         var prOperand1 = descentParser(tokens);
+         if (!prOperand1.HasValue) {
+             return prOperand1;
+         }
+         int count = prOperand1.SourceTokens.Count;
+         var operand1 = prOperand1.Value;
 
-        var prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
+         var prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
 
-        while (prOperator.HasValue) {
-            count += prOperator.SourceTokens.Count;
+         while (prOperator.HasValue) {
+             count += prOperator.SourceTokens.Count;
 
-            ParseResult<Expression> operand2 = descentParser(tokens.Skip(count));
-            count += operand2.SourceTokens.Count;
-            if (!operand2.HasValue) {
-                return operand2.WithSourceTokens(new(tokens, count));
-            }
+             ParseResult<Expression> operand2 = descentParser(tokens.Skip(count));
+             count += operand2.SourceTokens.Count;
+             if (!operand2.HasValue) {
+                 return operand2.WithSourceTokens(new(tokens, count));
+             }
 
-            operand1 = new Expression.OperationBinary(new(tokens, count),
-                operand1, operators[prOperator.Value.Type], operand2.Value);
+             operand1 = new Expression.OperationBinary(new(tokens, count),
+                 operand1, operators[prOperator.Value.Type], operand2.Value);
 
-            prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
-        }
+             prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
+         }
 
-        return ParseResult.Ok(new(tokens, count), operand1);
-    }
+         return ParseResult.Ok(new(tokens, count), operand1);
+    };
 
-    private static ParseResult<Expression> ParseUnaryOperation(
-        IEnumerable<Token> tokens,
-        Func<IEnumerable<Token>, ParseResult<Expression>> descentParser,
-        IReadOnlyDictionary<TokenType, UnaryOperator> operators)
-    {
-        var prOperator = ParseTokenOfType(tokens, operators.Keys);
+    private static Parser<Expression> ParseUnaryOperation(
+        IReadOnlyDictionary<TokenType, UnaryOperator> operators,
+        Parser<Expression> descentParser)
+     => tokens => {
+         var prOperator = ParseTokenOfType(tokens, operators.Keys);
 
-        return prOperator.Match(
-            some: op => {
-                var prExpr = descentParser(tokens.Skip(1)).Map((tokens, expr) => new Expression.OperationUnary(tokens, operators[op.Type], expr));
-                return prExpr.WithSourceTokens(new(tokens, prExpr.SourceTokens.Count + 1));
-            },
-            none: _ => descentParser(tokens));
-    }
+         return prOperator.Match(
+             some: op => {
+                 var prExpr = descentParser(tokens.Skip(1)).Map((tokens, expr)
+                      => new Expression.OperationUnary(tokens, operators[op.Type], expr));
+                 return prExpr.WithSourceTokens(new(tokens, prExpr.SourceTokens.Count + 1));
+             },
+             none: _ => descentParser(tokens));
+    };
 }

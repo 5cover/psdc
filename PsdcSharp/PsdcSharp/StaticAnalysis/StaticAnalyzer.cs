@@ -132,15 +132,6 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                 AnalyzeExpression(scope, doWhileLoop.Condition, hookExpr);
                 break;
 
-            case Statement.Builtin.Ecrire ecrire:
-                AnalyzeExpression(scope, ecrire.ArgumentNomLog, hookExpr);
-                AnalyzeExpression(scope, ecrire.ArgumentExpression, hookExpr);
-                break;
-
-            case Statement.Builtin.Fermer fermer:
-                AnalyzeExpression(scope, fermer.ArgumentNomLog, hookExpr);
-                break;
-
             case Statement.ForLoop forLoop:
                 AnalyzeExpression(scope, forLoop.Start, hookExpr);
                 forLoop.Step.MatchSome(step => AnalyzeExpression(scope, step, hookExpr));
@@ -151,6 +142,15 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             case Statement.Builtin.Lire lire:
                 AnalyzeExpression(scope, lire.ArgumentNomLog, hookExpr);
                 AnalyzeExpression(scope, lire.ArgumentVariable, hookExpr);
+                break;
+
+            case Statement.Builtin.Ecrire ecrire:
+                AnalyzeExpression(scope, ecrire.ArgumentNomLog, hookExpr);
+                AnalyzeExpression(scope, ecrire.ArgumentExpression, hookExpr);
+                break;
+
+            case Statement.Builtin.Fermer fermer:
+                AnalyzeExpression(scope, fermer.ArgumentNomLog, hookExpr);
                 break;
 
             case Statement.Builtin.OuvrirAjout ouvrirAjout:
@@ -165,9 +165,11 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                 AnalyzeExpression(scope, ouvrirLecture.ArgumentNomLog, hookExpr);
                 break;
 
-            case Statement.ProcedureCall call:
-                HandleCall<Symbol.Procedure>(scope, call);
+            case Statement.Builtin.Assigner assigner:
+                AnalyzeExpression(scope, assigner.ArgumentNomExt);
+                AnalyzeExpression(scope, assigner.ArgumentNomLog);
                 break;
+
             case Statement.Builtin.EcrireEcran ecrireEcran:
                 foreach (var arg in ecrireEcran.Arguments) {
                     AnalyzeExpression(scope, arg, hookExpr);
@@ -177,6 +179,11 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             case Statement.Builtin.LireClavier lireClavier:
                 AnalyzeExpression(scope, lireClavier.ArgumentVariable, hookExpr);
                 break;
+
+            case Statement.ProcedureCall call:
+                HandleCall<Symbol.Procedure>(scope, call);
+            break;
+
 
             case Statement.RepeatLoop repeatLoop:
                 AnalyzeScopedBlock(repeatLoop);

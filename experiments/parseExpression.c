@@ -15,6 +15,8 @@
 
 #define ARRAYSIZE(arr) (sizeof(arr) / sizeof(arr[0]))
 
+#define let const
+
 /// @brief A stack-allocated string of maximum length 255.
 /// @brief Used to take advantage of C's automatic memory management of stack-allocated objects.
 typedef struct {
@@ -105,57 +107,57 @@ struct ParseResult {
 /// @brief Get the character representation of a token.
 /// @param token The token to get the character representation of.
 /// @return The character representation of the token.
-char token_get_char(Token token);
+char token_get_char(Token let token);
 
 /// @brief Create a parse result from a token.
 /// @param token The token to create the parse result from.
 /// @return The parse result.
-ParseResult token_literal_create(Token token);
+ParseResult token_literal_create(Token let token);
 
 /// @brief Create a binary expression node.
 /// @param operand1 The first operand of the binary expression.
 /// @param operator The operator of the binary expression.
 /// @param operand2 The second operand of the binary expression.
 /// @return The binary expression node.
-NodeExpression expression_create_binary(ParseResult operand1, Token operator, ParseResult operand2);
+NodeExpression expression_create_binary(ParseResult let operand1, Token let operator, ParseResult let operand2);
 
 /// @brief Parse an expression from a array of tokens.
 /// @param tokens The array of tokens to parse the expression from.
 /// @param tokenCount The amount of tokens in the array.
 /// @return The parse result of the expression.
-ParseResult expression_parse(Token const *tokens, int tokenCount);
+ParseResult expression_parse(Token let *let tokens, int let tokenCount);
 
 /// @brief Free an expression node.
 /// @param expr The expression node to free.
-void expression_free(NodeExpression expr);
+void expression_free(NodeExpression let expr);
 
 /// @brief Show an expression.
 /// @param expr The expression to show.
-void expression_show(NodeExpression expr);
+void expression_show(NodeExpression let expr);
 
 /// @brief Show an expression with depth.
 /// @param expr The expression to show.
 /// @param depth The depth of the expression.
-void expression_show_depth(NodeExpression const expr, int depth);
+void expression_show_depth(NodeExpression let expr, int let depth);
 
 /// @brief Find the index of the first token of a specific type in an array of tokens.
 /// @param tokens The array of tokens to search in.
 /// @param startIndex The index to start searching from.
 /// @param tokenCount The amount of tokens in the array.
 /// @param search The type of token to search for.
-int token_find(Token const *tokens, int startIndex, int tokenCount, TokenType search);
+int token_find(Token let *let tokens, int let startIndex, int let tokenCount, TokenType let search);
 
 /// @brief Find the index of the last token of a specific type in an array of tokens.
 /// @param tokens The array of tokens to search in.
 /// @param startIndex The index to start searching from.
 /// @param tokenCount The amount of tokens in the array.
 /// @param search The type of token to search for.
-int token_find_last(Token const *tokens, int startIndex, int tokenCount, TokenType search);
+int token_find_last(Token let *let tokens, int let startIndex, int let tokenCount, TokenType let search);
 
 /// @brief Create a token from a character.
 /// @param repr The character to create the token from.
 /// @return A new Token.
-Token token(char repr)
+Token token(char let repr)
 {
     Token tok;
     switch (repr) {
@@ -171,11 +173,9 @@ Token token(char repr)
     return tok;
 }
 
-Token const *start;
-
 int main()
 {
-    Token test[] =
+    Token let test[] =
         // 4 * 3 * 5
         //{token_int(4), token('*'), token_int(3), token('*'), token_int(5)};
 
@@ -212,7 +212,7 @@ int main()
         // (3 + 5) * 6
         {token('('), token_int(3), token('+'), token_int(5), token(')'), token('*'), token_int(6)};
 
-    ParseResult result = expression_parse(test, ARRAYSIZE(test));
+    ParseResult let result = expression_parse(test, ARRAYSIZE(test));
 
     if (result.hasValue) {
         expression_show_depth(result.value, 0);
@@ -229,7 +229,7 @@ int main()
     return EXIT_SUCCESS;
 }
 
-ParseResult expression_parse(Token const *tokens, int tokenCount)
+ParseResult expression_parse(Token let *let tokens, int let tokenCount)
 {
     switch (tokenCount) {
     case 0: return result_fail("Empty expression");
@@ -246,26 +246,26 @@ ParseResult expression_parse(Token const *tokens, int tokenCount)
             return expression_parse(tokens + 1, 1);
         }
         return result_fail("Invalid expression");
-    default:
+    default: {
         // Check if the expression contains brackets
-        int const iOpenBracket = token_find(tokens, 0, tokenCount, TokenType_BracketOpen);
+        int let iOpenBracket = token_find(tokens, 0, tokenCount, TokenType_BracketOpen);
         if (iOpenBracket != -1) {
-            int const iCloseBracket = token_find_last(tokens, iOpenBracket + 1, tokenCount, TokenType_BracketClose);
+            int let iCloseBracket = token_find_last(tokens, iOpenBracket + 1, tokenCount, TokenType_BracketClose);
             if (iCloseBracket == -1) {
                 return result_fail("Unmatched parentheses");
             }
 
             ParseResult expr_before;
-            bool const has_expr_before = iOpenBracket > 1;
+            bool let has_expr_before = iOpenBracket > 1;
             if (has_expr_before) {
                 expr_before = expression_parse(tokens, iOpenBracket - 1);
             }
 
-            ParseResult const expr_inside = expression_parse(tokens + iOpenBracket + 1, iCloseBracket - iOpenBracket - 1);
+            ParseResult let expr_inside = expression_parse(tokens + iOpenBracket + 1, iCloseBracket - iOpenBracket - 1);
 
             if (iCloseBracket < tokenCount - 2) {
-                ParseResult expr_after = expression_parse(tokens + iCloseBracket + 2, tokenCount - iCloseBracket - 2);
-                ParseResult expr_insideAfter = result_ok(expression_create_binary(
+                ParseResult let expr_after = expression_parse(tokens + iCloseBracket + 2, tokenCount - iCloseBracket - 2);
+                ParseResult let expr_insideAfter = result_ok(expression_create_binary(
                     expr_inside,
                     tokens[iCloseBracket + 1], // operator after )
                     expr_after));
@@ -286,7 +286,7 @@ ParseResult expression_parse(Token const *tokens, int tokenCount)
                      : expr_inside;
         }
 
-        int const iPlus = token_find(tokens, 0, tokenCount, TokenType_OperatorAdd);
+        int let iPlus = token_find(tokens, 0, tokenCount, TokenType_OperatorAdd);
         if (iPlus == -1) {
             // plus not found: parse using associativity
             return result_ok(expression_create_binary(
@@ -301,11 +301,12 @@ ParseResult expression_parse(Token const *tokens, int tokenCount)
             tokens[iPlus],
             expression_parse(tokens + iPlus + 1, tokenCount - iPlus - 1)));
     }
+    }
 }
 
-NodeExpression expression_create_binary(ParseResult operand1, Token operator, ParseResult operand2)
+NodeExpression expression_create_binary(ParseResult let operand1, Token let operator, ParseResult let operand2)
 {
-    NodeExpression expr = {
+    NodeExpression let expr = {
         .type = ExpressionType_Binary,
         .binary = {
             .operand1 = malloc(sizeof operand1),
@@ -324,7 +325,7 @@ NodeExpression expression_create_binary(ParseResult operand1, Token operator, Pa
     return expr;
 }
 
-ParseResult token_literal_create(Token token)
+ParseResult token_literal_create(Token let token)
 {
     if (token.type != TokenType_LiteralInteger) {
         return result_fail("Literal token is not an integer");
@@ -334,11 +335,10 @@ ParseResult token_literal_create(Token token)
         .type = ExpressionType_Terminal,
         .terminal = {
             .literal = token,
-        }
-    }));
+        }}));
 }
 
-int token_find(Token const *tokens, int startIndex, int tokenCount, TokenType search)
+int token_find(Token let *let tokens, int let startIndex, int let tokenCount, TokenType let search)
 {
     int i = startIndex;
     while (i < tokenCount && tokens[i].type != search) {
@@ -347,7 +347,7 @@ int token_find(Token const *tokens, int startIndex, int tokenCount, TokenType se
     return i < tokenCount ? i : -1;
 }
 
-int token_find_last(Token const *tokens, int startIndex, int tokenCount, TokenType search)
+int token_find_last(Token let *let tokens, int let startIndex, int let tokenCount, TokenType let search)
 {
     int i = tokenCount - 1;
     while (i >= startIndex && tokens[i].type != search) {
@@ -356,7 +356,7 @@ int token_find_last(Token const *tokens, int startIndex, int tokenCount, TokenTy
     return i >= startIndex ? i : -1;
 }
 
-void expression_show(NodeExpression const expr)
+void expression_show(NodeExpression let expr)
 {
     switch (expr.type) {
     case ExpressionType_Binary:
@@ -380,7 +380,7 @@ void expression_show(NodeExpression const expr)
     }
 }
 
-void expression_show_depth(NodeExpression const expr, int depth)
+void expression_show_depth(NodeExpression let expr, int let depth)
 {
     for (int i = 0; i < depth * 2; ++i) {
         putchar(' ');
@@ -408,7 +408,7 @@ void expression_show_depth(NodeExpression const expr, int depth)
     }
 }
 
-char token_get_char(Token token)
+char token_get_char(Token let token)
 {
     switch (token.type) {
     case TokenType_OperatorAdd:
@@ -424,7 +424,7 @@ char token_get_char(Token token)
     }
 }
 
-void expression_free(NodeExpression expr)
+void expression_free(NodeExpression let expr)
 {
     if (expr.type == ExpressionType_Binary) {
         if (expr.binary.operand1->hasValue) {
