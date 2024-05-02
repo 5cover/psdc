@@ -59,7 +59,8 @@ internal partial class Parser
     private ParseResult<Expression.Lvalue> ParseLvalue(IEnumerable<Token> tokens)
      => ParseAnyOf(ParseArraySubscriptOrComponentAccess, ParseTerminalLvalue)(tokens);
 
-    private ParseResult<Expression.Lvalue> ParseArraySubscriptOrComponentAccess(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
+    private ParseResult<Expression.Lvalue> ParseArraySubscriptOrComponentAccess(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_messenger, tokens, "array subscript or component access")
         .Parse(out var rvalue, ParseTerminalRvalue)
         .ChooseBranch<Expression.Lvalue>(out var branch, new() {
             [Punctuation.OpenSquareBracket] = o => {
@@ -76,34 +77,41 @@ internal partial class Parser
 
     private ParseResult<Expression> ParseTerminalRvalue(IEnumerable<Token> tokens)
      => ParseAnyOf(
-            ParseFunctionCall, ParseBuiltinFdf,
-            ParseBracketed, ParseTerminalLvalue,
-            t => ParseByTokenType(t, _literalParsers))(tokens);
+            t => ParseByTokenType(t, "literal", _literalParsers),
+            ParseFunctionCall,
+            ParseTerminalLvalue,
+            ParseBracketed,
+            ParseBuiltinFdf)(tokens);
 
     private ParseResult<Expression.Lvalue> ParseTerminalLvalue(IEnumerable<Token> tokens)
-     => ParseAnyOf(ParseBracketedLvalue,
+     => ParseAnyOf(
             t => ParseIdentifier(tokens)
-            .Map((t, name) => new Expression.Lvalue.VariableReference(t, name)))(tokens);
+                .Map((t, name) => new Expression.Lvalue.VariableReference(t, name)),
+            ParseBracketedLvalue)(tokens);
 
-    private ParseResult<Expression.Lvalue> ParseBracketedLvalue(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
+    private ParseResult<Expression.Lvalue> ParseBracketedLvalue(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_messenger, tokens, "bracketed lvalue")
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var expression, ParseLvalue)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Expression.Lvalue.Bracketed(t, expression));
 
-    private ParseResult<Expression> ParseBracketed(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
+    private ParseResult<Expression> ParseBracketed(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_messenger, tokens, "bracketed expression")
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var expression, ParseExpression)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Expression.Bracketed(t, expression));
 
-    private ParseResult<Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
+    private ParseResult<Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_messenger, tokens, "function call")
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Punctuation.OpenBracket)
         .ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma, Punctuation.CloseBracket)
     .MapResult(t => new Expression.FunctionCall(t, name, parameters));
 
-    private ParseResult<Expression.BuiltinFdf> ParseBuiltinFdf(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
+    private ParseResult<Expression.BuiltinFdf> ParseBuiltinFdf(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_messenger, tokens, "FdF call")
         .ParseToken(Keyword.Fdf)
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var argNomLog, ParseExpression)
@@ -121,12 +129,12 @@ internal partial class Parser
          int count = prOperand1.SourceTokens.Count;
          var operand1 = prOperand1.Value;
 
-         var prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
+         var prOperator = ParseTokenOfType(tokens.Skip(count), "operator", operators.Keys);
 
          while (prOperator.HasValue) {
              count += prOperator.SourceTokens.Count;
 
-             ParseResult<Expression> operand2 = descentParser(tokens.Skip(count));
+             var operand2 = descentParser(tokens.Skip(count));
              count += operand2.SourceTokens.Count;
              if (!operand2.HasValue) {
                  return operand2.WithSourceTokens(new(tokens, count));
@@ -135,17 +143,17 @@ internal partial class Parser
              operand1 = new Expression.OperationBinary(new(tokens, count),
                  operand1, operators[prOperator.Value.Type], operand2.Value);
 
-             prOperator = ParseTokenOfType(tokens.Skip(count), operators.Keys);
+             prOperator = ParseTokenOfType(tokens.Skip(count), "operator", operators.Keys);
          }
 
          return ParseResult.Ok(new(tokens, count), operand1);
-    };
+     };
 
     private static Parser<Expression> ParseUnaryOperation(
         IReadOnlyDictionary<TokenType, UnaryOperator> operators,
         Parser<Expression> descentParser)
      => tokens => {
-         var prOperator = ParseTokenOfType(tokens, operators.Keys);
+         var prOperator = ParseTokenOfType(tokens, "operator", operators.Keys);
 
          return prOperator.Match(
              some: op => {
@@ -154,5 +162,5 @@ internal partial class Parser
                  return prExpr.WithSourceTokens(new(tokens, prExpr.SourceTokens.Count + 1));
              },
              none: _ => descentParser(tokens));
-    };
+     };
 }

@@ -1,13 +1,7 @@
 programme Test c'est
 
-procédure proc();
-procédure proc();
-
 début
-    proc();
-fin
-
-procédure proc() c'est
-début
-    écrireEcran("yo yo yo");
+    pour (i de 1 à MAX) faire
+        
+    finfaire
 fin

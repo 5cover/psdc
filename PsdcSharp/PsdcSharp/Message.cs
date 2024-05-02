@@ -36,7 +36,7 @@ internal sealed record Message(
 
     public static Message ErrorSyntax(SourceTokens sourceTokens, ParseError error)
     {
-        StringBuilder msgContent = new("expected ");
+        StringBuilder msgContent = new($"expected ");
 
         if (error.ExpectedProductions.Count > 0) {
             msgContent.AppendJoin(" or ", error.ExpectedProductions);

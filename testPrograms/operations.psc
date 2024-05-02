@@ -1,6 +1,8 @@
 programme Operations c'est
 // Oerations and implicit conversions example
 
+procédure proc(entF s1 : chaîne(20), entF s2 : chaîne);
+
 début
     b : booléen; // boolean
     c : caractère; // character
@@ -48,4 +50,14 @@ début
 
     r := +r;
     r := -r;
+
+    // implicit conversions
+    r := i + r;
+    proc(entE s, entE s);
+fin
+
+procédure proc(entF s1 : chaîne(20), entF s2 : chaîne) c'est début
+    b : booléen;
+    b := s1 == s2;
+    b := s1 != s2;
 fin

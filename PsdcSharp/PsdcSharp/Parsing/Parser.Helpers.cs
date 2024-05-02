@@ -22,39 +22,41 @@ internal partial class Parser
     private static Parser<T> MakeAlwaysOkParser<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
      => tokens => ParseResult.Ok(makeNodeWithValue(new(tokens, 1), tokens.First().Value.NotNull()));
 
-    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator) => ParseOperation.Start(_messenger, tokens)
+    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator) => ParseOperation.Start(_messenger, tokens, expectedType.ToString())
         .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => resultCreator(tokens, value));
 
-    private ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator) => ParseOperation.Start(_messenger, tokens)
+    private ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator) => ParseOperation.Start(_messenger, tokens, expectedType.ToString())
         .ParseToken(expectedType)
     .MapResult(resultCreator);
 
-    private static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, Parser<T>? fallback = null)
+    private static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, Parser<T>? fallback = null)
     {
         var firstToken = tokens.FirstOrNone();
-        var error = ParseError.ForProduction<T>(firstToken, parserMap.Keys);
+        var error = ParseError.ForProduction(production, firstToken, parserMap.Keys);
         return firstToken.HasValue && parserMap.TryGetValue(firstToken.Value.Type, out var parser)
             ? parser(tokens)
-            : fallback?.Invoke(tokens).MapError(error.CombineWith)
+            : fallback?.Invoke(tokens).MapError(e
+                 => error.CombineWith(error) with { ExpectedProductions = error.ExpectedProductions })
             ?? ParseResult.Fail<T>(SourceTokens.Empty, error);
     }
 
-    private static ParseResult<T> GetByTokenType<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, T> map)
+    private static ParseResult<T> GetByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, T> map)
     {
         var firstToken = tokens.FirstOrNone();
         return firstToken.HasValue && map.TryGetValue(firstToken.Value.Type, out var t)
             ? ParseResult.Ok(new(tokens, 1), t)
-            : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.ForProduction<T>(firstToken, map.Keys));
+            : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.ForProduction(production, firstToken, map.Keys));
     }
 
     private static ParseResult<Token> ParseTokenOfType(
         IEnumerable<Token> tokens,
+        string production,
         IEnumerable<TokenType> allowedTokensTypes)
     {
         var firstToken = tokens.FirstOrNone();
         return firstToken.HasValue && allowedTokensTypes.Contains(firstToken.Value.Type)
             ? ParseResult.Ok(new(tokens, 1), firstToken.Value)
-            : ParseResult.Fail<Token>(SourceTokens.Empty, ParseError.ForProduction<Token>(firstToken, allowedTokensTypes));
+            : ParseResult.Fail<Token>(SourceTokens.Empty, ParseError.ForProduction(production, firstToken, allowedTokensTypes));
     }
 }

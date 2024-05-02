@@ -175,12 +175,6 @@ internal static class OptionalCollectionExtensions
             : values.Some<IEnumerable<T>, IEnumerable<TError>>();
     }
 
-    public static Option<IEnumerable<T>> AccumulateAtLeast1<T>(this IEnumerable<Option<T>> options)
-    {
-        var somes = options.Accumulate();
-        return somes.Any() ? somes.Some() : Option.None<IEnumerable<T>>();
-    }
-
     public static IEnumerable<T> Accumulate<T>(this IEnumerable<Option<T>> options)
      => options.Where(v => v.HasValue).Select(v => v.Value!);
     public static T FirstSome<T>(this IEnumerable<Option<T>> options)
@@ -188,14 +182,30 @@ internal static class OptionalCollectionExtensions
 
     public static Option<T> FirstOrNone<T>(this IEnumerable<Option<T>> options, Func<Option<T>, bool> predicate)
      => options.FirstOrDefault(predicate, Option.None<T>());
+
     public static Option<T> FirstOrNone<T>(this IEnumerable<T> items, Func<T, bool> predicate)
-     => items.FirstOrDefault(predicate) is { } first ? first.Some() : Option.None<T>();
+    {
+        var r = items.FirstOrDefault(predicate);
+        return r is null || r.Equals(default(T)) ? Option.None<T>() : r.Some();
+    }
+
     public static Option<T> FirstOrNone<T>(this IEnumerable<T> items)
-     => items.FirstOrDefault() is { } first ? first.Some() : Option.None<T>();
+    {
+        var r = items.FirstOrDefault();
+        return r is null || r.Equals(default(T)) ? Option.None<T>() : r.Some();
+    }
+
     public static Option<T> LastOrNone<T>(this IEnumerable<Option<T>> options, Func<Option<T>, bool> predicate)
      => options.LastOrDefault(predicate, Option.None<T>());
     public static Option<T> LastOrNone<T>(this IEnumerable<T> items, Func<T, bool> predicate)
-     => items.LastOrDefault(predicate) is { } last ? last.Some() : Option.None<T>();
+    {
+        var r = items.LastOrDefault(predicate);
+        return r is null || r.Equals(default(T)) ? Option.None<T>() : r.Some();
+    }
+
     public static Option<T> LastOrNone<T>(this IEnumerable<T> items)
-     => items.LastOrDefault() is { } last ? last.Some() : Option.None<T>();
+    {
+        var r = items.LastOrDefault();
+        return r is null || r.Equals(default(T)) ? Option.None<T>() : r.Some();
+    }
 }

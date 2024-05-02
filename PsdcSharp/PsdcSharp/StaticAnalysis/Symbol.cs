@@ -15,6 +15,7 @@ internal interface Symbol : EquatableSemantics<Symbol>
 {
     public Identifier Name { get; }
     public SourceTokens SourceTokens { get; }
+
     internal record Variable(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type)
     : Symbol

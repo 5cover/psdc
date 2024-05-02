@@ -34,7 +34,7 @@ internal abstract class ParseOperation
 {
     private int _readCount;
     private readonly IEnumerable<Token> _tokens;
-
+    
     private ParseOperation(IEnumerable<Token> tokens, int readCount)
      => (_tokens, _readCount) = (tokens, readCount);
 
@@ -43,9 +43,10 @@ internal abstract class ParseOperation
     /// </summary>
     /// <param name="messenger">The messenger which will recieve syntax errors when multi-parsing.</param>
     /// <param name="tokens">The input tokens.</param>
+    /// <param name="production">Name of the production to parse.</param>
     /// <returns>A new <see cref="ParseOperation"/>.</returns>
-    public static ParseOperation Start(Messenger messenger, IEnumerable<Token> tokens)
-     => new SuccessfulSoFarOperation(tokens, messenger);
+    public static ParseOperation Start(Messenger messenger, IEnumerable<Token> tokens, string production)
+     => new SuccessfulSoFarOperation(tokens, messenger, production);
 
     /// <summary>
     /// Skims <paramref name="n"/> tokens.
@@ -125,7 +126,7 @@ internal abstract class ParseOperation
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens);
 
-    private sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, Messenger messenger) : ParseOperation(tokens, 0)
+    private sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, Messenger messenger, string production) : ParseOperation(tokens, 0)
     {
         private IEnumerable<Token> ParsingTokens => _tokens.Skip(_readCount);
 
@@ -143,7 +144,7 @@ internal abstract class ParseOperation
                 return this;
             }
             branch = default!;
-            return Fail(ParseError.ForProduction<T>(token, branches.Keys));
+            return Fail(ParseError.ForProduction(production, token, branches.Keys));
         }
 
         public override ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch)
@@ -183,7 +184,7 @@ internal abstract class ParseOperation
                 _readCount++;
                 return this;
             }
-            return Fail(ParseError.ForTerminal<Token>(token, type));
+            return Fail(ParseError.ForTerminal(production, token, type));
         }
 
         public override ParseOperation ParseTokenValue(out string result, TokenType type)
@@ -196,7 +197,7 @@ internal abstract class ParseOperation
             }
 
             result = null!;
-            return Fail(ParseError.ForTerminal<Token>(token, type));
+            return Fail(ParseError.ForTerminal(production, token, type));
         }
 
         public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
@@ -318,7 +319,7 @@ internal abstract class ParseOperation
                 none: error => messenger.Report(Message.ErrorSyntax(item.SourceTokens, error))
             );
 
-        private FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error);
+        private FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error with { FailedProduction = production });
 
         private Option<bool> NextParsingTokenIs(params TokenType[] types)
          => NextTokenIs(ParsingTokens, types);
