@@ -5,10 +5,10 @@ namespace Scover.Psdc.StaticAnalysis;
 internal static partial class AstExtensions
 {
     public static bool IsConstant(this Expression expression, ReadOnlyScope scope) => expression switch {
-        Expression.Bracketed b => b.Expression.IsConstant(scope),
+        Expression.Bracketed b => b.ContainedExpression.IsConstant(scope),
         Expression.Literal => true,
         Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.IsConstant(scope) && arrSub.Indexes.All(i => i.IsConstant(scope)),
-        Expression.Lvalue.Bracketed b => b.Lvalue.IsConstant(scope),
+        Expression.Lvalue.Bracketed b => b.ContainedLvalue.IsConstant(scope),
         Expression.Lvalue.ComponentAccess compAccess => compAccess.Structure.IsConstant(scope),
         Expression.Lvalue.VariableReference varRef => scope.GetSymbol<Symbol.Constant>(varRef.Name).HasValue,
         Expression.OperationBinary ob => ob.Operand1.IsConstant(scope) && ob.Operand2.IsConstant(scope),
@@ -37,8 +37,8 @@ internal static partial class AstExtensions
          => opUn.Operand.EvaluateValue(scope)
             .FlatMap(op => op.Operate(opUn.Operator)
                 .MapError(e => GetOperationMessage(e, opUn, op.Type).Some())),
-        Expression.Bracketed b => b.Expression.EvaluateValue(scope),
-        Expression.Lvalue.Bracketed b => b.Lvalue.EvaluateValue(scope),
+        Expression.Bracketed b => b.ContainedExpression.EvaluateValue(scope),
+        Expression.Lvalue.Bracketed b => b.ContainedLvalue.EvaluateValue(scope),
         Expression.Lvalue.VariableReference v
          => scope.GetSymbol<Symbol.Constant>(v.Name)
             .MapError(e => Option.None<Message>())

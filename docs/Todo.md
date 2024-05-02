@@ -33,7 +33,7 @@
 - Release
 - More static analysis
 - customize formatting
-- allow optional brackets in control structures
+- **allow optional brackets in control structures** : update FG and parser
 - string literal escape sequences
 
 - Have formal grammar follow parsing order in choices.

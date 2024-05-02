@@ -54,29 +54,27 @@ internal partial class Parser
         ParseBinaryOperation(operatorsComparison,
         ParseBinaryOperation(operatorsAddSub,
         ParseBinaryOperation(operatorsMulDivMod,
-        ParseUnaryOperation(operatorsUnary, ParseAnyOf(ParseArraySubscriptOrComponentAccess, ParseTerminalRvalue)))))))))(tokens);
+        ParseUnaryOperation(operatorsUnary, ParseFirst(ParseArraySubscriptOrComponentAccess, ParseTerminalRvalue)))))))))(tokens);
 
     private ParseResult<Expression.Lvalue> ParseLvalue(IEnumerable<Token> tokens)
-     => ParseAnyOf(ParseArraySubscriptOrComponentAccess, ParseTerminalLvalue)(tokens);
+     => ParseFirst(ParseArraySubscriptOrComponentAccess, ParseTerminalLvalue)(tokens);
 
     private ParseResult<Expression.Lvalue> ParseArraySubscriptOrComponentAccess(IEnumerable<Token> tokens)
      => ParseOperation.Start(_messenger, tokens, "array subscript or component access")
         .Parse(out var rvalue, ParseTerminalRvalue)
         .ChooseBranch<Expression.Lvalue>(out var branch, new() {
-            [Punctuation.OpenSquareBracket] = o => {
-                o.ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma, Punctuation.CloseSquareBracket);
-                return t => new Expression.Lvalue.ArraySubscript(t, rvalue, indexes);
-            },
-            [Operator.ComponentAccess] = o => {
-                o.Parse(out var component, ParseIdentifier);
-                return t => new Expression.Lvalue.ComponentAccess(t, rvalue, component);
-            },
+            [Punctuation.OpenSquareBracket] = o
+             => (o.ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma, Punctuation.CloseSquareBracket),
+                t => new Expression.Lvalue.ArraySubscript(t, rvalue, indexes)),
+            [Operator.ComponentAccess] = o
+             => (o.Parse(out var component, ParseIdentifier),
+                t => new Expression.Lvalue.ComponentAccess(t, rvalue, component)),
         })
         .Fork(out var result, branch)
         .MapResult(result);
 
     private ParseResult<Expression> ParseTerminalRvalue(IEnumerable<Token> tokens)
-     => ParseAnyOf(
+     => ParseFirst(
             t => ParseByTokenType(t, "literal", _literalParsers),
             ParseFunctionCall,
             ParseTerminalLvalue,
@@ -84,7 +82,7 @@ internal partial class Parser
             ParseBuiltinFdf)(tokens);
 
     private ParseResult<Expression.Lvalue> ParseTerminalLvalue(IEnumerable<Token> tokens)
-     => ParseAnyOf(
+     => ParseFirst(
             t => ParseIdentifier(tokens)
                 .Map((t, name) => new Expression.Lvalue.VariableReference(t, name)),
             ParseBracketedLvalue)(tokens);

@@ -50,7 +50,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
     {
         Indent(o.AppendLine()).Append("int main() ");
         return AppendBlock(o, mainProgram,
-            sb => Indent(sb).AppendLine("return 0;"))
+            sb => Indent(sb.AppendLine()).AppendLine("return 0;"))
         .AppendLine();
     }
 
@@ -115,13 +115,13 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         // their only usage statement in C is in braceless control structures, but we don't have them, so they serve no purpose.
         // In addition we make get them as a result of parsing errors.
         Statement.Nop => o,
-        Statement.Alternative alternative => AppendAlternative(o, alternative),
+        Statement.Alternative alt => AppendAlternative(o, alt),
         Statement.Builtin builtin => AppendBuiltin(o, builtin, scope),
         Statement.Assignment assignment => AppendAssignment(o, assignment),
-        Statement.DoWhileLoop doWhileLoop => AppendDoWhileLoop(o, doWhileLoop),
-        Statement.ForLoop forLoop => AppendForLoop(o, forLoop),
+        Statement.DoWhileLoop doWhile => AppendDoWhileLoop(o, doWhile),
+        Statement.ForLoop @for => AppendForLoop(o, @for),
         Statement.ProcedureCall call => AppendCall(Indent(o), call).AppendLine(";"),
-        Statement.RepeatLoop repeatLoop => AppendRepeatLoop(o, repeatLoop),
+        Statement.RepeatLoop repeat => AppendRepeatLoop(o, repeat),
         Statement.Return ret => AppendReturn(o, ret),
         Statement.Switch @switch => AppendSwitch(o, @switch),
         Statement.LocalVariable varDecl => AppendVariableDeclaration(o, varDecl, scope),
@@ -178,14 +178,16 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         }
 
         alternative.Else.MatchSome(elseBlock
-         => AppendBlock(o.Append(" else "), elseBlock).AppendLine());
+         => AppendBlock(o.Append(" else "), elseBlock));
+
+        o.AppendLine();
 
         return o;
 
         StringBuilder AppendAlternativeClause(StringBuilder o, string keyword, Expression condition, BlockNode node)
         {
-            AppendExpression(o.Append($"{keyword} ("), condition).Append(") ");
-            return AppendBlock(o, node);
+            AppendBracketedExpression(o.Append($"{keyword} "), condition);
+            return AppendBlock(o.Append(' '), node);
         }
     }
 
@@ -222,7 +224,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
     private StringBuilder AppendSwitch(StringBuilder o, Statement.Switch @switch)
     {
         Indent(o).Append("switch ");
-        AppendExpression(o, @switch.Expression, true).AppendLine(" {");
+        AppendBracketedExpression(o, @switch.Expression).AppendLine(" {");
 
         foreach (var @case in @switch.Cases) {
             Indent(o).Append("case ");
@@ -261,7 +263,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
     private StringBuilder AppendWhileLoop(StringBuilder o, Statement.WhileLoop whileLoop)
     {
         Indent(o).Append("while ");
-        AppendExpression(o, whileLoop.Condition, true);
+        AppendBracketedExpression(o, whileLoop.Condition);
         return AppendBlock(o.Append(' '), whileLoop).AppendLine();
     }
 
@@ -269,7 +271,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
     {
         Indent(o).Append("do ");
         AppendBlock(o, doWhileLoop).Append(" while ");
-        AppendExpression(o, doWhileLoop.Condition, true);
+        AppendBracketedExpression(o, doWhileLoop.Condition);
         return o.AppendLine(";");
     }
 
@@ -277,7 +279,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
     {
         Indent(o).Append("do ");
         AppendBlock(o, repeatLoop).Append(" while (!");
-        AppendExpression(o, repeatLoop.Condition, true);
+        AppendBracketedExpression(o, repeatLoop.Condition);
         return o.AppendLine(");");
     }
 
@@ -309,6 +311,9 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
 
     #region Expressions
 
+    private StringBuilder AppendBracketedExpression(StringBuilder o, Expression expr)
+     => AppendExpression(o, expr, expr is not NodeBracketedExpression);
+
     private StringBuilder AppendExpression(StringBuilder o, Expression expr, bool bracketed = false)
     {
         if (bracketed) {
@@ -323,9 +328,9 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
             Expression.Literal literal => o.Append(FormatValue(literal.Value)),
             Expression.OperationBinary opBin => AppendOperationBinary(o, opBin),
             Expression.OperationUnary opUn => AppendOperationUnary(o, opUn),
-            Expression.Bracketed b => AppendExpression(o, b.Expression, true),
+            Expression.Bracketed b => AppendExpression(o, b.ContainedExpression, true),
             Expression.Lvalue.ArraySubscript arraySub => AppendArraySubscript(o, arraySub),
-            Expression.Lvalue.Bracketed b => AppendExpression(o, b.Lvalue, true),
+            Expression.Lvalue.Bracketed b => AppendExpression(o, b.ContainedLvalue, true),
             Expression.Lvalue.VariableReference variable => o.Append(variable.Name),
             Expression.Lvalue.ComponentAccess compAccess => AppendExpression(o, compAccess.Structure, PrecedenceRequiresBrackets(compAccess.Structure))
                             .Append('.').Append(compAccess.ComponentName),
@@ -404,7 +409,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
     private static bool RequiresPointer(ParameterMode mode) => mode != ParameterMode.In;
 
     private static bool PrecedenceRequiresBrackets(Expression expr) => expr is not
-        (Expression.Bracketed
+        (NodeBracketedExpression
         or Expression.BuiltinFdf
         or Expression.FunctionCall
         or Expression.Literal

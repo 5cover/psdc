@@ -10,8 +10,8 @@ internal static partial class AstExtensions
     public static Option<EvaluatedType, Message> EvaluateType(this Expression expression, ReadOnlyScope scope) => expression switch {
         Expression.OperationBinary ob => EvaluateTypeOperationBinary(ob, scope),
         Expression.OperationUnary ou => ou.Operand.EvaluateType(scope),
-        Expression.Bracketed b => b.Expression.EvaluateType(scope),
-        Expression.Lvalue.Bracketed b => b.Lvalue.EvaluateType(scope),
+        Expression.Bracketed b => b.ContainedExpression.EvaluateType(scope),
+        Expression.Lvalue.Bracketed b => b.ContainedLvalue.EvaluateType(scope),
 
         Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.EvaluateType(scope).FlatMap(outerType
          => outerType is EvaluatedType.Array arrayType

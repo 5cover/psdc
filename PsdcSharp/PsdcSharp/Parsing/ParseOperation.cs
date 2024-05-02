@@ -24,8 +24,8 @@ internal delegate T ResultCreator<out T>(SourceTokens sourceTokens);
 /// </summary>
 /// <typeparam name="T">The type of node this branch parses.</typeparam>
 /// <param name="operation">The current parsing operation.</param>
-/// <returns>A result creator to use to retrieve the result.</returns>
-internal delegate ResultCreator<T> Branch<out T>(ParseOperation operation);
+/// <returns>The current <see cref="ParseOperation"> and a result creator to use to retrieve the result based on the final read tokens of the parse operation.</returns>
+internal delegate (ParseOperation, ResultCreator<T>) Branch<T>(ParseOperation operation);
 
 /// <summary>
 /// A fluent class to parse production rules.
@@ -67,8 +67,9 @@ internal abstract class ParseOperation
     /// <typeparam name="T">The type of node to parse.</typeparam>
     /// <param name="result">Assigned to the result creator. Pass it to <see cref="MapResult"/> to retrieve the parse result.</param>
     /// <param name="branch">The branch to execute.</param>
-    /// <returns></returns>
+    /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch);
+
     public ParseOperation ChooseBranch<T>(
         out Branch<T> branch,
         Dictionary<TokenType, Branch<T>> branches)
@@ -149,8 +150,8 @@ internal abstract class ParseOperation
 
         public override ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch)
         {
-            result = branch(this);
-            return this;
+            (ParseOperation p, result) = branch(this);
+            return p;
         }
 
         public override ParseResult<T> MapResult<T>(ResultCreator<T> resultCreator) => MakeOkResult(resultCreator(ReadTokens));

@@ -25,6 +25,11 @@ internal abstract class BlockNode(SourceTokens sourceTokens,
     public IReadOnlyCollection<Node.Statement> Block => block;
 }
 
+internal interface NodeBracketedExpression : Node.Expression
+{
+    public Expression ContainedExpression { get; }
+}
+
 #endregion Node traits
 
 internal interface Node : EquatableSemantics<Node>
@@ -426,11 +431,16 @@ internal interface Node : EquatableSemantics<Node>
 
             internal sealed new class Bracketed(SourceTokens sourceTokens,
                 Lvalue lvalue)
-            : NodeImpl(sourceTokens), Lvalue
+            : NodeImpl(sourceTokens), Lvalue, NodeBracketedExpression
             {
-                public Lvalue Lvalue => lvalue;
+                public Lvalue ContainedLvalue { get; } = lvalue is NodeBracketedExpression b
+                                              && b.ContainedExpression is Lvalue l
+                                              ? l : lvalue;
+
+                Expression NodeBracketedExpression.ContainedExpression => ContainedLvalue;
+
                 public override bool SemanticsEqual(Node other) => other is Bracketed o
-                 && o.Lvalue.SemanticsEqual(Lvalue);
+                 && o.ContainedLvalue.SemanticsEqual(ContainedLvalue);
             }
 
             internal sealed class ArraySubscript(SourceTokens sourceTokens,
@@ -505,11 +515,12 @@ internal interface Node : EquatableSemantics<Node>
 
         internal sealed class Bracketed(SourceTokens sourceTokens,
             Expression expression)
-        : NodeImpl(sourceTokens), Expression
+        : NodeImpl(sourceTokens), NodeBracketedExpression
         {
-            public Expression Expression => expression;
+            public Expression ContainedExpression { get; } = expression is NodeBracketedExpression b
+                                                           ? b.ContainedExpression : expression;
             public override bool SemanticsEqual(Node other) => other is Bracketed o
-             && o.Expression.SemanticsEqual(Expression);
+             && o.ContainedExpression.SemanticsEqual(ContainedExpression);
         }
 
         internal interface Literal : Expression

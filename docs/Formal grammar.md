@@ -66,19 +66,20 @@ $$
     \\
     ⟨ForLoop⟩ \to \begin{split}
     \\
-    &   \text{pour}\ Identifier
-        \ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩
-        \{\text{pas} ⟨Expr⟩\}^?
+    &   \begin{cases}
+            \text{pour}\ Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \{\text{pas} ⟨Expr⟩\}^?\\
+            \text{pour}(Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \{\text{pas} ⟨Expr⟩\}^?)\\
+        \end{cases}
         \text{faire} \\
     &   ⟨Block⟩ \\
     &   \text{finfaire}
     \end{split}
     \\
-    ⟨RepeatLoop⟩ \to \text{répéter} ⟨Block⟩ \text{jusqu'à} (⟨Expr⟩)
+    ⟨RepeatLoop⟩ \to \text{répéter} ⟨Block⟩ \text{jusqu'à} ⟨Expr⟩
     \\
-    ⟨DoWhileLoop⟩ \to \text{faire} ⟨Block⟩ \text{tant\ que} (⟨Expr⟩)
+    ⟨DoWhileLoop⟩ \to \text{faire} ⟨Block⟩ \text{tant\ que} ⟨Expr⟩
     \\
-    ⟨WhileLoop⟩ \to \text{tant\ que} (⟨Expr⟩) \text{faire} ⟨Block⟩ \text{finfaire}
+    ⟨WhileLoop⟩ \to \text{tant\ que} ⟨Expr⟩ \text{faire} ⟨Block⟩ \text{finfaire}
     \\
     ⟨Switch⟩ \to \begin{split}
     &   \text{selon} ⟨Expr⟩ \text{c'est}\\
@@ -112,9 +113,9 @@ $$
     ⟨Nop⟩ \to ;
 \end{cases}
 \\
-⟨Alternative.If⟩ &\to \text{si} (⟨Expr⟩) \text{alors} ⟨Block⟩
+⟨Alternative.If⟩ &\to \text{si} ⟨Expr⟩ \text{alors} ⟨Block⟩
 \\
-⟨Alternative.ElseIf⟩ &\to \text{sinonsi} (⟨Expr⟩) \text{alors} ⟨Block⟩\
+⟨Alternative.ElseIf⟩ &\to \text{sinonsi} ⟨Expr⟩ \text{alors} ⟨Block⟩\
 \\
 ⟨Alternative.Else⟩ &\to \text{sinon} ⟨Block⟩
 \\

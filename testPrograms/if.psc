@@ -13,6 +13,7 @@ début
         écrireÉcran("Vous êtes majeur");
     sinonsi (age == 16) alors
         écrireÉcran("C'est l'heure de se faire recenser!");
+    sinonsi age == 18 alors
     sinon
         écrireÉcran("T'es un bébé toi!");
     finsi

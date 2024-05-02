@@ -5,12 +5,12 @@ namespace Scover.Psdc.Parsing;
 
 internal partial class Parser
 {
-    private static Parser<T> ParseAnyOf<T>(Parser<T> firstParser, params Parser<T>[] parsers)
+    private static Parser<T> ParseFirst<T>(Parser<T> firstParser, params Parser<T>[] parsers)
      => tokens => {
         var result = firstParser(tokens);
         var enumParser = parsers.GetGenericEnumerator();
 
-        while (enumParser.MoveNext() && !result.HasValue) {
+        while (!result.HasValue && enumParser.MoveNext()) {
             result = enumParser.Current(tokens).MapError(result.Error.CombineWith);
         }
 
