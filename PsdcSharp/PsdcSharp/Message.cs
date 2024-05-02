@@ -38,11 +38,11 @@ internal sealed record Message(
     {
         StringBuilder msgContent = new("expected ");
 
-        _ = error.ExpectedTokens.Count switch {
-            0 => throw new UnreachableException("tokens set is empty"),
-            <= 3 => msgContent.AppendJoin(", ", error.ExpectedTokens),
-            _ => msgContent.Append(error.ExpectedProductionName),
-        };
+        if (error.ExpectedProductions.Count > 0) {
+            msgContent.AppendJoin(" or ", error.ExpectedProductions);
+        } else {
+            msgContent.AppendJoin(", ", error.ExpectedTokens);
+        }
 
         error.ErroneousToken.MatchSome(token => msgContent.Append($", got {token}"));
 
@@ -102,6 +102,9 @@ internal sealed record Message(
     public static string ProblemWrongArgumentType(Identifier name, EvaluatedType expected, EvaluatedType actual)
      => $"wrong type for `{name}`: expected {expected}, got {actual}";
 
+    public static Message ErrorTargetLanguage(string targetLanguageName, IEnumerable<Token> sourceTokens, string content)
+     => Create(sourceTokens, MessageCode.TargetLanguageError, $"{targetLanguageName}: {content}");
+
     public static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
         $"reassigning constant `{constant.Name}`");
@@ -118,10 +121,6 @@ internal sealed record Message(
     public static Message ErrorStructureDuplicateComponent(IEnumerable<Token> sourceTokens, Identifier componentName)
      => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
         $"duplicate component `{componentName}` in structure");
-
-    public static Message ErrorOutputParameterNeverAssigned(Identifier parameterName)
-     => Create(parameterName.SourceTokens, MessageCode.OutputParameterNeverAssigned,
-        $"output parameter `{parameterName}` never assigned");
 
     public static Message ErrorStructureComponentDoesntExist(Expression.Lvalue.ComponentAccess compAccess,
         Option<Identifier> structureName)

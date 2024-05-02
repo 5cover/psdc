@@ -5,14 +5,13 @@ namespace Scover.Psdc.Parsing;
 
 internal partial class Parser
 {
-
     private static Parser<T> ParseAnyOf<T>(Parser<T> firstParser, params Parser<T>[] parsers)
      => tokens => {
         var result = firstParser(tokens);
         var enumParser = parsers.GetGenericEnumerator();
 
         while (enumParser.MoveNext() && !result.HasValue) {
-            result = enumParser.Current(tokens);
+            result = enumParser.Current(tokens).MapError(result.Error.CombineWith);
         }
 
         return result;
@@ -34,10 +33,11 @@ internal partial class Parser
     private static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, Parser<T>? fallback = null)
     {
         var firstToken = tokens.FirstOrNone();
+        var error = ParseError.ForProduction<T>(firstToken, parserMap.Keys);
         return firstToken.HasValue && parserMap.TryGetValue(firstToken.Value.Type, out var parser)
             ? parser(tokens)
-            : fallback?.Invoke(tokens)
-            ?? ParseResult.Fail<T>(SourceTokens.Empty, ParseError.Create<T>(firstToken, parserMap.Keys));
+            : fallback?.Invoke(tokens).MapError(error.CombineWith)
+            ?? ParseResult.Fail<T>(SourceTokens.Empty, error);
     }
 
     private static ParseResult<T> GetByTokenType<T>(IEnumerable<Token> tokens, IReadOnlyDictionary<TokenType, T> map)
@@ -45,7 +45,7 @@ internal partial class Parser
         var firstToken = tokens.FirstOrNone();
         return firstToken.HasValue && map.TryGetValue(firstToken.Value.Type, out var t)
             ? ParseResult.Ok(new(tokens, 1), t)
-            : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.Create<T>(firstToken, map.Keys));
+            : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.ForProduction<T>(firstToken, map.Keys));
     }
 
     private static ParseResult<Token> ParseTokenOfType(
@@ -55,6 +55,6 @@ internal partial class Parser
         var firstToken = tokens.FirstOrNone();
         return firstToken.HasValue && allowedTokensTypes.Contains(firstToken.Value.Type)
             ? ParseResult.Ok(new(tokens, 1), firstToken.Value)
-            : ParseResult.Fail<Token>(SourceTokens.Empty, ParseError.Create<Token>(firstToken, allowedTokensTypes));
+            : ParseResult.Fail<Token>(SourceTokens.Empty, ParseError.ForProduction<Token>(firstToken, allowedTokensTypes));
     }
 }

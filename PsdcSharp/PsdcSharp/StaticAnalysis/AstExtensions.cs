@@ -12,6 +12,7 @@ internal static partial class AstExtensions
         Expression.OperationUnary ou => ou.Operand.EvaluateType(scope),
         Expression.Bracketed b => b.Expression.EvaluateType(scope),
         Expression.Lvalue.Bracketed b => b.Lvalue.EvaluateType(scope),
+
         Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.EvaluateType(scope).FlatMap(outerType
          => outerType is EvaluatedType.Array arrayType
             ? arrayType.ElementType.Some<EvaluatedType, Message>()

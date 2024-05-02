@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
@@ -107,7 +108,7 @@ internal abstract class ParseOperation
     public abstract ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
-    public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator);
+    public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens);
@@ -119,7 +120,7 @@ internal abstract class ParseOperation
     public abstract ParseOperation ParseToken(TokenType type);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
-    public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator);
+    public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens);
@@ -142,7 +143,7 @@ internal abstract class ParseOperation
                 return this;
             }
             branch = default!;
-            return Fail(ParseError.Create<T>(token, branches.Keys));
+            return Fail(ParseError.ForProduction<T>(token, branches.Keys));
         }
 
         public override ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch)
@@ -174,34 +175,102 @@ internal abstract class ParseOperation
             result = pr.DiscardError();
             return this;
         }
-        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator)
+
+        public override ParseOperation ParseToken(TokenType type)
+        {
+            Option<Token> token = ParsingTokens.FirstOrNone();
+            if (token.HasValue && token.Value.Type == type) {
+                _readCount++;
+                return this;
+            }
+            return Fail(ParseError.ForTerminal<Token>(token, type));
+        }
+
+        public override ParseOperation ParseTokenValue(out string result, TokenType type)
+        {
+            Option<Token> token = ParsingTokens.FirstOrNone();
+            if (token.HasValue && token.Value.Type == type) {
+                _readCount++;
+                result = token.Value.Value ?? throw new InvalidOperationException("Parsed token doesn't have a value");
+                return this;
+            }
+
+            result = null!;
+            return Fail(ParseError.ForTerminal<Token>(token, type));
+        }
+
+        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
         {
             List<T> items = [];
             result = items;
 
-            ParseResult<T> item = parse(ParsingTokens);
+            var item = parse(ParsingTokens);
 
-            _readCount += item.SourceTokens.Count;
-
-            bool separatorPresent = CheckAndConsumeToken(ParsingTokens, separator);
-
-            if (item.HasValue) {
-                items.Add(item.Value);
-            } else {
-                if (!separatorPresent) {
-                    // If the first item didn't have a value and wasn't followed by a separator, go back in the read tokens to where we were when we started.
-                    // This is so we don't read too many tokens when there are zero elements.
-                    _readCount -= item.SourceTokens.Count;
-                }
-
+            if (!item.HasValue && NextParsingTokenIs(end).ValueOr(true)) {
                 return Fail(item.Error);
             }
 
-            if (separatorPresent) {
-                ParseWhile(items, parse, () => CheckAndConsumeToken(ParsingTokens, separator), doWhile: true);
+            _readCount += Math.Max(1, item.SourceTokens.Count);
+            AddOrSyntaxError(items, item);
+
+            ParseWhile(items, parse, () => CheckAndConsumeToken(ParsingTokens, separator),
+                skimWhile: () => !NextParsingTokenIs(separator, end).ValueOr(true));
+
+            if (readEndToken) {
+                _ = CheckAndConsumeToken(ParsingTokens, end);
             }
 
             return this;
+        }
+
+        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
+        {
+            List<T> items = [];
+            result = items;
+
+            var item = parse(ParsingTokens);
+
+            if (!item.HasValue && NextParsingTokenIs(end).ValueOr(true)) {
+                return this;
+            }
+
+            _readCount += Math.Max(1, item.SourceTokens.Count);
+            AddOrSyntaxError(items, item);
+
+            ParseWhile(items, parse, () => CheckAndConsumeToken(ParsingTokens, separator),
+                skimWhile: () => !NextParsingTokenIs(separator, end).ValueOr(true));
+
+            if (readEndToken) {
+                _ = CheckAndConsumeToken(ParsingTokens, end);
+            }
+
+            return this;
+        }
+
+        private void ParseWhile<T>(ICollection<T> items, Parser<T> parse, Func<bool> keepGoingWhile, bool doWhile = false, Func<bool>? skimWhile = null)
+        {
+            while (skimWhile?.Invoke() ?? false) {
+                _readCount++;
+            }
+
+            ParseError? lastError = null;
+            while (doWhile || keepGoingWhile()) {
+                doWhile = false;
+
+                var item = parse(ParsingTokens);
+                _readCount += Math.Max(1, item.SourceTokens.Count);
+
+                if (item.HasValue || !item.Error.IsEquivalent(lastError)) {
+                    AddOrSyntaxError(items, item);
+                }
+
+                if (!item.HasValue) {
+                    lastError = item.Error;
+                    while (skimWhile?.Invoke() ?? false) {
+                        _readCount++;
+                    }
+                }
+            }
         }
 
         public override ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
@@ -218,77 +287,9 @@ internal abstract class ParseOperation
                 return Fail(item.Error);
             }
 
-            ParseWhile(items, parse, () => !NextParsingTokenIsAny(endTokens).ValueOr(true));
+            ParseWhile(items, parse, () => !NextParsingTokenIs(endTokens).ValueOr(true));
 
             return this;
-        }
-
-        public override ParseOperation ParseToken(TokenType type)
-        {
-            Option<Token> token = ParsingTokens.FirstOrNone();
-            if (token.HasValue && token.Value.Type == type) {
-                _readCount++;
-                return this;
-            }
-            return Fail(ParseError.Create<Token>(token, type));
-        }
-
-        public override ParseOperation ParseTokenValue(out string result, TokenType type)
-        {
-            Option<Token> token = ParsingTokens.FirstOrNone();
-            if (token.HasValue && token.Value.Type == type) {
-                _readCount++;
-                result = token.Value.Value ?? throw new InvalidOperationException("Parsed token doesn't have a value");
-                return this;
-            }
-
-            result = null!;
-            return Fail(ParseError.Create<Token>(token, type));
-        }
-
-        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator)
-        {
-            List<T> items = [];
-            result = items;
-
-            ParseResult<T> item = parse(ParsingTokens);
-
-            _readCount += item.SourceTokens.Count;
-
-            bool separatorPresent = CheckAndConsumeToken(ParsingTokens, separator);
-
-            if (item.HasValue) {
-                items.Add(item.Value);
-            } else if (!separatorPresent) {
-                // If the first item didn't have a value and wasn't followed by a separator, go back in the read tokens to where we were when we started.
-                // This is so we don't read too many tokens when there are zero elements.
-                _readCount -= item.SourceTokens.Count;
-            }
-
-            if (separatorPresent) {
-                ParseWhile(items, parse, () => CheckAndConsumeToken(ParsingTokens, separator), doWhile: true);
-            }
-
-            return this;
-        }
-
-        private void ParseWhile<T>(ICollection<T> items, Parser<T> parse, Func<bool> doKeepGoing, bool doWhile = false)
-        {
-            ParseError? lastError = null;
-            while (doWhile || doKeepGoing()) {
-                doWhile = false;
-
-                var item = parse(ParsingTokens);
-                _readCount += Math.Max(1, item.SourceTokens.Count);
-
-                if (item.HasValue || !item.Error.IsEquivalent(lastError)) {
-                    AddOrSyntaxError(items, item);
-                }
-
-                if (!item.HasValue) {
-                    lastError = item.Error;
-                }
-            }
         }
 
         public override ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
@@ -296,15 +297,15 @@ internal abstract class ParseOperation
             List<T> items = [];
             result = items;
 
-            ParseWhile(items, parse, () => !NextParsingTokenIsAny(endTokens).ValueOr(true));
+            ParseWhile(items, parse, () => !NextParsingTokenIs(endTokens).ValueOr(true));
 
             return this;
         }
 
         private ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(new(_tokens, _readCount), result);
-        private bool CheckAndConsumeToken(IEnumerable<Token> tokens, TokenType type)
+        private bool CheckAndConsumeToken(IEnumerable<Token> tokens, params TokenType[] types)
         {
-            bool nextIsSeparator = NextTokenIs(tokens, type);
+            bool nextIsSeparator = NextTokenIs(tokens, types).ValueOr(false);
             if (nextIsSeparator) {
                 _readCount++;
             }
@@ -319,10 +320,10 @@ internal abstract class ParseOperation
 
         private FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error);
 
-        private Option<bool> NextParsingTokenIsAny(IEnumerable<TokenType> types)
-         => ParsingTokens.FirstOrNone().Map(token => types.Contains(token.Type));
-        private static bool NextTokenIs(IEnumerable<Token> tokens, TokenType type)
-         => tokens.FirstOrNone().Map(token => token.Type == type).ValueOr(false);
+        private Option<bool> NextParsingTokenIs(params TokenType[] types)
+         => NextTokenIs(ParsingTokens, types);
+        private static Option<bool> NextTokenIs(IEnumerable<Token> tokens, params TokenType[] types)
+         => tokens.FirstOrNone().Map(token => types.Contains(token.Type));
 
         public override ParseOperation Skim(int n)
         {
@@ -346,7 +347,7 @@ internal abstract class ParseOperation
             result = Option.None<T>();
             return this;
         }
-        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator)
+        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true)
         {
             result = Array.Empty<T>();
             return this;
@@ -363,7 +364,7 @@ internal abstract class ParseOperation
             return this;
         }
         public override ParseOperation ParseToken(TokenType type) => this;
-        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator)
+        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
         {
             result = Array.Empty<T>();
             return this;

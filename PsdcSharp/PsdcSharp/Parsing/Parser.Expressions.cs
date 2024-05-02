@@ -63,8 +63,7 @@ internal partial class Parser
         .Parse(out var rvalue, ParseTerminalRvalue)
         .ChooseBranch<Expression.Lvalue>(out var branch, new() {
             [Punctuation.OpenSquareBracket] = o => {
-                o.ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma)
-                 .ParseToken(Punctuation.CloseSquareBracket);
+                o.ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma, Punctuation.CloseSquareBracket);
                 return t => new Expression.Lvalue.ArraySubscript(t, rvalue, indexes);
             },
             [Operator.ComponentAccess] = o => {
@@ -101,8 +100,7 @@ internal partial class Parser
     private ParseResult<Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Punctuation.OpenBracket)
-        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma)
-        .ParseToken(Punctuation.CloseBracket)
+        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma, Punctuation.CloseBracket)
     .MapResult(t => new Expression.FunctionCall(t, name, parameters));
 
     private ParseResult<Expression.BuiltinFdf> ParseBuiltinFdf(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
@@ -111,12 +109,6 @@ internal partial class Parser
         .Parse(out var argNomLog, ParseExpression)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Expression.BuiltinFdf(t, argNomLog));
-
-    private ParseResult<IReadOnlyCollection<Expression>> ParseIndexes(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .ParseToken(Punctuation.OpenSquareBracket)
-        .ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma)
-        .ParseToken(Punctuation.CloseSquareBracket)
-    .MapResult(_ => indexes);
 
     private static Parser<Expression> ParseBinaryOperation(
         IReadOnlyDictionary<TokenType, BinaryOperator> operators,

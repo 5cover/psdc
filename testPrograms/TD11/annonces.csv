@@ -1,0 +1,1001 @@
+id	marque	designation	annee	km	prix
+1	renault	VelSatis 2.2 DCI GPS 3D 2006 Carminat	2006	171000	7300
+2	renault	Renault laguna 1.9 dci 120 cv initiale 2001	2001	194000	6700
+3	alfa romeo	Alfa Romeo GT Q2 2008	2008	37700	20200
+4	mini	VOLKSWAGEN PASSAT 2.0 TDI 140ch CONFORTLINE	2009	12500	19490
+5	peugeot	Peugeot 307 2.0 l hdi 110 cv serie xt clim 5 ptes	2004	128642	6700
+6	peugeot	PEUGEOT 406 Coupé - 2.2L 16V Pack	2003	37500	12000
+7	seat	Altea 2.0 tdi 140cv	2005	123500	9500
+8	nissan	Peugeot 407 Coupé 2.0L HDI 136cv Féline 9800Kms	2008	9800	26500
+9	audi	307 cc super occaz peu km	2005	8700	19500
+10	peugeot	Peugeot 407 -2.0 hdi -136 Cvhonda	2004	155000	8900
+11	audi	Audi a4 new ambition 2.0 tdi fap	2009	24000	26300
+12	renault	"Mégane rs 225cv ""TRES bonne affaire"""	2005	74000	11700
+13	renault	VelSatis 2.2 DCI GPS 3D 2006 Carminat	2006	171000	7300
+14	renault	Renault laguna 1.9 dci 120 cv initiale 2001	2001	194000	6700
+15	mini	"Nissan almera tino ""tekna"""	2005	89000	8800
+16	peugeot	307 sw 2.0 hdi pack	2004	106000	8700
+17	renault	Renault scenic 2 1.9 dci 120 ch. luxe privilege	2004	121000	7100
+18	renault	Renault Espace 2.2 l 150 cv Expression BV6	2003	107000	12000
+19	peugeot	Peugeot 807 2.0 hdi 16v confort	2006	135000	12500
+20	renault	Laguna II estate 2.2 dci 150 CV	2002	137000	7000
+21	renault	Megane cc	2006	75000	12500
+22	audi	406 coupé 2.2L HDi 16s pack	2002	80000	9500
+23	peugeot	407 2.0l hdi 136cv executive	2005	101000	9200
+24	mazda	Mazda rx8 élégance pack	2004	53000	14950
+25	lexus	Lexus is 220d pack muktimedia ou echange	2006	39500	20000
+26	peugeot	Peugeot 807 2.0 hdi 16v confort	2006	135000	12500
+27	renault	Mégane coupé	2000	193000	4100
+28	audi	406 coupé 2.2L HDi 16s pack	2002	80000	9500
+29	peugeot	407 2.0l hdi 136cv executive	2005	101000	9200
+30	ford	Ford mondeo 2.0l di 115	2002	200000	4500
+31	citroen	Citroen xsara picasso 2.0 hdi 90 ch exclusive gtie	2003	153000	5990
+32	citroen	Citroen xsara picasso 2.0 hdi	2003	141133	6990
+33	volkswagen	Volkswagen touran tdi match	2006	101200	13990
+34	peugeot	Peugeot 407 sw hdi 2.0 l 136 cv executive dms	2005	114000	8900
+35	audi	AUDI A3 S-Line 2.0 TDI 140Ch	2006	63000	19000
+36	seat	Seat Altéa 1.9 TDI 105 CV BVMS STYLANCE	2006	66500	10500
+37	renault	Megane 2 1.9 DCI 120 expression	2003	146000	6000
+38	ford	Ford focus 2.0 tdci 133 cv	2003	129000	7490
+39	renault	Renault espace 4 2l2 dci 150cv garantie a voir	2006	97850	11800
+40	peugeot	Peugeot 407 SW HDI avec garantie constructeur	2007	78000	14000
+41	renault	Renault espace 1.9 DCI 117 CH Confort expression	2006	150000	7600
+42	renault	Mégane 2 dci 120 luxe authentique	2003	114000	6900
+43	renault	Renault Scenic 2 1.9 DCI 120 cv Exception	2005	108647	7790
+44	renault	Mégane 2 dci 120 luxe authentique	2003	114000	6900
+45	renault	Renault espace 1.9 DCI 117 CH Confort expression	2006	150000	7600
+46	renault	Renault Scenic 2 1.9 DCI 120 cv Exception	2005	108647	7790
+47	audi	Superbe SEAT LEON II 2.0L TDI 140 ch	2006	95000	12500
+48	renault	Laguna 2 estate 1.9 dci 110 cv Expréssion	2003	123260	6500
+49	renault	SCENIC 2 conft expression 1.9 Dci 120cv	2003	161200	6900
+50	audi	Audi a4 1.9 tdi 100 cv toute options etat neuf	2002	168000	7700
+51	renault	Megane II CC 2.0 dci 150cv Dynamique 2007	2007	35500	15500
+52	audi	Audi a3 2.0 tdi	2004	112700	12800
+53	opel	Opel Vectra GTS 2.2 DTI 125 cv	2003	157000	6600
+54	audi	Audi A3 Sportback 2.0 TDI (140cv ) Ambition	2006	87000	14500
+55	alfa romeo	Alfa romeo 156 sw 1.9 jtd 115 cv an. 2004	2004	99300	9000
+56	audi	NISSAN PRIMERA 5p 2.2L DCi 138ch Acenta Pack GPS	2006	83653	9990
+57	audi	Superbe SEAT LEON II 2.0L TDI 140 ch	2006	95000	12500
+58	renault	Laguna 2 estate 1.9 dci 110 cv Expréssion	2003	123260	6500
+59	audi	Audi a4 1.9 tdi 100 cv toute options etat neuf	2002	168000	7700
+60	citroen	Citroen xsara break 2.0 hdi 90cv sx	2001	147000	3990
+61	renault	Megane II CC 2.0 dci 150cv Dynamique 2007	2007	35500	15500
+62	subaru	Subaru impreza WRX	2008	15000	32600
+63	alfa romeo	Alfa romeo 156 sw 1.9 jtd 115 cv an. 2004	2004	99300	9000
+64	seat	Seat leon 1.9 tdi 110ch signo grtie 3 mois	2002	162200	5990
+65	audi	AUDI A3 Sportback ambition luxe	2005	112882	14850
+66	volvo	Volvo s40	2001	147000	7000
+67	audi	NISSAN PRIMERA 5p 2.2L DCi 138ch Acenta Pack GPS	2006	83653	9990
+68	honda	Honda civic break 2.0 td 105 cv	1998	299800	2500
+69	peugeot	Peugeot 407 SW	2005	80000	13000
+70	seat	Seat toledo style 2.0 tdi 140 cv	2009	127000	19793
+71	renault	A saisir renault scenic 1.9dci 130cv exp gps	2006	63330	11800
+72	hyundai	Skoda roomster tdi	2007	29000	14190
+73	opel	Opel ZAFIRA 1.9 L CDTI 150 CV DIESEL COSMO EDITION	2006	66000	12950
+74	citroen	Citroen zxara	2000	155000	4000
+75	volkswagen	Volkswagen Jetta TDI 136cv	2006	111500	11500
+76	audi	Audi A3 Sportback 2.0 TDI (140cv ) Ambition	2006	87000	14500
+77	alfa romeo	Alfa romeo 156 sw 1.9 jtd 115 cv an. 2004	2004	99300	9000
+78	audi	AUDI A3 Sportback ambition luxe	2005	112882	14850
+79	volvo	Volvo s40	2001	147000	7000
+80	audi	NISSAN PRIMERA 5p 2.2L DCi 138ch Acenta Pack GPS	2006	83653	9990
+81	honda	Honda civic break 2.0 td 105 cv	1998	299800	2500
+82	peugeot	Peugeot 407 SW	2005	80000	22000
+83	seat	Seat toledo style 2.0 tdi 140 cv	2009	63000	19793
+84	renault	A saisir renault scenic 1.9dci 130cv exp gps	2006	633300	11800
+85	opel	Opel ZAFIRA 1.9 L CDTI 150 CV DIESEL COSMO EDITION	2006	66000	12950
+86	citroen	Citroen zxara	2000	155000	4000
+87	volkswagen	Volkswagen Jetta TDI 136cv	2006	111500	11500
+88	honda	Honda FRV 2.2 CTDI Confort Pack 1ére Main 55000 K	2006	55000	14900
+89	renault	Renault Laguna Estate 1.9 DCI 11O Pack Authentique	2005	82500	8490
+90	renault	LAGUNA INITIALE DCI 120cv 1&virgule;9l	2005	83000	10000
+91	renault	Velsatis 2.2 dci 150 cv	2003	145000	6500
+92	renault	Renault laguna 2 estate dynamique 1.9 dci	2005	77000	10500
+93	audi	AUDI A5 Cabriolet S-LINE 2.0 TSI 211 Quattro	2009	9000	46900
+94	volkswagen	POLO SPORT 1.9TDI 100CH&virgule; 6Cv &virgule;3p &virgule;1ère main &virgule;2007	2007	60000	11900
+95	citroen	CITROEN XSARA II 2.0 HDI 90 cv	2001	240000	3000
+96	audi	Audi A3 SPORBACK 1.9 tdi 105 S LINE	2006	88500	21000
+97	honda	Honda civic break 2.0 td 105 cv	1998	299800	2500
+98	peugeot	Peugeot 407 SW	2005	80000	14800
+99	seat	Seat toledo style 2.0 tdi 140 cv	2009	56000	19793
+100	renault	A saisir renault scenic 1.9dci 130cv exp gps	2006	63330	11800
+101	peugeot	Peugeot 307 2.0 hdi xs 110cv Navtech. GPS.TEL.CLIM	2004	125000	6650
+102	hyundai	Skoda roomster tdi	2007	29000	14190
+103	citroen	Citroen zxara	2000	155000	4000
+104	honda	Honda FRV 2.2 CTDI Confort Pack 1ére Main 55000 K	2006	55000	14900
+105	renault	LAGUNA INITIALE DCI 120cv 1&virgule;9l	2005	83000	10000
+106	renault	Velsatis 2.2 dci 150 cv	2003	145000	6500
+107	renault	Renault laguna 2 estate dynamique 1.9 dci	2005	77000	10500
+108	audi	AUDI A5 Cabriolet S-LINE 2.0 TSI 211 Quattro	2009	9000	46900
+109	volkswagen	POLO SPORT 1.9TDI 100CH&virgule; 6Cv &virgule;3p &virgule;1ère main &virgule;2007	2007	60000	11900
+110	audi	Audi A3 2.0tdi 140cv noire métal	2004	132000	11900
+111	audi	Audi A3 SPORBACK 1.9 tdi 105 S LINE	2006	88500	21000
+112	audi	SAAB 9-3 Break Sport-Hatch 9.3 9 3	2006	78000	13000
+113	mini	Volkswagen Touran	2005	53000	12500
+114	hyundai	Coupé Hyundai 2.0L FX 143cv	2002	144000	5900
+115	seat	Seat Ibiza Stylance Noir 1.9 TDI 105CV	2009	11400	12900
+116	volkswagen	Volkswagen Passat 1.9 TDI 130 ch	2001	210000	5700
+117	audi	Urgent 407 sport pack 2L 136CV 13 500 euros	2007	40000	13500
+118	renault	Megane 2 estate 1.9 dci 120cv	2003	176000	6900
+119	honda	Honda FRV 2.2 CTDI Confort Pack 1ére Main 55000 K	2006	55000	14900
+120	renault	Renault Laguna Estate 1.9 DCI 11O Pack Authentique	2005	82500	8490
+121	renault	Renault laguna 2 estate dynamique 1.9 dci	2005	77000	10500
+122	renault	Velsatis 2.2 dci 150 cv	2003	145000	6500
+123	audi	AUDI A5 Cabriolet S-LINE 2.0 TSI 211 Quattro	2009	9000	46900
+124	audi	Audi A3 SPORBACK 1.9 tdi 105 S LINE	2006	88500	21000
+125	audi	SAAB 9-3 Break Sport-Hatch 9.3 9 3	2006	78000	13000
+126	mini	Volkswagen Touran	2005	53000	12500
+127	hyundai	Coupé Hyundai 2.0L FX 143cv	2002	144000	5900
+128	seat	Seat Ibiza Stylance Noir 1.9 TDI 105CV	2009	11400	12900
+129	volkswagen	Volkswagen Passat 1.9 TDI 130 ch	2001	210000	5700
+130	audi	Urgent 407 sport pack 2L 136CV 13 500 euros	2007	40000	13500
+131	saab	Saab 2.0 l turbo se	2000	135000	7500
+132	renault	Megane 2 estate 1.9 dci 120cv	2003	176000	6900
+133	renault	Renault Megane R26 F1 Team - 18500\u0080	2007	35000	18500
+134	seat	Urgent jolie seat ibiza 1.9 tdi 130ch fr	2007	68500	10600
+135	audi	Audi A3 AMBITION 2009	2009	23000	22600
+136	peugeot	307 sw griffe 2.0l hdi 136 cv boite 6	2005	100000	5990
+137	opel	Opel zafira	2008	76800	13900
+138	audi	Audi a4 avant 1.9 tdi 130cv noir	2004	93000	12500
+139	audi	Audi a4 tdi 2.5 Multitronic	2003	150000	12200
+140	ford	Ford Mondéo 2.0 l TDCI 130cv Ghia	2003	190000	6000
+141	audi	Audi a3 sportback	2008	25000	20000
+142	citroen	Citroen C6 2.2 HDi Exclusive	2007	22000	21900
+143	audi	NISSAN 4x4 _ 2.2 DCI 136 CH COLUMBIA pack cuir	2006	135000	12200
+144	opel	OPEL ASTRA 1&virgule;9L cdti 150cv Cosmo	2006	65000	11000
+145	saab	Saab 2.0 l turbo se	2000	135000	7500
+146	volkswagen	Volkswagen Passat 1.9 TDI 130 ch	2001	210000	5700
+147	audi	Urgent 407 sport pack 2L 136CV 13 500 euros	2007	40000	13500
+148	renault	Megane 2 estate 1.9 dci 120cv	2003	176000	6900
+149	seat	Urgent jolie seat ibiza 1.9 tdi 130ch fr	2007	68500	10600
+150	renault	Renault Megane R26 F1 Team - 18500\u0080	2007	35000	18500
+151	audi	Audi A3 AMBITION 2009	2009	23000	22600
+152	peugeot	307 sw griffe 2.0l hdi 136 cv boite 6	2005	100000	5990
+153	ford	Ford Mondéo 2.0 l TDCI 130cv Ghia	2003	190000	6000
+154	opel	Opel zafira	2008	76800	13900
+155	audi	Audi a4 avant 1.9 tdi 130cv noir	2004	93000	12500
+156	audi	Audi a4 tdi 2.5 Multitronic	2003	150000	12200
+157	audi	Audi a3 sportback	2008	25000	20000
+158	citroen	Citroen C6 2.2 HDi Exclusive	2007	22000	21900
+159	audi	NISSAN 4x4 _ 2.2 DCI 136 CH COLUMBIA pack cuir	2006	135000	12200
+160	opel	OPEL ASTRA 1&virgule;9L cdti 150cv Cosmo	2006	65000	11000
+161	renault	Renault megane 22003	2003	187000	5300
+162	peugeot	PEUGEOT 307 SW 2.0 L HDI 136 CV Sport FAP 47000kms	2007	47000	14000
+163	renault	Espace IV privilège 2.0T&virgule;170cv&virgule;BVA&virgule;53800 km	2006	53800	14000
+164	peugeot	206 HDI Premium 2.0 l 90 ch TOUTE OPTION	2002	215000	4200
+165	renault	Espace 4 2.2 dci 150 ch	2003	127000	8500
+166	audi	A4 sport 2.0 tdi 143 cv	2008	57000	25900
+167	audi	Audi a4 1.9 tdi ambiente	2006	82500	14900
+168	renault	GRAND SCENIC Luxe Privilege 1.9 d Prix à débattre	2005	50500	13500
+169	opel	OPEL ASTRA GTC 1.9 CDTI 150ch SPORT reprise possib	2005	112000	10900
+170	peugeot	Peugeot 407 sw hdi 126 confort	2005	150000	8400
+171	opel	OPEL ASTRA 1&virgule;9L cdti 150cv Cosmo	2006	65000	11000
+172	seat	Seat Léon 2.0 TDI 170 CV FR BV6	2008	45450	18990
+173	renault	Renault megane 22003	2003	187000	5300
+174	peugeot	PEUGEOT 307 SW 2.0 L HDI 136 CV Sport FAP 47000kms	2007	47000	14000
+175	renault	Espace IV privilège 2.0T&virgule;170cv&virgule;BVA&virgule;53800 km	2006	53800	14000
+176	peugeot	206 HDI Premium 2.0 l 90 ch TOUTE OPTION	2002	215000	4200
+177	renault	Espace 4 2.2 dci 150 ch	2003	127000	8500
+178	audi	A4 sport 2.0 tdi 143 cv	2008	57000	25900
+179	opel	OPEL ASTRA GTC 1.9 CDTI 150ch SPORT reprise possib	2005	112000	10900
+180	citroen	A Saisir C5 2.2HDi 136CV 1ère main&virgule; très bon état	2002	105000	7000
+181	peugeot	Peugeot 407 sw hdi 126 confort	2005	150000	8400
+182	renault	Renault megane 1.9dti face2 excelent etat general	1999	272000	2650
+183	bmw	118 D confort 143CV 24000km du 12/2008 GPS16/9	2008	24000	19000
+184	jaguar	Jaguar x-type 2.0l D 130ch collection &virgule; gps (rare)	2005	82000	16500
+185	peugeot	Peugeot 407 2l hdi 136cv pack sport -prix a saisir	2007	150000	8900
+186	renault	Laguna II 2.2 dci 150cv luxe privilège	2002	113000	5800
+187	hyundai	Hyundai tucson 2.0 crdi 140 2wd	2008	55000	15000
+188	citroen	Citroen XSARA 2.0 HDI 90CH 5 portes	2003	167000	4700
+189	renault	Renault scenic 1.9dci fairway 105ch	2002	115200	6300
+190	opel	Astra Cosmo 120ch 1.9l CDTI	2007	20100	12000
+191	mazda	Mazda 3 2.0L Performance 11 000euros à déb	2007	33000	11000
+192	seat	Seat ibiza sport edition 1&virgule;9 l tdi 100 ch 5p	2008	53000	9200
+193	seat	Golf gtd 2.0l 170 dsg6	2009	6700	28650
+194	renault	Grand Scénic 1&virgule;9 DCI 120 cv Luxe Dynamique GPS	2005	73000	11000
+195	renault	Mégane estate sport dynamique 1&virgule;9 dci 120 break	2005	123500	7700
+196	audi	Audi A3 sporback	2007	78000	17200
+197	renault	Astra II 2.0 16S OPC 160cv 3p	2001	150000	5700
+198	mercedes	Chrysler - Pt Cruiser touring CRD	2002	165200	8700
+199	peugeot	Peugeot 407 hdi 110 cv fap pack	2006	84500	11000
+200	seat	Golf gtd 2.0l 170 dsg6	2009	6700	28650
+201	renault	Mégane estate sport dynamique 1&virgule;9 dci 120 break	2005	123500	7700
+202	audi	Audi A3 sporback	2007	78000	17200
+203	renault	Astra II 2.0 16S OPC 160cv 3p	2001	150000	5700
+204	mercedes	Chrysler - Pt Cruiser touring CRD	2002	165200	8700
+205	renault	Grand scenic luxe dynamique 1.9 dci 130ch fap	2005	69000	12900
+206	opel	Opel Astra 2.2 DTI	2003	110000	8000
+207	audi	Audi A3 ambition 1.9 tdi	2007	51000	16350
+208	fiat	Monospace fiat ulysse 2L2 --- 136cv	2005	160000	10500
+209	audi	Honda CRV 2.2 iCTDi 140cv	2005	106000	14000
+210	renault	Grand espace 3 2.2dCi PRIVILEGE 130cv	2002	106000	12000
+211	volkswagen	Scirocco sportline 2.0 TDI 140 ch	2009	6500	24000
+212	audi	Audi a3 2.0 tdi 170ch s-line prix negociable	2007	91000	17800
+213	ford	Ford focus C MAX GHIA 2.0l 136cv	2004	100000	9300
+214	renault	Scénic 2 - 1&virgule;9l DCI Dynamique Sport	2003	108000	7800
+215	renault	Renault megane break estate 1&virgule;9 dci fap 130 cv	2005	88000	10000
+216	audi	Audi A4 TDi 115cv 2001 8000 \u0080	2001	129900	8000
+217	mercedes	Golf v plus 1.9 tdi 105 confort gps - echange	2006	82000	11900
+218	peugeot	PEUGEOT 307 XS 2L HDI 90ch	2005	155000	8500
+219	ford	Ford S-Max 2.0 Tdci 130cv Titanium Bva 7 places	2008	36900	21900
+220	renault	Laguna II 1.9 DCI 120 ch Sport Dynamique	2003	135000	7600
+221	volkswagen	Volkswagen bora break 1.9l tdi 115cv bv6	2002	154000	7000
+222	alfa romeo	Alfa romeo 159 1.9 jtdm 150 cv distinctive	2006	53500	13700
+223	renault	SCENIC II Excepion 130cv	2008	12000	18750
+224	audi	Audi a6 en suberbe etat	2004	106000	13000
+225	renault	Espace 4 privilége 2.0 dci 150 cv 7 sieges	2007	139500	13500
+226	peugeot	Peugeot 308 féline	2008	44000	21000
+227	audi	Audi A6 2.5 TDI 150 CV&virgule; pack plus&virgule; distri neuve&virgule;	2001	121000	10990
+228	opel	OPEL ZAFIRA 1.9 CDTI FAP 120cv COSMO PACK	2008	13500	19500
+229	renault	Scénic 2 - 1&virgule;9l DCI Dynamique Sport	2003	108000	7800
+230	renault	Renault megane break estate 1&virgule;9 dci fap 130 cv	2005	88000	10000
+231	alfa romeo	Alfa Romeo GT Q2 2008	2008	44000	17900
+232	audi	Audi A4 TDi 115cv 2001 8000 \u0080	2001	129900	8000
+233	mercedes	Golf v plus 1.9 tdi 105 confort gps - echange	2006	82000	11900
+234	peugeot	PEUGEOT 307 XS 2L HDI 90ch	2005	155000	8600
+235	ford	Ford S-Max 2.0 Tdci 130cv Titanium Bva 7 places	2008	36900	21900
+236	renault	Laguna II 1.9 DCI 120 ch Sport Dynamique	2003	135000	9400
+237	volkswagen	Volkswagen bora break 1.9l tdi 115cv bv6	2002	154000	7000
+238	audi	Audi a3 tdi 130 cv	2001	203000	6850
+239	alfa romeo	Alfa romeo 159 1.9 jtdm 150 cv distinctive	2006	53500	13700
+240	renault	SCENIC II Excepion 130cv	2008	12000	18750
+241	audi	Audi a6 en suberbe etat	2004	106000	13000
+242	renault	Espace 4 privilége 2.0 dci 150 cv 7 sieges	2007	139500	13500
+243	peugeot	Peugeot 308 féline	2008	44000	21000
+244	audi	Audi A6 2.5 TDI 150 CV&virgule; pack plus&virgule; distri neuve&virgule;	2001	121000	10990
+245	opel	OPEL ZAFIRA 1.9 CDTI FAP 120cv COSMO PACK	2008	13500	19500
+246	renault	Laguna break 1.9dci 120ch	2002	170000	4200
+247	mazda	Mazda 3 Performance Pack 2.0L MZR-CD 143 cv	2007	41400	14500
+248	volkswagen	Volkswagen jetta 2.0 tdi comfortline 140cv bva	2009	12000	23800
+249	volkswagen	Volkswagen golf 5 break 1.9 tdi confortline 105 cv	2010	186000	20000
+250	renault	Scenic confort dynamique 150 cv 2006	2006	95000	9900
+251	volkswagen	Volkswagen passat 2.0 tdi comfortline 140 cv	2009	156000	22700
+252	renault	RENAULT ESPACE 3 2.2 dCi 130	2001	209000	5800
+253	renault	LAGUNA 2 PHASE 2 1.9 DCI LUXE PRIVILEGE +options	2006	86183	11000
+254	peugeot	407 griffe 2.0 hdi 136 ch bva gps ttes options	2005	128500	11900
+255	renault	Renault Espace IV 2.2 DCi	2005	92000	15000
+256	mazda	Mazda 3 Sport 2.2L MZR-CD 185 cv	2009	3500	21900
+257	peugeot	Peugeot 806 hdi 110cv 5200\u0080	2000	210000	5200
+258	opel	OPEL ZAFIRA B 1.9 CDTI 120CH cosmo fap	2007	55000	14800
+259	renault	LAGUNA 2 PHASE 2 1.9 DCI LUXE PRIVILEGE +options	2006	86183	11000
+260	peugeot	407 griffe 2.0 hdi 136 ch bva gps ttes options	2005	128500	11900
+261	renault	Renault Espace IV 2.2 DCi	2005	92000	15000
+262	mazda	Mazda 3 Sport 2.2L MZR-CD 185 cv	2009	3500	21900
+263	peugeot	Peugeot 806 hdi 110cv 5200\u0080	2000	210000	5200
+264	opel	OPEL ZAFIRA B 1.9 CDTI 120CH cosmo fap	2007	55000	14800
+265	bmw	Opel zafira 2.2 dti 16v elegange 2004+garantie	2004	120000	8500
+266	audi	Audi A3 Sportback 1.9 Tdi Noire modele Ambition	2006	62000	14900
+267	audi	807 2.2hdi 136cv navetech on bord	2004	164000	9000
+268	ford	Mondéo Titanium 155 CV 2.2 L Diesel 9500 \u0080	2005	125000	9500
+269	peugeot	PEUGEOT 607 2.2 L hdi Premium Pack 136 CV	2004	124000	9400
+270	audi	AUDI A6 avant 2.0 TDI Ambition Luxe 2006	2006	112000	19000
+271	renault	ESPACE 3/2.2 DCI / NORDCARS (garantie 3 à 24 mois)	2002	69870	7000
+272	citroen	CITROEN XM.2.5L.TD.136cv.EXCLUSIVE. magnifique	1999	176000	5000
+273	renault	Grand Scenic 7 pl Luxe Privilège DCI 120cv 76000Km	2005	76000	11900
+274	audi	Audi A4 break	2000	113000	9500
+275	renault	Renault scenic II 1l9 DCI 120 cv boite 6	2003	130000	6000
+276	audi	Volkswagen tiguan r-line blanc tdi 140	2009	11000	36000
+277	volkswagen	Volkswagen touran 1.9 tdi 105 ch carrat	2005	155000	9900
+278	fiat	Bravo 2.0 MTJ 165ch Sport	2009	6500	21300
+279	mini	PEUGEOT 206 SW 2.0 HDi 90cv XS	2003	220000	4900
+280	peugeot	407 sw 2.0 hdi 136 premium pack gps (05/2008)	2008	31900	17500
+281	audi	Audi A4 - 1.9TDI - 130CV	2002	193000	8000
+282	audi	Audi A3 Sportback 1.9 Tdi Noire modele Ambition	2006	62000	14900
+283	renault	ESPACE 3/2.2 DCI / NORDCARS (garantie 3 à 24 mois)	2002	69870	7000
+284	peugeot	PEUGEOT 607 2.2 L hdi Premium Pack 136 CV	2004	124000	9400
+285	audi	AUDI A6 avant 2.0 TDI Ambition Luxe 2006	2006	112000	19000
+286	renault	Renault Scenic 1.9DCI Confort Expression	2004	139000	6300
+287	renault	Grand Scenic 7 pl Luxe Privilège DCI 120cv 76000Km	2005	76000	11900
+288	audi	Audi A4 break	2000	113000	9500
+289	audi	Volkswagen tiguan r-line blanc tdi 140	2009	11000	36000
+290	volkswagen	Volkswagen touran 1.9 tdi 105 ch carrat	2005	155000	9900
+291	renault	Renault Laguna III 2.0 DCI 150 dynamique	2008	30638	15750
+292	fiat	Bravo 2.0 MTJ 165ch Sport	2009	6500	21300
+293	mini	PEUGEOT 206 SW 2.0 HDi 90cv XS	2003	220000	4900
+294	peugeot	Peugeot 307 HDI 136ch Sportline	2004	109000	8800
+295	skoda	Skoda octavia 1.9 tdi 110	2001	114000	6000
+296	renault	Scenic dci echange possible	2001	191000	4800
+297	peugeot	407 sw 2.0 hdi 136 premium pack gps (05/2008)	2008	31900	17500
+298	audi	Audi A4 - 1.9TDI - 130CV	2002	193000	8000
+299	seat	SEAT LEON II 1.9 tdi 105ch 9600\u0080adb 86000km	2006	86000	9600
+300	renault	Renault grand scenic 1.9dci 130cv luxe privilege	2006	107000	10990
+301	renault	Renault espace iv 2.2dci-150cv privilege gps+dvd	2004	110000	12490
+302	renault	Renault scenic 1.9dci 120cv dynamique to pano	2006	112000	9000
+303	audi	Audi a3 tdi dpf 11/2006 - ETAT NEUF	2006	77000	15900
+304	citroen	Voiture xsara citroen 110 cv	2001	137000	5900
+305	renault	Espace 4 2.2dci 150cv rallongé	2004	143000	9500
+306	volkswagen	Golf iv tdi 110cv 1.9 tdi 105 000km	2002	100000	6590
+307	peugeot	Peugeot 607	2001	260000	5400
+308	volkswagen	Golf 5 TDI 105 Goal	2006	70000	13900
+309	peugeot	PEUGEOT 307 2.0 16v 180 ch Feline	2006	32000	10000
+310	opel	Opel astra GTC	2006	79000	12000
+311	citroen	Citroen xsara 2.0 HDI	2003	92000	7500
+312	renault	Laguna 2 1.9dci echange	2002	175500	6000
+313	renault	Renault espace 4	2005	105000	11000
+314	renault	Espace 4 2.2dci 150cv rallongé	2004	143000	9500
+315	volkswagen	Golf iv tdi 110cv 1.9 tdi 105 000km	2002	100000	6590
+316	peugeot	Peugeot 607	2001	260000	5400
+317	citroen	Citroen xsara 2.0 HDI	2003	92000	7500
+318	peugeot	PEUGEOT 307 2.0 16v 180 ch Feline	2006	32000	10000
+319	opel	Opel astra GTC	2006	79000	12000
+320	renault	Laguna 2 1.9dci echange	2002	175500	6000
+321	renault	Renault espace 4	2005	105000	11000
+322	renault	Renault megane scenic 2 1&virgule;9 dci 2005 99000km ARGUS	2005	99000	12500
+323	mini	Volkswagen Passat 1.9 tdi 105 cv bvm5 confortline	2008	40105	15990
+324	audi	406 coupe 2.2 hdi turbo 16 soupapes fap	2002	111000	8200
+325	audi	AUDI A6 QUATTRO 4X4 TDI ==echange==	2002	122300	12850
+326	fiat	FIAT DOBLO 1.9 JTD 105cv	2004	95000	5700
+327	peugeot	PEUGEOT 607 2.2 16v PACK 160CH	2001	106835	6200
+328	chrysler	CHRYSLER PT CRUISER 2.2 CRD OLYMPIA 150ch	2006	73660	10900
+329	citroen	Citroen c4 2.0hdi 138cv exclusive&virgule; gps 16/9	2007	99900	10490
+330	audi	Audi a3 tdi 1.9 ambition 130 cv	2003	153000	9400
+331	opel	Astra gtc 150 cv garantie opel	2005	79000	12000
+332	peugeot	Peugeot 807 2.2L hdi 136CV SV pullman 6 places	2005	107000	12900
+333	volvo	VOLVO V40 SUMMUN :1&virgule;9 D115ch	1999	200000	5300
+334	audi	Audi a3 1.9 tdi 130cv ambiante	2003	128000	9900
+335	audi	A3 1.9l tdi 130 cv ambiente bv6	2002	109000	10000
+336	ford	Mondéo break TDCI 115 cv X-trend	2003	173000	5500
+337	abarth	Fiat stilo	2003	154700	5800
+338	renault	Renault clio 2 1.9 l dti 80cv diesel cuir	2000	156000	4600
+339	renault	Renault megane II (2) 2.0 t 230 rs f1 team R26 3p	2007	25000	18900
+340	audi	Audi A4 2.0 TDI 143 CV Ambition luxe BV6	2008	39700	27990
+341	peugeot	Peugeot 406 2.2 hdi 136cv pack sport	2001	191000	6590
+342	hyundai	HYUNDAI TUCSON 2.0 CRDI 4WD PACK LUXE 112ch	2005	90100	10500
+343	hyundai	Hyundai tucson 2.0l crdi 140cv 4*4 pack confort	2006	58000	13900
+344	ford	Mondéo break TDCI 115 cv X-trend	2003	173000	5500
+345	abarth	Fiat stilo	2003	154700	5800
+346	renault	Renault clio 2 1.9 l dti 80cv diesel cuir	2000	156000	4600
+347	audi	Audi A4 2.0 TDI 143 CV Ambition luxe BV6	2008	39700	27990
+348	renault	Renault megane II (2) 2.0 t 230 rs f1 team R26 3p	2007	25000	18900
+349	peugeot	Peugeot 406 2.2 hdi 136cv pack sport	2001	191000	6590
+350	hyundai	HYUNDAI TUCSON 2.0 CRDI 4WD PACK LUXE 112ch	2005	90100	10500
+351	hyundai	Hyundai tucson 2.0l crdi 140cv 4*4 pack confort	2006	58000	13900
+352	renault	Renault Laguna III Estate DCI 150 Exp. - 24500 km	2008	24500	15890
+353	audi	Alfa Roméo GT 1.9 JTD 150 CV Selective - 50665 km	2007	50665	18900
+354	seat	Seat leon (a débattre)	2009	26000	17000
+355	fiat	Fiat Croma 1.9 Mjet 120 CV Dynamic - 40750 km	2007	40750	13190
+356	renault	Scenic dci120cv luxe dynamique toit pano gps cuir	2005	106000	8500
+357	fiat	Monospace fiat ulysse	2006	98000	12800
+358	audi	A saisir audi a4 tdi 130 pack - faible kilometrage	2004	93000	12400
+359	citroen	A SAISIR XSARA VTS 2.0 167 Cv - Cuir - Clim	2000	164000	3900
+360	citroen	Citroen c4 picasso hdi 138 cv collection + gps	2009	8000	23490
+361	volkswagen	Vw passat 2.0 tdi 140ch confortline	2006	123000	13300
+362	opel	Zafira 2.0 dti elegance	2001	203000	4850
+363	fiat	Fiat grande punto sport 130ch	2006	47500	12500
+364	toyota	TOYOTA Land cruiser 3L D4-D VX 165 CV cuir 09/2002	2002	168000	11100
+365	renault	Espace IV long 2.2 dci 150 cv	2004	80000	10000
+366	peugeot	Peugeot 406 2.0 hdi 110 pack confort	2001	161500	6800
+367	renault	Renault scénic	2008	31000	17900
+368	volkswagen	Volkswagen golf 5 2.0 tdi 140 sport	2004	165800	8500
+369	audi	Audi A3 sportback 1.9 TDI 105 cv ambition	2005	72000	14200
+370	renault	Scenic dci120cv luxe dynamique toit pano gps cuir	2005	106000	8500
+371	renault	Grand espace iv 2.0l dci 175 fab BVA alyum	2006	45261	10800
+372	fiat	Monospace fiat ulysse	2006	98000	12800
+373	audi	A saisir audi a4 tdi 130 pack - faible kilometrage	2004	93000	12400
+374	citroen	A SAISIR XSARA VTS 2.0 167 Cv - Cuir - Clim	2000	164000	3900
+375	volkswagen	Vw passat 2.0 tdi 140ch confortline	2006	123000	13300
+376	citroen	Citroen c4 picasso hdi 138 cv collection + gps	2009	8000	23490
+377	fiat	Fiat grande punto sport 130ch	2006	47500	12500
+378	renault	Espace IV long 2.2 dci 150 cv	2004	80000	10000
+379	peugeot	Peugeot 406 2.0 hdi 110 pack confort	2001	161500	6800
+380	renault	Renault scénic	2008	31000	17900
+381	seat	Seat leon 1.9l TDI 105 stylance 2008	2008	41000	13000
+382	audi	Audi A3 sportback 1.9 TDI 105 cv ambition	2005	72000	14200
+383	renault	Renault scenic iii 1.9 dci 105cv luxe dynamique	2005	70991	11500
+384	audi	AUDI A3 1.9 tdi	1997	216000	6000
+385	renault	Renault laguna 1.9 dci 110cv emotion	2005	127601	8700
+386	nissan	Peugeot 307 break SW pack 110cv	2002	175000	5200
+387	audi	Peugeot 308 Féline 2.0 HDI 136CV	2007	26000	18000
+388	audi	Audi A6 break 2.5L TDI 150cv	1998	153000	7800
+389	subaru	Subaru Impreza 2.0 GT Turbo 217 CV 5P	2000	124000	9840
+390	audi	AUDI A3 sportback 1.9 l 105 ambiente bv5	2008	46500	19500
+391	peugeot	PEUGEOT 407 2.0 HDI 136cv Sport Pack FAP	2004	94200	12300
+392	fiat	SMART Roadster Coupé Glance Grey	2003	120000	5500
+393	renault	RX 4 2.OL 16V 120CV toutes options	2000	90000	5500
+394	renault	Renault scenic grand confort gps 7 place dci dms	2005	113000	7900
+395	audi	Audi a4 breack tdi 130 pack plus contre touran	2002	147500	11500
+396	audi	C4 2.0 hdi vtr +	2007	46000	14150
+397	ford	MITSUBISHI OUTLANDER ETAT NEUF et GARANTIE	2008	59500	20500
+398	volkswagen	Volkswagen golf 5 2.0 tdi 140 sport	2004	165800	8500
+399	audi	Audi A3 sportback 1.9 TDI 105 cv ambition	2005	72000	14200
+400	renault	Renault laguna 1.9 dci 110cv emotion	2005	127601	8700
+401	audi	AUDI A3 1.9 tdi	1997	216000	6000
+402	nissan	Peugeot 307 break SW pack 110cv	2002	175000	5200
+403	audi	Peugeot 308 Féline 2.0 HDI 136CV	2007	26000	18000
+404	volkswagen	Golf 5 tdi confortline 2008	2008	46000	16000
+405	renault	Renault Laguna 2 1.9 dci 120ch privilege GPS	2004	168000	4900
+406	audi	Audi A6 break 2.5L TDI 150cv	1998	153000	7800
+407	subaru	Subaru Impreza 2.0 GT Turbo 217 CV 5P	2000	124000	9840
+408	audi	AUDI A3 sportback 1.9 l 105 ambiente bv5	2008	46500	19500
+409	peugeot	PEUGEOT 407 2.0 HDI 136cv Sport Pack FAP	2004	94200	12300
+410	mini	407 hdi 136 sw 85000km am2005 toit panoramique	2005	85000	10800
+411	fiat	SMART Roadster Coupé Glance Grey	2003	120000	6500
+412	audi	Audi A3 sportback 2.0 TDI 140cv DSG GPS	2005	85000	16500
+413	renault	Renault Scenic III 1.9 DCI 130 FAP PRIVILEGE 7 pl	2009	4159	22500
+414	audi	C4 2.0 hdi vtr +	2007	46000	14150
+415	volkswagen	Volkswagen New Beetle 2.0i HIGHLINE 115CH 73 700KM	2000	73700	8290
+416	audi	AUDI A6 ALLROAD 2&virgule;5 tdi V6	2002	174000	12900
+417	alfa romeo	Alfa 156 garantie 8 mois	2004	117000	9800
+418	audi	Audi a3 sportback ambition 2.0 tdi 140 cv	2008	21000	22900
+419	renault	Renault espace 4 2.2l dci 150 cv	2004	149300	8800
+420	seat	Seat Leon Stylance 1&virgule;9TDI 105ch	2007	91000	9900
+421	volkswagen	Volkswagen New Beetle 2.0i HIGHLINE 115CH 73 700KM	2000	73700	8290
+422	audi	AUDI A6 ALLROAD 2&virgule;5 tdi V6	2002	174000	12900
+423	alfa romeo	Alfa 156 garantie 8 mois	2004	117000	9800
+424	renault	Renault espace 4 2.2l dci 150 cv	2004	149300	8800
+425	audi	Audi A6 2.5 tdi mellésime 1997 toute options	1996	234000	4000
+426	mini	VOLKSWAGEN TOURAN 2.0 tdi 140 cv bvm6 CONFORT	2004	141505	9550
+427	peugeot	Peugeot 807 2.0HDi136	2006	139900	11990
+428	ford	FORD RANGER 4x4	2008	52000	22000
+429	bmw	BMW 118 Diesel 122 ch Confort BV6. 5 portes	2006	76500	16900
+430	volkswagen	Passat Carat TDI 140	2007	48058	18800
+431	mini	Volkswagen Scirocco 2.0L TDI 140ch - 04/2009	2009	27500	22800
+432	citroen	C4 VTS HDI 2.0 litre 138 chx 2005	2005	65000	13200
+433	audi	Audi a4 bk v6 2.5 tdi 163cv multitronic quatro	2002	126000	7900
+434	renault	Scenic 1.9 dci 12o ch luxe dynamique	2005	132000	8500
+435	volkswagen	Volkswagen Golf Plus 2.0L TDI - 04/09 - 7240km	2009	7240	21300
+436	mini	VOLKSWAGEN TOURAN 2.0 tdi 140 cv bvm6 CONFORT	2004	141505	9550
+437	renault	Renault laguna estate 1.9dci 120Ch	2005	155000	6800
+438	peugeot	Peugeot 206 CC 2.0 L 16S Premium Pack Cuir BM5	2002	119000	4990
+439	bmw	BMW 118 Diesel 122 ch Confort BV6. 5 portes	2006	76500	16900
+440	volkswagen	Passat Carat TDI 140	2007	48058	18800
+441	audi	AUDI A3 1.9TDI 130 S-LINE AN 02 NOIR CUIR 8500e	2002	171000	8500
+442	audi	Audi a3 2.0l tdi sportback s-line 2008 5800kms	2008	5800	24990
+443	audi	Seat altea 1.9 tdi 105cv an 04 151000km 6900e	2004	151000	6900
+444	peugeot	307 XT Premium - 2.0L - 110CV	2003	114000	7500
+445	peugeot	Peugeot 307 sw	2004	125500	8000
+446	peugeot	Peugeot 406 hdi	2001	264000	3700
+447	audi	Audi a3 sporback	2006	63000	16100
+448	renault	Renault scenic 2 1.9 dci 120 ch confort dynamique	2005	112000	8400
+449	seat	Seat altea seduce 1.9 tdi 105 ch	2009	10500	15900
+450	mini	Nissan x-trail diesel premiere main	2004	147000	9000
+451	fiat	Fiat punto II 1.9L JTD EL clim 80cv	2002	113000	4700
+452	hyundai	Hyundai santa fe 2.0 crdi 125 ch	2005	125000	9600
+453	peugeot	Peugeot 206 2.0 hdi 90 ch xt 5 portes	2003	165200	5900
+454	opel	Opel vectra 2.2 dti	2003	140000	6200
+455	saab	Saab 9.3 Vector TID 150	2006	58500	15990
+456	audi	Audi a4 avant 2.0 tdi ambition luxe	2005	91000	16700
+457	opel	Opel Zafira 1	2005	128600	9000
+458	audi	Audi a4 s line 2.0 140cv multitronic	2007	99500	19900
+459	renault	Renault trafic minibus	2005	112000	11900
+460	audi	Audi a3 1.9 l tdi 110 cv	1998	230000	4000
+461	volkswagen	Cross polo 1.9l TDI 100 ch	2006	69000	12250
+462	peugeot	Peugeot 406 1.9L TD 110cv	1995	270000	2000
+463	peugeot	Peugeot 406 1.9L TD 110cv	1995	270000	2000
+464	mini	Opel Vectra GTS III 2&virgule;2 L 16S 8 CV DTI 125 CH	2003	100000	8500
+465	skoda	"Skoda Fabia combi "" Tour de France"""	2007	78500	8800
+466	ford	Ford Mondeo Ghia X&virgule; 5 portes&virgule; 2.5L Turbo 220cv	2008	28000	19490
+467	opel	Opel Astra GTC 1.9 CTDI 120 cv cosmo 05/2007	2007	45200	15000
+468	opel	Opel Astra GTC 1.9 CDTI DPF Cosmo	2007	53000	16990
+469	citroen	Citroen C5 Berline 2.0 L HDi 140 CV	2010	5	23700
+470	renault	Renault laguna 2 dci	2002	187000	4500
+471	audi	Scirocco 2.0 tdi 140 carat	2009	20000	26500
+472	mini	Picasso 2.0 hdi pack clim révisé garantie 3 mois	2003	164652	6900
+473	opel	Opel zafira 2.2 dti 125ch 2004	2004	146000	9000
+474	seat	Seat Ibiza Fresh 1.9L TDI 100ch	2003	117500	5400
+475	renault	Renault laguna estate privilège	2001	100000	7000
+476	fiat	Affaire a saisir fiat stylo	2004	130500	7500
+477	opel	Opel zafira 2.2l dti	2005	78000	12100
+478	renault	Megane cc	2005	137500	9500
+479	opel	Opel zafira 2.2l dti	2005	78000	12100
+480	hyundai	Hyundai tucson 2.0 crdi	2005	104000	10000
+481	audi	Audi a4 break tdi	2002	122000	17600
+482	audi	Audi A3 2.0L tdi ambition	2003	193000	9500
+483	toyota	Toyota auris 2.0 D4-D 126cv linéa sol	2007	21500	12990
+484	audi	Audi a6	1997	380000	3000
+485	audi	Seat Alhambra 1.9 TDI 115 CH 7 places	2010	7000	19900
+486	renault	Laguna 2	2001	172800	4400
+487	chevrolet	Chevrolet Captiva LT Pack 150cv faible kilomètrage	2007	28000	21400
+488	citroen	Citroen XSARA 2002 2.0 HDI EXCLUSIVE	2002	140000	5500
+489	renault	Renault scenic ii 1.9 dci 130 cv exception	2008	55000	15500
+490	renault	RENAULT Espace IV 2.2 DCI 150ch Privilège	2002	135000	9900
+491	opel	Opel zafira	2006	57000	14200
+492	peugeot	Peugeot 407 2.2 HDI Griffe	2005	136000	9000
+493	opel	Astra sport 2.2l Diesel 125ch rare	2003	165000	6600
+494	audi	Audi A3 Sportback 1.9 TDI s-line Ref:B25	2009	29900	23390
+495	audi	AUDI Sline millesime 2005	2005	131000	14500
+496	renault	Toyota corolla verso 7 places 2.2 diesel 136cv	2007	56500	15400
+497	hyundai	Hyundai Tucson	2007	54000	15000
+498	citroen	Citroen c5 ii 2.0 hdi 138 fap exclusive	2008	23000	20490
+499	audi	Audi a3 facelift 1.9 tdi ambition dpf 105 ch	2008	33200	19200
+500	renault	Espace renault 4	2003	130000	12000
+501	peugeot	Peugeot 307 SW 2.0 Hdi 110cv &quote;Navteq&quote;	2003	104905	8900
+502	mini	VOLKSWAGEN PASSAT TDI 105ch CONFORTLINE	2009	22000	18990
+503	mini	Superbe CALIFORNIA 176CV TDI Comme Neuf	2008	39000	44000
+504	peugeot	Peugeot 407 Griffe 2.0HDI 136ch	2005	73250	12400
+505	opel	Opel	2002	124000	5300
+506	audi	Audi a4 tdi 130	2002	131000	9500
+507	opel	Opel Zafira pack DVD 2.0l DTI 16V 100ch-165000km	2003	165000	6500
+508	renault	Laguna Break Renault 1.9 DCI 120CV GARANTIE 6 MOIS	2002	200000	4800
+509	peugeot	Peugeot 406&virgule; 2.0 HDI&virgule; 110 CH	2002	170000	5850
+510	seat	Seat Leon 1.9 Tdi Last edition	2006	114000	8100
+511	peugeot	307 HDI 110 cv pack sport 5 portes	2002	225000	5000
+512	seat	Seat leon 1.9 tdi	2007	20000	12900
+513	audi	AUDI A4 Avant 2.5 TDI 163cv	2004	188000	9500
+514	opel	Monospace opel zafira cosmo 1.9 cdti FAP urgent	2006	59830	12800
+515	audi	Audi A4 1.9L TDI 130 CV	2001	138000	9900
+516	peugeot	Peugeot 206 HDI 90 trés bon état	2001	145000	5400
+517	renault	Grand Scénic 1.9 dci 120ch luxe TOIT PANORAMIQUE	2004	98000	10200
+518	audi	Audi A6 break 2.5 tdi quattro pack luxe	2000	320000	7500
+519	fiat	Fiat bravo dynamique jtd	2007	34800	12300
+520	renault	Laguna ph 2	2005	104000	7000
+521	renault	Renault Grand Espace 2.2dt	2000	216000	6500
+522	renault	Renault Laguna 1 phase 2 Dédicace 1&virgule;6L 16V 110cv	2000	133000	2700
+523	fiat	Fiat stylo	2003	144000	4000
+524	renault	Renault laguna 2	2001	133000	5000
+525	kia	Kia Sorento 2.5 L CRDi 170 CV EX Major	2009	15000	19000
+526	opel	Zafira 2.2 DTI 7 pl élégance125 ch	2005	67000	9500
+527	land rover	Peugeot 407 2.2 essence Exécutive Pack	2004	64000	7850
+528	renault	Renault mégane dci cabriolet	2004	239411	8900
+529	audi	Audi A3 Sportback 2.0 TDI Ref:43	2008	33500	21200
+530	audi	Audi A3 TDI 140 CV	2006	140000	12000
+531	ford	Ford Kuga Titanium 4x4 2.0 tdi Ref:39	2009	28100	25190
+532	opel	OPEL ZAFIRA Enjoy pack limited 1.9 CDTi 100ch	2009	100	18990
+533	seat	Seat cordoba sport 1.9 tdi 90cv	2001	130000	4490
+534	renault	CEDE ou echange Renault grand espace III 2.2 DCI	2001	160000	6000
+535	honda	Belle honda accord 2.2 i vtec BVA	1996	230000	2800
+536	renault	Renault Espace Alyum Plus	2006	76000	18000
+537	alfa romeo	Alfa roméo 156	2000	164000	4000
+538	renault	Renault Laguna Luxe Privilege 1.9dci 120cv	2001	133200	4990
+539	ford	Ford Mondeo 2.0 TDCi Automatique 140cv 14752 km	2009	14752	24990
+540	ford	FORD KUGA TITANIUM NOIRE Ref:E1	2008	20900	23690
+541	mini	Golf V GT TDI 170cv	2007	45000	17900
+542	opel	Opel zafira 1.9cdti 120	2007	65000	14700
+543	renault	LAGUNA II Ph2 1.9 dCi 125ch LUXE DYNAMIQUE	2006	64816	10124
+544	opel	Opel Vectra Breack 1.9 CDTI 05/08 Ref:C2	2008	37500	16690
+545	peugeot	Scenic I phase II 1&virgule; 9 dci 105 cv aigle	2002	111000	6200
+546	renault	Renault Scenic II 1.9 dci 120ch confort expression	2005	81000	9800
+547	fiat	Fiat Bravo II 1.9 M-Jet 150 Cv EMOTION	2008	29300	12300
+548	audi	Audi A4 avant break 1.9TDI 130ch pack plus	2002	154991	10599
+549	seat	SEAT IBIZA 1.9 TDi 100CH	2004	85000	7900
+550	fiat	FIAT Stylo	2003	140000	6000
+551	renault	Espace 4 privilège 2.2 dci 150 cv	2003	111980	8400
+552	audi	Audi a4 break sline pack int + ext 2.0 tdi 2008	2008	74000	21000
+553	seat	SEAT LEON 2.0 TDI 140ch STYLANCE	2008	33000	16000
+554	audi	VW Scirocco 2&virgule;0 TDI DPF BV6	2009	8400	28200
+555	kia	KIA Sportage 2.0l CRDI de 2008	2008	50000	17300
+556	renault	Laguna estate luxe privilege 1.9 dci 120cv	2005	175000	7500
+557	audi	Peugeot 308 pack prenium	2007	65000	15000
+558	audi	Belle AUDI A3 1&virgule;9TDI+SONO FOCAL+boitier PTRONIC	1998	216500	5500
+559	peugeot	Peugeot 307 sw 2.0 HDI	2003	156000	6200
+560	citroen	C8 2.2 130 ch HDI PACK FAP	2004	149000	11500
+561	opel	Zafira magnetic dec 2007 49000km 120cv sous argus	2008	49000	16000
+562	ford	Opel Zafira Elegance 2.2L DTi 125cv 16V&virgule; Toury 28	2003	144500	7890
+563	bmw	Magnifique Avantime 2l2 dci 150 cv Toutes Options	2002	50000	14900
+564	bmw	BMW 320td compact à débattre	2002	125000	13500
+565	mercedes	Pt Cruiser 2.2 CRD Touring Noir 07/2004 100000kms	2004	100000	8400
+566	seat	Seat leon	2007	37000	13000
+567	opel	ZAFIRA II 1.9 CDTI 120CV ENJOY PACK FAP noir	2006	65500	12700
+568	volkswagen	Touran dsg 2.0 tdi 140	2007	127600	13500
+569	peugeot	PEUGEOT Partner Zenith 2L HDI 90cv	2003	125640	6480
+570	audi	Audi a4 130cv model 2002	2001	157000	7500
+571	renault	Laguna 2 dci 125cv dynamique 08/2006 1ere main	2006	157000	6700
+572	peugeot	Peugeot 807 2.2 hdi 136ch	2002	180000	8500
+573	volkswagen	Golf 4 2003 match 2 nickel	2003	210000	7500
+574	peugeot	Peugeot 306 1.9 turbo diesel td 1994	1994	271000	1800
+575	renault	Renault Scenic luxe privilege 1.9 dci 120 cv	2006	110000	11000
+576	bmw	307 CC 2.0 HDI Sport Gris 2006 . 47000 KM	2006	47000	14990
+577	renault	Renault megane 2 II 120cv 1.9 dci 7 ch ARGUS 9500\u0080	2005	137000	6399
+578	peugeot	307 cc pack sport luxe 136 hdi 2l toute option	2006	94000	14400
+579	renault	Renault scenic 1.9l dti 100cv	2000	195000	3300
+580	ford	Espace 4 2.2 L DCI 150CV	2004	180000	8000
+581	mini	407 sw 2.0 hdi 136 fap	2008	65000	12000
+582	renault	Trafic 1.9 l dci 100 cv 9 places 79 000 kms.tbe	2003	79000	12200
+583	nissan	Nissan x-trail 2.2 dci 136ch	2005	120000	14500
+584	renault	407 sw 2.0l bv6 sport pack ou echange	2005	140000	8600
+585	renault	Renault Megane II 1.9l DCI 120cv	2003	135000	6000
+586	renault	Grand Scenic Exception 1&virgule;9Dci&virgule; 120cv&virgule; 55000 km	2005	55000	14500
+587	renault	Scenic moteur neuf 1.9dci 120ch 2003	2003	1	10500
+588	renault	RENAULT LAGUNA III 2.0l 140ch	2007	23000	17900
+589	renault	Renault scenic 1.9 dti	1999	190834	3500
+590	mercedes	807 2.2 HDI 136CV 7 places 55000 km	2006	55000	18000
+591	audi	AUDI Q5 2.0 TDI 170cv XENON \u0096 CUIR - GPS	2008	7000	42400
+592	opel	Opel astra 2.0dti 2004	2004	148000	5000
+593	ford	Ford Mondeo 2.0L TDDI 115CV Trend 2002	2002	113000	5200
+594	alfa romeo	Alfa Romeo 147 1.9JTD 16v 140cv	2004	95000	9900
+595	renault	Megane 1.9 dci 120 ch	2005	86900	10300
+596	fiat	Fiat marea week end	1997	217000	2000
+597	renault	Renault Scénic I phase 2 (Mégane)	2001	85000	6500
+598	peugeot	Peugeot 406 coupe 2.2 hdi	2001	173000	7990
+599	peugeot	Peugeot 308 2.0 HDI 136 cv premium pack&virgule; GPS+TEL	2008	27370	16970
+600	opel	Astra cosmos 2005	2005	66000	10500
+601	audi	AUDI A3 SPORTBACK 2.0L 170cv S-LINE	2007	60000	20000
+602	opel	OPEL VECTRA ANNEE 94 2.0i 2500\u0080	1994	165000	2500
+603	volkswagen	Passat III 2.0 tdi confort - 2006	2006	79000	12200
+604	peugeot	Peugeot 407 2.0 HDI 140 cv premium&virgule; 5769 kms	2008	5769	14970
+605	seat	Seat ibiza 1&virgule;9 tdi 100 cv	2007	39500	10900
+606	renault	Scenic 2 luxe privilege 1.9dci 120cv	2005	50100	11200
+607	renault	LAGUNA II Phase 2 - 1&virgule;9 Dci 120 Ch - Luxe privilèg	2005	132000	8700
+608	alfa romeo	Alfa romeo 166 jtd 2.4 stronic 175 cv selective	2003	140000	9500
+609	renault	Renault scenic exception 1.9l dci 120 ch	2005	80680	18400
+610	peugeot	Urgent Peugeot 807 2&virgule;2 HDI 130ch confort pack	2006	53000	16500
+611	renault	Megane 2 1.9l dci 120ch sport dynamique	2004	118000	6500
+612	lexus	Megane2 1.9L DCI 120 ch	2004	152000	7900
+613	volvo	Volvo S40 2.0 turbo 1998	1998	220000	2200
+614	ford	Focus st 225ch 2007	2007	28000	17000
+615	peugeot	Peugeot 607 2.2l 136ch	2001	140000	7800
+616	opel	Opel zafira	2009	15000	18000
+617	audi	Espace 4 1.9dci 117ch+cuir	2005	108000	10000
+618	citroen	Citroën Picasso Diesel	2005	66000	9300
+619	peugeot	A saisir 607 2.2hdi 16s 2001	2001	117000	9000
+620	renault	Grand espace 2.2 dci 7places	2001	79402	8500
+621	peugeot	307 cc 2.0 16v Pack Sport 138 ch	2004	94000	9000
+622	renault	Magnifique scenic2 finition JADE 150 cv de 2007	2007	91500	15600
+623	audi	Audi A3 s line	2008	22500	23500
+624	audi	Audi A3 S-line 2.0L 140 ch 2008	2008	47000	19990
+625	renault	Espace 3	2001	117800	6500
+626	mini	C8 2.0 16v hdi exclusive révisé garantie 1 an	2006	117030	13600
+627	volkswagen	Golf V 2.0 TDI 140 cv Sport	2005	80000	12700
+628	renault	Golf 4 iv 1.9tdi 90cv (echange possible)	1998	145000	6000
+629	audi	Audi A4 1.9 TDI	2002	107200	9900
+630	citroen	CITROEN XSARA Exclusive 2.0L HDI 110Cv	2001	131000	4900
+631	ford	OUTLANDER 7 places 2.0 DID 140 INTENSE NEUF	2009	1	26550
+632	mitsubishi	Mitsubishi Pajero 2.5 Turbo d intercooler 115 cv	1990	195000	2500
+633	mini	Peugeot 207 premium pack 2.0 dhi 90cv 5 ptes 2008	2008	13500	12900
+634	peugeot	Peugeot 807 2.2 hdi 136ch	2002	180000	8500
+635	volkswagen	Volkswagen Sharan 1.9 TDi 110CV 7 places	2000	215742	5500
+636	audi	Superbe Alpha Roméo GT 1.9L JTD 150 CV	2008	15000	18000
+637	audi	AUDI a4 2.5tdi v6	1998	183500	4700
+638	bmw	Bmw 320d e46	2001	97000	8000
+639	audi	Audi a3 sport back s line 2009 2.0 l tdi 140 ch	2009	18000	24990
+640	renault	Laguna 2 dci 110 cv expression	2002	120000	5000
+641	seat	Seat leon bleu tdi 1.9 110ch	2002	151000	4500
+642	renault	Laguna estate luxe privilege 1.9 dci 120cv	2005	175000	7500
+643	seat	Seat leon fr 2.0 tdi 170 ch	2008	29000	17500
+644	audi	Audi A3 sportback 1.9l tdi	2006	75000	16500
+645	renault	Renault megane	2000	195000	2800
+646	peugeot	Peugeot 206 quiksilver 2.0 L hdi 90	2002	179054	5700
+647	renault	Grand scenic 1.9 dci 120 cv 7 places sarl luxauto	2005	135000	8900
+648	alfa romeo	Alfa Romeo 147 2.0 L Selespeed Twin Spark 3 portes	2001	148000	5600
+649	citroen	Citroen C5 hdi exclusive cuir 108000km luxauto	2005	108000	8900
+650	renault	Espace IV 1.9 dci 92000KM garanti 12 mois luxauto	2005	92000	9900
+651	renault	Renault master frigorifique	2004	211000	7500
+652	peugeot	206 Peugeot 2.0L HDI 90 ch	2000	122000	5750
+653	seat	URGENT SEAT leon 1.9 TDI 105ch Stylance	2006	80000	11500
+654	seat	URGENT seat leon 2.0 tdi 140 cv 2008 blanche	2008	30800	13800
+655	lancia	LANCIA Lybra 2.4 JTD EXECUTIVE 150 Cv	2002	129000	6800
+656	renault	Grand SCENIC 7 places 1.9DCI 120&virgule; 57800kms&virgule;12500e	2005	57800	12500
+657	alfa romeo	Alfa romeo 156 jtd	2003	84000	9000
+658	mini	Volkswagen Scirocco 2.0L TDI 140ch - 04/2009	2009	27500	22800
+659	citroen	C4 VTS HDI 2.0 litre 138 chx 2005	2005	65000	13200
+660	renault	Scenic 1.9 dci 12o ch luxe dynamique	2005	132000	8500
+661	audi	Audi a4 bk v6 2.5 tdi 163cv multitronic quatro	2002	126000	7900
+662	volkswagen	Volkswagen Golf Plus 2.0L TDI - 04/09 - 7240km	2009	7240	21300
+663	renault	Renault Espace 2&virgule;2 dci 150cv privilège	2006	118600	10550
+664	renault	Renault Grand Scenic 3 - 2.0 DCI 160 JADE 7 places	2009	49900	19970
+665	peugeot	407 Griffe 2.0 HDI 136 BVM 6 2004 Gris Anthracite	2004	151000	9990
+666	renault	Renault espace 4 2.2 dci	2005	63500	9900
+667	renault	Megane estate confort expression130cv 1ere main	2006	128000	7100
+668	renault	Renault Grand Scenic 3 - 2.0 DCI 160 JADE 7 places	2009	49900	19970
+669	audi	Audi a4 avant 2.0 tdi 140 cv noire	2007	55000	20000
+670	peugeot	407 Griffe 2.0 HDI 136 BVM 6 2004 Gris Anthracite	2004	151000	9990
+671	renault	Renault espace 4 2.2 dci	2005	63500	9900
+672	renault	Megane estate confort expression130cv 1ere main	2006	128000	7100
+673	lexus	206 s16 2.0l	2001	140000	6900
+674	audi	A3 2.0 dsg s-tronic tdi ambition luxe	2006	56000	21200
+675	opel	Opel Zafira 2.2 DTI Elegance	2003	145000	7000
+676	citroen	C8 Citroën HDI 138CV Exclusive 7 places	2009	14500	27500
+677	volkswagen	Volkswagen passat break tdi carat diesel	2006	57000	19890
+678	mini	Peugeot 3008 HDI 150 Premium de collaborateur	2009	13500	23800
+679	peugeot	Peugeot 406 2.2 hdi 136 cv	2002	140000	5600
+680	renault	Mégane 3 130 DCi Dynamique PROMO 16490 \u0080	2008	24123	16490
+681	renault	Renault espace iv 2.2 dci 150cv privilege	2002	162000	8000
+682	renault	Mégane 3 130 DCi Dynamique PROMO 16490 \u0080	2008	24123	16490
+683	peugeot	Peugeot 406 2.2 hdi 136 cv	2002	140000	5600
+684	renault	Renault espace iv 2.2 dci 150cv privilege	2002	162000	8000
+685	audi	Audi break 2l tdi ambition lux full options	2007	126000	15400
+686	alfa romeo	ALFA ROMEO 166 2.0 TS 155 CV / Twin Spark	1998	120850	4800
+687	volkswagen	Golf VI TDI 110 FAP Carat Pack Hiver : TARIF -15%	2009	10	22990
+688	renault	Grand espace 12/2005 Alyum + 80000 km diesel 1.9dc	2005	80000	13000
+689	renault	Laguna Coupé GT 180 dCi Cuir GPS PROMO 25990 \u0080	2009	12424	25990
+690	mini	Tiguan carat 2.0 tdi 170 ch	2008	65000	26900
+691	opel	Opel zafira 2.2 dti elegance 125 cv	2003	124000	7500
+692	opel	Opel omega 2.5l v6	1998	180000	1500
+693	seat	Seat ibiza cupra 1.9tdi 160ch	2007	58000	12500
+694	peugeot	307 xs 2.0 hdi 90 cv 3p	2002	79000	7800
+695	audi	VW Scirocco 2.0 TSI DSG Blanc	2008	9000	25000
+696	honda	Honda Civic 2.2 icdti FAP Sport 140ch	2008	13500	16750
+697	renault	Renault Espace 2&virgule;2 dci 150cv privilège	2006	118006	10550
+698	renault	Xsara picasso hdi	2000	192000	4000
+699	renault	Renault laguna ii 2.0 dci 150	1997	99500	10750
+700	audi	A3 2.0 TDI 140cv S-Line &virgule; 12/07 25000km Ref:O15	2007	25000	21290
+701	opel	Opel vectra 2&virgule;2 dti Elegance	2001	130000	3800
+702	land rover	VOLVO C70 CC 2.0d 136 ch premium edition	2009	2500	28990
+703	audi	Audi a4 avant 1.9 tdi 130 cv pack plus	2004	106000	14000
+704	audi	Audi A3 Cabriolet 2.0 TDI Ambition 140cv Ref:O13	2009	11450	26090
+705	mini	Golf 6 cofort 2.0tdi 110 cv 01/2009 pdc av+ar+clim	2009	19757	18990
+706	ford	Ford Kuga 4x4 Titanium 2.0 TDCI 136&virgule; 04/09 Ref:O8	2009	21950	25890
+707	ford	Ford Kuga Titanium 4x4 2.0 tdci 136 cv Ref:O9	2009	20715	25390
+708	renault	Scénic II 1.9L dCi 130cv Luxe Dynamique	2005	66000	14200
+709	audi	Audi A3 S-Line 2.0 TDI 170&virgule; 06/07 58200km Ref:O11	2007	58200	21990
+710	audi	Audi A3 Ambition Luxe 2.0 TDI 140cv Ref:O10	2008	30500	24190
+711	audi	AUDI A3 - TDI 2.0 AMBITION 140CV. Décembre 2003	2003	87000	13500
+712	mercedes	Mercedes Classe A AvantGarde 180CDI	2005	110000	11990
+713	audi	AUDI A3 - TDI 2.0 AMBITION 140CV. Décembre 2003	2003	87000	13500
+714	mercedes	Mercedes Classe A AvantGarde 180CDI	2005	110000	11990
+715	opel	Zafira 2.2DTI125 Disney Elégance &virgule;06/05&virgule;129000km	2005	129000	7850
+716	audi	Touran 1.9 tdi 105 cv	2003	142000	12900
+717	audi	Audi A3 Cabriolet 1.9 TDI DPF / Cuir et G.P.S	2009	11300	28500
+718	renault	Megane CC DCI luxe	2004	125000	10800
+719	citroen	Citroen picasso 2.0l hdi 90 cv	2002	143000	5500
+720	renault	Renault Laguna 3 Estate 2.0 dCi 150ch Dynamique	2008	34000	18500
+721	alfa romeo	ALFA ROMEO GT coupé 150 CV DIESEL	2007	41095	15780
+722	seat	Nouvelle seat ibiza tdi 105 cv 08/2008	2008	36000	11800
+723	renault	Laguna 2 estate	2003	126000	6500
+724	peugeot	Peugeot 407 sw pack sport 2.0hdi 136ch	2006	185700	9500
+725	citroen	CITROEN C8 2.2 hdi 130 CH pack fap noir	2004	149000	10500
+726	nissan	Missan x-trail	2003	68738	10400
+727	audi	Audi S3 2&virgule;0 TFSI 05/2008 24260km Toutes options	2008	24260	33000
+728	peugeot	Tres belle 607 hdi 2.2 l 136 cv pack luxe	2003	135617	6990
+729	audi	Tres belle audi a4 tdi 130	2002	170000	7800
+730	seat	Nouvelle seat ibiza grand via 1&virgule;9 l 105 ch	2009	5300	15000
+731	renault	Renault laguna Estate 1.9 DCI 120CV à 4350\u0080	2002	172500	4350
+732	citroen	Tres belle citroen c5 exclusive 2.2 hdi 138	2001	159000	6300
+733	renault	Laguna 1.9 dci 120cv estate privilège	2003	116000	6800
+734	renault	Megane dci expression 2007 1ere main 120000km	2007	120000	5800
+735	renault	Mégane 2 Sport Dynamique	2003	105000	7800
+736	honda	Honda fr-v 2.2 ctdi executive 140cv 6 places + opt	2008	23000	26000
+737	volkswagen	Touran 2.0 tdi 140 cv boite dsg	2005	94000	11500
+738	mini	Touran TDI 140 CV - DSG - SPORT 7 pl. Pack Hiver	2005	145000	12000
+739	audi	Audi A4 breack quattro	2002	95000	12300
+740	skoda	Skoda Octavia 2.0 TDI 140 Confort	2005	95000	10900
+741	citroen	Citroen picasso 2.0 hdi 90 cv a-r-o	2002	145000	5990
+742	alfa romeo	Alfa Romeo 147 TI 150CV serie SPECIAL sport	2006	67000	13400
+743	audi	AUDI A3 1.9 TDI 105 cv excellent état	2007	33000	19000
+744	audi	Echange audi a4/s4	1997	230000	4600
+745	citroen	Citroen xsara break 2.0hdi 90 an 2000 245000km tbe	2000	245000	2800
+746	citroen	Citroen xsara 1.9d 70cv	2002	155000	2500
+747	renault	Renault espace 2.2dt rxe115cv 7sièges1999-308000km	1999	308000	2900
+748	peugeot	Peugeot 206 SW BREAK 2.0 L HDI 90 PACK QUIKSILVER	2004	84000	7950
+749	hyundai	Hyundai elantra crdi	2004	190000	4500
+750	renault	Grand Scénic 3 Expression 7 places 1.9 dCi 130 cv	2009	10000	20700
+751	audi	Audi a3 2.0 tdi ambition	2004	120000	11500
+752	citroen	CITROEN C8 2.0L 143cv an2006-29700km COMME NEUF	2006	29700	21000
+753	audi	À Saisir Audi A3 TDI 140 Ambition Luxe	2006	78000	15800
+754	renault	Laguna II 1.9 dci 110 cv	2004	116100	7000
+755	audi	AUDI A3 SPORTBACK 2.0 TDI 140 CV - 49 000 kms	2006	49000	17900
+756	renault	Renault scenic ii 1.9 dci 120 ch confort expressio	2004	70000	9500
+757	renault	Renault scenic dci 120cv sport dynamique ct vierge	2004	78000	8990
+758	renault	Renault Espace IV Privilège - 2.2 L DCI 150 ch	2004	115000	11500
+759	mini	Grand c4 piccasso eclisive pack plus	2008	71000	21000
+760	fiat	Peugeot 407 noir	2009	23000	22000
+761	audi	Audi A3 Ambition 2.0l tdi 140cv 6 Vitesses	2005	45000	19000
+762	renault	Scenic 2 privilege 1.9 dci 130cv 7 places gtie 1an	2006	50000	13990
+763	renault	Grand espace iv alyum plus	2008	40000	24500
+764	fiat	"Fiat bravo 2.0l hgt pack sport ""echange possible"""	2000	138000	3900
+765	renault	Grand renault espace 3	2001	131000	6900
+766	renault	Renault Scenic II 1.9 DCI 120 CH LUXE	2005	100877	9700
+767	audi	Audi A3 sportback	2007	34000	17500
+768	renault	Renault MEGANE II Luxe Privilege	2003	110000	12400
+769	peugeot	Peugeot 407 &virgule; 2.2 hdi	2005	163000	7900
+770	renault	Renault megane 1.9 dci	2006	144000	7800
+771	audi	Audi A4 s-line serie limitée	2003	227500	9990
+772	renault	CLIO 3 2.0 140 ch EXCEPTION BVA 3 p / ttes options	2008	18000	12750
+773	opel	Zafira 1.9 cdti 100 ch Enjoy	2006	89303	11990
+774	fiat	Fiat grande punto 1.9 mjt 130cv sport	2007	52000	10000
+775	volkswagen	VW New Beetle 1.9TDI / Noire / Pack Sunsea / 105ch	2007	50560	13000
+776	audi	AUDI Q5 2.0 TDI 170 Cv CUIR 2009 NOIR	2009	28200	39200
+777	audi	Audi a 4 1.9tdi 130ch	2002	204000	7200
+778	volkswagen	TOURAN SPORT TDI 140ch 7 places	2008	47500	23000
+779	volkswagen	Volkswagen passat business line 2 - tdi 130 ch	2004	168000	7600
+780	nissan	4x4 nissan x-trail	2004	88000	12500
+781	audi	Audi A4 Break&virgule; 1.9 TDI 130 BV6&virgule; Excellent état	2004	162000	9900
+782	renault	Renault laguna estate 1.9dci 120ch impulsion	2004	96000	9800
+783	peugeot	Peugeot 307 2.0hdi 90ch x-line 5 portes	2004	123000	8500
+784	peugeot	Voiture 406 hdi 110 ch année 1999 st	1999	275000	3700
+785	skoda	Skoda Fabia RS 1.9L TDI 175ch	2005	115000	10000
+786	renault	Renault scenic 1.9 dci confort expression	2003	133780	9300
+787	citroen	Citroen xsara picasso pack clim. 2.0l hdi rouge 90	2001	149200	6200
+788	peugeot	307CC 2.0 HDI 136ch FAP Sport Pack CUIR INTEGRAL	2007	46200	17900
+789	mini	VW SCIROCCO 2.0 PACK SPORT 200 Cv 2009	2009	25900	22500
+790	peugeot	307 hdi	2002	165000	5700
+791	bmw	BMW 118D Confort BVA6 / 5P / 12.06.09 / 13000km	2009	13000	22900
+792	renault	RENAULT SCENIC II 1.9l dci 120ch Pack Expression	2005	95000	8300
+793	audi	Audi a 4 2&virgule;5 v6 tdi 163 cv pack luxe	2003	142000	12900
+794	renault	Espace dci	2005	185000	7250
+795	renault	Scenic 1.9dci 120ch de 2006 échange possible	2006	155000	8000
+796	audi	A4 ambition luxe multitronic 100mkms ct vierge	2005	100000	16500
+797	audi	"Audi a3 ""affaire"""	2000	156000	5900
+798	renault	Espace IV Privilège 2.2 dci de 12/2004	2004	101000	12500
+799	audi	A4 2.0l TDI 140cv AMBITION LUXE MULTITRONIC 98000K	2005	100000	16500
+800	peugeot	Peugeot 307 Hdi 90cv	2002	171700	5300
+801	renault	RENAULT LAGUNA II Phase 2 Essence 2.0T Luxe Priv	2005	35000	9000
+802	renault	Espace 4 dci 2.2 l	2005	154500	8800
+803	fiat	FIAT GRANDEPUNTO 1.9 JTDiesel 120 CV EMOTION	2006	65000	7200
+804	peugeot	Urgent 307 x-line clim 2l hdi 90cv	2004	121000	6690
+805	bmw	Bmw 120d	2009	15600	27500
+806	opel	Opel vectra 2.5 v6 cdx pack cuir bva	1999	151000	2790
+807	renault	Senic RX4 toutes options	2002	110000	7000
+808	peugeot	Peugeot 307 sw 2.0 HDI 110 cv navetech on board	2003	143000	7400
+809	toyota	Belle Toyota avensis II 2.0 D4D 116 ch Sol	2003	76000	11000
+810	renault	Clio williams 200cv numérotée 1261	1994	154852	5000
+811	toyota	RAV 4 genération II phase 2 48000km 3 portes	2004	48000	14600
+812	peugeot	306 TD signature	1996	255000	2800
+813	renault	TRES BELLE LAGUNA 1.9DCI PRIVILEGE de 2003	2003	182000	4890
+814	citroen	TRES URGENT c8 2.0 pack 16v 110cv 7places merci	2003	90000	10200
+815	renault	Renault Megane 1.9 DCi 120cv Confort expression	2005	67000	8500
+816	audi	Audi A3 S-LINE 2.0 TDI	2009	23800	27600
+817	seat	Break BONNE AFFAIRE	2001	129000	5000
+818	alfa romeo	ALFA 147 DUCATI 170cv - Sous garantie	2009	25000	25000
+819	renault	Mégane II 1.9 DCI 130 cv	2007	65000	11900
+820	fiat	Fiat grande punto 1&virgule;9 mjt emotion 3p 2006	2006	46000	10500
+821	renault	SENIC II CONFORT EXPRESSION 1&virgule;9DCI 120 Chx Boite6v	2004	115000	6800
+822	audi	Av A4 ambiente 2.5 tdi 163 multitronic	2005	47910	18500
+823	volvo	Volvo S60 2.4 D Momentum &virgule;126 ch&virgule; boite 5 vitesses	2007	39050	15700
+824	renault	Grand scenic 2.0 dci 150 ch dynamique 5 places	2007	38429	15790
+825	renault	Laguna 3 berline Privilège 2&virgule;0 dCi 150 + attelage	2007	35000	17700
+826	alfa romeo	Alfa Romeo GT 1.9 JTD 150 Cuir GPS Distinctive	2005	85000	12990
+827	ford	FORD MONDEO 2 trend berline 157000km	2002	157000	4200
+828	audi	607 2.2 HDI 136cv 2003	2003	197700	6900
+829	nissan	A SAISIR Nissan X-Trail 2.2 DCI 136 CV Confort	2004	160000	7900
+830	audi	Audi a3 2.0 tdi 140 ch pack ambition	2004	145000	10500
+831	audi	Audi a3 tdi 2.0 ambition 140	2007	52000	17300
+832	opel	Opel astra GTC 150CV	2006	105000	9800
+833	audi	Audi A3 SPORTBACK 2&virgule;0 TDI 140CV 07/2008	2008	8500	21960
+834	renault	Laguna 2.2l dci 150ch bv6 faible km année 01/2002	2002	96000	4800
+835	fiat	FIAT 4x4 SEDICI 1.9 JTD120 EMOTION 5p	2007	34000	13607
+836	renault	Échange Clio RS 2 phase 2	2002	94500	8000
+837	renault	Grand Scénic 5 Places JADE 1.9Dci 130 CV	2009	5000	24000
+838	peugeot	Peugeot 607 2.2HDI 136CV	2004	165000	6990
+839	hyundai	MONOSPACE HYUNDAI - 2.5 TD 100CV - 162000km -Tinté	2000	162000	5100
+840	audi	Audi a3 1.9tdi 14.500km 3 portes noir brillant	2008	14500	22000
+841	peugeot	Peugeot 308 Sw Diesel 2.0 HDI 136 cv Premium	2009	3900	16970
+842	renault	Renault Laguna III estate2.0 Dci 130 cv Expression	2008	26359	14970
+843	renault	Renault Grand Scenic III 2.0 Dci 160 cv Jade 7 pl	2009	49500	19970
+844	renault	Renault Laguna III berline 2.0 Dci 150 cv BVA6 Pr	2008	12043	16490
+845	mini	PEUGEOT 807 2.2 HDI GPS COULEUR CUIR boite 6	2006	112500	12500
+846	renault	Renault mégane	2004	150000	6700
+847	audi	AUDi A4 1.9 TDi 110chv RS4	1998	260000	3500
+848	renault	LAGUNA 1.9 DCI 120ch gps xenon	2001	127000	6000
+849	audi	SOLDES +++ Double emploi avec voiture de fonction	2005	96000	15900
+850	renault	TOP Mégane Sport Dynamique oct 2005	2006	99500	8500
+851	alfa romeo	Alfa 147 selespeed	2001	89000	6000
+852	kia	Belle 406 2.2 hdi 136 cv pack sport	2002	155000	5900
+853	renault	Renault Megane 1.9dci 130CV FAP	2006	75000	9500
+854	audi	Audi a4 1.9 tdi 90cv	1995	290000	3000
+855	audi	Audi a3 1.9 tdi ambiente	1999	246000	5400
+856	audi	A4 avant 2.0 tdi 140 cv s/line clim auto+j.alu 17	2006	54618	19150
+857	audi	A4 avant s/line 2.0tdi 143cv navi+xenon+l 04/2009	2009	27107	32970
+858	skoda	Skoda Fabia combi pack clim	2005	74500	6300
+859	audi	A3 ambition facelift 2.0tdi 140cv jtes exc 03/2009	2009	9620	23970
+860	renault	Renault espace 3 privilege 124000km	2001	124000	9000
+861	opel	Opel zafira 120ch	2006	78000	13000
+862	ford	Ford C Max Ghia 2l TDCI 34000km	2006	34000	13500
+863	citroen	Xsara Picasso 2.0HDi pack	1993	155500	3950
+864	peugeot	Peugeot 406 2.0 Hdi 110 CV	2000	139000	3800
+865	audi	A4 cabriolet s/line 2.0tdi 140cv xenon+cuir+bose+p	2006	40935	23970
+866	renault	Renault trafic passenger 1.9 dci 100ch 8places	2004	131050	12500
+867	peugeot	Peugeot 206 XS 2.0L HDI 90ch	2002	118000	5400
+868	peugeot	PEUGEOT 307 XT Premium	2002	184000	5200
+869	renault	Renault velsatis carminat 2.2 dci 150cv	2005	91976	8990
+870	alfa romeo	ALFA ROMEO 156 1.9 jtd SPORTWAGON 115cv	2001	39000	3300
+871	audi	AUDI A6 TDI AVANT BREAK AMBIENTE GPS + Régulateur	2006	67500	22000
+872	volkswagen	Volkswagen Jetta 1.9 TDI Comfortline Alu/	2008	31000	14990
+873	opel	Opel Astra 2.0l DTI 16S édition GPS	2001	152000	4800
+874	renault	Laguna estate	2006	95500	10800
+875	audi	A4 ambiente 2.0 tdi 143 cv navi+xenon+leds 09/2008	2008	26975	26450
+876	opel	Opel Astra 2.0l DTI 16S édition GPS	2001	152000	4800
+877	renault	Laguna Initiale 1.9 DCI 120	2003	106000	8900
+878	peugeot	Peugeot 807 2.2 hdi 136ch	2007	200000	14700
+879	audi	Audi a4 avant 2.0 tdi 140 ch ambiente bv6	2006	68900	17990
+880	citroen	CITROEN Xsara 2.0 VTS 137 ch	2001	115000	4000
+881	renault	Grand Espace IV 2.0 DCI 175 FAP Alyum Plus	2007	51000	22000
+882	opel	Opel zafira 1.9 CDTI 120ch cosmo fap	2007	84000	13000
+883	renault	RENAULT CLIO RS 2.0 16V Phase III 200 cv	2007	28973	14500
+884	renault	Renault Espace IV(2) 2.0L DCI 150cv Privilége	2007	39000	12590
+885	mini	Subaru impreza wrx 225 cv	2003	118165	12400
+886	volkswagen	NEW BEETLE - 1.9 TDI 90 - modele 2000	1999	205000	5900
+887	renault	Megane II 1.9 dci 120 ch luxe privilege	2003	138000	7500
+888	renault	Renault Megane II Classic 1.9 dci 120cv 33 000km	2005	33000	8390
+889	volkswagen	Volkswagen Passat CC 2.0 TDI Sportline&virgule; Navi&virgule; PD	2009	28000	24990
+890	audi	Audi a3 sportback 1.9 l tdi 105 cv ambition faceli	2008	26500	21900
+891	volkswagen	Volkswagen Passat CC 2.0 TDI Sportline&virgule; Navi&virgule; PD	2009	28000	24990
+892	audi	Volvo c30 2.0 d 136cv momentum	2007	50500	15990
+893	audi	Audi 2.5 TDI 5 cylindres	1992	45000	2800
+894	peugeot	Peugeot 206 Quicksilver 2.0l hdi	2002	160000	5000
+895	honda	Honda accord 2.2 ctdi sport	2007	84000	15500
+896	audi	Audi A3 Sportback 2.0 TDI 170 ch Quattro S Line	2006	124000	16800
+897	chrysler	Chrysler PT Cruiser 2.2 CRD Route 66	2006	83000	12600
+898	peugeot	PEUGEOT 307 XS 5Ptes 2.0 HDI 110 - Diesel	2003	133000	6500
+899	renault	Renault Espace 2.2 DCi The Race 2002	2002	195000	5500
+900	mini	Citroen Xsara 2 exclusive 2.0 HDI 90cv an2002 CTOK	2002	130000	3990
+901	renault	Renault senic II dci	2003	126220	8380
+902	audi	SAAB 9-3 2.0t SE 150 cv	2001	80000	5700
+903	renault	Renault Espace 2.2 DCi The Race 2002	2002	195000	5500
+904	renault	Laguna ii 1.9 dci 120 cv dynamique bv6	2001	119000	5500
+905	audi	AUDI A4 1&virgule;9 TDI pack plus 130 ch	2001	94500	9900
+906	audi	Audi A4 2&virgule;0 TDI Ambition 03/08 29500km Ref:B2	2008	29500	24990
+907	alfa romeo	Alfa Romeo 147 1.9 JTD	2006	86500	9990
+908	audi	Laguna 2 Estate 2.2l DCI Luxe Privilège 150cv	2005	169000	7000
+909	citroen	Citroen c5 2.2hdi 136ch	2003	196000	3500
+910	mini	Suzuki vitara 2.0 td modele 1999	1998	230000	3800
+911	renault	Renault espace 4 dci2.2 / 150 cv	2003	155000	8900
+912	peugeot	Peugeot 206 SW XS 2.0 HDI 90ch	2003	91000	7600
+913	nissan	NISSAN X TRAIL phase 3 2.2 DCI confort pack family	2005	81800	12500
+914	citroen	Belle citroen xsara 2.0 hdi 90ch exclusive	2001	203120	3790
+915	nissan	NISSAN X TRAIL phase 3 2.2 DCI confort pack family	2005	81800	12500
+916	opel	Zafira 1.9cdti enjoy	2006	105000	10500
+917	renault	Laguna 2estate 1.9 dci 125cv confcarminat 2006 gps	2006	92545	7900
+918	ferrari	Fiat stilo schumacher	2005	103000	11000
+919	peugeot	Peugeot 406 1.9l turbo diesel	1998	275000	2350
+920	lexus	"Audi A3 1.9 TDI 130CV Pack S-Line GPS&virgule;XENONE&virgule;JA19"""	2002	119000	9500
+921	audi	Audi a3 sportback 2.0 tdi 140 cv 2005	2005	94500	13500
+922	renault	Renault espace III.2.2dti 115cv.7pl	1998	270000	3100
+923	ford	Gd scenic 2.0 dci 150 jade&virgule;cuir&virgule;gps couleur&virgule;t.pano	2006	94000	14500
+924	audi	Audi a8 v6tdi 2.5l 150cv 9800euro	1998	236000	9800
+925	renault	Renault Clio III RS Sport 2.0 16S 200ch	2006	44000	13900
+926	renault	Clio sport 2.0 l rs 200 ch	2007	32000	13900
+927	renault	Laguna 2.2 dci 150 ch privilege	2002	110000	7200
+928	renault	Megane cc luxe privilege 1.9 dci 120ch ss côte	2006	68000	13700
+929	renault	Laguna 2.2 dci 150 ch privilege	2002	110000	7200
+930	renault	Megane cc luxe privilege 1.9 dci 120ch ss côte	2006	68000	13700
+931	renault	Renault Kangoo 4X4 1&virgule;9 l dci 85 ch Privilège	2005	173300	6800
+932	renault	Laguna 1.9 dci 120ch gps xenon	2001	127000	5500
+933	mercedes	Pt cruiser touring 2.2 crd	2003	81000	8500
+934	volkswagen	T 5 multivan 174cv haut de gamme	2003	195860	19600
+935	audi	Audi A4 1&virgule;9 TDI	2003	135000	10500
+936	opel	Opel ASTRA cosmo 1.9 CDTI 120	2005	119000	9100
+937	alfa romeo	Alfa romeo 156 1.9 jtd	2001	192000	4500
+938	renault	Renault espace iv	2003	160000	8000
+939	audi	Audi A4 2.5 TDI quattro 150 cv	1999	150000	8900
+940	renault	Renault megane 1.9dci 120ch	2003	179000	5400
+941	renault	Espace 2&virgule;2 dci 115 expression	2002	116000	7490
+942	mini	Peugeot 407 2.0 HDI 16v Executive Pack FAP 136cv	2004	110000	8590
+943	peugeot	407 hdi 2.0 136cv	2005	122000	8800
+944	audi	Audi a6 2.0 tdi	2006	174000	14900
+945	renault	Scénic 2 - 1.9 DCI Luxe Privilège	2004	120000	7900
+946	peugeot	Peugeot 307 HDI 5 Portes	2003	110000	7000
+947	renault	Scénic aigle 1&virgule;9dci 105 cv	2002	181000	5200
+948	ford	A saisir ford kuga occasion	2009	14900	22995
+949	peugeot	Belle Peugeot 806 2.0l hdi	2000	168000	8500
+950	citroen	C5 BVA 2.2HDI 136cv 2002 FULL 105000Km 7300\u0080 Grtie	2002	99999	7300
+951	fiat	Fiat stilo 1.9 jtd 140ch 2005 153500km 5490\u0080	2005	153500	5490
+952	citroen	Picasso 2.0 hdi 90cv	2000	207000	3700
+953	skoda	Skoda octavia tdi	2006	58772	10900
+954	citroen	Xsara exclusive 2.0 hdi 110cv bva affaire	2003	128000	4490
+955	renault	Renault scenic ii	2006	66000	11000
+956	renault	Scenic 1.9 dci	2005	55000	8500
+957	renault	Grand espace 4	2004	65000	12900
+958	renault	Jolie renault scenic 1.9 dci 120cv luxe privilege	2003	152000	5990
+959	volkswagen	Volkswagen Touran - 1.9 tdi 105 match 7pl	2006	79300	15000
+960	audi	Audi A4 1.9 TDI accidenté	1996	190000	1000
+961	peugeot	PEUGEOT 407 . 2&virgule;2 HDI 16V 170CV Executive Pack FAP	2006	146000	9750
+962	honda	Honda Cr-v (2) 2.2 CTDI 140 CH EX	2005	115000	14600
+963	ford	Ford mondeo 2.0 di 115 ch de2001	2001	116000	6500
+964	renault	Megane II 1L9 DCI 120 CV	2003	135000	5500
+965	fiat	Fiat Stilo 1.9l JTD 115CH&virgule; année 2002&virgule; 4800\u0080	2002	166000	4800
+966	volkswagen	Volkswagen GOLF V 1.9 L TDI 105 SPORT GOLF 5 PORTE	2004	58500	12450
+967	seat	Seat leon 1.9 TDI - 105 cv	2008	34000	15500
+968	renault	Mégane 2 DCI	2002	135000	6700
+969	fiat	"Fiat stilo 1.9l jtd 115 cv ""échange possible"""	2002	140000	5900
+970	opel	Opel zafira 2.0 dti 100cv elegance an 2003 7places	2003	121000	6500
+971	opel	Opel astra gtc 1.9 l cdti cosmo coupe sport	2006	60000	13000
+972	renault	Echange 307 2.0l HDI 136 cv Pack sport	2004	119000	8600
+973	peugeot	206 2.0l xs hdi	2000	180000	5000
+974	opel	Opel astra 2.16S	1999	79000	4000
+975	nissan	Nissan primera 1.9l DCI	2004	95000	9000
+976	volkswagen	Volkswagen Golf 1.9 TDI 105 CH confort ling	2007	130000	11800
+977	renault	Renault espace 4 - 2.0 dci 150cv	2007	36000	20000
+978	abarth	Fiat stilo abarth	2003	117000	4900
+979	audi	Véhicule automobile	1997	221000	6700
+980	renault	ESPACE 4 1.9dci 120cv authent 10/03 1e main 5990E	2003	165700	5990
+981	audi	Audi A4 1.9TDI PACK LUXE 115 CV	2000	168000	9000
+982	renault	Laguna II break diesel à saisir	2005	85000	9500
+983	renault	BMW preference 2005 118000km ou echange	2005	118000	12300
+984	bmw	C8 2.0 hdi 110cv 09/2004 gps 67000kms 6 sieges	2005	67000	11200
+985	bmw	C8 2.0 hdi 110cv 09/2004 gps 67000kms 6 sieges	2005	67000	11200
+986	renault	Laguna 2 phase 2 dci 110ch confort expression	2005	91500	6850
+987	renault	RENAULT RX4 2.0 16V Privilège Pack cuir	2002	114000	5490
+988	audi	Seat toledo 2.0 tdi super prix	2006	112000	8390
+989	renault	Renault Scenic II 1.9DCI 120CH 2004 118000KM	2004	118000	7200
+990	peugeot	Peugeot 407 sw 2.0hdi executive pack	2005	85000	12890
+991	renault	Renault grand scenic pack expression 1.9l dci 120	2005	83421	10200
+992	volkswagen	"PASSAT 2.0TDI-140 ""1ere MAIN"""	2006	120000	11190
+993	audi	Audi A3 2L TDI 170CV S-Line	2007	46000	22750
+994	seat	Seat altea 1.9tdi seduce -- prix a debattre -	2009	18200	15500
+995	volkswagen	VW PASSAT VI TDI 140 BV6 Cft. 1°MAIN+carnet VW	2005	137000	9990
+996	renault	Renault scenic 1.9 dci 120 cv serie luxe dynamique	2004	133642	6700
+997	renault	Espace III	2002	118500	6000
+998	audi	Audi a 3 1.9 tdi	2002	169000	6000
+999	audi	AUDI A3 SPORTBACK 105 ch	2006	133000	12900
+1000	ford	Ford Kuga Titanium 2.0 TDI 136cv 	2009	18000	25790

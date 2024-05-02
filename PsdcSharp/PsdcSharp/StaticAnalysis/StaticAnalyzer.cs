@@ -95,7 +95,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             }
         }
 
-        void AnalyzeStatement(Scope scope, Statement stmt, Action<Expression>? hookExpr = null)
+        void AnalyzeStatement(Scope scope, Statement stmt)
         {
             SetParentScopeIfNecessary(stmt, scope);
 
@@ -104,11 +104,11 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                 break;
 
             case Statement.Alternative alternative:
-                AnalyzeExpression(scope, alternative.If.Condition, hookExpr);
+                AnalyzeExpression(scope, alternative.If.Condition);
                 SetParentScope(alternative.If, scope);
                 AnalyzeScopedBlock(alternative.If);
                 foreach (var elseIf in alternative.ElseIfs) {
-                    AnalyzeExpression(scope, elseIf.Condition, hookExpr);
+                    AnalyzeExpression(scope, elseIf.Condition);
                     SetParentScope(elseIf, scope);
                     AnalyzeScopedBlock(elseIf);
                 }
@@ -119,50 +119,50 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                 break;
 
             case Statement.Assignment assignment:
-                AnalyzeExpression(scope, assignment.Target, hookExpr);
+                AnalyzeExpression(scope, assignment.Target);
                 if (assignment.Target is Expression.Lvalue.VariableReference varRef) {
                     scope.GetSymbol<Symbol.Constant>(varRef.Name).MatchSome(constant
                      => messenger.Report(Message.ErrorConstantAssignment(assignment, constant)));
                 }
-                AnalyzeExpression(scope, assignment.Value, hookExpr);
+                AnalyzeExpression(scope, assignment.Value);
                 break;
 
             case Statement.DoWhileLoop doWhileLoop:
                 AnalyzeScopedBlock(doWhileLoop);
-                AnalyzeExpression(scope, doWhileLoop.Condition, hookExpr);
+                AnalyzeExpression(scope, doWhileLoop.Condition);
                 break;
 
             case Statement.ForLoop forLoop:
-                AnalyzeExpression(scope, forLoop.Start, hookExpr);
-                forLoop.Step.MatchSome(step => AnalyzeExpression(scope, step, hookExpr));
-                AnalyzeExpression(scope, forLoop.End, hookExpr);
+                AnalyzeExpression(scope, forLoop.Start);
+                forLoop.Step.MatchSome(step => AnalyzeExpression(scope, step));
+                AnalyzeExpression(scope, forLoop.End);
                 AnalyzeScopedBlock(forLoop);
                 break;
 
             case Statement.Builtin.Lire lire:
-                AnalyzeExpression(scope, lire.ArgumentNomLog, hookExpr);
-                AnalyzeExpression(scope, lire.ArgumentVariable, hookExpr);
+                AnalyzeExpression(scope, lire.ArgumentNomLog);
+                AnalyzeExpression(scope, lire.ArgumentVariable);
                 break;
 
             case Statement.Builtin.Ecrire ecrire:
-                AnalyzeExpression(scope, ecrire.ArgumentNomLog, hookExpr);
-                AnalyzeExpression(scope, ecrire.ArgumentExpression, hookExpr);
+                AnalyzeExpression(scope, ecrire.ArgumentNomLog);
+                AnalyzeExpression(scope, ecrire.ArgumentExpression);
                 break;
 
             case Statement.Builtin.Fermer fermer:
-                AnalyzeExpression(scope, fermer.ArgumentNomLog, hookExpr);
+                AnalyzeExpression(scope, fermer.ArgumentNomLog);
                 break;
 
             case Statement.Builtin.OuvrirAjout ouvrirAjout:
-                AnalyzeExpression(scope, ouvrirAjout.ArgumentNomLog, hookExpr);
+                AnalyzeExpression(scope, ouvrirAjout.ArgumentNomLog);
                 break;
 
             case Statement.Builtin.OuvrirEcriture ouvrirEcriture:
-                AnalyzeExpression(scope, ouvrirEcriture.ArgumentNomLog, hookExpr);
+                AnalyzeExpression(scope, ouvrirEcriture.ArgumentNomLog);
                 break;
 
             case Statement.Builtin.OuvrirLecture ouvrirLecture:
-                AnalyzeExpression(scope, ouvrirLecture.ArgumentNomLog, hookExpr);
+                AnalyzeExpression(scope, ouvrirLecture.ArgumentNomLog);
                 break;
 
             case Statement.Builtin.Assigner assigner:
@@ -172,12 +172,12 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
 
             case Statement.Builtin.EcrireEcran ecrireEcran:
                 foreach (var arg in ecrireEcran.Arguments) {
-                    AnalyzeExpression(scope, arg, hookExpr);
+                    AnalyzeExpression(scope, arg);
                 }
                 break;
 
             case Statement.Builtin.LireClavier lireClavier:
-                AnalyzeExpression(scope, lireClavier.ArgumentVariable, hookExpr);
+                AnalyzeExpression(scope, lireClavier.ArgumentVariable);
                 break;
 
             case Statement.ProcedureCall call:
@@ -190,7 +190,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                 break;
 
             case Statement.Return ret:
-                AnalyzeExpression(scope, ret.Value, hookExpr);
+                AnalyzeExpression(scope, ret.Value);
                 break;
 
             case Statement.LocalVariable varDecl:
@@ -205,9 +205,9 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                 break;
 
             case Statement.Switch switchCase:
-                AnalyzeExpression(scope, switchCase.Expression, hookExpr);
+                AnalyzeExpression(scope, switchCase.Expression);
                 foreach (var @case in switchCase.Cases) {
-                    AnalyzeExpression(scope, @case.When, hookExpr);
+                    AnalyzeExpression(scope, @case.When);
                     SetParentScope(@case, scope);
                     AnalyzeScopedBlock(@case);
                 }
@@ -311,20 +311,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             HandleCallableDefinition(scope, sub);
             AddParameters(scopes[node], sub.Parameters);
 
-            Dictionary<Identifier, bool> outputParametersAssigned = sub.Parameters
-                .Where(param => param.Mode == ParameterMode.Out)
-                .ToDictionary(keySelector: param => param.Name, elementSelector: _ => false);
-
-            AnalyzeScopedBlock(node, hookExpr: expr => {
-                if (expr is Expression.Lvalue.VariableReference varRef
-                 && outputParametersAssigned.ContainsKey(varRef.Name)) {
-                    outputParametersAssigned[varRef.Name] = true;
-                }
-            });
-
-            foreach (var unassignedOutParam in outputParametersAssigned.Where(kv => !kv.Value).Select(kv => kv.Key)) {
-                messenger.Report(Message.ErrorOutputParameterNeverAssigned(unassignedOutParam));
-            }
+            AnalyzeScopedBlock(node);
         }
 
         void HandleCallableDefinition<T>(Scope scope, T sub) where T : CallableSymbol, IEquatable<T?>
@@ -345,7 +332,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
         void AnalyzeScopedBlock(BlockNode scopedBlock, Action<Expression>? hookExpr = null)
         {
             foreach (var stmt in scopedBlock.Block) {
-                AnalyzeStatement(scopes[scopedBlock], stmt, hookExpr);
+                AnalyzeStatement(scopes[scopedBlock], stmt);
             }
         }
     }

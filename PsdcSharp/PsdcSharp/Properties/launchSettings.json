@@ -2,7 +2,7 @@
   "profiles": {
     "C#: Psdc Debug": {
       "commandName": "Project",
-      "commandLineArgs": "fold.psc"
+      "commandLineArgs": "TD7/ex2.1.b.psc"
     }
   }
 }

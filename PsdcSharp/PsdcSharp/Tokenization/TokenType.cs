@@ -9,7 +9,8 @@ internal abstract class TokenType
 
     public override string ToString() => _repr;
 
-    private TokenType(string repr, bool isStatic) => _repr = isStatic ? $"`{repr}`" : repr;
+    private TokenType(string repr, bool isStatic)
+     => _repr = isStatic ? $"`{repr}`" : repr;
 
     internal interface Ruled
     {

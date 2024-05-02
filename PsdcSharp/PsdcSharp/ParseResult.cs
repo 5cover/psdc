@@ -1,22 +1,9 @@
-
-using Scover.Psdc.Tokenization;
-
 namespace Scover.Psdc.Parsing;
 
 internal interface ParseResult<out T> : Option<T, ParseError>
 {
     SourceTokens SourceTokens { get; }
     ParseResult<T> WithSourceTokens(SourceTokens newSourceTokens);
-}
-
-internal sealed record ParseError(Option<Token> ErroneousToken, IReadOnlySet<TokenType> ExpectedTokens, string ExpectedProductionName)
-{
-    public static ParseError Create<T>(Option<Token> erroneousToken, IEnumerable<TokenType> expectedTokens)
-     => new(erroneousToken, expectedTokens.ToHashSet(), typeof(T).Name.ToLower());
-    public static ParseError Create<T>(Option<Token> erroneousToken, TokenType expectedTokens)
-     => new(erroneousToken, new HashSet<TokenType> { expectedTokens }, typeof(T).Name.ToLower());
-
-    public bool IsEquivalent(ParseError? other) => other is not null && other.ExpectedTokens.SetEquals(ExpectedTokens);
 }
 
 internal static class ParseResult
@@ -29,14 +16,10 @@ internal static class ParseResult
     public static ParseResult<T> Fail<T>(SourceTokens sourceTokens, ParseError error)
      => new ParseResultImpl<T>(false, default, error, sourceTokens);
 
-    public static ParseResult<T> Else<T>(this ParseResult<T> original, Func<ParseResult<T>> alternative)
-    {
-        if (original.HasValue) {
-            return original;
-        }
-        ParseResult<T> alt = alternative();
-        return new ParseResultImpl<T>(alt.HasValue, alt.Value, alt.Error?.CombineWith<T>(original.Error), alt.SourceTokens);
-    }
+    public static ParseResult<T> MapError<T>(this ParseResult<T> result, Func<ParseError, ParseError> transformError)
+     => result.HasValue
+        ? result
+        : Fail<T>(result.SourceTokens, transformError(result.Error));
 
     public static ParseResult<TResult> Map<T, TResult>(this ParseResult<T> original, Func<SourceTokens, T, TResult> transform)
      => original.HasValue
@@ -45,10 +28,6 @@ internal static class ParseResult
 
     public static ParseResult<TResult> FlatMap<T, TResult>(this ParseResult<T> pr, Func<T, ParseResult<TResult>> transform)
      => pr.HasValue ? transform(pr.Value) : Fail<TResult>(pr.SourceTokens, pr.Error);
-
-    private static ParseError CombineWith<T>(this ParseError original, ParseError @new)
-     => new(original.ErroneousToken.Else(@new.ErroneousToken),
-            original.ExpectedTokens.Concat(@new.ExpectedTokens).ToHashSet(), typeof(T).Name.ToLower());
 
     private sealed record ParseResultImpl<T>(
         bool HasValue,

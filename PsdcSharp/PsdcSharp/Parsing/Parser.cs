@@ -29,7 +29,7 @@ internal sealed partial class Parser
         };
 
         _statementParsers = new Dictionary<TokenType, Parser<Statement>>() {
-            [Valued.Identifier] = ParseAnyOf(ParserVariableDeclarationOrProcedureCall, ParseAssignment),
+            [Valued.Identifier] = ParseAnyOf(ParseAssignment, ParserVariableDeclarationOrProcedureCall),
             [Keyword.Do] = ParseDoWhileLoop,
             [Keyword.For] = ParseForLoop,
             [Keyword.If] = ParseAlternative,
@@ -72,7 +72,7 @@ internal sealed partial class Parser
     }
 
     private ParseResult<Type> ParseType(IEnumerable<Token> tokens)
-     => ParseAnyOf<Type>(ParseTypeComplete, ParseTypeAliasReference, ParseTypeString)(tokens);
+     => ParseAnyOf<Type>(ParseTypeString, ParseTypeAliasReference, ParseTypeComplete)(tokens);
 
     // Parsing starts here with the "Algorithm" production rule
     public ParseResult<Algorithm> Parse()
@@ -117,7 +117,11 @@ internal sealed partial class Parser
     .MapResult(t => new Declaration.MainProgram(t, block));
 
     private ParseResult<Declaration> ParseProcedureDeclarationOrDefinition(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .Parse(out var signature, ParseProcedureSignature)
+        .ParseToken(Keyword.Procedure)
+        .Parse(out var name, ParseIdentifier)
+        .ParseToken(Punctuation.OpenBracket)
+        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterFormal, Punctuation.Comma, Punctuation.CloseBracket)
+        .GetIntermediateResult(out var signature, t => new ProcedureSignature(t, name, parameters))
         .ChooseBranch<Declaration>(out var branch, new() {
             [Punctuation.Semicolon] = _ => t => new Declaration.Procedure(t, signature),
             [Keyword.Is] = o => {
@@ -131,7 +135,13 @@ internal sealed partial class Parser
     .MapResult(result);
 
     private ParseResult<Declaration> ParseFunctionDeclarationOrDefinition(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .Parse(out var signature, ParseFunctionSignature)
+        .ParseToken(Keyword.Function)
+        .Parse(out var name, ParseIdentifier)
+        .ParseToken(Punctuation.OpenBracket)
+        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterFormal, Punctuation.Comma, Punctuation.CloseBracket)
+        .ParseToken(Keyword.Delivers)
+        .Parse(out var returnType, ParseType)
+        .GetIntermediateResult(out var signature, t => new FunctionSignature(t, name, parameters, returnType))
         .ChooseBranch<Declaration>(out var branch, new() {
             [Punctuation.Semicolon] = _ => t => new Declaration.Function(t, signature),
             [Keyword.Is] = o => {
@@ -143,24 +153,6 @@ internal sealed partial class Parser
         })
         .Fork(out var result, branch)
     .MapResult(result);
-
-    private ParseResult<FunctionSignature> ParseFunctionSignature(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .ParseToken(Keyword.Function)
-        .Parse(out var name, ParseIdentifier)
-        .ParseToken(Punctuation.OpenBracket)
-        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterFormal, Punctuation.Comma)
-        .ParseToken(Punctuation.CloseBracket)
-        .ParseToken(Keyword.Delivers)
-        .Parse(out var returnType, ParseType)
-    .MapResult(t => new FunctionSignature(t, name, parameters, returnType));
-
-    private ParseResult<ProcedureSignature> ParseProcedureSignature(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .ParseToken(Keyword.Procedure)
-        .Parse(out var name, ParseIdentifier)
-        .ParseToken(Punctuation.OpenBracket)
-        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterFormal, Punctuation.Comma)
-        .ParseToken(Punctuation.CloseBracket)
-    .MapResult(t => new ProcedureSignature(t, name, parameters));
 
     #endregion Declarations
 
@@ -174,15 +166,14 @@ internal sealed partial class Parser
     .MapResult(t => new Statement.Nop(t));
 
     private ParseResult<Statement.Alternative> ParseAlternative(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .Parse(out var ifClause, tokens => ParseOperation.Start(_messenger, tokens)
-            .ParseToken(Keyword.If)
-            .ParseToken(Punctuation.OpenBracket)
-            .Parse(out var condition, ParseExpression)
-            .ParseToken(Punctuation.CloseBracket)
-            .ParseToken(Keyword.Then)
-            .ParseZeroOrMoreUntilToken(out var block, ParseStatement,
+        .ParseToken(Keyword.If)
+        .ParseToken(Punctuation.OpenBracket)
+        .Parse(out var ifCondition, ParseExpression)
+        .ParseToken(Punctuation.CloseBracket)
+        .ParseToken(Keyword.Then)
+        .ParseZeroOrMoreUntilToken(out var ifBlock, ParseStatement,
                 Keyword.EndIf, Keyword.Else, Keyword.ElseIf)
-        .MapResult(t => new Statement.Alternative.IfClause(t, condition, block)))
+        .GetIntermediateResult(out var ifClause, t => new Statement.Alternative.IfClause(t, ifCondition, ifBlock))
 
         .ParseZeroOrMoreUntilToken(out var elseIfClauses, tokens => ParseOperation.Start(_messenger, tokens)
             .ParseToken(Keyword.ElseIf)
@@ -204,8 +195,7 @@ internal sealed partial class Parser
     .MapResult(t => new Statement.Alternative(t, ifClause, elseIfClauses, elseClause));
 
     private ParseResult<Statement.LocalVariable> ParseVariableDeclaration(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
-        .ParseOneOrMoreSeparated(out var names, ParseIdentifier, Punctuation.Comma)
-        .ParseToken(Punctuation.Colon)
+        .ParseOneOrMoreSeparated(out var names, ParseIdentifier, Punctuation.Comma, Punctuation.Colon)
         .Parse(out var type, ParseTypeComplete)
         .ParseToken(Punctuation.Semicolon)
     .MapResult(t => new Statement.LocalVariable(t, names, type));
@@ -228,12 +218,11 @@ internal sealed partial class Parser
         .Parse(out var ident, ParseIdentifier)
         .ChooseBranch<Statement>(out var branch, new() {
             [Punctuation.Comma] = o => FinishVariableDeclaration(o
-                .ParseZeroOrMoreSeparated(out var names, ParseIdentifier, Punctuation.Comma)
-                .ParseToken(Punctuation.Colon), names.Prepend(ident)),
+                .ParseZeroOrMoreSeparated(out var names, ParseIdentifier, Punctuation.Comma, Punctuation.Colon),
+                names.Prepend(ident)),
             [Punctuation.Colon] = o => FinishVariableDeclaration(o, ident.Yield()),
             [Punctuation.OpenBracket] = o => {
-                o.ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma)
-                .ParseToken(Punctuation.CloseBracket);
+                o.ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma, Punctuation.CloseBracket);
                 return t => new Statement.ProcedureCall(t, ident, parameters);
             },
         })
@@ -318,7 +307,7 @@ internal sealed partial class Parser
     private ParseResult<Statement.Builtin> ParseBuiltin(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ChooseBranch<Statement.Builtin>(out var branch, new() {
             [Keyword.EcrireEcran] = o => {
-                o.ParseZeroOrMoreSeparated(out var arguments, ParseExpression, Punctuation.Comma);
+                o.ParseZeroOrMoreSeparated(out var arguments, ParseExpression, Punctuation.Comma, Punctuation.CloseBracket, readEndToken: false);
                 return t => new Statement.Builtin.EcrireEcran(t, arguments);
             },
             [Keyword.LireClavier] = o => {
@@ -382,7 +371,8 @@ internal sealed partial class Parser
 
     private ParseResult<Type.Complete.Array> ParseTypeArray(IEnumerable<Token> tokens) => ParseOperation.Start(_messenger, tokens)
         .ParseToken(Keyword.Array)
-        .Parse(out var dimensions, ParseIndexes)
+        .ParseToken(Punctuation.OpenSquareBracket)
+        .ParseOneOrMoreSeparated(out var dimensions, ParseExpression, Punctuation.Comma, Punctuation.CloseSquareBracket)
         .ParseToken(Keyword.From)
         .Parse(out var type, ParseTypeComplete)
     .MapResult(t => new Type.Complete.Array(t, type, dimensions));

@@ -16,7 +16,7 @@ internal static class Program
 
         const bool Verbose = false;
 
-        string input = File.ReadAllText($"../../testPrograms/{args[0]}");
+        string input = File.ReadAllText(Path.Join("../../testPrograms", args[0]));
         Globals.Initialize(input);
 
         PrintMessenger messenger = new();

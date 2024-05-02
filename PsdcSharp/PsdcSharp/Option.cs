@@ -64,6 +64,8 @@ internal static class Option
 
     public static Option<TResult> Map<T, TResult>(this Option<T> option, Func<T, TResult> transform)
      => option.HasValue ? transform(option.Value).Some() : None<TResult>();
+    public static Option<TResult> Map<T1, T2, TResult>(this Option<(T1, T2)> option, Func<T1, T2, TResult> transform)
+     => option.HasValue ? transform(option.Value.Item1, option.Value.Item2).Some() : None<TResult>();
     public static Option<TResult, TError> Map<T, TError, TResult>(this Option<T, TError> option, Func<T, TResult> transform)
      => option.HasValue
         ? transform(option.Value).Some<TResult, TError>()
@@ -173,7 +175,13 @@ internal static class OptionalCollectionExtensions
             : values.Some<IEnumerable<T>, IEnumerable<TError>>();
     }
 
-    public static IEnumerable<T> WhereSome<T>(this IEnumerable<Option<T>> options)
+    public static Option<IEnumerable<T>> AccumulateAtLeast1<T>(this IEnumerable<Option<T>> options)
+    {
+        var somes = options.Accumulate();
+        return somes.Any() ? somes.Some() : Option.None<IEnumerable<T>>();
+    }
+
+    public static IEnumerable<T> Accumulate<T>(this IEnumerable<Option<T>> options)
      => options.Where(v => v.HasValue).Select(v => v.Value!);
     public static T FirstSome<T>(this IEnumerable<Option<T>> options)
      => options.First(v => v.HasValue).Value!;

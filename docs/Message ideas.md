@@ -22,6 +22,7 @@
 - Function/Procdeure Signature mismatch (between prototypes or between definition/prototype)
 - Reassignment of constant
 - Output parameter never assigned
+- Value of output parameter is undefined here
 
 - `lire[Clavier]`, `ecrire[Ecran]` to/of an expression of a type for which it doesn't make sense to do so (`nomFichierLog`). We won't define custom IO logic that C doesn't natively support, it would be up to the user to do so.
 - Assignment types incompatible

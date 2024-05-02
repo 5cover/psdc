@@ -20,10 +20,14 @@ internal partial class CodeGeneratorC
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
             } else {
-                part.EvaluateType(scope).MatchError(_messenger.Report).MatchSome(partType => {
-                    CreateTypeInfo(partType).FormatComponent.MatchSome(c => format.Append(c));
-                    arguments.Add(part);
-                });
+                part.EvaluateType(scope)
+                    .Match(none: _messenger.Report,
+                    some: type => CreateTypeInfo(type).FormatComponent.Match(
+                    fmtComp => {
+                        format.Append(fmtComp);
+                        arguments.Add(part);
+                    }, () => _messenger.Report(Message.ErrorTargetLanguage("C", part.SourceTokens,
+                        $"type {type} does not have a format component and as such cannot be used in a format string."))));
             }
         }
 

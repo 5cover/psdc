@@ -21,7 +21,6 @@
 - ~~Fix syntax error handling~~
 - ~~Lvalues~~
 - ~~Constant folding for type checking and division by zero~~
-- Files and other builtins
 - Brace initialization (voir TD14 ex 1)
 - CLI (use nuget package)
     - customize header?
@@ -29,10 +28,13 @@
 - Tests?
     - Errors
     - Valid code
+- File handling (low priority)
 - Documentation
 - Release
 - More static analysis
 - customize formatting
+- allow optional brackets in control structures
+- string literal escape sequences
 
 - Have formal grammar follow parsing order in choices.
 

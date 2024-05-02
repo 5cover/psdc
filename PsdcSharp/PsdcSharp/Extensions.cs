@@ -112,6 +112,23 @@ internal static class Extensions
         return count;
     }
 
+    public static IReadOnlyDictionary<TKey, TValue> UnionCombineDuplicates<TKey, TValue>(
+        this IReadOnlyDictionary<TKey, TValue> d1,
+        IReadOnlyDictionary<TKey, TValue> d2,
+        Func<TValue, TValue, TValue> combineValuesHavingSameKey)
+        where TKey : notnull
+    {
+        Dictionary<TKey, TValue> ret = new(d1);
+
+        foreach (var (key, value) in d2) {
+            ret[key] = ret.TryGetValue(key, out var d1Value)
+                ? combineValuesHavingSameKey(d1Value, value)
+                : value;
+        }
+
+        return ret;
+    }
+
     public static int GetSequenceHashCode<T>(this IEnumerable<T> items)
     {
         HashCode hc = new();
