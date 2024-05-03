@@ -45,7 +45,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
     private StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant)
     {
         Indent(o).Append($"#define {constant.Name} ");
-        return AppendExpression(o, constant.Value, GetPrecedence(constant.Value) <= 1).AppendLine();
+        return AppendExpression(o, constant.Value, GetPrecedence(constant.Value) > 1).AppendLine();
     }
 
     private StringBuilder AppendMainProgram(StringBuilder o, Declaration.MainProgram mainProgram)

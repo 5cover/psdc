@@ -44,14 +44,18 @@ internal abstract partial class CodeGenerator<TOpInfo>(Messenger messenger, Sema
 
     private static (bool bracketLeft, bool bracketRight) ShouldBracket(int precedenceLeft, int precedenceRight, TOpInfo me, Associativity psdcAssociativity)
      => (bracketLeft: precedenceLeft > me.Precedence
-            || precedenceLeft == me.Precedence
-                && me.Associativity == RightToLeft
-                && psdcAssociativity == LeftToRight,
+                   || precedenceLeft == me.Precedence
+                        && me.Associativity == RightToLeft
+                        && psdcAssociativity == LeftToRight,
         bracketRight: precedenceRight > me.Precedence
-            || precedenceRight == me.Precedence
-                && me.Associativity == LeftToRight
-                && psdcAssociativity == RightToLeft);
+                   || precedenceRight == me.Precedence
+                        && me.Associativity == LeftToRight
+                        && psdcAssociativity == RightToLeft);
 
     private static bool ShouldBracket(Expression operand, TOpInfo me, Associativity psdcAssociativity)
-     => GetPrecedence(operand) > me.Precedence || me.Associativity != psdcAssociativity;
+    {
+        var precedence = GetPrecedence(operand);
+        return precedence > me.Precedence
+            || precedence == me.Precedence && me.Associativity != psdcAssociativity;
+    }
 }
