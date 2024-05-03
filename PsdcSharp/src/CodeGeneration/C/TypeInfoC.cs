@@ -30,16 +30,24 @@ internal sealed class TypeInfoC : TypeInfo
         case EvaluatedType.Array array:
             var arrayType = Create(array.ElementType, generateExpression, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
-            foreach (var dimension in array.DimensionExpressions.Select(generateExpression)) {
+            foreach (var dimension in array.DimensionConstantExpressions.Select(generateExpression)) {
                 postModifier.Append($"[{dimension}]");
             }
             return new(type, arrayType._typeName,
                 requiredHeaders: arrayType.RequiredHeaders,
                 starCount: arrayType._stars.Length,
                 postModifier: postModifier.ToString());
-        case EvaluatedType.StringLengthed slk:
-            string length = slk.LengthExpression.Map(generateExpression).ValueOr(slk.Length.ToString());
-            return new(type, "char", "%s", postModifier: $"[{length}]");
+        case EvaluatedType.StringLengthed strlen:
+            // add 1 to the length for null terminator
+            string lengthPlus1 = strlen.LengthConstantExpression
+                .Map(len => generateExpression(
+                    // This feels like cheating, creatig AST nodes with placeholder source tokens during code generation
+                    // But this is the only way without massive abstraction
+                    // This will be improved if it ever becomes a problem.
+                    new Node.Expression.OperationBinary(len.SourceTokens, len, BinaryOperator.Plus,
+                        new Node.Expression.Literal.Integer(SourceTokens.Empty, "1"))))
+                .ValueOr((strlen.Length + 1).ToString());
+            return new(type, "char", "%s", postModifier: $"[{lengthPlus1}]");
         case EvaluatedType.Structure structure:
             StringBuilder sb = new("struct {");
             sb.AppendLine();

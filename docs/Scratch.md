@@ -255,12 +255,6 @@ Maybe we could tokenize them as identifiers always and expect an identifier of a
 
 That seems like an easy way to implement this feature.
 
-## Possibility of duplicate errors
-
-Errors may be duplicated between the static analyzer and the code generator.
-
-The issue is that we're doing duplicate work to evaluate types. So maybe we should add a types lookup table.
-
 ## File handling PSC &rarr; C
 
 ### Step 1. Declaration
@@ -373,114 +367,22 @@ How do we implement them?
 
 Currently we just add a bang and parentheses in front of it. That's dirty. We will need proper precedence and associativity control before that though.
 
-## Unified solution for operator precedence
+## String comparison
 
-For each code generator associate each operator with a precedence. So we always know whether to bracket an expression in non-terminal expressions.
+We need to support special syntax for comparisons between certain types.
 
-The idea is to add brackets if necessary.
+We could add it to typeinfoc or just check the type and operator in appendbinaryoperation and generate a strcmp appropriately.
 
-Let's start from a simple example.
-
-With the expression `5 + 4 * 3 + 2`
-
-We get the tree:
-
-```mermaid
-flowchart
-+1["+"]
-+2["+"]
-+2 --1--> +1
-+2 --2--> 2
-+1 --1--> 5
-+1 --2--> *
-* --1--> 4
-* --2--> 3
-
-2 ~~~~ 3
-```
-
-Equivalent : `((5 + (4 * 3)) + 2)`
-
-But it is generated without brackets.
-
-Generated : `5 + 4 * 3 + 2`
-
-But what if the target language has a lower precedence for addition than for multiplication?
-
-(lower = binds tigher).
-
-The resulting expression would be interpred as such, without brackets:
-
-```mermaid
-flowchart
-+1["+"]
-+2["+"]
-* --1--> +1
-* --2--> +2
-+1 --1--> 5
-+1 --2--> 4
-+2 --1--> 3
-+2 --2--> 2
-```
-
-To make it parse like before, we have to add brackets : `5 + (4 * 3) + 2`
-
-Now let's factor in associativity. If we consider + to be RTL associative, the expression
-
-`5 - 4 - 3 - 2`
-
-would be interpreted as:
-
-```mermaid
-flowchart
--1["-"]
--2["-"]
--3["-"]
-
--1 --1--> 5
--1 --2--> -2
--2 --1--> 4
--2 --2--> -3
--3 --1--> 3
--3 --2--> 2
-```
-
-is parsed as:
-
-```mermaid
-
-flowchart TD
--1["-"]
--2["-"]
--3["-"]
--1 --1--> -2
--1 --2--> 2
--2 --1--> -3
--2 --2--> 3
--3 --1--> 5
--3 --2--> 4
-
-2 ~~~~ 4
-3 ~~~ 4
-```
-
-We need to bracket like this : `((5 - 4) - 3) - 2`
-
-When generating a binary operation, surround in brackets :
-
-- left operand
-    - when its precedence is > mine
-    - or when its precedence = mine and my associativity is RTL and psdc associativity is LTR
-- right operand
-    - when its precedence is > mine
-    - or when its precedence = mine and my associativity is LTR and psdc associativity is RTL
-
-Unary operations : bracket when my operand's precedence is > mine
-
-for macros, enclose in brackets if precedence is anything but the lowest.
-
-Note that we don't need acceess to psdc's precedence values : the difference is enough.
+There will be concerns with precedence
 
 ## expression evaluation issue
 
 non-constant expressions are simply ignored.
+
+## array indices
+
+currently we do no translation, that's wrong.
+
+c is 0 to n-1, psdc is 1 to n. So we have to substract one to each index.
+
+Als it would be nice if we supported the syntax for arrays with custom index boundaries.

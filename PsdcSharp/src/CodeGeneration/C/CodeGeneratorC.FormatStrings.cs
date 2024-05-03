@@ -19,15 +19,12 @@ internal partial class CodeGeneratorC
                 format.Append(FormatValue(literal.Value)
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
-            } else {
-                part.EvaluateType(scope)
-                    .Match(none: _messenger.Report,
-                    some: type => CreateTypeInfo(type).FormatComponent.Match(
-                    fmtComp => {
+            } else if (_ast.InferredTypes.TryGetValue(part, out var type)) {
+                    CreateTypeInfo(type).FormatComponent.Match(fmtComp => {
                         format.Append(fmtComp);
                         arguments.Add(part);
                     }, () => _messenger.Report(Message.ErrorTargetLanguage("C", part.SourceTokens,
-                        $"type {type} does not have a format component and as such cannot be used in a format string."))));
+                             $"type '{type}' cannot be used in a format string")));
             }
         }
 

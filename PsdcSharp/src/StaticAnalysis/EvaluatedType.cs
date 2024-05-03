@@ -72,10 +72,10 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
                                           dimensions.Select(d => d.Value).ToList(), null));
 
         private Array(EvaluatedType elementType, IReadOnlyCollection<Expression> dimensionExprs, IReadOnlyCollection<int> dimensions, Identifier? alias) : base(alias)
-         => (ElementType, DimensionExpressions, Dimensions) = (elementType, dimensionExprs, dimensions);
+         => (ElementType, DimensionConstantExpressions, Dimensions) = (elementType, dimensionExprs, dimensions);
 
         public EvaluatedType ElementType { get; }
-        public IReadOnlyCollection<Expression> DimensionExpressions { get; }
+        public IReadOnlyCollection<Expression> DimensionConstantExpressions { get; }
         public IReadOnlyCollection<int> Dimensions { get; }
 
         protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Array o
@@ -86,7 +86,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
          => $"tableau [{string.Join(", ", Dimensions)}] de {ElementType.ActualRepresentation}";
 
         public override EvaluatedType ToAliasReference(Identifier alias)
-         => new Array(ElementType, DimensionExpressions, Dimensions, alias);
+         => new Array(ElementType, DimensionConstantExpressions, Dimensions, alias);
 
         // Arrays can't be reassigned.
         public override bool IsAssignableTo(EvaluatedType other) => false;
@@ -164,9 +164,9 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
          => new(Option.None<Expression>(), length, null);
 
         private StringLengthed(Option<Expression> lengthExpression, int length, Identifier? alias) : base(alias)
-         => (LengthExpression, Length) = (lengthExpression, length);
+         => (LengthConstantExpression, Length) = (lengthExpression, length);
 
-        public Option<Expression> LengthExpression { get; }
+        public Option<Expression> LengthConstantExpression { get; }
         public int Length { get; }
 
         protected override string ActualRepresentation => $"chaîne({Length})";
@@ -176,7 +176,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
         public override bool IsAssignableTo(EvaluatedType other)
          => other is String || ActualSemanticsEqual(other);
-        public override EvaluatedType ToAliasReference(Identifier alias) => new StringLengthed(LengthExpression, Length, alias);
+        public override EvaluatedType ToAliasReference(Identifier alias) => new StringLengthed(LengthConstantExpression, Length, alias);
     }
 
     internal sealed class Structure(IReadOnlyDictionary<Identifier, EvaluatedType> components, Identifier? alias = null) : EvaluatedType(alias)

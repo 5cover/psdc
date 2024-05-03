@@ -4,11 +4,11 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-internal sealed class SemanticAst(Algorithm root, IReadOnlyDictionary<NodeScoped, Scope> scopes)
+internal sealed class SemanticAst(Algorithm root, IReadOnlyDictionary<NodeScoped, Scope> scopes, IReadOnlyDictionary<Expression, EvaluatedType> inferredTypes)
 {
     public Algorithm Root => root;
-
     public IReadOnlyDictionary<NodeScoped, Scope> Scopes => scopes;
+    public IReadOnlyDictionary<Expression, EvaluatedType> InferredTypes => inferredTypes;
 }
 
 internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
@@ -16,6 +16,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
     public SemanticAst AnalyzeSemantics()
     {
         Dictionary<NodeScoped, Scope> scopes = [];
+        Dictionary<Expression, EvaluatedType> inferredTypes = [];
         bool seenMainProgram = false;
 
         SetParentScope(root, null);
@@ -27,7 +28,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             messenger.Report(Message.ErrorMissingMainProgram(root.SourceTokens));
         }
 
-        return new(root, scopes);
+        return new(root, scopes, inferredTypes);
 
         void AnalyzeDeclaration(Scope scope, Declaration decl)
         {
@@ -40,7 +41,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                 break;
 
             case Declaration.Constant constant:
-                constant.Value.EvaluateType(scope).MatchError(messenger.Report).MatchSome(inferredType => {
+                AnalyzeExpression(scope, constant.Value).MatchSome(inferredType => {
                     var declaredType = constant.Type.CreateTypeOrError(scope, messenger);
 
                     if (!declaredType.SemanticsEqual(inferredType)) {
@@ -183,7 +184,7 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
 
             case Statement.ProcedureCall call:
                 HandleCall<Symbol.Procedure>(scope, call);
-            break;
+                break;
 
             case Statement.RepeatLoop repeatLoop:
                 AnalyzeScopedBlock(repeatLoop);
@@ -222,16 +223,25 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             }
         }
 
-        void AnalyzeExpression(Scope scope, Expression expr)
+        Option<EvaluatedType> AnalyzeExpression(Scope scope, Expression expr)
         {
             SetParentScopeIfNecessary(expr, scope);
 
-            // Try to evaluate the expression as a constant.
-            // This will fold any constants the expression contains and perform various checks.
-            // No message is reported if the expression isn't constant.
-            // Detects indirect division by zero errors. Example : (4 / (2 + 3 - 5))
-            expr.EvaluateValue(scope)
-                .MatchError(e => e.MatchSome(messenger.Report));
+            var type = expr.EvaluateType(scope)
+                .MatchError(messenger.Report);
+
+            type.MatchSome(type => inferredTypes.Add(expr, type));
+
+            if (type.HasValue) {
+                // Try to evaluate the expression as a constant.
+                // This will fold any constants the expression contains and perform various checks.
+                // No message is reported if the expression isn't constant.
+                // Detects indirect division by zero errors. Example : (4 / (2 + 3 - 5))
+                expr.EvaluateValue(scope)
+                    .MatchError(e => e.MatchSome(messenger.Report));
+            }
+
+            return type;
         }
 
         void SetParentScopeIfNecessary(Node node, Scope? parentScope)
@@ -273,8 +283,8 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                         problems.Add(Message.ProblemWrongArgumentMode(formal.Name,
                             actual.Mode.RepresentationActual, formal.Mode.RepresentationFormal));
                     }
-                    
-                    actual.Value.EvaluateType(scope).MatchError(messenger.Report).MatchSome(actualType => {
+
+                    AnalyzeExpression(scope, actual.Value).MatchSome(actualType => {
                         if (!actualType.IsAssignableTo(formal.Type)) {
                             problems.Add(Message.ProblemWrongArgumentType(formal.Name,
                                 formal.Type, actualType));

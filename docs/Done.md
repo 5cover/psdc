@@ -692,3 +692,117 @@ We need to prefix every operation we make with `EvaluatedType`s with Unwrap to g
 We need a different solution so the type of an instance is the same as its actual type (so we can perform is checks).
 
 Maybe we can have a type remember which alias, if any it belongs to?
+
+## Unified solution for operator precedence
+
+For each code generator associate each operator with a precedence. So we always know whether to bracket an expression in non-terminal expressions.
+
+The idea is to add brackets if necessary.
+
+Let's start from a simple example.
+
+With the expression `5 + 4 * 3 + 2`
+
+We get the tree:
+
+```mermaid
+flowchart
++1["+"]
++2["+"]
++2 --1--> +1
++2 --2--> 2
++1 --1--> 5
++1 --2--> *
+* --1--> 4
+* --2--> 3
+
+2 ~~~~ 3
+```
+
+Equivalent : `((5 + (4 * 3)) + 2)`
+
+But it is generated without brackets.
+
+Generated : `5 + 4 * 3 + 2`
+
+But what if the target language has a lower precedence for addition than for multiplication?
+
+(lower = binds tigher).
+
+The resulting expression would be interpred as such, without brackets:
+
+```mermaid
+flowchart
++1["+"]
++2["+"]
+* --1--> +1
+* --2--> +2
++1 --1--> 5
++1 --2--> 4
++2 --1--> 3
++2 --2--> 2
+```
+
+To make it parse like before, we have to add brackets : `5 + (4 * 3) + 2`
+
+Now let's factor in associativity. If we consider + to be RTL associative, the expression
+
+`5 - 4 - 3 - 2`
+
+would be interpreted as:
+
+```mermaid
+flowchart
+-1["-"]
+-2["-"]
+-3["-"]
+
+-1 --1--> 5
+-1 --2--> -2
+-2 --1--> 4
+-2 --2--> -3
+-3 --1--> 3
+-3 --2--> 2
+```
+
+is parsed as:
+
+```mermaid
+
+flowchart TD
+-1["-"]
+-2["-"]
+-3["-"]
+-1 --1--> -2
+-1 --2--> 2
+-2 --1--> -3
+-2 --2--> 3
+-3 --1--> 5
+-3 --2--> 4
+
+2 ~~~~ 4
+3 ~~~ 4
+```
+
+We need to bracket like this : `((5 - 4) - 3) - 2`
+
+When generating a binary operation, surround in brackets :
+
+- left operand
+    - when its precedence is > mine
+    - or when its precedence = mine and my associativity is RTL and psdc associativity is LTR
+- right operand
+    - when its precedence is > mine
+    - or when its precedence = mine and my associativity is LTR and psdc associativity is RTL
+
+Unary operations : bracket when my operand's precedence is > mine
+
+for macros, enclose in brackets if precedence is anything but the lowest.
+
+Note that we don't need acceess to psdc's precedence values : the difference is enough.
+
+## Possibility of duplicate errors
+
+Errors may be duplicated between the static analyzer and the code generator.
+
+The issue is that we're doing duplicate work to evaluate types. So maybe we should add a types lookup table.
