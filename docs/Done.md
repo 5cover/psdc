@@ -692,9 +692,3 @@ We need to prefix every operation we make with `EvaluatedType`s with Unwrap to g
 We need a different solution so the type of an instance is the same as its actual type (so we can perform is checks).
 
 Maybe we can have a type remember which alias, if any it belongs to?
-
-## custom logic to parse and language-specific way to print literals
-
-current we use `CultureInfo.Invariant`, which seems to works but not sure if it covers all edge cases. Cleanest way is to use our own algorithms.
-
-Also specific target language may use different syntax for literals.

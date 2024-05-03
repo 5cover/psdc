@@ -6,17 +6,11 @@
 
 #include <stdio.h>
 
-void afficherTableDeMultiplication(int n) {
+typedef struct {
     int i;
-    printf("Table de multiplication de %d : \n", n);
-    for (i = 1; i <= 9; i += 1) {
-        printf("%d * %d = %d\n", n, i, n * i);
-    }
-}
+} S;
 
 int main() {
-    int n;
-    printf("n = \n");
-    scanf("%d", &n);
-    afficherTableDeMultiplication(n);
+    S s = {5};
+    printf("i = \n", s.(i));
 }

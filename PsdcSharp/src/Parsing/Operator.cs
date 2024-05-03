@@ -26,6 +26,10 @@ internal static class OperatorExtensions
         UnaryOperator.Plus => "+",
         _ => throw @operator.ToUnmatchedException()
     };
+
+    public static Associativity GetAssociativity(this BinaryOperator @operator) => Associativity.LeftToRight;
+    public static Associativity GetAssociativity(this UnaryOperator @operator) => Associativity.RightToLeft;
+
 }
 
 internal enum BinaryOperator

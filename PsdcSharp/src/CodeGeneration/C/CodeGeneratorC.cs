@@ -6,7 +6,8 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
-internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst) : CodeGenerator(messenger, semanticAst)
+internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst)
+    : CodeGenerator<OperatorInfoC>(messenger, semanticAst)
 {
     private readonly IncludeSet _includes = new();
 
@@ -44,7 +45,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
     private StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant)
     {
         Indent(o).Append($"#define {constant.Name} ");
-        return AppendExpression(o, constant.Value, PrecedenceRequiresBrackets(constant.Value)).AppendLine();
+        return AppendExpression(o, constant.Value, GetPrecedence(constant.Value) <= 1).AppendLine();
     }
 
     private StringBuilder AppendMainProgram(StringBuilder o, Declaration.MainProgram mainProgram)
@@ -321,20 +322,20 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
             o.Append('(');
         }
         _ = expr switch {
+            Expression.Bracketed b => AppendExpression(o, b.ContainedExpression, !bracketed),
             Expression.FunctionCall call => AppendCall(o, call),
             Expression.Literal.Character litChar => o.Append($"'{FormatValue(litChar.Value)}'"),
+            Expression.Literal.False l => AppendLiteralBoolean(l),
             Expression.Literal.String litStr => o.Append($"\"{FormatValue(litStr.Value)}\""),
             Expression.Literal.True l => AppendLiteralBoolean(l),
-            Expression.Literal.False l => AppendLiteralBoolean(l),
             Expression.Literal literal => o.Append(FormatValue(literal.Value)),
+            Expression.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
+            Expression.Lvalue.Bracketed b => AppendExpression(o, b.ContainedLvalue, !bracketed),
+            Expression.Lvalue.ComponentAccess compAccess
+             => AppendExpression(o, compAccess.Structure, ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
+            Expression.Lvalue.VariableReference variable => o.Append(variable.Name),
             Expression.OperationBinary opBin => AppendOperationBinary(o, opBin),
             Expression.OperationUnary opUn => AppendOperationUnary(o, opUn),
-            Expression.Bracketed b => AppendExpression(o, b.ContainedExpression, true),
-            Expression.Lvalue.ArraySubscript arraySub => AppendArraySubscript(o, arraySub),
-            Expression.Lvalue.Bracketed b => AppendExpression(o, b.ContainedLvalue, true),
-            Expression.Lvalue.VariableReference variable => o.Append(variable.Name),
-            Expression.Lvalue.ComponentAccess compAccess => AppendExpression(o, compAccess.Structure, PrecedenceRequiresBrackets(compAccess.Structure))
-                            .Append('.').Append(compAccess.ComponentName),
             _ => throw expr.ToUnmatchedException(),
         };
         if (bracketed) {
@@ -342,17 +343,18 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         }
         return o;
 
-        StringBuilder AppendLiteralBoolean(Expression.Literal l) {
+        StringBuilder AppendLiteralBoolean(Expression.Literal l)
+        {
             _includes.Ensure(IncludeSet.StdBool);
             return o.Append(FormatValue(l.Value));
         }
     }
 
-    private StringBuilder AppendArraySubscript(StringBuilder o, Expression.Lvalue.ArraySubscript arraySub)
+    private StringBuilder AppendArraySubscript(StringBuilder o, Expression.Lvalue.ArraySubscript arrSub)
     {
-        AppendExpression(o, arraySub.Array);
+        AppendExpression(o, arrSub.Array, ShouldBracket(arrSub));
 
-        foreach (Expression index in arraySub.Indexes) {
+        foreach (Expression index in arrSub.Indexes) {
             AppendExpression(o.Append('['), index).Append(']');
         }
 
@@ -361,29 +363,29 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
 
     private StringBuilder AppendOperationBinary(StringBuilder o, Expression.OperationBinary opBin)
     {
-        AppendExpression(o, opBin.Operand1);
-        o.Append($" {binaryOperators[opBin.Operator]} ");
-        AppendExpression(o, opBin.Operand2);
-        return o;
+        var (bracketLeft, bracketRight) = ShouldBracket(opBin);
+        AppendExpression(o, opBin.Operand1, bracketLeft);
+        o.Append($" {OperatorInfoC.Get(opBin.Operator).Code} ");
+        return AppendExpression(o, opBin.Operand2, bracketRight);
     }
 
     private StringBuilder AppendOperationUnary(StringBuilder o, Expression.OperationUnary opUn)
     {
-        o.Append(unaryOperators[opUn.Operator]);
-        AppendExpression(o, opUn.Operand);
-        return o;
+        o.Append(OperatorInfoC.Get(opUn.Operator).Code);
+        return AppendExpression(o, opUn.Operand, ShouldBracket(opUn));
     }
 
     #endregion Expressions
 
     #region Helpers
 
-    private StringBuilder AppendFileHeader(StringBuilder o) => o
-        .AppendLine($"/** @file")
-        .AppendLine($" * @brief {_ast.Root.Name}")
-        .AppendLine($" * @author {Environment.UserName}")
-        .AppendLine($" * @date {DateOnly.FromDateTime(DateTime.Now)}")
-        .AppendLine($" */");
+    private StringBuilder AppendFileHeader(StringBuilder o) => o.AppendLine($"""
+        /** @file
+         * @brief {_ast.Root.Name}
+         * @author {Environment.UserName}
+         * @date {DateOnly.FromDateTime(DateTime.Now)}
+         */
+        """);
 
     private StringBuilder AppendCall(StringBuilder o, NodeCall call)
     {
@@ -409,41 +411,5 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
 
     private static bool RequiresPointer(ParameterMode mode) => mode != ParameterMode.In;
 
-    private static bool PrecedenceRequiresBrackets(Expression expr) => expr is not
-        (NodeBracketedExpression
-        or Expression.BuiltinFdf
-        or Expression.FunctionCall
-        or Expression.Literal
-        or Expression.Lvalue);
-
     #endregion Helpers
-
-    #region Terminals
-
-    private static readonly IReadOnlyDictionary<BinaryOperator, string> binaryOperators
-        = new Dictionary<BinaryOperator, string>() {
-        [BinaryOperator.And] = "&&",
-        [BinaryOperator.Divide] = "/",
-        [BinaryOperator.Equal] = "==",
-        [BinaryOperator.GreaterThan] = ">",
-        [BinaryOperator.GreaterThanOrEqual] = ">=",
-        [BinaryOperator.LessThan] = "<",
-        [BinaryOperator.LessThanOrEqual] = "<=",
-        [BinaryOperator.Minus] = "-",
-        [BinaryOperator.Modulus] = "%",
-        [BinaryOperator.Multiply] = "*",
-        [BinaryOperator.NotEqual] = "!=",
-        [BinaryOperator.Or] = "||",
-        [BinaryOperator.Plus] = "+",
-        [BinaryOperator.Xor] = "^",
-    };
-
-    private static readonly IReadOnlyDictionary<UnaryOperator, string> unaryOperators
-        = new Dictionary<UnaryOperator, string>() {
-        [UnaryOperator.Minus] = "-",
-        [UnaryOperator.Not] = "!",
-        [UnaryOperator.Plus] = "+",
-    };
-
-    #endregion Terminals
 }

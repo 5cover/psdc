@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc;
 
@@ -120,10 +121,9 @@ internal static class Option
     public static Option<(T1, T2), TError> Combine<T1, T2, TError>(this Option<T1, TError> option1, Option<T2, TError> option2)
      => (option1.HasValue && option2.HasValue)
         ? Some<(T1, T2), TError>((option1.Value, option2.Value))
-        : None<(T1, T2), TError>(option1.Error ?? option2.Error.NotNull());
+        : None<(T1, T2), TError>(option1.HasValue ? option2.Error.NotNull() : option1.Error);
 
     private readonly record struct OptionImpl<T>(bool HasValue, T? Value) : Option<T>;
-
     private readonly record struct OptionImpl<T, TError>(bool HasValue, T? Value, TError? Error) : Option<T, TError>;
 }
 
@@ -146,26 +146,50 @@ internal static class OptionalCollectionExtensions
             : values.Some<IEnumerable<T>, IEnumerable<TError>>();
     }
 
-    public static Option<T> ElementAtOrNone<T>(this IEnumerable<T> items, Index index)
+    public static Option<T> ElementAtOrNone<T>(this IEnumerable<T> source, int index)
     {
-        var r = items.ElementAtOrDefault(index);
-        return r is null || r.Equals(default(T))
-            ? Option.None<T>()
-            : r.Some();
+        if (index >= 0) {
+            if (source is IReadOnlyList<T> list) {
+                if (index < list.Count) {
+                    return list[index].Some();
+                }
+            } else {
+                using var enumerator = source.GetEnumerator();
+                while (enumerator.MoveNext()) {
+                    if (index-- == 0) {
+                        return enumerator.Current.Some();
+                    }
+                }
+            }
+        }
+        return Option.None<T>();
     }
 
-    public static Option<T> FirstOrNone<T>(this IEnumerable<Option<T>> options, Func<Option<T>, bool> predicate)
-     => options.FirstOrDefault(predicate, Option.None<T>());
+    public static Option<T> FirstOrNone<T>(this IEnumerable<Option<T>> source, Func<Option<T>, bool> predicate)
+     => source.FirstOrDefault(predicate, Option.None<T>());
 
-    public static Option<T> FirstOrNone<T>(this IEnumerable<T> items, Func<T, bool> predicate)
+    public static Option<T> FirstOrNone<T>(this IEnumerable<T> source, Func<T, bool> predicate)
     {
-        var r = items.FirstOrDefault(predicate);
-        return r is null || r.Equals(default(T)) ? Option.None<T>() : r.Some();
+        foreach (var element in source) {
+            if (predicate(element)) {
+                return element.Some();
+            }
+        }
+        return Option.None<T>();
     }
 
-    public static Option<T> FirstOrNone<T>(this IEnumerable<T> items)
+    public static Option<T> FirstOrNone<T>(this IEnumerable<T> source)
     {
-        var r = items.FirstOrDefault();
-        return r is null || r.Equals(default(T)) ? Option.None<T>() : r.Some();
+        if (source is IReadOnlyList<T> list) {
+            if (list.Count > 0) {
+                return list[0].Some();
+            }
+        } else {
+            using var enumerator = source.GetEnumerator();
+            if (enumerator.MoveNext()) {
+                return enumerator.Current.Some();
+            }
+        }
+        return Option.None<T>();
     }
 }

@@ -38,6 +38,7 @@ internal static partial class AstExtensions
         Expression.FunctionCall call
          => scope.GetSymbol<Symbol.Function>(call.Name).Map(func => func.ReturnType),
         Expression.Literal lit => lit.Value.Type.Some<EvaluatedType, Message>(),
+
         _ => throw expression.ToUnmatchedException(),
     };
 

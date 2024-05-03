@@ -1,4 +1,4 @@
 programme Test c'est
 début
-    arr[1/(1-1)][int + obj.int].arr.arr.arr[arr[int]].int := 0;
+    écrireEcran(5 == 4 - 3 - 2);
 fin

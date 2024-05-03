@@ -63,5 +63,5 @@ internal sealed class Tokenizer(Messenger messenger, string code)
      => messenger.Report(Message.ErrorUnknownToken(invalidStart..index));
 
     private Option<Token> ReadToken(int offset)
-     => rules.Select(t => t.TryExtract(_code, offset)).FirstOrNone(t => t.HasValue);
+     => rules.Select(t => t.TryExtract(_code, offset)).FirstOrNone(o => o.HasValue);
 }

@@ -9,11 +9,15 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Messages;
 
-internal readonly record struct Message(
-    MessageCode Code,
-    Option<Range> SourceCodeRange,
-    string Content)
+internal readonly struct Message
 {
+    private Message(MessageCode code, Option<Range> sourceCodeRange, string content)
+     => (Code, SourceCodeRange, Content) = (code, sourceCodeRange ?? throw new ArgumentNullException(nameof(sourceCodeRange)), content);
+
+    public MessageCode Code { get; }
+    public Option<Range> SourceCodeRange { get; }
+    public string Content { get; }
+
     public MessageSeverity Severity {
         get {
             var severity = (MessageSeverity)((int)Code / 1000);
