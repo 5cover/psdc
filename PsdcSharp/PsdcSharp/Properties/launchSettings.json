@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "C#: Psdc Debug": {
-      "commandName": "Project",
-      "commandLineArgs": "bracketcontrol.psc"
-    }
-  }
-}

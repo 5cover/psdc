@@ -5,7 +5,7 @@
       "name": "C#: Psdc Debug",
       "type": "dotnet",
       "request": "launch",
-      "projectPath": "${workspaceFolder}/PsdcSharp/PsdcSharp/PsdcSharp.csproj",
+      "projectPath": "${workspaceFolder}/PsdcSharp/src/src.csproj",
     }
   ],
 }

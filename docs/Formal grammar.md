@@ -180,8 +180,24 @@ $$
 \end{cases}
 \\
 ⟨Expr_{Primary}⟩ &\to \begin{cases}
-    ⟨TerminalRvalue⟩\\
     ⟨Lvalue⟩\\
+    ⟨TerminalRvalue⟩\\
+\end{cases}
+\\
+⟨Lvalue⟩ &\to \begin{cases}
+    ⟨ArraySubscript⟩\\
+    ⟨ComponentAccess⟩\\
+    ⟨TerminalLvalue⟩\\
+\end{cases}
+\\
+⟨ArraySubscript⟩ &\to ⟨TerminalRvalue⟩\{[⟨Expr⟩^{+|,}]\}^+
+\\
+⟨ComponentAccess⟩ &\to ⟨TerminalRvalue⟩\{.⟨Identifier⟩\}^+
+\\
+⟨TerminalLvalue⟩ &\to \begin{cases}
+    ⟨BracketedLvalue⟩ \to (⟨Lvalue⟩)
+    \\
+    ⟨IdentifierReference⟩ \to Identifier
 \end{cases}
 \\
 ⟨TerminalRvalue⟩ &\to \begin{cases}
@@ -201,22 +217,6 @@ $$
     ⟨BuiltinFdf⟩ \to \text{FdF}(⟨Expr⟩)
     \\
     ⟨TerminalLvalue⟩
-\end{cases}
-\\
-⟨Lvalue⟩ &\to \begin{cases}
-    ⟨ArraySubscript⟩\\
-    ⟨ComponentAccess⟩\\
-    ⟨TerminalLvalue⟩\\
-\end{cases}
-\\
-⟨ArraySubscript⟩ &\to ⟨TerminalRvalue⟩[⟨Expr⟩^{+|,}]
-\\
-⟨ComponentAccess⟩ &\to ⟨TerminalRvalue⟩.Identifier
-\\
-⟨TerminalLvalue⟩ &\to \begin{cases}
-    ⟨BracketedLvalue⟩ \to (⟨Lvalue⟩)
-    \\
-    ⟨IdentifierReference⟩ \to Identifier
 \end{cases}
 \\
 ⟨Call⟩ &\to Identifier(⟨ParameterActual⟩^{*|,})

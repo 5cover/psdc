@@ -14,4 +14,7 @@ début
     p.c_nom := "NoLastName";
     p.c_estUnHomme := vrai;
     p.c_age := 300;
+
+    struct.arr[i] := 0;
+    arr[i].struct := 0;
 fin

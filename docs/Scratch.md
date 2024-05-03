@@ -261,26 +261,6 @@ Errors may be duplicated between the static analyzer and the code generator.
 
 The issue is that we're doing duplicate work to evaluate types. So maybe we should add a types lookup table.
 
-## Alias reference unwrap madness
-
-We need to prefix every operation we make with `EvaluatedType`s with Unwrap to get the true type by discarding any alias references in the way.
-
-We need a different solution so the type of an instance is the same as its actual type (so we can perform is checks).
-
-Maybe we can have a type remember which alias, if any it belongs to?
-
-## custom logic to parse and language-specific way to print literals
-
-current we use `CultureInfo.Invariant`, which seems to works but not sure if it covers all edge cases. Cleanest way is to use our own algorithms.
-
-Also specific target language may use different syntax for literals.
-
-## Raise warning on unsupported IO type
-
-Should it be done in the static analysis or in the code generator?
-
-It's target language specific, so in the code generator. We will need an abstraction for it eventually though.
-
 ## File handling PSC &rarr; C
 
 ### Step 1. Declaration
@@ -371,90 +351,14 @@ We need to define were empty spacing lines should be. Maybe a state machine coul
 
 Each of these sections is separated by an empty line (so 2 newlines)
 
-## Unified solution for operator precedence
-
-For each code generator associate each operator with a precedence. So we always know whether to bracket an expression in non-terminal expressions.
-
-Also add boolean argument `bracketed` to appendexpression so we don't need `AppendBracketedExpression`.
-
-## StringLenghted and constant folding
-
-`StringLenghted` shouldn't exist. Only `StringKnownLength` should. That's because a string length should always be a constant value. But we can't enforce that right now because we cannot evaluate all constant expressions.
-
-We will need constant folding. I didn't think we would, but we do. Hopefully it shouldn't be too hard.
-
-It's weird that i need this for such a niche part, that is, controlling assignment between different string types.
-
-```text
-s1 : chaîne(20);
-
-s2 : chaîne(10 + 10);
-
-s2 := s1;
-```
-
-```c
-char s1[20];
-char s2[10 + 20];
-
-// s1 = s2; // nope! can't reassign arrays in C.
-strcpy(s1, s2);
-strncpy(s1, s2, 20);
-```
-
-I *could* disallow reassigning lengthed strings entirely, but that feels like a pointless limitation. Considering that we've been taught to use `strcpy`, i should use it.
-
-Also this means we won't need `IsConstant` anymore, since any expression that is constant will now be able have its value evaluated.
-
-In order to generate the strcpy calls we will need something to control assignment in `TypeInfo` too.
-
-Gosh this is getting complex. And I haven't even implemented the whole language yet.
-
-I definitely will not use constant folding as an optimization though, because the objective of this whole project is to generate C code that matches the input in behavior **and** semantics.
-
-same for array dimensions
-
-We need to think about which operations we allow for which types.
-
-Row header is the result type
-
-Cells contain operand types. If there's only one it's the type of all operands. One supported operation per line.
-
-arity|operator|booléen|caractère|chaîne|entier|réel
--|-|-|-|-|-|-
-2|And|booléen|||||
-2|Divide||||entier|réel|
-2|Equal|booléen<br>caractère<br>chaîne<br>entier<br>réel|||||
-2|GreaterThan|entier<br>réel|||||
-2|GreaterThanOrEqual|entier<br>réel|||||
-2|LessThan|entier<br>réel|||||
-2|LessThanOrEqual|entier<br>réel|||||
-2|Minus||||entier|réel|
-2|Modulus||||entier|réel|
-2|Multiply||||entier|réel|
-2|NotEqual|booléen<br>caractère<br>chaîne<br>entier<br>réel|||||
-2|Or|booléen|||||
-2|Plus||||entier|réel|
-1|UnaryMinus||||entier|réel|
-1|UnaryNot|booléen|||||
-1|UnaryPlus||||entier|réel|
-2|Xor|booléen|||||
-
-The Pseudocode type system is safe, albeit rather limited.
-
-Strings only support equality. It wouldn't be hard to add support for comparision, but it gets confusing. What do we mean by `"foo" > "bar"`? The lexicographical comparison provided by `strcmp` is not obvious. And what about empty strings or strings of different lengths? Too many edge cases and choices to make. The user can implement string comparison themselves.
-But it would be nice to have a `strcmp` standard library function available, so we have one way to compare strings without resorting to a custom implementation. Maybe one day.
-
-Since we don't have casting, we must avoid arbitrary restrictions.
-
-### Implicit conversions
+## Implicit conversions
 
 ```mermaid
 flowchart TD
-booléen
-caractère
-chaîneLenghted["chaîne(<i>N</i>)"] --> chaîne
-entier --> réel
+boolean
+character
+lengthedString["chaîne(<i>N</i>)"] --> string
+integer --> real
 ```
 
 **Characters are not integers**. Yes, they are represented by integers, but that's an implementation detail. Pseudocode focuses on semantics, not technicalities.
@@ -467,4 +371,8 @@ How do we implement them?
 
 ## Proper inversion of boolean expression in repeat loop code generation
 
-Currently we
+Currently we just add a bang and parentheses in front of it. That's dirty. We will need proper precedence and associativity control before that though.
+
+## Unified solution for operator precedence
+
+For each code generator associate each operator with a precedence. So we always know whether to bracket an expression in non-terminal expressions.

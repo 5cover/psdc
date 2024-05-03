@@ -1,15 +1,17 @@
+programme ex1 c'est
+
 constante entier MAXNUM := 3;
 constante entier MAXPERS := 10;
 
 type t_tabNumeros = tableau[MAXNUM] de entier;
 
 type t_personne = structure début
-    c_nom : chaîne(30)
+    c_nom : chaîne(30);
     c_liste : t_tabNumeros;
     c_nbComptes : entier;
-fin
+fin;
 
-type t_tabPersonnes = tableau[MAXPERS] de t_personne
+type t_tabPersonnes = tableau[MAXPERS] de t_personne;
 
 /*
 1. Écrire la procédure permuter() qui permute les contenus respectifs de p1 et p2 de type t_personne avec un minimum d'instructions
@@ -66,7 +68,7 @@ début
 /*
 5. Programme principal
 */
-programme ex1 c'est début
+début
     /*constante t_tabPersonnes BANQUE;
     p : t_personne;
     p.c_nom = "toto";

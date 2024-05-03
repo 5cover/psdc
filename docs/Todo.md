@@ -21,10 +21,11 @@
 - ~~Fix syntax error handling~~
 - ~~Lvalues~~
 - ~~Constant folding for type checking and division by zero~~
-- Brace initialization (voir TD14 ex 1)
+- Brace initialization (voir TD14 ex 1), array literals
 - CLI (use nuget package)
     - customize header?
     - special behaviors (ecrireEcran newlines...)
+- step-by-step benchmarks
 - Tests?
     - Errors
     - Valid code

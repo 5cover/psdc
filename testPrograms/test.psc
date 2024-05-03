@@ -1,7 +1,4 @@
 programme Test c'est
-
 début
-    pour (i de 1 à MAX) faire
-        
-    finfaire
+    arr[1/(1-1)][int + obj.int].arr.arr.arr[arr[int]].int := 0;
 fin

@@ -1,0 +1,5 @@
+#!/bin/env bash
+
+set -eu
+
+PsdcSharp/src/bin/Debug/net8.0/src testPrograms/$1.psc

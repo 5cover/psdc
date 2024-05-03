@@ -27,6 +27,11 @@ procédure printNTimes(entF str: chaine, entF n: entier) c'est début
     finfaire
 fin
 
+procédure sayHello() c'est
+début
+    écrireEcran("hello");
+fin
+
 procédure incrémenter(entF/sortF n: entier) c'est début
     n := n + 1;
 fin
@@ -40,6 +45,8 @@ début
 fin
 
 début
+    sayHello();
+
     printNTimes(entE "Bonjour", entE pow(entE 2, entE 3));
     x : entier;
     x := 0;
@@ -47,5 +54,4 @@ début
 
     incrémenter(entE/sortE x);
     swap(entE/sortE x, entE/sortE y);
-
 fin

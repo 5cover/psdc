@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PsdcSharp", "PsdcSharp\PsdcSharp.csproj", "{1B23EFDF-29C0-4A2B-90FC-674D97DBA736}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "src", "src\src.csproj", "{1B23EFDF-29C0-4A2B-90FC-674D97DBA736}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Éléments de solution", "Éléments de solution", "{A66661D9-082C-4CD8-A919-A10839811D78}"
 EndProject

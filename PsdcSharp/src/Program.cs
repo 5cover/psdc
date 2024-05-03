@@ -1,0 +1,122 @@
+using System.Collections.Immutable;
+using Scover.Psdc.CodeGeneration;
+using Scover.Psdc.CodeGeneration.C;
+using Scover.Psdc.Messages;
+using Scover.Psdc.Parsing;
+using Scover.Psdc.StaticAnalysis;
+using Scover.Psdc.Tokenization;
+
+namespace Scover.Psdc;
+
+internal static class Program
+{
+    private const string StdinPlaceholder = "-";
+
+    private static void WriteError(string message)
+     => Console.Error.WriteLine($"psdc: {message}");
+
+    private static int Main(string[] args)
+    {
+        if (args.Length != 1) {
+            WriteError("usage: <test_program_filename>");
+            return SysExits.Usage;
+        }
+
+        const bool Debug = false;
+
+        string input;
+        try
+        {
+            input = args[0] == StdinPlaceholder
+                ? Console.In.ReadToEnd()
+                : File.ReadAllText(args[0]);
+        } catch (Exception e) when (e.IsFileSystemExogenous())
+        {
+            WriteError(e.Message);
+            return SysExits.NoInput;
+        }
+
+        Globals.Initialize(input);
+
+        PrintMessenger messenger = new();
+
+        Tokenizer tokenizer = new(messenger, input);
+        var tokens = "Tokenizing".LogOperation(Debug, () => tokenizer.Tokenize().ToImmutableArray());
+
+        Parser parser = new(messenger, tokens);
+        var ast = "Parsing".LogOperation(Debug, parser.Parse).Value;
+
+        if (ast is null) {
+            return SysExits.DataErr;
+        }
+
+        StaticAnalyzer semanticAnalyzer = new(messenger, ast);
+        var semanticAst = "Analyzing".LogOperation(Debug, semanticAnalyzer.AnalyzeSemantics);
+
+        CodeGeneratorC codeGenerator = new(messenger, semanticAst);
+        string cCode = "Generating code".LogOperation(Debug, codeGenerator.Generate);
+
+        Console.Error.WriteLine("Generated C : ");
+        Console.WriteLine(cCode);
+
+        return SysExits.Ok;
+    }
+
+    private sealed class PrintMessenger : Messenger
+    {
+        private static TextWriter Stderr => Console.Error;
+
+        private readonly Dictionary<MessageSeverity, int> _msgCountsBySeverity = [];
+
+        public void PrintConclusion()
+         => Stderr.WriteLine($"""
+            Compilation terminated
+             ({_msgCountsBySeverity[MessageSeverity.Error]} errors,
+             {_msgCountsBySeverity[MessageSeverity.Warning]} warnings,
+             {_msgCountsBySeverity[MessageSeverity.Suggestion]} suggestions).
+            """);
+
+        public void Report(Message message)
+        {
+            if (!_msgCountsBySeverity.TryAdd(message.Severity, 1)) {
+                ++_msgCountsBySeverity[message.Severity];
+            }
+            var msgColor = message.Severity.GetConsoleColor();
+            msgColor.DoInColor(() => Stderr.Write($"[P{(int)message.Code:d4}] "));
+
+            message.SourceCodeRange.Match(range => {
+                Position start = Globals.Input.GetPositionAt(range.Start);
+                Position end = Globals.Input.GetPositionAt(range.End);
+
+                // If the error spans over multiple line, show only the last line.
+                if (start.Line != end.Line) {
+                    start = new(end.Line, 0);
+                }
+
+                Stderr.WriteLine($"{start}: {message.Severity.ToString().ToLower()}: {message.Content}");
+
+                ReadOnlySpan<char> faultyLine = Globals.Input.GetLine(start.Line);
+
+                // Part of line before error
+                Stderr.Write($"{GetErrorLinePrefix(start.Line)}{faultyLine[..start.Column]}");
+
+                msgColor.SetColor();
+                Stderr.Write($"{faultyLine[start.Column..end.Column]}");
+                Console.ResetColor();
+
+                // Part of line after error
+                Stderr.WriteLine($"{faultyLine[end.Column..].TrimEnd()}");
+
+                // Arrow below to indicate the precise location of the error even if colors aren't available
+                Stderr.Write(GetErrorLinePrefix(new string(' ', start.Line.DigitCount())));
+                var offset = Math.Max(faultyLine.GetLeadingWhitespaceCount(), start.Column);
+                Stderr.WriteNTimes(offset, ' ');
+                msgColor.DoInColor(() => Stderr.WriteNTimes(end.Column - offset, '^'));
+
+                static string GetErrorLinePrefix(object lineNo) => $"    {lineNo} | ";
+            },
+            none: () => Stderr.WriteLine($"{message.Severity}: {message.Content}"));
+            Stderr.WriteLine();
+        }
+    }
+}
