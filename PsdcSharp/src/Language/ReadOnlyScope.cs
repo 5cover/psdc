@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 
-namespace Scover.Psdc.StaticAnalysis;
+namespace Scover.Psdc.Language;
 
 internal interface ReadOnlyScope
 {

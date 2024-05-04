@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc;
 

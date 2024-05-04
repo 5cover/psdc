@@ -1,7 +1,7 @@
+using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
-using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
-using static Scover.Psdc.Parsing.Associativity;
+using static Scover.Psdc.Language.Associativity;
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration;

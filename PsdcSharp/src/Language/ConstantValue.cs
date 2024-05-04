@@ -1,6 +1,4 @@
-using Scover.Psdc.Parsing;
-
-namespace Scover.Psdc.StaticAnalysis;
+namespace Scover.Psdc.Language;
 
 internal enum OperationError
 {

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.CodeGeneration.C;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;

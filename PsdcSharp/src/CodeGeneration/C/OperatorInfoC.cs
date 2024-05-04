@@ -1,7 +1,7 @@
-using Scover.Psdc.Parsing;
-using static Scover.Psdc.Parsing.Associativity;
-using static Scover.Psdc.Parsing.BinaryOperator;
-using static Scover.Psdc.Parsing.UnaryOperator;
+using Scover.Psdc.Language;
+using static Scover.Psdc.Language.Associativity;
+using static Scover.Psdc.Language.BinaryOperator;
+using static Scover.Psdc.Language.UnaryOperator;
 
 namespace Scover.Psdc.CodeGeneration.C;
 

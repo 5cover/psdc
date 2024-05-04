@@ -1,6 +1,6 @@
 using System.Text;
+using Scover.Psdc.Language;
 using Scover.Psdc.Parsing;
-using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.CodeGeneration.C;
 

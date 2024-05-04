@@ -1,4 +1,4 @@
-namespace Scover.Psdc.Parsing;
+namespace Scover.Psdc.Language;
 
 internal static class OperatorExtensions
 {

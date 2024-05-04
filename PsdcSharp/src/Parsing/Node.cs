@@ -1,5 +1,5 @@
 using System.Globalization;
-using Scover.Psdc.StaticAnalysis;
+using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Parsing;
 
@@ -732,12 +732,6 @@ internal sealed class ParameterMode
     public static ParameterMode In { get; } = new("entF", "entE");
     public static ParameterMode Out { get; } = new("sortF", "sortE");
     public static ParameterMode InOut { get; } = new("entF/sortF", "entE/sortE");
-}
-
-internal enum NumericType
-{
-    Integer,
-    Real,
 }
 
 internal sealed class Identifier : NodeImpl, IEquatable<Identifier?>

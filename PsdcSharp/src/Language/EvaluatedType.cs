@@ -1,9 +1,10 @@
 using System.Text;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
+using Scover.Psdc.StaticAnalysis;
 using static Scover.Psdc.Parsing.Node;
 
-namespace Scover.Psdc.StaticAnalysis;
+namespace Scover.Psdc.Language;
 
 /// <summary>
 /// A type evaluated during the static analysis.

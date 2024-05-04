@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
+using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
-using Scover.Psdc.StaticAnalysis;
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;

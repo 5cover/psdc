@@ -4,6 +4,7 @@ using static Scover.Psdc.Tokenization.TokenType;
 using static Scover.Psdc.Parsing.Node;
 using Type = Scover.Psdc.Parsing.Node.Type;
 using Scover.Psdc.Messages;
+using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Parsing;
 

@@ -3,9 +3,8 @@ using System.Text;
 
 using Scover.Psdc.Parsing;
 using static Scover.Psdc.Parsing.Node;
-
-using Scover.Psdc.StaticAnalysis;
 using Scover.Psdc.Tokenization;
+using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Messages;
 

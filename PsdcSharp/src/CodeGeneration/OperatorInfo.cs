@@ -1,4 +1,4 @@
-using Scover.Psdc.Parsing;
+using Scover.Psdc.Language;
 
 namespace Scover.Psdc.CodeGeneration;
 
