@@ -43,7 +43,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
     internal sealed class Unknown(SourceTokens sourceTokens, Identifier? alias = null) : EvaluatedType(alias)
     {
-        protected override string ActualRepresentation => sourceTokens.SourceCode;
+        protected override string ActualRepresentation => Globals.Input[sourceTokens.InputRange];
 
         // Unknown types are semantically equal to every other type.
         // This is to prevent cascading errors when an object of an unknown type is used.

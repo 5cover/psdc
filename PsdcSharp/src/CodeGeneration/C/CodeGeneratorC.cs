@@ -119,7 +119,7 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         // In addition we make get them as a result of parsing errors.
         Statement.Nop => o,
         Statement.Alternative alt => AppendAlternative(o, alt),
-        Statement.Builtin builtin => AppendBuiltin(o, builtin, scope),
+        Statement.Builtin builtin => AppendBuiltin(o, builtin),
         Statement.Assignment assignment => AppendAssignment(o, assignment),
         Statement.DoWhileLoop doWhile => AppendDoWhileLoop(o, doWhile),
         Statement.ForLoop @for => AppendForLoop(o, @for),
@@ -132,17 +132,17 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         _ => throw stmt.ToUnmatchedException(),
     };
 
-    private StringBuilder AppendBuiltin(StringBuilder o, Statement.Builtin builtin, ReadOnlyScope scope) => builtin switch {
-        Statement.Builtin.EcrireEcran ee => AppendEcrireEcran(o, scope, ee),
-        Statement.Builtin.LireClavier lc => AppendLireClavier(o, scope, lc),
+    private StringBuilder AppendBuiltin(StringBuilder o, Statement.Builtin builtin) => builtin switch {
+        Statement.Builtin.EcrireEcran ee => AppendEcrireEcran(o, ee),
+        Statement.Builtin.LireClavier lc => AppendLireClavier(o, lc),
         _ => throw builtin.ToUnmatchedException(),
     };
 
-    private StringBuilder AppendEcrireEcran(StringBuilder o, ReadOnlyScope scope, Statement.Builtin.EcrireEcran ecrireEcran)
+    private StringBuilder AppendEcrireEcran(StringBuilder o, Statement.Builtin.EcrireEcran ecrireEcran)
     {
         _includes.Ensure(IncludeSet.StdIo);
 
-        var (format, arguments) = BuildFormatString(scope, ecrireEcran.Arguments);
+        var (format, arguments) = BuildFormatString(ecrireEcran.Arguments);
 
         Indent(o).Append($@"printf(""{format}\n""");
 
@@ -153,11 +153,11 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         return o.AppendLine(");");
     }
 
-    private StringBuilder AppendLireClavier(StringBuilder o, ReadOnlyScope scope, Statement.Builtin.LireClavier lireClavier)
+    private StringBuilder AppendLireClavier(StringBuilder o, Statement.Builtin.LireClavier lireClavier)
     {
         _includes.Ensure(IncludeSet.StdIo);
 
-        var (format, arguments) = BuildFormatString(scope, lireClavier.ArgumentVariable.Yield());
+        var (format, arguments) = BuildFormatString(lireClavier.ArgumentVariable.Yield());
 
         Indent(o).Append($@"scanf(""{format}""");
 
@@ -335,8 +335,8 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
             Expression.Lvalue.ComponentAccess compAccess
              => AppendExpression(o, compAccess.Structure, ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
             Expression.Lvalue.VariableReference variable => o.Append(variable.Name),
-            Expression.OperationBinary opBin => AppendOperationBinary(o, opBin),
-            Expression.OperationUnary opUn => AppendOperationUnary(o, opUn),
+            Expression.BinaryOperation opBin => AppendOperationBinary(o, opBin),
+            Expression.UnaryOperation opUn => AppendOperationUnary(o, opUn),
             _ => throw expr.ToUnmatchedException(),
         };
         if (bracketed) {
@@ -356,21 +356,21 @@ internal sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst se
         AppendExpression(o, arrSub.Array, ShouldBracket(arrSub));
 
         foreach (Expression index in arrSub.Indexes) {
-            AppendExpression(o.Append('['), index).Append(']');
+            AppendExpression(o.Append('['), index.Alter(BinaryOperator.Minus, 1)).Append(']');
         }
 
         return o;
     }
 
-    private StringBuilder AppendOperationBinary(StringBuilder o, Expression.OperationBinary opBin)
+    private StringBuilder AppendOperationBinary(StringBuilder o, Expression.BinaryOperation opBin)
     {
         var (bracketLeft, bracketRight) = ShouldBracket(opBin);
-        AppendExpression(o, opBin.Operand1, bracketLeft);
+        AppendExpression(o, opBin.Left, bracketLeft);
         o.Append($" {OperatorInfoC.Get(opBin.Operator).Code} ");
-        return AppendExpression(o, opBin.Operand2, bracketRight);
+        return AppendExpression(o, opBin.Right, bracketRight);
     }
 
-    private StringBuilder AppendOperationUnary(StringBuilder o, Expression.OperationUnary opUn)
+    private StringBuilder AppendOperationUnary(StringBuilder o, Expression.UnaryOperation opUn)
     {
         o.Append(OperatorInfoC.Get(opUn.Operator).Code);
         return AppendExpression(o, opUn.Operand, ShouldBracket(opUn));

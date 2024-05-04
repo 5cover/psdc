@@ -83,7 +83,7 @@ internal static class Program
             var msgColor = message.Severity.GetConsoleColor();
             msgColor.DoInColor(() => Stderr.Write($"[P{(int)message.Code:d4}] "));
 
-            message.SourceCodeRange.Match(range => {
+            message.InputRange.Match(range => {
                 Position start = Globals.Input.GetPositionAt(range.Start);
                 Position end = Globals.Input.GetPositionAt(range.End);
 

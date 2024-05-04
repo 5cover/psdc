@@ -1,4 +1,5 @@
 
+using System.Globalization;
 using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
@@ -10,8 +11,8 @@ namespace Scover.Psdc.StaticAnalysis;
 internal static partial class AstExtensions
 {
     public static Option<EvaluatedType, Message> EvaluateType(this Expression expression, ReadOnlyScope scope) => expression switch {
-        Expression.OperationBinary ob => EvaluateTypeOperationBinary(ob, scope),
-        Expression.OperationUnary ou => ou.Operand.EvaluateType(scope),
+        Expression.BinaryOperation ob => EvaluateTypeOperationBinary(ob, scope),
+        Expression.UnaryOperation ou => ou.Operand.EvaluateType(scope),
         Expression.Bracketed b => b.ContainedExpression.EvaluateType(scope),
         Expression.Lvalue.Bracketed b => b.ContainedLvalue.EvaluateType(scope),
 
@@ -49,7 +50,7 @@ internal static partial class AstExtensions
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MatchError(messenger.Report)
                 .Map(aliasType => aliasType.TargetType.ToAliasReference(alias.Name))
             .ValueOr(new EvaluatedType.Unknown(type.SourceTokens)),
-        Type.Complete.Array array 
+        Type.Complete.Array array
             => EvaluatedType.Array.Create(array.Type.CreateTypeOrError(scope, messenger), array.Dimensions, scope)
             .MatchError(Function.Foreach<Message>(messenger.Report))
             .ValueOr<EvaluatedType>(new EvaluatedType.Unknown(type.SourceTokens)),
@@ -78,9 +79,9 @@ internal static partial class AstExtensions
         return new EvaluatedType.Structure(components);
     }
 
-    private static Option<EvaluatedType, Message> EvaluateTypeOperationBinary(Expression.OperationBinary operationBinary, ReadOnlyScope scope)
-     => EvaluateType(operationBinary.Operand1, scope)
-        .Combine(EvaluateType(operationBinary.Operand2, scope))
+    private static Option<EvaluatedType, Message> EvaluateTypeOperationBinary(Expression.BinaryOperation operationBinary, ReadOnlyScope scope)
+     => EvaluateType(operationBinary.Left, scope)
+        .Combine(EvaluateType(operationBinary.Right, scope))
         .FlatMap((o1, o2) => o1.SemanticsEqual(o2)
             ? o1.Some<EvaluatedType, Message>()
             : o1 is EvaluatedType.Numeric n1 && o2 is EvaluatedType.Numeric n2
@@ -88,4 +89,11 @@ internal static partial class AstExtensions
                 .Some<EvaluatedType, Message>()
             : Message.ErrorUnsupportedOperation(operationBinary, o1, o2)
                 .None<EvaluatedType, Message>());
+
+    public static Expression.BinaryOperation Alter(this Expression expr, BinaryOperator @operator, int value)
+    // This feels like cheating, creatig AST nodes with placeholder source tokens during code generation
+    // But this is the only way without massive abstraction
+    // This will be improved if it ever becomes a problem.
+     => new(SourceTokens.Empty, expr, @operator,
+            new Expression.Literal.Integer(SourceTokens.Empty, value.ToString(CultureInfo.InvariantCulture)));
 }

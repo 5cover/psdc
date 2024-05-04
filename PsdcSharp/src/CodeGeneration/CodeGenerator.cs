@@ -17,8 +17,8 @@ internal abstract partial class CodeGenerator<TOpInfo>(Messenger messenger, Sema
     protected static int GetPrecedence(Expression expr)
      => expr switch {
          Expression.FunctionCall or Expression.BuiltinFdf => TOpInfo.FunctionCall.Precedence,
-         Expression.OperationBinary opBin => TOpInfo.Get(opBin.Operator).Precedence,
-         Expression.OperationUnary opUn => TOpInfo.Get(opUn.Operator).Precedence,
+         Expression.BinaryOperation opBin => TOpInfo.Get(opBin.Operator).Precedence,
+         Expression.UnaryOperation opUn => TOpInfo.Get(opUn.Operator).Precedence,
          Expression.Lvalue.ArraySubscript => TOpInfo.ArraySubscript.Precedence,
          Expression.Lvalue.ComponentAccess => TOpInfo.ComponentAccess.Precedence,
          Expression.Lvalue.VariableReference or Expression.Literal
@@ -26,14 +26,14 @@ internal abstract partial class CodeGenerator<TOpInfo>(Messenger messenger, Sema
          _ => throw expr.ToUnmatchedException(),
      };
 
-    protected static (bool bracketLeft, bool bracketRight) ShouldBracket(Expression.OperationBinary opBin)
+    protected static (bool bracketLeft, bool bracketRight) ShouldBracket(Expression.BinaryOperation opBin)
      => ShouldBracket(
-        GetPrecedence(opBin.Operand1),
-        GetPrecedence(opBin.Operand2),
+        GetPrecedence(opBin.Left),
+        GetPrecedence(opBin.Right),
         TOpInfo.Get(opBin.Operator),
         opBin.Operator.GetAssociativity());
 
-    protected static bool ShouldBracket(Expression.OperationUnary opUn)
+    protected static bool ShouldBracket(Expression.UnaryOperation opUn)
      => ShouldBracket(opUn.Operand, TOpInfo.Get(opUn.Operator), opUn.Operator.GetAssociativity());
 
     protected static bool ShouldBracket(Expression.Lvalue.ComponentAccess compAccess)

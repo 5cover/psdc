@@ -10,11 +10,11 @@ namespace Scover.Psdc.Messages;
 
 internal readonly struct Message
 {
-    private Message(MessageCode code, Option<Range> sourceCodeRange, string content)
-     => (Code, SourceCodeRange, Content) = (code, sourceCodeRange ?? throw new ArgumentNullException(nameof(sourceCodeRange)), content);
+    private Message(MessageCode code, Option<Range> inputRange, string content)
+     => (Code, InputRange, Content) = (code, inputRange, content);
 
     public MessageCode Code { get; }
-    public Option<Range> SourceCodeRange { get; }
+    public Option<Range> InputRange { get; }
     public string Content { get; }
 
     public MessageSeverity Severity {
@@ -25,10 +25,10 @@ internal readonly struct Message
         }
     }
 
-    public static Message ErrorUnknownToken(Range range)
+    public static Message ErrorUnknownToken(Range inputRange)
      => new(MessageCode.UnknownToken,
-            range.Some(),
-            $"stray `{Globals.Input[range]}` in program");
+            inputRange.Some(),
+            $"stray `{Globals.Input[inputRange]}` in program");
 
     public static Message ErrorSyntax(SourceTokens sourceTokens, ParseError error)
     {
@@ -41,11 +41,14 @@ internal readonly struct Message
         }
 
         error.ErroneousToken.MatchSome(token => msgContent.Append($", got {token}"));
-
-        return Create(error.ErroneousToken.Map(Extensions.Yield).ValueOr(sourceTokens), MessageCode.SyntaxError, msgContent.ToString());
+        
+        return Create(error.ErroneousToken
+            .Map(t => t.InputRange)
+            .ValueOr(sourceTokens.InputRange),
+            MessageCode.SyntaxError, msgContent.ToString());
     }
 
-    public static Message ErrorCantInferTypeOfExpression(IEnumerable<Token> sourceTokens)
+    public static Message ErrorCantInferTypeOfExpression(SourceTokens sourceTokens)
      => Create(sourceTokens, MessageCode.CantInferType,
         "can't infer type of expression");
 
@@ -65,15 +68,16 @@ internal readonly struct Message
      => Create(mainProgram.SourceTokens, MessageCode.RedefinedMainProgram,
         $"more than one main program");
 
-    public static Message ErrorMissingMainProgram(IEnumerable<Token> sourceTokens)
+    public static Message ErrorMissingMainProgram(SourceTokens sourceTokens)
      => Create(sourceTokens, MessageCode.MissingMainProgram,
         "main program missing");
 
     public static Message ErrorSignatureMismatch<TSymbol>(TSymbol newSig, TSymbol expectedSig) where TSymbol : Symbol
      => Create(newSig.SourceTokens, MessageCode.SignatureMismatch,
-        $"this signature of {newSig.GetKind()} `{newSig.Name}` differs from previous signature (`{expectedSig.SourceTokens.SourceCode}`)");
+        $"this signature of {newSig.GetKind()} `{newSig.Name}` differs from previous signature (`{
+            Globals.Input[expectedSig.SourceTokens.InputRange]}`)");
 
-    public static Message ErrorCallParameterMismatch(IEnumerable<Token> sourceTokens,
+    public static Message ErrorCallParameterMismatch(SourceTokens sourceTokens,
         CallableSymbol callable, IReadOnlyCollection<string> problems)
     {
         Debug.Assert(problems.Count > 0);
@@ -98,61 +102,65 @@ internal readonly struct Message
     public static string ProblemWrongArgumentType(Identifier name, EvaluatedType expected, EvaluatedType actual)
      => $"wrong type for `{name}`: expected {expected}, got {actual}";
 
-    public static Message ErrorTargetLanguage(string targetLanguageName, IEnumerable<Token> sourceTokens, string content)
+    public static Message ErrorTargetLanguage(string targetLanguageName, SourceTokens sourceTokens, string content)
      => Create(sourceTokens, MessageCode.TargetLanguageError, $"{targetLanguageName}: {content}");
 
     public static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
         $"reassigning constant `{constant.Name}`");
 
-    public static Message ErrorDeclaredInferredTypeMismatch(IEnumerable<Token> sourceTokens,
+    public static Message ErrorDeclaredInferredTypeMismatch(SourceTokens sourceTokens,
         EvaluatedType declaredType, EvaluatedType inferredType)
      => Create(sourceTokens, MessageCode.DeclaredInferredTypeMismatch,
         $"declared type '{declaredType}' differs from inferred type '{inferredType}'");
 
-    public static Message ErrorConstantExpressionExpected(IEnumerable<Token> sourceTokens)
+    public static Message ErrorConstantExpressionExpected(SourceTokens sourceTokens)
      => Create(sourceTokens, MessageCode.ConstantExpressionExpected,
         "constant expression expected");
 
-    public static Message ErrorStructureDuplicateComponent(IEnumerable<Token> sourceTokens, Identifier componentName)
+    public static Message ErrorStructureDuplicateComponent(SourceTokens sourceTokens, Identifier componentName)
      => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
         $"duplicate component `{componentName}` in structure");
 
     public static Message ErrorStructureComponentDoesntExist(Expression.Lvalue.ComponentAccess compAccess,
         Option<Identifier> structureName)
-     => Create(compAccess.ComponentName.SourceTokens, MessageCode.StructureComponentDoesntExist,
+     => Create(compAccess.ComponentName, MessageCode.StructureComponentDoesntExist,
             structureName.Match(
                 some: structName => $"`{structName}` has no component named `{compAccess.ComponentName}`",
                 none: () => $"no component named `{compAccess.ComponentName}` in structure"));
 
     public static Message ErrrorComponentAccessOfNonStruct(Expression.Lvalue.ComponentAccess compAccess)
-     => Create(compAccess.SourceTokens, MessageCode.ComponentAccessOfNonStruct,
+     => Create(compAccess, MessageCode.ComponentAccessOfNonStruct,
         $"request for component `{compAccess.ComponentName}` in something not a structure");
 
     public static Message ErrorSubscriptOfNonArray(Expression.Lvalue.ArraySubscript arraySub)
-     => Create(arraySub.SourceTokens, MessageCode.SubscriptOfNonArray,
+     => Create(arraySub, MessageCode.SubscriptOfNonArray,
         $"subscripted value is not an array");
 
-    public static Message ErrorUnsupportedOperation(Expression.OperationBinary opBin, EvaluatedType operand1Type, EvaluatedType operand2Type)
-     => Create(opBin.SourceTokens, MessageCode.UnsupportedOperation,
+    public static Message ErrorUnsupportedOperation(Expression.BinaryOperation opBin, EvaluatedType operand1Type, EvaluatedType operand2Type)
+     => Create(opBin, MessageCode.UnsupportedOperation,
         $"unsupported operand types for {opBin.Operator.GetRepresentation()}: '{operand1Type}' and '{operand2Type}'");    
     
-    public static Message ErrorUnsupportedOperation(Expression.OperationUnary opUn, EvaluatedType operandType)
-     => Create(opUn.SourceTokens, MessageCode.UnsupportedOperation,
+    public static Message ErrorUnsupportedOperation(Expression.UnaryOperation opUn, EvaluatedType operandType)
+     => Create(opUn, MessageCode.UnsupportedOperation,
         $"unsupported operand type for {opUn.Operator.GetRepresentation()}: '{operandType}'");
 
     public static Message ErrorConstantExpressionWrongType(Expression expr, EvaluatedType expected, EvaluatedType actual)
-     => Create(expr.SourceTokens, MessageCode.ConstantExpressionWrongType,
+     => Create(expr, MessageCode.ConstantExpressionWrongType,
         $"wrong type for literal: expected '{expected}', got '{actual}'");
 
-    public static Message WarningDivisionByZero(IEnumerable<Token> sourceTokens)
+    public static Message WarningDivisionByZero(SourceTokens sourceTokens)
      => Create(sourceTokens, MessageCode.DivisionByZero,
         "division by zero will cause runtime error");
 
-    private static Message Create(IEnumerable<Token> involvedTokens, MessageCode code, string content)
+    private static Message Create(Range inputRange, MessageCode code, string content)
      => new(code,
-            involvedTokens.Any()
-            ? (involvedTokens.First().StartIndex..(involvedTokens.Last().StartIndex + involvedTokens.Last().Length)).Some()
-            : Option.None<Range>(),
+            inputRange.Some(),
             content);
+            
+    private static Message Create(SourceTokens sourceTokens, MessageCode code, string content)
+     => Create(sourceTokens.InputRange, code, content);
+
+        private static Message Create(Node sourceNode, MessageCode code, string content)
+     => Create(sourceNode.SourceTokens.InputRange, code, content);
 }

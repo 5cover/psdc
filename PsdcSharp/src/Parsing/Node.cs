@@ -465,31 +465,31 @@ internal interface Node : EquatableSemantics<Node>
             }
         }
 
-        internal sealed class OperationUnary(SourceTokens sourceTokens,
+        internal sealed class UnaryOperation(SourceTokens sourceTokens,
             UnaryOperator @operator,
             Expression operand)
         : NodeImpl(sourceTokens), Expression
         {
             public UnaryOperator Operator => @operator;
             public Expression Operand => operand;
-            public override bool SemanticsEqual(Node other) => other is OperationUnary o
+            public override bool SemanticsEqual(Node other) => other is UnaryOperation o
              && o.Operator == Operator
              && o.Operand.SemanticsEqual(Operand);
         }
 
-        internal sealed class OperationBinary(SourceTokens sourceTokens,
-            Expression operand1,
+        internal sealed class BinaryOperation(SourceTokens sourceTokens,
+            Expression left,
             BinaryOperator @operator,
-            Expression operand2)
+            Expression right)
         : NodeImpl(sourceTokens), Expression
         {
-            public Expression Operand1 => operand1;
+            public Expression Left => left;
             public BinaryOperator Operator => @operator;
-            public Expression Operand2 => operand2;
-            public override bool SemanticsEqual(Node other) => other is OperationBinary o
-             && o.Operand1.SemanticsEqual(Operand1)
+            public Expression Right => right;
+            public override bool SemanticsEqual(Node other) => other is BinaryOperation o
+             && o.Left.SemanticsEqual(Left)
              && o.Operator == Operator
-             && o.Operand2.SemanticsEqual(Operand2);
+             && o.Right.SemanticsEqual(Right);
         }
 
         internal sealed class BuiltinFdf(SourceTokens sourceTokens,

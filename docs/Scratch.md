@@ -379,10 +379,6 @@ There will be concerns with precedence
 
 non-constant expressions are simply ignored.
 
-## array indices
+## alter collapse constant expressions
 
-currently we do no translation, that's wrong.
-
-c is 0 to n-1, psdc is 1 to n. So we have to substract one to each index.
-
-Als it would be nice if we supported the syntax for arrays with custom index boundaries.
+In Alter, if left operand (base expression) is a literal, just merge the two instead of creating a binary expression.

@@ -191,7 +191,7 @@ internal partial class Parser
              count += right.SourceTokens.Count;
 
              result = right.WithSourceTokens(new(tokens, count)).Map((srcTokens, operand2)
-              => new Expression.OperationBinary(srcTokens, result.Value, op.Value, operand2));
+              => new Expression.BinaryOperation(srcTokens, result.Value, op.Value, operand2));
          }
 
          return result;
@@ -206,7 +206,7 @@ internal partial class Parser
          return prOperator.Match(
              some: op => {
                  var prExpr = descentParser(tokens.Skip(1)).Map((tokens, expr)
-                      => new Expression.OperationUnary(tokens, operators[op.Type], expr));
+                      => new Expression.UnaryOperation(tokens, operators[op.Type], expr));
                  return prExpr.WithSourceTokens(new(tokens, prExpr.SourceTokens.Count + 1));
              },
              none: _ => descentParser(tokens));

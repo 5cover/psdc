@@ -13,8 +13,8 @@ internal static partial class AstExtensions
         Expression.Lvalue.Bracketed b => b.ContainedLvalue.IsConstant(scope),
         Expression.Lvalue.ComponentAccess compAccess => compAccess.Structure.IsConstant(scope),
         Expression.Lvalue.VariableReference varRef => scope.GetSymbol<Symbol.Constant>(varRef.Name).HasValue,
-        Expression.OperationBinary ob => ob.Operand1.IsConstant(scope) && ob.Operand2.IsConstant(scope),
-        Expression.OperationUnary ou => ou.Operand.IsConstant(scope),
+        Expression.BinaryOperation ob => ob.Left.IsConstant(scope) && ob.Right.IsConstant(scope),
+        Expression.UnaryOperation ou => ou.Operand.IsConstant(scope),
         _ => throw expression.ToUnmatchedException(),
     };
 
@@ -30,12 +30,12 @@ internal static partial class AstExtensions
 
     public static Option<ConstantValue, Option<Message>> EvaluateValue(this Expression expr, ReadOnlyScope scope) => expr switch {
         Expression.Literal l => l.Value.Some<ConstantValue, Option<Message>>(),
-        Expression.OperationBinary opBin
-         => opBin.Operand1.EvaluateValue(scope)
-            .Combine(opBin.Operand2.EvaluateValue(scope))
+        Expression.BinaryOperation opBin
+         => opBin.Left.EvaluateValue(scope)
+            .Combine(opBin.Right.EvaluateValue(scope))
             .FlatMap((op1, op2) => op1.Operate(opBin.Operator, op2)
                 .MapError(e => GetOperationMessage(e, opBin, op1.Type, op2.Type).Some())),
-        Expression.OperationUnary opUn
+        Expression.UnaryOperation opUn
          => opUn.Operand.EvaluateValue(scope)
             .FlatMap(op => op.Operate(opUn.Operator)
                 .MapError(e => GetOperationMessage(e, opUn, op.Type).Some())),
@@ -48,13 +48,13 @@ internal static partial class AstExtensions
         _ => Option.None<Message>().None<ConstantValue, Option<Message>>(),
     };
 
-    private static Message GetOperationMessage(OperationError error, Expression.OperationUnary opUn, EvaluatedType operandType) => error switch {
+    private static Message GetOperationMessage(OperationError error, Expression.UnaryOperation opUn, EvaluatedType operandType) => error switch {
         OperationError.UnsupportedOperator => Message.ErrorUnsupportedOperation(opUn, operandType),
         OperationError.DivisionByZero => Message.WarningDivisionByZero(opUn.SourceTokens),
         _ => throw error.ToUnmatchedException(),
     };
 
-    private static Message GetOperationMessage(OperationError error, Expression.OperationBinary opUn, EvaluatedType op1type, EvaluatedType op2type) => error switch {
+    private static Message GetOperationMessage(OperationError error, Expression.BinaryOperation opUn, EvaluatedType op1type, EvaluatedType op2type) => error switch {
         OperationError.UnsupportedOperator => Message.ErrorUnsupportedOperation(opUn, op1type, op2type),
         OperationError.DivisionByZero => Message.WarningDivisionByZero(opUn.SourceTokens),
         _ => throw error.ToUnmatchedException(),

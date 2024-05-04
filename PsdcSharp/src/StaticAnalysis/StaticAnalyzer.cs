@@ -270,38 +270,37 @@ internal sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             .ToList();
 
         void HandleCall<TSymbol>(Scope scope, NodeCall call) where TSymbol : CallableSymbol
-        {
-            scope.GetSymbol<TSymbol>(call.Name).MatchError(messenger.Report).MatchSome(callable => {
-                List<string> problems = new();
+         => scope.GetSymbol<TSymbol>(call.Name).MatchError(messenger.Report).Match(callable => {
+            List<string> problems = new();
 
-                if (call.Parameters.Count != callable.Parameters.Count) {
-                    problems.Add(Message.ProblemWrongNumberOfArguments(
-                        call.Parameters.Count, callable.Parameters.Count));
+            if (call.Parameters.Count != callable.Parameters.Count) {
+                problems.Add(Message.ProblemWrongNumberOfArguments(
+                    call.Parameters.Count, callable.Parameters.Count));
+            }
+
+            foreach (var (actual, formal) in call.Parameters.Zip(callable.Parameters)) {
+                if (actual.Mode != formal.Mode) {
+                    problems.Add(Message.ProblemWrongArgumentMode(formal.Name,
+                        actual.Mode.RepresentationActual, formal.Mode.RepresentationFormal));
                 }
 
-                foreach (var (actual, formal) in call.Parameters.Zip(callable.Parameters)) {
-                    if (actual.Mode != formal.Mode) {
-                        problems.Add(Message.ProblemWrongArgumentMode(formal.Name,
-                            actual.Mode.RepresentationActual, formal.Mode.RepresentationFormal));
+                AnalyzeExpression(scope, actual.Value).MatchSome(actualType => {
+                    if (!actualType.IsAssignableTo(formal.Type)) {
+                        problems.Add(Message.ProblemWrongArgumentType(formal.Name,
+                            formal.Type, actualType));
                     }
+                });
+            }
 
-                    AnalyzeExpression(scope, actual.Value).MatchSome(actualType => {
-                        if (!actualType.IsAssignableTo(formal.Type)) {
-                            problems.Add(Message.ProblemWrongArgumentType(formal.Name,
-                                formal.Type, actualType));
-                        }
-                    });
-                }
-
-                if (problems.Count > 0) {
-                    messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
-                }
-            });
-
+            if (problems.Count > 0) {
+                messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
+            }
+        }, none: () => {
+            // If the callable symbol wasn't found, still analyze the parameter expressions.
             foreach (var actual in call.Parameters) {
                 AnalyzeExpression(scope, actual.Value);
             }
-        }
+        });
 
         void HandleCallableDeclaration<T>(Scope scope, T sub) where T : CallableSymbol, IEquatable<T?>
         {

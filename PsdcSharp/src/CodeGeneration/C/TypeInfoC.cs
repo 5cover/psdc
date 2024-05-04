@@ -1,14 +1,16 @@
 using System.Text;
 using Scover.Psdc.Language;
 using Scover.Psdc.Parsing;
+using Scover.Psdc.StaticAnalysis;
+using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
 internal sealed class TypeInfoC : TypeInfo
 {
-    public static TypeInfoC Create(EvaluatedType type, Func<Node.Expression, string> generateExpression)
+    public static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression)
      => Create(type, generateExpression, new());
-    private static TypeInfoC Create(EvaluatedType type, Func<Node.Expression, string> generateExpression, Indentation indent)
+    private static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression, Indentation indent)
     {
         switch (type) {
         case EvaluatedType.Unknown u:
@@ -30,7 +32,7 @@ internal sealed class TypeInfoC : TypeInfo
         case EvaluatedType.Array array:
             var arrayType = Create(array.ElementType, generateExpression, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
-            foreach (var dimension in array.DimensionConstantExpressions.Select(generateExpression)) {
+            foreach (var dimension in array.DimensionConstantExpressions.Select(dim => generateExpression(dim))) {
                 postModifier.Append($"[{dimension}]");
             }
             return new(type, arrayType._typeName,
@@ -40,12 +42,7 @@ internal sealed class TypeInfoC : TypeInfo
         case EvaluatedType.StringLengthed strlen:
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression
-                .Map(len => generateExpression(
-                    // This feels like cheating, creatig AST nodes with placeholder source tokens during code generation
-                    // But this is the only way without massive abstraction
-                    // This will be improved if it ever becomes a problem.
-                    new Node.Expression.OperationBinary(len.SourceTokens, len, BinaryOperator.Plus,
-                        new Node.Expression.Literal.Integer(SourceTokens.Empty, "1"))))
+                .Map(len => generateExpression(len.Alter(BinaryOperator.Plus, 1)))
                 .ValueOr((strlen.Length + 1).ToString());
             return new(type, "char", "%s", postModifier: $"[{lengthPlus1}]");
         case EvaluatedType.Structure structure:

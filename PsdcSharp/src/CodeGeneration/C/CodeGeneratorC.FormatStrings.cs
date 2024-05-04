@@ -8,8 +8,7 @@ namespace Scover.Psdc.CodeGeneration.C;
 
 internal partial class CodeGeneratorC
 {
-    private (string format, IReadOnlyList<Expression> arguments) BuildFormatString(
-        ReadOnlyScope scope, IEnumerable<Expression> parts)
+    private (string format, IReadOnlyList<Expression> arguments) BuildFormatString(IEnumerable<Expression> parts)
     {
         List<Expression> arguments = [];
         StringBuilder format = new();
