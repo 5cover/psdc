@@ -1,6 +1,7 @@
 using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.StaticAnalysis;
+
 using static Scover.Psdc.Language.Associativity;
 using static Scover.Psdc.Parsing.Node;
 
@@ -9,9 +10,10 @@ namespace Scover.Psdc.CodeGeneration;
 abstract partial class CodeGenerator<TOpInfo>(Messenger messenger, SemanticAst semanticAst)
     where TOpInfo : OperatorInfo<TOpInfo>
 {
-    protected readonly Messenger _messenger = messenger;
     protected readonly SemanticAst _ast = semanticAst;
     protected readonly Indentation _indent = new();
+    protected readonly Messenger _messenger = messenger;
+
     public abstract string Generate();
 
     protected static int GetPrecedence(Expression expr)
@@ -38,7 +40,7 @@ abstract partial class CodeGenerator<TOpInfo>(Messenger messenger, SemanticAst s
 
     protected static bool ShouldBracket(Expression.Lvalue.ComponentAccess compAccess)
      => ShouldBracket(compAccess.Structure, TOpInfo.ComponentAccess, LeftToRight);
-    
+
     protected static bool ShouldBracket(Expression.Lvalue.ArraySubscript arrSub)
      => ShouldBracket(arrSub.Array, TOpInfo.ArraySubscript, LeftToRight);
 

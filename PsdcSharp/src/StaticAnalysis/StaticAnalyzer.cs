@@ -1,15 +1,16 @@
 using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
+
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.StaticAnalysis;
 
 sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
 {
+    readonly Dictionary<Expression, EvaluatedType> _inferredTypes = [];
+    readonly Dictionary<NodeScoped, Scope> _scopes = [];
     bool _seenMainProgram;
-    Dictionary<NodeScoped, Scope> _scopes = [];
-    Dictionary<Expression, EvaluatedType> _inferredTypes = [];
 
     public SemanticAst AnalyzeSemantics()
     {
@@ -23,6 +24,23 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
         }
 
         return new(root, _scopes, _inferredTypes);
+    }
+
+    void AddParameters(Scope scope, IEnumerable<Symbol.Parameter> parameters)
+    {
+        foreach (var param in parameters) {
+            if (!scope.TryAdd(param, out var existingSymbol)) {
+                messenger.Report(Message.ErrorRedefinedSymbol(param, existingSymbol));
+            }
+        }
+    }
+
+    void AnalyzeCallableDefinition<T>(Scope scope, BlockNode node, T sub) where T : CallableSymbol, IEquatable<T?>
+    {
+        HandleCallableDefinition(scope, sub);
+        AddParameters(_scopes[node], sub.Parameters);
+
+        AnalyzeScopedBlock(node);
     }
 
     void AnalyzeDeclaration(Scope scope, Declaration decl)
@@ -89,6 +107,34 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
 
         default:
             throw decl.ToUnmatchedException();
+        }
+    }
+
+    Option<EvaluatedType> AnalyzeExpression(Scope scope, Expression expr)
+    {
+        SetParentScopeIfNecessary(expr, scope);
+
+        var type = expr.EvaluateType(scope)
+            .MatchError(messenger.Report);
+
+        type.MatchSome(type => _inferredTypes.Add(expr, type));
+
+        if (type.HasValue) {
+            // Try to evaluate the expression as a constant.
+            // This will fold any constants the expression contains and perform various checks.
+            // No message is reported if the expression isn't constant.
+            // Detects indirect division by zero errors. Example : (4 / (2 + 3 - 5))
+            expr.EvaluateValue(scope)
+                .MatchError(e => e.MatchSome(messenger.Report));
+        }
+
+        return type;
+    }
+
+    void AnalyzeScopedBlock(BlockNode scopedBlock)
+    {
+        foreach (var stmt in scopedBlock.Block) {
+            AnalyzeStatement(_scopes[scopedBlock], stmt);
         }
     }
 
@@ -218,45 +264,6 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
         }
     }
 
-    Option<EvaluatedType> AnalyzeExpression(Scope scope, Expression expr)
-    {
-        SetParentScopeIfNecessary(expr, scope);
-
-        var type = expr.EvaluateType(scope)
-            .MatchError(messenger.Report);
-
-        type.MatchSome(type => _inferredTypes.Add(expr, type));
-
-        if (type.HasValue) {
-            // Try to evaluate the expression as a constant.
-            // This will fold any constants the expression contains and perform various checks.
-            // No message is reported if the expression isn't constant.
-            // Detects indirect division by zero errors. Example : (4 / (2 + 3 - 5))
-            expr.EvaluateValue(scope)
-                .MatchError(e => e.MatchSome(messenger.Report));
-        }
-
-        return type;
-    }
-
-    void SetParentScopeIfNecessary(Node node, Scope? parentScope)
-    {
-        if (node is NodeScoped sn) {
-            SetParentScope(sn, parentScope);
-        }
-    }
-
-    void SetParentScope(NodeScoped scopedNode, Scope? parentScope) => _scopes.Add(scopedNode, new(parentScope));
-
-    void AddParameters(Scope scope, IEnumerable<Symbol.Parameter> parameters)
-    {
-        foreach (var param in parameters) {
-            if (!scope.TryAdd(param, out var existingSymbol)) {
-                messenger.Report(Message.ErrorRedefinedSymbol(param, existingSymbol));
-            }
-        }
-    }
-
     List<Symbol.Parameter> CreateParameters(ReadOnlyScope scope, IEnumerable<ParameterFormal> parameters)
         => parameters.Select(param
             => new Symbol.Parameter(param.Name, param.SourceTokens,
@@ -265,36 +272,36 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
 
     void HandleCall<TSymbol>(Scope scope, NodeCall call) where TSymbol : CallableSymbol
         => scope.GetSymbol<TSymbol>(call.Name).MatchError(messenger.Report).Match(callable => {
-        List<string> problems = new();
+            List<string> problems = [];
 
-        if (call.Parameters.Count != callable.Parameters.Count) {
-            problems.Add(Message.ProblemWrongNumberOfArguments(
-                call.Parameters.Count, callable.Parameters.Count));
-        }
-
-        foreach (var (actual, formal) in call.Parameters.Zip(callable.Parameters)) {
-            if (actual.Mode != formal.Mode) {
-                problems.Add(Message.ProblemWrongArgumentMode(formal.Name,
-                    actual.Mode.RepresentationActual, formal.Mode.RepresentationFormal));
+            if (call.Parameters.Count != callable.Parameters.Count) {
+                problems.Add(Message.ProblemWrongNumberOfArguments(
+                    call.Parameters.Count, callable.Parameters.Count));
             }
 
-            AnalyzeExpression(scope, actual.Value).MatchSome(actualType => {
-                if (!actualType.IsAssignableTo(formal.Type)) {
-                    problems.Add(Message.ProblemWrongArgumentType(formal.Name,
-                        formal.Type, actualType));
+            foreach (var (actual, formal) in call.Parameters.Zip(callable.Parameters)) {
+                if (actual.Mode != formal.Mode) {
+                    problems.Add(Message.ProblemWrongArgumentMode(formal.Name,
+                        actual.Mode.RepresentationActual, formal.Mode.RepresentationFormal));
                 }
-            });
-        }
 
-        if (problems.Count > 0) {
-            messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
-        }
-    }, none: () => {
-        // If the callable symbol wasn't found, still analyze the parameter expressions.
-        foreach (var actual in call.Parameters) {
-            AnalyzeExpression(scope, actual.Value);
-        }
-    });
+                AnalyzeExpression(scope, actual.Value).MatchSome(actualType => {
+                    if (!actualType.IsAssignableTo(formal.Type)) {
+                        problems.Add(Message.ProblemWrongArgumentType(formal.Name,
+                            formal.Type, actualType));
+                    }
+                });
+            }
+
+            if (problems.Count > 0) {
+                messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
+            }
+        }, none: () => {
+            // If the callable symbol wasn't found, still analyze the parameter expressions.
+            foreach (var actual in call.Parameters) {
+                AnalyzeExpression(scope, actual.Value);
+            }
+        });
 
     void HandleCallableDeclaration<T>(Scope scope, T sub) where T : CallableSymbol, IEquatable<T?>
     {
@@ -307,14 +314,6 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                 messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
             }
         }
-    }
-
-    void AnalyzeCallableDefinition<T>(Scope scope, BlockNode node, T sub) where T : CallableSymbol, IEquatable<T?>
-    {
-        HandleCallableDefinition(scope, sub);
-        AddParameters(_scopes[node], sub.Parameters);
-
-        AnalyzeScopedBlock(node);
     }
 
     void HandleCallableDefinition<T>(Scope scope, T sub) where T : CallableSymbol, IEquatable<T?>
@@ -332,10 +331,12 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
         }
     }
 
-    void AnalyzeScopedBlock(BlockNode scopedBlock)
+    void SetParentScope(NodeScoped scopedNode, Scope? parentScope) => _scopes.Add(scopedNode, new(parentScope));
+
+    void SetParentScopeIfNecessary(Node node, Scope? parentScope)
     {
-        foreach (var stmt in scopedBlock.Block) {
-            AnalyzeStatement(_scopes[scopedBlock], stmt);
+        if (node is NodeScoped sn) {
+            SetParentScope(sn, parentScope);
         }
     }
 }

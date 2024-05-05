@@ -1,7 +1,29 @@
 namespace Scover.Psdc.Language;
 
+enum BinaryOperator
+{
+    And,
+    Divide,
+    Equal,
+    GreaterThan,
+    GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
+    Subtract,
+    Mod,
+    Multiply,
+    NotEqual,
+    Or,
+    Add,
+    Xor,
+}
+
 static class OperatorExtensions
 {
+    public static Associativity GetAssociativity(this BinaryOperator @operator) => Associativity.LeftToRight;
+
+    public static Associativity GetAssociativity(this UnaryOperator @operator) => Associativity.RightToLeft;
+
     public static string GetRepresentation(this BinaryOperator @operator) => @operator switch {
         BinaryOperator.And => "ET",
         BinaryOperator.Divide => "/",
@@ -26,28 +48,6 @@ static class OperatorExtensions
         UnaryOperator.Plus => "+",
         _ => throw @operator.ToUnmatchedException()
     };
-
-    public static Associativity GetAssociativity(this BinaryOperator @operator) => Associativity.LeftToRight;
-    public static Associativity GetAssociativity(this UnaryOperator @operator) => Associativity.RightToLeft;
-
-}
-
-enum BinaryOperator
-{
-    And,
-    Divide,
-    Equal,
-    GreaterThan,
-    GreaterThanOrEqual,
-    LessThan,
-    LessThanOrEqual,
-    Subtract,
-    Mod,
-    Multiply,
-    NotEqual,
-    Or,
-    Add,
-    Xor,
 }
 
 enum UnaryOperator

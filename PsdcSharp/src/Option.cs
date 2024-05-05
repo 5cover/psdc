@@ -14,54 +14,24 @@ interface Option<out T>
 
 interface Option<out T, out TError>
 {
+    TError? Error { get; }
+
     [MemberNotNullWhen(true, nameof(Value))]
     [MemberNotNullWhen(false, nameof(Error))]
     bool HasValue { get; }
 
     T? Value { get; }
-    TError? Error { get; }
 }
 
 static class Option
 {
+    public static Option<(T1, T2), TError> Combine<T1, T2, TError>(this Option<T1, TError> option1, Option<T2, TError> option2)
+     => (option1.HasValue && option2.HasValue)
+        ? Some<(T1, T2), TError>((option1.Value, option2.Value))
+        : None<(T1, T2), TError>(option1.HasValue ? option2.Error.NotNull() : option1.Error);
+
     public static Option<T> DiscardError<T, TError>(this Option<T, TError> option)
-     => new OptionImpl<T>(option.HasValue, option.Value);
-
-    public static Option<T> MatchError<T, TError>(this Option<T, TError> option, Action<TError> actionWithError)
-    {
-        if (!option.HasValue) {
-            actionWithError.Invoke(option.Error);
-        }
-        return new OptionImpl<T>(option.HasValue, option.Value);
-    }
-
-    public static Option<T, TNewError> MapError<T, TError, TNewError>(this Option<T, TError> option, Func<TError, TNewError> errorMap)
-     => new OptionImpl<T, TNewError>(option.HasValue, option.Value, option.HasValue ? default : errorMap(option.Error));
-
-    public static T ValueOr<T>(this Option<T> option, T defaultValue)
-     => option.HasValue ? option.Value : defaultValue;
-    public static T ValueOr<T, TError>(this Option<T, TError> option, T defaultValue)
-     => option.HasValue ? option.Value : defaultValue;
-
-    public static Option<T> Some<T>(this T value)
-     => new OptionImpl<T>(true, value);
-    public static Option<T, TError> Some<T, TError>(this T value)
-     => new OptionImpl<T, TError>(true, value, default);
-
-    public static Option<T> SomeNotNull<T>(this T? value) where T : class
-     => value is not null ? value.Some() : None<T>();
-    public static Option<T, TError> SomeNotNull<T, TError>(this T? value, TError error) where T : class
-    => value is not null ? value.Some<T, TError>() : None<T, TError>(error);
-
-    public static Option<T> None<T>() => new OptionImpl<T>(false, default);
-    public static Option<T, TError> None<T, TError>(this TError error) => new OptionImpl<T, TError>(false, default, error);
-
-    public static Option<TResult> Map<T, TResult>(this Option<T> option, Func<T, TResult> transform)
-     => option.HasValue ? transform(option.Value).Some() : None<TResult>();
-    public static Option<TResult, TError> Map<T, TError, TResult>(this Option<T, TError> option, Func<T, TResult> transform)
-     => option.HasValue
-        ? transform(option.Value).Some<TResult, TError>()
-        : None<TResult, TError>(option.Error);
+         => new OptionImpl<T>(option.HasValue, option.Value);
 
     public static Option<TResult, TError> FlatMap<T, TError, TResult>(this Option<T, TError> option,
         Func<T, Option<TResult, TError>> transform)
@@ -70,6 +40,17 @@ static class Option
     public static Option<TResult, TError> FlatMap<T1, T2, TError, TResult>(this Option<(T1, T2), TError> option,
         Func<T1, T2, Option<TResult, TError>> transform)
         => option.HasValue ? transform(option.Value.Item1, option.Value.Item2) : None<TResult, TError>(option.Error);
+
+    public static Option<TResult> Map<T, TResult>(this Option<T> option, Func<T, TResult> transform)
+     => option.HasValue ? transform(option.Value).Some() : None<TResult>();
+
+    public static Option<TResult, TError> Map<T, TError, TResult>(this Option<T, TError> option, Func<T, TResult> transform)
+     => option.HasValue
+        ? transform(option.Value).Some<TResult, TError>()
+        : None<TResult, TError>(option.Error);
+
+    public static Option<T, TNewError> MapError<T, TError, TNewError>(this Option<T, TError> option, Func<TError, TNewError> errorMap)
+     => new OptionImpl<T, TNewError>(option.HasValue, option.Value, option.HasValue ? default : errorMap(option.Error));
 
     public static void Match<T>(this Option<T> option, Action<T> some, Action none)
     {
@@ -100,8 +81,17 @@ static class Option
 
     public static TResult Match<T, TResult>(this Option<T> option, Func<T, TResult> some, Func<TResult> none)
      => option.HasValue ? some(option.Value) : none();
+
     public static TResult Match<T, TError, TResult>(this Option<T, TError> option, Func<T, TResult> some, Func<TError, TResult> none)
      => option.HasValue ? some(option.Value) : none(option.Error);
+
+    public static Option<T> MatchError<T, TError>(this Option<T, TError> option, Action<TError> actionWithError)
+    {
+        if (!option.HasValue) {
+            actionWithError.Invoke(option.Error);
+        }
+        return new OptionImpl<T>(option.HasValue, option.Value);
+    }
 
     public static void MatchSome<T, TError>(this Option<T, TError> option, Action<T> action)
     {
@@ -117,10 +107,27 @@ static class Option
         }
     }
 
-    public static Option<(T1, T2), TError> Combine<T1, T2, TError>(this Option<T1, TError> option1, Option<T2, TError> option2)
-     => (option1.HasValue && option2.HasValue)
-        ? Some<(T1, T2), TError>((option1.Value, option2.Value))
-        : None<(T1, T2), TError>(option1.HasValue ? option2.Error.NotNull() : option1.Error);
+    public static Option<T> None<T>() => new OptionImpl<T>(false, default);
+
+    public static Option<T, TError> None<T, TError>(this TError error) => new OptionImpl<T, TError>(false, default, error);
+
+    public static Option<T> Some<T>(this T value)
+     => new OptionImpl<T>(true, value);
+
+    public static Option<T, TError> Some<T, TError>(this T value)
+     => new OptionImpl<T, TError>(true, value, default);
+
+    public static Option<T> SomeNotNull<T>(this T? value) where T : class
+     => value is not null ? value.Some() : None<T>();
+
+    public static Option<T, TError> SomeNotNull<T, TError>(this T? value, TError error) where T : class
+    => value is not null ? value.Some<T, TError>() : None<T, TError>(error);
+
+    public static T ValueOr<T>(this Option<T> option, T defaultValue)
+                                     => option.HasValue ? option.Value : defaultValue;
+
+    public static T ValueOr<T, TError>(this Option<T, TError> option, T defaultValue)
+     => option.HasValue ? option.Value : defaultValue;
 
     readonly record struct OptionImpl<T>(bool HasValue, T? Value) : Option<T>;
     readonly record struct OptionImpl<T, TError>(bool HasValue, T? Value, TError? Error) : Option<T, TError>;

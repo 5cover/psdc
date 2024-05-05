@@ -1,15 +1,63 @@
 using System.Text;
+
 using Scover.Psdc.Language;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
+
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
 sealed class TypeInfoC : TypeInfo
 {
+    readonly string _stars;
+
+    readonly string _typeName, _postModifier, _typeQualifier;
+
+    TypeInfoC(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders, int starCount = 0, string postModifier = "", string? typeQualifier = null)
+     => (_stars, _typeName, _postModifier, _typeQualifier, FormatComponent, RequiredHeaders)
+        = (new string('*', starCount),
+           typeName,
+           postModifier,
+           AddSpaceBefore(typeQualifier),
+           formatComponent,
+           requiredHeaders);
+
+    TypeInfoC(EvaluatedType type, string actualTypeName, string? formatCompnent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
+    : this(type.Alias?.Name ?? actualTypeName,
+           formatCompnent.SomeNotNull(),
+           requiredHeaders ?? [],
+           starCount,
+           postModifier,
+           typeQualifier)
+    {
+    }
+
+    public Option<string> FormatComponent { get; }
+
+    public IEnumerable<string> RequiredHeaders { get; }
+
     public static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression)
-     => Create(type, generateExpression, new());
+                             => Create(type, generateExpression, new());
+
+    public string DecorateExpression(string expr)
+     => $"{_stars}{expr}";
+
+    public string Generate() => $"{_typeName}{_stars}{_postModifier}{_typeQualifier}";
+
+    public string GenerateDeclaration(IEnumerable<Identifier> names)
+     => $"{_typeName}{_typeQualifier} {string.Join(", ", names.Select(name => _stars + name.Name + _postModifier))}";
+
+    public TypeInfoC ToConst()
+     => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length, _postModifier,
+        "const");
+
+    public TypeInfoC ToPointer(int level)
+     => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length + level,
+        _postModifier, null);
+
+    static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
+
     static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression, Indentation indent)
     {
         switch (type) {
@@ -62,46 +110,4 @@ sealed class TypeInfoC : TypeInfo
             throw type.ToUnmatchedException();
         }
     }
-
-    readonly string _typeName, _postModifier, _typeQualifier;
-    readonly string _stars;
-    TypeInfoC(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders, int starCount = 0, string postModifier = "", string? typeQualifier = null)
-     => (_stars, _typeName, _postModifier, _typeQualifier, FormatComponent, RequiredHeaders)
-        = (new string('*', starCount),
-           typeName,
-           postModifier,
-           AddSpaceBefore(typeQualifier),
-           formatComponent,
-           requiredHeaders);
-
-    TypeInfoC(EvaluatedType type, string actualTypeName, string? formatCompnent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
-    : this(type.Alias?.Name ?? actualTypeName,
-           formatCompnent.SomeNotNull(),
-           requiredHeaders ?? [],
-           starCount,
-           postModifier,
-           typeQualifier)
-    {
-    }
-
-    public Option<string> FormatComponent { get; }
-    public IEnumerable<string> RequiredHeaders { get; }
-
-    public TypeInfoC ToPointer(int level)
-     => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length + level,
-        _postModifier, null);
-
-    public TypeInfoC ToConst()
-     => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length, _postModifier,
-        "const");
-
-    public string DecorateExpression(string expr)
-     => $"{_stars}{expr}";
-
-    public string GenerateDeclaration(IEnumerable<Identifier> names)
-     => $"{_typeName}{_typeQualifier} {string.Join(", ", names.Select(name => _stars + name.Name + _postModifier))}";
-
-    public string Generate() => $"{_typeName}{_stars}{_postModifier}{_typeQualifier}";
-
-    static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
 }

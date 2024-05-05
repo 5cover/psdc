@@ -2,12 +2,9 @@ using System.Text.RegularExpressions;
 
 namespace Scover.Psdc.Tokenization;
 
-sealed class RegexTokenRule : TokenRule
+sealed class RegexTokenRule(string pattern, RegexOptions flags = RegexOptions.None) : TokenRule
 {
-    readonly Regex _pattern;
-
-    public RegexTokenRule(string pattern, RegexOptions flags = RegexOptions.None)
-     => _pattern = new($@"\G{pattern}", flags);
+    readonly Regex _pattern = new($@"\G{pattern}", flags);
 
     public Option<Token> TryExtract(TokenType tokenType, string code, int startIndex)
     {

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
+
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.Tokenization;
@@ -15,10 +16,59 @@ readonly record struct Position(int Line, int Column)
 
 static class Extensions
 {
-    public static string RemoveDiacritics(this string text)
-     => new string(text.Normalize(NormalizationForm.FormD)
-        .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
-        .ToArray()).Normalize(NormalizationForm.FormC);
+    public static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T>
+     => first.AllZipped(second, (f, s) => f.SemanticsEqual(s));
+
+    public static bool AllZipped<T1, T2>(this IEnumerable<T1> first, IEnumerable<T2> second, Func<T1, T2, bool> predicate)
+    {
+        using var e1 = first.GetEnumerator();
+        using var e2 = second.GetEnumerator();
+
+        bool all = true;
+        while (all && e1.MoveNext()) {
+            all = e2.MoveNext() && predicate(e1.Current, e2.Current);
+        }
+        return !e2.MoveNext() && all;
+    }
+
+    public static int DigitCount(this int n, int @base = 10) => n == 0 ? 1 : 1 + (int)Math.Log(n, @base);
+
+    public static void DoInColor(this (ConsoleColor? foreground, ConsoleColor? background) color, Action action)
+    {
+        color.SetColor();
+        action();
+        Console.ResetColor();
+    }
+
+    public static (ConsoleColor? foreground, ConsoleColor? background) GetConsoleColor(this MessageSeverity msgSeverity) => msgSeverity switch {
+        MessageSeverity.Error => (ConsoleColor.Red, null),
+        MessageSeverity.Warning => (ConsoleColor.Yellow, null),
+        MessageSeverity.Suggestion => (ConsoleColor.Blue, null),
+        _ => throw msgSeverity.ToUnmatchedException(),
+    };
+
+    public static IEnumerator<T> GetGenericEnumerator<T>(this T[] array) => ((IEnumerable<T>)array).GetEnumerator();
+
+    public static int GetLeadingWhitespaceCount(this ReadOnlySpan<char> str)
+    {
+        var count = 0;
+        var enumerator = str.GetEnumerator();
+        while (enumerator.MoveNext() && char.IsWhiteSpace(enumerator.Current)) {
+            count++;
+        }
+
+        return count;
+    }
+
+    public static ReadOnlySpan<char> GetLine(this string str, int lineNumber)
+    {
+        var lines = str.AsSpan().EnumerateLines();
+        bool success = true;
+        for (; success && lineNumber >= 0; --lineNumber) {
+            success = lines.MoveNext();
+        }
+        return success ? lines.Current : throw new ArgumentOutOfRangeException(nameof(lineNumber), "Line number is out of range");
+    }
 
     public static Position GetPositionAt(this string str, Index index)
     {
@@ -35,114 +85,6 @@ static class Extensions
         return new Position(line, column);
     }
 
-    public static (ConsoleColor? foreground, ConsoleColor? background) GetConsoleColor(this MessageSeverity msgSeverity) => msgSeverity switch {
-        MessageSeverity.Error => (ConsoleColor.Red, null),
-        MessageSeverity.Warning => (ConsoleColor.Yellow, null),
-        MessageSeverity.Suggestion => (ConsoleColor.Blue, null),
-        _ => throw msgSeverity.ToUnmatchedException(),
-    };
-
-    public static IEnumerable<T> Yield<T>(this T t)
-    {
-        yield return t;
-    }
-
-    public static UnreachableException ToUnmatchedException<T>(this T t) => new($"Unmatched {typeof(T).Name}: {t}");
-
-    public static void DoInColor(this (ConsoleColor? foreground, ConsoleColor? background) color, Action action)
-    {
-        color.SetColor();
-        action();
-        Console.ResetColor();
-    }
-
-    public static void SetColor(this (ConsoleColor? foreground, ConsoleColor? background) color)
-    {
-        if (color.foreground is { } fg) {
-            Console.ForegroundColor = fg;
-        }
-        if (color.background is { } bg) {
-            Console.BackgroundColor = bg;
-        }
-    }
-
-    public static T LogOperation<T>(this string name, bool verbose, Func<T> operation)
-    {
-        if (verbose) {
-            Console.Error.Write($"{name}...");
-        }
-        T t = operation();
-        if (verbose) {
-            Console.Error.WriteLine(" done");
-        }
-        return t;
-    }
-
-    /// <summary>Asserts that <paramref name="t" /> isn't <see langword="null" />.</summary>
-    /// <remarks>This is a safer replacement for the null-forgiving operator (<c>!</c>).</remarks>
-    /// <returns><paramref name="t" />, not null.</returns>
-    public static T NotNull<T>([NotNull] this T? t, string? message = null)
-    {
-        Debug.Assert(t is not null, message);
-        return t;
-    }
-
-    public static ReadOnlySpan<char> GetLine(this string str, int lineNumber)
-    {
-        var lines = str.AsSpan().EnumerateLines();
-        bool success = true;
-        for (; success && lineNumber >= 0; --lineNumber) {
-            success = lines.MoveNext();
-        }
-        return success ? lines.Current : throw new ArgumentOutOfRangeException(nameof(lineNumber), "Line number is out of range");
-    }
-
-    public static int GetLeadingWhitespaceCount(this ReadOnlySpan<char> str)
-    {
-        var count = 0;
-        var enumerator = str.GetEnumerator();
-        while (enumerator.MoveNext() && char.IsWhiteSpace(enumerator.Current)) {
-            count++;
-        }
-
-        return count;
-    }
-
-    public static bool AllZipped<T1, T2>(this IEnumerable<T1> first, IEnumerable<T2> second, Func<T1, T2, bool> predicate)
-    {
-        using var e1 = first.GetEnumerator();
-        using var e2 = second.GetEnumerator();
-
-        bool all = true;
-        while (all && e1.MoveNext()) {
-            all = e2.MoveNext() && predicate(e1.Current, e2.Current);
-        }
-        return !e2.MoveNext() && all;
-    }
-
-    public static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T>
-     => first.AllZipped(second, (f, s) => f.SemanticsEqual(s));
-
-    public static bool OptionSemanticsEqual(this Option<Node> first, Option<Node> second)
-     => first.HasValue && second.HasValue
-        ? first.Value.SemanticsEqual(second.Value)
-        : first.HasValue == second.HasValue;
-
-    public static void WriteNTimes(this TextWriter writer, int n, char c)
-    {
-        if (n < 0) {
-            throw new ArgumentOutOfRangeException(nameof(n), "cannot be negative");
-        }
-        while (n > 0) {
-            n--;
-            writer.Write(c);
-        }
-    }
-
-    public static int DigitCount(this int n, int @base = 10) => n == 0 ? 1 : 1 + (int)Math.Log(n, @base);
-
-    public static IEnumerator<T> GetGenericEnumerator<T>(this T[] array) => ((IEnumerable<T>)array).GetEnumerator();
-
     /// <summary>
     /// Checks if an exception is exogenous and could have been thrown by the filesystem API.
     /// </summary>
@@ -158,8 +100,67 @@ static class Extensions
     public static bool IsFileSystemExogenous(this Exception e)
         => e is IOException or UnauthorizedAccessException or System.Security.SecurityException;
 
+    public static T LogOperation<T>(this string name, bool verbose, Func<T> operation)
+    {
+        if (verbose) {
+            Console.Error.Write($"{name}...");
+        }
+        T t = operation();
+        if (verbose) {
+            Console.Error.WriteLine(" done");
+        }
+        return t;
+    }
+
     public static Option<bool> NextIsOfType(this IEnumerable<Token> tokens, params TokenType[] types)
          => tokens.FirstOrNone().Map(token => types.Contains(token.Type));
+
+    /// <summary>Asserts that <paramref name="t" /> isn't <see langword="null" />.</summary>
+    /// <remarks>This is a safer replacement for the null-forgiving operator (<c>!</c>).</remarks>
+    /// <returns><paramref name="t" />, not null.</returns>
+    public static T NotNull<T>([NotNull] this T? t, string? message = null)
+    {
+        Debug.Assert(t is not null, message);
+        return t;
+    }
+
+    public static bool OptionSemanticsEqual(this Option<Node> first, Option<Node> second)
+     => first.HasValue && second.HasValue
+        ? first.Value.SemanticsEqual(second.Value)
+        : first.HasValue == second.HasValue;
+
+    public static string RemoveDiacritics(this string text)
+                                                             => new string(text.Normalize(NormalizationForm.FormD)
+        .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+        .ToArray()).Normalize(NormalizationForm.FormC);
+
+    public static void SetColor(this (ConsoleColor? foreground, ConsoleColor? background) color)
+    {
+        if (color.foreground is { } fg) {
+            Console.ForegroundColor = fg;
+        }
+        if (color.background is { } bg) {
+            Console.BackgroundColor = bg;
+        }
+    }
+
+    public static UnreachableException ToUnmatchedException<T>(this T t) => new($"Unmatched {typeof(T).Name}: {t}");
+
+    public static void WriteNTimes(this TextWriter writer, int n, char c)
+    {
+        if (n < 0) {
+            throw new ArgumentOutOfRangeException(nameof(n), "cannot be negative");
+        }
+        while (n > 0) {
+            n--;
+            writer.Write(c);
+        }
+    }
+
+    public static IEnumerable<T> Yield<T>(this T t)
+    {
+        yield return t;
+    }
 }
 
 static class Function
@@ -177,4 +178,3 @@ static class Function
              }
          };
 }
-

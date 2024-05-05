@@ -1,23 +1,12 @@
 using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
+
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.StaticAnalysis;
 
 static partial class AstExtensions
 {
-    public static bool IsConstant(this Expression expression, ReadOnlyScope scope) => expression switch {
-        Expression.Bracketed b => b.ContainedExpression.IsConstant(scope),
-        Expression.Literal => true,
-        Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.IsConstant(scope) && arrSub.Indexes.All(i => i.IsConstant(scope)),
-        Expression.Lvalue.Bracketed b => b.ContainedLvalue.IsConstant(scope),
-        Expression.Lvalue.ComponentAccess compAccess => compAccess.Structure.IsConstant(scope),
-        Expression.Lvalue.VariableReference varRef => scope.GetSymbol<Symbol.Constant>(varRef.Name).HasValue,
-        Expression.BinaryOperation ob => ob.Left.IsConstant(scope) && ob.Right.IsConstant(scope),
-        Expression.UnaryOperation ou => ou.Operand.IsConstant(scope),
-        _ => throw expression.ToUnmatchedException(),
-    };
-
     public static Option<TVal, Message> EvaluateConstantValue<TVal>(this Expression expr, ReadOnlyScope scope, EvaluatedType expectedType)
     where TVal : ConstantValue
      => expr.EvaluateConstantValue(scope).FlatMap(val
@@ -46,6 +35,18 @@ static partial class AstExtensions
             .MapError(e => Option.None<Message>())
             .FlatMap(constant => constant.Value.EvaluateValue(scope)),
         _ => Option.None<Message>().None<ConstantValue, Option<Message>>(),
+    };
+
+    public static bool IsConstant(this Expression expression, ReadOnlyScope scope) => expression switch {
+        Expression.Bracketed b => b.ContainedExpression.IsConstant(scope),
+        Expression.Literal => true,
+        Expression.Lvalue.ArraySubscript arrSub => arrSub.Array.IsConstant(scope) && arrSub.Indexes.All(i => i.IsConstant(scope)),
+        Expression.Lvalue.Bracketed b => b.ContainedLvalue.IsConstant(scope),
+        Expression.Lvalue.ComponentAccess compAccess => compAccess.Structure.IsConstant(scope),
+        Expression.Lvalue.VariableReference varRef => scope.GetSymbol<Symbol.Constant>(varRef.Name).HasValue,
+        Expression.BinaryOperation ob => ob.Left.IsConstant(scope) && ob.Right.IsConstant(scope),
+        Expression.UnaryOperation ou => ou.Operand.IsConstant(scope),
+        _ => throw expression.ToUnmatchedException(),
     };
 
     static Message GetOperationMessage(OperationError error, Expression.UnaryOperation opUn, EvaluatedType operandType) => error switch {

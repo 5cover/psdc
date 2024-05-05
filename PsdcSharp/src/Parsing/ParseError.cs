@@ -1,5 +1,5 @@
-
 using System.Collections.Immutable;
+
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
@@ -13,8 +13,8 @@ sealed record ParseError(
     public static ParseError ForProduction(string failedProduction, Option<Token> erroneousToken, IEnumerable<TokenType> expectedTokens, string expectedProduction)
      => new(failedProduction, erroneousToken,
             expectedTokens.ToImmutableHashSet(),
-            ImmutableHashSet.Create(expectedProduction)); 
-            
+            ImmutableHashSet.Create(expectedProduction));
+
     public static ParseError ForProduction(string failedProduction, Option<Token> erroneousToken, IEnumerable<TokenType> expectedTokens)
      => new(failedProduction, erroneousToken,
             expectedTokens.ToImmutableHashSet(),

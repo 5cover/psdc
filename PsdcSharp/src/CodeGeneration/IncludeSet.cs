@@ -10,8 +10,6 @@ sealed class IncludeSet
 
     readonly HashSet<string> _headers = [];
 
-    public void Ensure(string name) => _headers.Add(name);
-
     public StringBuilder AppendIncludeSection(StringBuilder o)
     {
         if (_headers.Count == 0) {
@@ -24,4 +22,6 @@ sealed class IncludeSet
         }
         return o;
     }
+
+    public void Ensure(string name) => _headers.Add(name);
 }

@@ -1,4 +1,5 @@
 using System.Globalization;
+
 using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Parsing;
@@ -35,6 +36,7 @@ interface NodeBracketedExpression : Node.Expression
 interface Node : EquatableSemantics<Node>
 {
     SourceTokens SourceTokens { get; }
+
     internal sealed class Algorithm(SourceTokens sourceTokens,
         Identifier name,
         IReadOnlyCollection<Declaration> declarations)
@@ -42,6 +44,7 @@ interface Node : EquatableSemantics<Node>
     {
         public Identifier Name => name;
         public IReadOnlyCollection<Declaration> Declarations => declarations;
+
         public override bool SemanticsEqual(Node other) => other is Algorithm o
          && o.Name.SemanticsEqual(Name)
          && o.Declarations.AllSemanticsEqual(Declarations);
@@ -64,6 +67,7 @@ interface Node : EquatableSemantics<Node>
         {
             public Identifier Name => name;
             public Type Type => type;
+
             public override bool SemanticsEqual(Node other) => other is TypeAlias o
              && o.Name.SemanticsEqual(Name)
              && o.Type.SemanticsEqual(Type);
@@ -76,6 +80,7 @@ interface Node : EquatableSemantics<Node>
         {
             public Identifier Name => name;
             public Type.Complete Type => type;
+
             public override bool SemanticsEqual(Node other) => other is CompleteTypeAlias o
              && o.Name.SemanticsEqual(Name)
              && o.Type.SemanticsEqual(Type);
@@ -90,6 +95,7 @@ interface Node : EquatableSemantics<Node>
             public Type Type => type;
             public Identifier Name => name;
             public Expression Value => value;
+
             public override bool SemanticsEqual(Node other) => other is Constant o
              && o.Name.SemanticsEqual(Name)
              && o.Type.SemanticsEqual(Type)
@@ -101,6 +107,7 @@ interface Node : EquatableSemantics<Node>
         : NodeImpl(sourceTokens), Declaration
         {
             public ProcedureSignature Signature => signature;
+
             public override bool SemanticsEqual(Node other) => other is Procedure o
              && o.Signature.SemanticsEqual(Signature);
         }
@@ -111,6 +118,7 @@ interface Node : EquatableSemantics<Node>
         : BlockNode(sourceTokens, block), Declaration
         {
             public ProcedureSignature Signature => signature;
+
             public override bool SemanticsEqual(Node other) => other is ProcedureDefinition o
              && o.Signature.SemanticsEqual(Signature)
              && o.Block.AllSemanticsEqual(Block);
@@ -121,6 +129,7 @@ interface Node : EquatableSemantics<Node>
         : NodeImpl(sourceTokens), Declaration
         {
             public FunctionSignature Signature => signature;
+
             public override bool SemanticsEqual(Node other) => other is Function o
  && o.Signature.SemanticsEqual(Signature);
         }
@@ -131,6 +140,7 @@ interface Node : EquatableSemantics<Node>
         : BlockNode(sourceTokens, block), Declaration
         {
             public FunctionSignature Signature => signature;
+
             public override bool SemanticsEqual(Node other) => other is FunctionDefinition o
  && o.Signature.SemanticsEqual(Signature)
  && o.Block.AllSemanticsEqual(Block);
@@ -154,16 +164,19 @@ interface Node : EquatableSemantics<Node>
             public IfClause If => @if;
             public IReadOnlyCollection<ElseIfClause> ElseIfs => @elseIf;
             public Option<ElseClause> Else => @else;
+
             public override bool SemanticsEqual(Node other) => other is Alternative o
              && o.If.SemanticsEqual(If)
              && o.ElseIfs.AllSemanticsEqual(ElseIfs)
              && o.Else.OptionSemanticsEqual(Else);
+
             internal sealed class IfClause(SourceTokens sourceTokens,
                 Expression condition,
                 IReadOnlyCollection<Statement> block)
             : BlockNode(sourceTokens, block)
             {
                 public Expression Condition => condition;
+
                 public override bool SemanticsEqual(Node other) => other is IfClause o
                  && o.Condition.SemanticsEqual(Condition)
                  && o.Block.AllSemanticsEqual(Block);
@@ -175,6 +188,7 @@ interface Node : EquatableSemantics<Node>
             : BlockNode(sourceTokens, block)
             {
                 public Expression Condition => condition;
+
                 public override bool SemanticsEqual(Node other) => other is ElseIfClause o
                  && o.Condition.SemanticsEqual(Condition)
                  && o.Block.AllSemanticsEqual(Block);
@@ -198,16 +212,19 @@ interface Node : EquatableSemantics<Node>
             public Expression Expression => expression;
             public IReadOnlyCollection<Case> Cases => cases;
             public Option<DefaultCase> Default => @default;
+
             public override bool SemanticsEqual(Node other) => other is Switch o
                  && o.Expression.SemanticsEqual(Expression)
                  && o.Cases.AllSemanticsEqual(Cases)
                  && o.Default.OptionSemanticsEqual(Default);
+
             internal sealed class Case(SourceTokens sourceTokens,
                 Expression when,
                 IReadOnlyCollection<Statement> block)
             : BlockNode(sourceTokens, block)
             {
                 public Expression When => when;
+
                 public override bool SemanticsEqual(Node other) => other is Case o
                  && o.When.SemanticsEqual(When)
                  && o.Block.AllSemanticsEqual(Block);
@@ -229,6 +246,7 @@ interface Node : EquatableSemantics<Node>
         {
             public Expression.Lvalue Target => target;
             public Expression Value => value;
+
             public override bool SemanticsEqual(Node other) => other is Assignment o
              && o.Target.SemanticsEqual(Target)
              && o.Value.SemanticsEqual(Value);
@@ -240,6 +258,7 @@ interface Node : EquatableSemantics<Node>
         : BlockNode(sourceTokens, block), Statement
         {
             public Expression Condition => condition;
+
             public override bool SemanticsEqual(Node other) => other is DoWhileLoop o
              && o.Condition.SemanticsEqual(Condition)
                 && o.Block.AllSemanticsEqual(Block);
@@ -254,6 +273,7 @@ interface Node : EquatableSemantics<Node>
             {
                 public Expression ArgumentNomLog => argumentNomLog;
                 public Expression ArgumentExpression => argumentExpression;
+
                 public override bool SemanticsEqual(Node other) => other is Ecrire o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
                  && o.ArgumentExpression.SemanticsEqual(ArgumentExpression);
@@ -264,6 +284,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Builtin
             {
                 public Expression ArgumentNomLog => argumentNomLog;
+
                 public override bool SemanticsEqual(Node other) => other is Fermer o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
@@ -275,6 +296,7 @@ interface Node : EquatableSemantics<Node>
             {
                 public Expression ArgumentNomLog => argumentNomLog;
                 public Expression ArgumentVariable => argumentVariable;
+
                 public override bool SemanticsEqual(Node other) => other is Lire o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
                  && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
@@ -285,6 +307,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Builtin
             {
                 public Expression ArgumentNomLog => argumentNomLog;
+
                 public override bool SemanticsEqual(Node other) => other is OuvrirAjout o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
@@ -294,6 +317,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Builtin
             {
                 public Expression ArgumentNomLog => argumentNomLog;
+
                 public override bool SemanticsEqual(Node other) => other is OuvrirEcriture o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
@@ -303,6 +327,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Builtin
             {
                 public Expression ArgumentNomLog => argumentNomLog;
+
                 public override bool SemanticsEqual(Node other) => other is OuvrirLecture o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
@@ -314,6 +339,7 @@ interface Node : EquatableSemantics<Node>
             {
                 public Expression.Lvalue ArgumentNomLog => argumentNomLog;
                 public Expression ArgumentNomExt => argumentNomExt;
+
                 public override bool SemanticsEqual(Node other) => other is Assigner o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
                  && o.ArgumentNomExt.SemanticsEqual(ArgumentNomExt);
@@ -324,6 +350,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Builtin
             {
                 public IReadOnlyCollection<Expression> Arguments => arguments;
+
                 public override bool SemanticsEqual(Node other) => other is EcrireEcran o
                  && o.Arguments.AllSemanticsEqual(Arguments);
             }
@@ -333,6 +360,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Builtin
             {
                 public Expression ArgumentVariable => argumentVariable;
+
                 public override bool SemanticsEqual(Node other) => other is LireClavier o
                  && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
             }
@@ -350,6 +378,7 @@ interface Node : EquatableSemantics<Node>
             public Expression Start => start;
             public Expression End => end;
             public Option<Expression> Step => step;
+
             public override bool SemanticsEqual(Node other) => other is ForLoop o
              && o.Variant.SemanticsEqual(Variant)
              && o.Start.SemanticsEqual(Start)
@@ -357,6 +386,7 @@ interface Node : EquatableSemantics<Node>
              && o.Step.OptionSemanticsEqual(Step)
              && o.Block.AllSemanticsEqual(Block);
         }
+
         internal sealed class ProcedureCall(SourceTokens sourceTokens,
             Identifier name,
             IReadOnlyCollection<ParameterActual> parameters)
@@ -364,6 +394,7 @@ interface Node : EquatableSemantics<Node>
         {
             public Identifier Name => name;
             public IReadOnlyCollection<ParameterActual> Parameters => parameters;
+
             public override bool SemanticsEqual(Node other) => other is ProcedureCall o
              && o.Name.SemanticsEqual(Name)
              && o.Parameters.AllSemanticsEqual(Parameters);
@@ -375,6 +406,7 @@ interface Node : EquatableSemantics<Node>
         : BlockNode(sourceTokens, block), Statement
         {
             public Expression Condition => condition;
+
             public override bool SemanticsEqual(Node other) => other is RepeatLoop o
              && o.Condition.SemanticsEqual(Condition)
              && o.Block.AllSemanticsEqual(Block);
@@ -385,6 +417,7 @@ interface Node : EquatableSemantics<Node>
         : NodeImpl(sourceTokens), Statement
         {
             public Expression Value => value;
+
             public override bool SemanticsEqual(Node other) => other is Return o
              && o.Value.SemanticsEqual(Value);
         }
@@ -396,6 +429,7 @@ interface Node : EquatableSemantics<Node>
         {
             public IReadOnlyCollection<Identifier> Names => names;
             public Type Type => type;
+
             public override bool SemanticsEqual(Node other) => other is LocalVariable o
              && o.Names.AllSemanticsEqual(Names)
              && o.Type.SemanticsEqual(Type);
@@ -407,6 +441,7 @@ interface Node : EquatableSemantics<Node>
         : BlockNode(sourceTokens, block), Statement
         {
             public Expression Condition => condition;
+
             public override bool SemanticsEqual(Node other) => other is WhileLoop o
              && o.Condition.SemanticsEqual(Condition)
              && o.Block.AllSemanticsEqual(Block);
@@ -424,6 +459,7 @@ interface Node : EquatableSemantics<Node>
             {
                 public Expression Structure => structure;
                 public Identifier ComponentName => componentName;
+
                 public override bool SemanticsEqual(Node other) => other is ComponentAccess o
                  && o.Structure.SemanticsEqual(Structure)
                  && o.ComponentName.SemanticsEqual(ComponentName);
@@ -450,6 +486,7 @@ interface Node : EquatableSemantics<Node>
             {
                 public Expression Array => array;
                 public IReadOnlyCollection<Expression> Indexes => indexes;
+
                 public override bool SemanticsEqual(Node other) => other is ArraySubscript o
                  && o.Array.SemanticsEqual(Array)
                  && o.Indexes.AllSemanticsEqual(Indexes);
@@ -460,6 +497,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Lvalue
             {
                 public Identifier Name => name;
+
                 public override bool SemanticsEqual(Node other) => other is VariableReference o
                  && o.Name.SemanticsEqual(Name);
             }
@@ -472,6 +510,7 @@ interface Node : EquatableSemantics<Node>
         {
             public UnaryOperator Operator => @operator;
             public Expression Operand => operand;
+
             public override bool SemanticsEqual(Node other) => other is UnaryOperation o
              && o.Operator == Operator
              && o.Operand.SemanticsEqual(Operand);
@@ -486,6 +525,7 @@ interface Node : EquatableSemantics<Node>
             public Expression Left => left;
             public BinaryOperator Operator => @operator;
             public Expression Right => right;
+
             public override bool SemanticsEqual(Node other) => other is BinaryOperation o
              && o.Left.SemanticsEqual(Left)
              && o.Operator == Operator
@@ -497,6 +537,7 @@ interface Node : EquatableSemantics<Node>
         : NodeImpl(sourceTokens), Expression
         {
             public Expression ArgumentNomLog => argumentNomLog;
+
             public override bool SemanticsEqual(Node other) => other is BuiltinFdf o
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
         }
@@ -508,6 +549,7 @@ interface Node : EquatableSemantics<Node>
         {
             public Identifier Name => name;
             public IReadOnlyCollection<ParameterActual> Parameters => parameters;
+
             public override bool SemanticsEqual(Node other) => other is FunctionCall o
              && o.Name.SemanticsEqual(Name)
              && o.Parameters.AllSemanticsEqual(Parameters);
@@ -519,6 +561,7 @@ interface Node : EquatableSemantics<Node>
         {
             public Expression ContainedExpression { get; } = expression is NodeBracketedExpression b
                                                            ? b.ContainedExpression : expression;
+
             public override bool SemanticsEqual(Node other) => other is Bracketed o
              && o.ContainedExpression.SemanticsEqual(ContainedExpression);
         }
@@ -526,10 +569,12 @@ interface Node : EquatableSemantics<Node>
         internal interface Literal : Expression
         {
             public ConstantValue Value { get; }
+
             internal sealed class True(SourceTokens sourceTokens)
     : NodeImpl(sourceTokens), Expression, Literal
             {
                 public ConstantValue Value { get; } = new ConstantValue.Boolean(true);
+
                 public override bool SemanticsEqual(Node other) => other is True;
             }
 
@@ -537,6 +582,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Expression, Literal
             {
                 public ConstantValue Value { get; } = new ConstantValue.Boolean(false);
+
                 public override bool SemanticsEqual(Node other) => other is False;
             }
 
@@ -545,6 +591,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Literal
             {
                 public ConstantValue Value { get; } = new ConstantValue.Character(char.Parse(valueStr));
+
                 public override bool SemanticsEqual(Node other) => other is Character o
                  && o.Value == Value;
             }
@@ -554,6 +601,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Literal
             {
                 public ConstantValue Value { get; } = new ConstantValue.Integer(int.Parse(valueStr, CultureInfo.InvariantCulture));
+
                 public override bool SemanticsEqual(Node other) => other is Integer o
                  && o.Value == Value;
             }
@@ -563,6 +611,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Literal
             {
                 public ConstantValue Value { get; } = new ConstantValue.Real(decimal.Parse(valueStr, CultureInfo.InvariantCulture));
+
                 public override bool SemanticsEqual(Node other) => other is Real o
                  && o.Value == Value;
             }
@@ -572,6 +621,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Literal
             {
                 public ConstantValue Value { get; } = new ConstantValue.String(valueStr);
+
                 public override bool SemanticsEqual(Node other) => other is String o
                  && o.Value == Value;
             }
@@ -585,6 +635,7 @@ interface Node : EquatableSemantics<Node>
         : NodeImpl(sourceTokens), Type, NodeAliasReference
         {
             public Identifier Name => name;
+
             public override bool SemanticsEqual(Node other) => other is AliasReference o
              && o.Name.SemanticsEqual(Name);
         }
@@ -604,6 +655,7 @@ interface Node : EquatableSemantics<Node>
             {
                 public Type Type => type;
                 public IReadOnlyCollection<Expression> Dimensions => dimensions;
+
                 public override bool SemanticsEqual(Node other) => other is Array o
                  && o.Type.SemanticsEqual(Type)
                  && o.Dimensions.AllSemanticsEqual(Dimensions);
@@ -632,6 +684,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Complete
             {
                 public NumericType Type => type;
+
                 public override bool SemanticsEqual(Node other) => other is Numeric o
                  && o.Type == Type;
             }
@@ -641,6 +694,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Complete, NodeAliasReference
             {
                 public Identifier Name => name;
+
                 public override bool SemanticsEqual(Node other) => other is AliasReference o
                  && o.Name.SemanticsEqual(Name);
             }
@@ -650,6 +704,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Complete
             {
                 public Expression Length => length;
+
                 public override bool SemanticsEqual(Node other) => other is LengthedString o
                  && o.Length.SemanticsEqual(Length);
             }
@@ -659,6 +714,7 @@ interface Node : EquatableSemantics<Node>
             : NodeImpl(sourceTokens), Complete
             {
                 public IReadOnlyCollection<Statement.LocalVariable> Components => components;
+
                 public override bool SemanticsEqual(Node other) => other is Structure o
                  && o.Components.AllSemanticsEqual(Components);
             }
@@ -672,6 +728,7 @@ interface Node : EquatableSemantics<Node>
     {
         public ParameterMode Mode => mode;
         public Expression Value => value;
+
         public override bool SemanticsEqual(Node other) => other is ParameterActual o
          && o.Mode == Mode
          && o.Value.SemanticsEqual(Value);
@@ -686,6 +743,7 @@ interface Node : EquatableSemantics<Node>
         public ParameterMode Mode => mode;
         public Identifier Name => name;
         public Type Type => type;
+
         public override bool SemanticsEqual(Node other) => other is ParameterFormal o
          && o.Mode == Mode
          && o.Name.SemanticsEqual(Name)
@@ -699,6 +757,7 @@ interface Node : EquatableSemantics<Node>
     {
         public Identifier Name => name;
         public IReadOnlyCollection<ParameterFormal> Parameters => parameters;
+
         public override bool SemanticsEqual(Node other) => other is ProcedureSignature o
          && o.Name.SemanticsEqual(Name)
          && o.Parameters.AllSemanticsEqual(Parameters);
@@ -713,6 +772,7 @@ interface Node : EquatableSemantics<Node>
         public Identifier Name => name;
         public IReadOnlyCollection<ParameterFormal> Parameters => parameters;
         public Type ReturnType => returnType;
+
         public override bool SemanticsEqual(Node other) => other is FunctionSignature o
          && o.Name.SemanticsEqual(Name)
          && o.Parameters.AllSemanticsEqual(Parameters)
@@ -721,6 +781,7 @@ interface Node : EquatableSemantics<Node>
 }
 
 #region Terminals
+
 sealed class ParameterMode
 {
     ParameterMode(string formal, string actual)
@@ -750,6 +811,7 @@ sealed class Identifier : NodeImpl, IEquatable<Identifier?>
     }
 
     public string Name { get; }
+
     public override string ToString() => Name;
 
     public override bool SemanticsEqual(Node other) => other is Identifier o
@@ -757,7 +819,9 @@ sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 
     // Equals and GetHashCode implementation for usage in dictionaries.
     public override bool Equals(object? obj) => Equals(obj as Identifier);
+
     public bool Equals(Identifier? other) => other is not null && other.Name == Name;
+
     public override int GetHashCode() => Name.GetHashCode();
 }
 
@@ -766,5 +830,6 @@ sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 abstract class NodeImpl(SourceTokens sourceTokens) : Node
 {
     public SourceTokens SourceTokens => sourceTokens;
+
     public abstract bool SemanticsEqual(Node other);
 }

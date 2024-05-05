@@ -1,4 +1,3 @@
-
 using System.Text.RegularExpressions;
 
 namespace Scover.Psdc.Tokenization;
@@ -7,118 +6,29 @@ abstract class TokenType
 {
     readonly string _repr;
 
-    public override string ToString() => _repr;
-
     TokenType(string repr, bool isStatic)
      => _repr = isStatic ? $"`{repr}`" : repr;
 
     internal interface Ruled
     {
         public TokenRule Rule { get; }
+
         public Option<Token> TryExtract(string code, int startIndex);
     }
 
-    internal abstract class Ruled<T>(string repr, bool isStatic, T rule)
-    : TokenType(repr, isStatic), Ruled where T : TokenRule
-    {
-        public Option<Token> TryExtract(string code, int startIndex) => rule.TryExtract(this, code, startIndex);
-        public T Rule => rule;
-        TokenRule Ruled.Rule => rule;
-    }
-
-    internal sealed class Valued : Ruled<RegexTokenRule>
-    {
-        Valued(string name, string pattern, RegexOptions options = RegexOptions.None)
-        : base(name, false, new(pattern, options)) => instances.Add(this);
-
-        static readonly List<Valued> instances = [];
-        public static IReadOnlyCollection<Valued> Instances => instances;
-
-        public static Valued CommentMultiline { get; } = new("multiline comment", @"/\*(.*?)\*/", RegexOptions.Singleline);
-        public static Valued CommentSingleline { get; } = new("singleline comment", "//(.*)$", RegexOptions.Multiline);
-        public static Valued Identifier { get; } = new("identifier", @"([\p{L}_][\p{L}_0-9]*)");
-        public static Valued LiteralCharacter { get; } = new("character literal", "'(.)'");
-        public static Valued LiteralInteger { get; } = new("integer literal", @"(\d+)");
-        public static Valued LiteralReal { get; } = new("real literal", @"(\d*\.\d+)");
-        public static Valued LiteralString { get; } = new("string literal", @"""(.*?)""");
-    }
-
-    internal sealed class Operator : Ruled<StringTokenRule>
-    {
-        Operator(string code)
-        : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
-         => instances.Add(this);
-
-        static readonly List<Operator> instances = [];
-        public static IReadOnlyCollection<Operator> Instances => instances;
-
-        public static Operator Assignment { get; } = new(":=");
-        public static Operator ComponentAccess { get; } = new(".");
-        public static Operator TypeAssignment { get; } = new("=");
-
-        #region Arithmetic
-
-        public static Operator Divide { get; } = new("/");
-        public static Operator Subtract { get; } = new("-");
-        public static Operator Mod { get; } = new("%");
-        public static Operator Multiply { get; } = new("*");
-        public static Operator Add { get; } = new("+");
-
-        #endregion Arithmetic
-
-        #region Logical
-
-        public static Operator And { get; } = new("ET");
-        public static Operator Not { get; } = new("NON");
-        public static Operator Or { get; } = new("OU");
-        public static Operator Xor { get; } = new("XOR");
-
-        #endregion Logical
-
-        #region Comparison
-
-        public static Operator Equal { get; } = new("==");
-        public static Operator GreaterThan { get; } = new(">");
-        public static Operator GreaterThanOrEqual { get; } = new(">=");
-        public static Operator LessThan { get; } = new("<");
-        public static Operator LessThanOrEqual { get; } = new("<=");
-        public static Operator NotEqual { get; } = new("!=");
-
-        #endregion Comparison
-    }
-
-    internal sealed class Punctuation : Ruled<StringTokenRule>
-    {
-        Punctuation(string code)
-        : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
-         => instances.Add(this);
-
-        static List<Punctuation> instances = [];
-        public static IReadOnlyCollection<Punctuation> Instances => instances;
-
-        public static Punctuation CloseBrace { get; } = new("}");
-        public static Punctuation CloseBracket { get; } = new(")");
-        public static Punctuation CloseSquareBracket { get; } = new("]");
-        public static Punctuation OpenBrace { get; } = new("{");
-        public static Punctuation OpenBracket { get; } = new("(");
-        public static Punctuation OpenSquareBracket { get; } = new("[");
-        public static Punctuation Arrow { get; } = new("=>");
-        public static Punctuation Colon { get; } = new(":");
-        public static Punctuation Comma { get; } = new(",");
-        public static Punctuation Semicolon { get; } = new(";");
-    }
+    public override string ToString() => _repr;
 
     internal sealed class Keyword : Ruled<WordTokenRule>
     {
-        Keyword(string word)
-        : base(word, true, new WordTokenRule(word, StringComparison.Ordinal))
-         => instances.Add(this);
-
         static readonly List<Keyword> instances = [];
-        public static IReadOnlyCollection<Keyword> Instances => instances;
+
+        Keyword(string word)
+                : base(word, true, new WordTokenRule(word, StringComparison.Ordinal))
+         => instances.Add(this);
 
         public static Keyword Begin { get; } = new("début");
         public static Keyword End { get; } = new("fin");
+        public static IReadOnlyCollection<Keyword> Instances => instances;
         public static Keyword Is { get; } = new("c'est");
         public static Keyword Program { get; } = new("programme");
         public static Keyword Structure { get; } = new("structure");
@@ -136,13 +46,12 @@ abstract class TokenType
 
         #region Types
 
+        public static Keyword Boolean { get; } = new("booléen");
+        public static Keyword Character { get; } = new("caractère");
+        public static Keyword File { get; } = new("nomFichierLog");
         public static Keyword Integer { get; } = new("entier");
         public static Keyword Real { get; } = new("réel");
-        public static Keyword Character { get; } = new("caractère");
         public static Keyword String { get; } = new("chaîne");
-        public static Keyword Boolean { get; } = new("booléen");
-        public static Keyword File { get; } = new("nomFichierLog");
-
         #endregion Types
 
         #region Callables
@@ -156,17 +65,16 @@ abstract class TokenType
 
         #region Builtins
 
-        public static Keyword LireClavier { get; } = new("lireClavier");
-        public static Keyword EcrireEcran { get; } = new("écrireEcran");
         public static Keyword Assigner { get; } = new("assigner");
+        public static Keyword Ecrire { get; } = new("écrire");
+        public static Keyword EcrireEcran { get; } = new("écrireEcran");
+        public static Keyword Fdf { get; } = new("FdF");
+        public static Keyword Fermer { get; } = new("fermer");
+        public static Keyword Lire { get; } = new("lire");
+        public static Keyword LireClavier { get; } = new("lireClavier");
         public static Keyword OuvrirAjout { get; } = new("ouvrirAjout");
         public static Keyword OuvrirEcriture { get; } = new("ouvrirEcriture");
         public static Keyword OuvrirLecture { get; } = new("ouvrirLecture");
-        public static Keyword Lire { get; } = new("lire");
-        public static Keyword Ecrire { get; } = new("écrire");
-        public static Keyword Fermer { get; } = new("fermer");
-        public static Keyword Fdf { get; } = new("FdF");
-
         #endregion Builtins
 
         #region Control structures
@@ -194,13 +102,87 @@ abstract class TokenType
         #region Parameters
 
         public static Keyword EntE { get; } = new("entE");
-        public static Keyword EntSortE { get; } = new("entE/sortE");
         public static Keyword EntF { get; } = new("entF");
+        public static Keyword EntSortE { get; } = new("entE/sortE");
         public static Keyword EntSortF { get; } = new("entF/sortF");
         public static Keyword SortE { get; } = new("sortE");
         public static Keyword SortF { get; } = new("sortF");
 
         #endregion Parameters
+    }
+
+    internal sealed class Operator : Ruled<StringTokenRule>
+    {
+        static readonly List<Operator> instances = [];
+
+        Operator(string code)
+                : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
+         => instances.Add(this);
+
+        public static Operator Assignment { get; } = new(":=");
+        public static Operator ComponentAccess { get; } = new(".");
+        public static IReadOnlyCollection<Operator> Instances => instances;
+        public static Operator TypeAssignment { get; } = new("=");
+
+        #region Arithmetic
+
+        public static Operator Add { get; } = new("+");
+        public static Operator Divide { get; } = new("/");
+        public static Operator Mod { get; } = new("%");
+        public static Operator Multiply { get; } = new("*");
+        public static Operator Subtract { get; } = new("-");
+        #endregion Arithmetic
+
+        #region Logical
+
+        public static Operator And { get; } = new("ET");
+        public static Operator Not { get; } = new("NON");
+        public static Operator Or { get; } = new("OU");
+        public static Operator Xor { get; } = new("XOR");
+
+        #endregion Logical
+
+        #region Comparison
+
+        public static Operator Equal { get; } = new("==");
+        public static Operator GreaterThan { get; } = new(">");
+        public static Operator GreaterThanOrEqual { get; } = new(">=");
+        public static Operator LessThan { get; } = new("<");
+        public static Operator LessThanOrEqual { get; } = new("<=");
+        public static Operator NotEqual { get; } = new("!=");
+
+        #endregion Comparison
+    }
+
+    internal sealed class Punctuation : Ruled<StringTokenRule>
+    {
+        static readonly List<Punctuation> instances = [];
+
+        Punctuation(string code)
+                : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
+         => instances.Add(this);
+
+        public static Punctuation Arrow { get; } = new("=>");
+        public static Punctuation CloseBrace { get; } = new("}");
+        public static Punctuation CloseBracket { get; } = new(")");
+        public static Punctuation CloseSquareBracket { get; } = new("]");
+        public static Punctuation Colon { get; } = new(":");
+        public static Punctuation Comma { get; } = new(",");
+        public static IReadOnlyCollection<Punctuation> Instances => instances;
+        public static Punctuation OpenBrace { get; } = new("{");
+        public static Punctuation OpenBracket { get; } = new("(");
+        public static Punctuation OpenSquareBracket { get; } = new("[");
+        public static Punctuation Semicolon { get; } = new(";");
+    }
+
+    internal abstract class Ruled<T>(string repr, bool isStatic, T rule)
+                : TokenType(repr, isStatic), Ruled where T : TokenRule
+    {
+        public T Rule => rule;
+
+        TokenRule Ruled.Rule => rule;
+
+        public Option<Token> TryExtract(string code, int startIndex) => rule.TryExtract(this, code, startIndex);
     }
 
     internal sealed class Special : TokenType
@@ -213,4 +195,20 @@ abstract class TokenType
         public static Special Eof { get; } = new("end of file");
     }
 
+    internal sealed class Valued : Ruled<RegexTokenRule>
+    {
+        static readonly List<Valued> instances = [];
+
+        Valued(string name, string pattern, RegexOptions options = RegexOptions.None)
+                : base(name, false, new(pattern, options)) => instances.Add(this);
+
+        public static Valued CommentMultiline { get; } = new("multiline comment", @"/\*(.*?)\*/", RegexOptions.Singleline);
+        public static Valued CommentSingleline { get; } = new("singleline comment", "//(.*)$", RegexOptions.Multiline);
+        public static Valued Identifier { get; } = new("identifier", @"([\p{L}_][\p{L}_0-9]*)");
+        public static IReadOnlyCollection<Valued> Instances => instances;
+        public static Valued LiteralCharacter { get; } = new("character literal", "'(.)'");
+        public static Valued LiteralInteger { get; } = new("integer literal", @"(\d+)");
+        public static Valued LiteralReal { get; } = new("real literal", @"(\d*\.\d+)");
+        public static Valued LiteralString { get; } = new("string literal", @"""(.*?)""");
+    }
 }

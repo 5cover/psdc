@@ -19,5 +19,4 @@ sealed class Indentation
         }
         return output;
     }
-
 }

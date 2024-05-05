@@ -1,25 +1,25 @@
+using Scover.Psdc.Messages;
 
 using static Scover.Psdc.Tokenization.TokenType;
-using static Scover.Psdc.Tokenization.TokenType.Valued;
 using static Scover.Psdc.Tokenization.TokenType.Special;
-using Scover.Psdc.Messages;
+using static Scover.Psdc.Tokenization.TokenType.Valued;
 
 namespace Scover.Psdc.Tokenization;
 
 sealed class Tokenizer(Messenger messenger, string code)
 {
+    static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
+
     static readonly IReadOnlyList<Ruled> rules =
         // Variable length
         new List<Ruled> { CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter, }
-        // Maximal munch
-        .Concat(Keyword.Instances.OrderByDescending(type => type.Rule.Expected.Length))
-        .Concat(Enumerable.Concat<Ruled<StringTokenRule>>(Punctuation.Instances, Operator.Instances)
-                .OrderByDescending(type => type.Rule.Expected.Length))
-        // Identifiers last
-        .Append(Identifier)
-        .ToList();
-
-    static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
+    // Maximal munch
+    .Concat(Keyword.Instances.OrderByDescending(type => type.Rule.Expected.Length))
+    .Concat(Enumerable.Concat<Ruled<StringTokenRule>>(Punctuation.Instances, Operator.Instances)
+            .OrderByDescending(type => type.Rule.Expected.Length))
+    // Identifiers last
+    .Append(Identifier)
+    .ToList();
 
     readonly string _code = code;
 

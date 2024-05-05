@@ -1,8 +1,10 @@
 using System.Text;
+
 using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
+
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
@@ -26,17 +28,6 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
 
     #region Declarations
 
-    StringBuilder AppendDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration decl) => decl switch {
-        Declaration.TypeAlias alias => AppendAliasDeclaration(o, scope, alias),
-        Declaration.Constant constant => AppendConstant(o, constant),
-        Declaration.MainProgram mainProgram => AppendMainProgram(o, mainProgram),
-        Declaration.Function func => AppendFunctionDeclaration(o, scope, func),
-        Declaration.Procedure proc => AppendProcedureDeclaration(o, scope, proc),
-        Declaration.FunctionDefinition funcDef => AppendFunctionDefinition(o, scope, funcDef),
-        Declaration.ProcedureDefinition procDef => AppendProcedureDefinition(o, scope, procDef),
-        _ => throw decl.ToUnmatchedException(),
-    };
-
     StringBuilder AppendAliasDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration.TypeAlias alias)
      => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).Map(alias => {
          var type = CreateTypeInfo(alias.TargetType);
@@ -49,6 +40,30 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
         return AppendExpression(o, constant.Value, GetPrecedence(constant.Value) > 1).AppendLine();
     }
 
+    StringBuilder AppendDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration decl) => decl switch {
+        Declaration.TypeAlias alias => AppendAliasDeclaration(o, scope, alias),
+        Declaration.Constant constant => AppendConstant(o, constant),
+        Declaration.MainProgram mainProgram => AppendMainProgram(o, mainProgram),
+        Declaration.Function func => AppendFunctionDeclaration(o, scope, func),
+        Declaration.Procedure proc => AppendProcedureDeclaration(o, scope, proc),
+        Declaration.FunctionDefinition funcDef => AppendFunctionDefinition(o, scope, funcDef),
+        Declaration.ProcedureDefinition procDef => AppendProcedureDefinition(o, scope, procDef),
+        _ => throw decl.ToUnmatchedException(),
+    };
+
+    StringBuilder AppendFunctionDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration.Function func)
+     => scope.GetSymbol<Symbol.Function>(func.Signature.Name)
+    .Map(sig => AppendFunctionSignature(o, sig).AppendLine(";")).ValueOr(o);
+
+    StringBuilder AppendFunctionDefinition(StringBuilder o, ReadOnlyScope scope, Declaration.FunctionDefinition funcDef)
+    => scope.GetSymbol<Symbol.Function>(funcDef.Signature.Name).Map(sig => {
+        AppendFunctionSignature(o.AppendLine(), sig);
+        return AppendBlock(o.Append(' '), funcDef).AppendLine();
+    }).ValueOr(o);
+
+    StringBuilder AppendFunctionSignature(StringBuilder o, Symbol.Function func)
+     => AppendSignature(o, CreateTypeInfo(func.ReturnType).Generate(), func.Name, func.Parameters);
+
     StringBuilder AppendMainProgram(StringBuilder o, Declaration.MainProgram mainProgram)
     {
         Indent(o.AppendLine()).Append("int main() ");
@@ -57,28 +72,15 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
         .AppendLine();
     }
 
-    StringBuilder AppendFunctionDefinition(StringBuilder o, ReadOnlyScope scope, Declaration.FunctionDefinition funcDef)
-    => scope.GetSymbol<Symbol.Function>(funcDef.Signature.Name).Map(sig => {
-        AppendFunctionSignature(o.AppendLine(), sig);
-        return AppendBlock(o.Append(' '), funcDef).AppendLine();
-    }).ValueOr(o);
-
-    StringBuilder AppendProcedureDefinition(StringBuilder o, ReadOnlyScope scope, Declaration.ProcedureDefinition procDef)
-    => scope.GetSymbol<Symbol.Procedure>(procDef.Signature.Name).Map(sig => {
-        AppendProcedureSignature(o.AppendLine(), sig);
-        return AppendBlock(o.Append(' '), procDef).AppendLine();
-    }).ValueOr(o);
-
-    StringBuilder AppendFunctionDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration.Function func)
-     => scope.GetSymbol<Symbol.Function>(func.Signature.Name)
-    .Map(sig => AppendFunctionSignature(o, sig).AppendLine(";")).ValueOr(o);
-
     StringBuilder AppendProcedureDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration.Procedure proc)
      => scope.GetSymbol<Symbol.Procedure>(proc.Signature.Name)
      .Map(sig => AppendProcedureSignature(o, sig).AppendLine(";")).ValueOr(o);
 
-    StringBuilder AppendFunctionSignature(StringBuilder o, Symbol.Function func)
-     => AppendSignature(o, CreateTypeInfo(func.ReturnType).Generate(), func.Name, func.Parameters);
+    StringBuilder AppendProcedureDefinition(StringBuilder o, ReadOnlyScope scope, Declaration.ProcedureDefinition procDef)
+        => scope.GetSymbol<Symbol.Procedure>(procDef.Signature.Name).Map(sig => {
+            AppendProcedureSignature(o.AppendLine(), sig);
+            return AppendBlock(o.Append(' '), procDef).AppendLine();
+        }).ValueOr(o);
 
     StringBuilder AppendProcedureSignature(StringBuilder o, Symbol.Procedure proc)
      => AppendSignature(o, "void", proc.Name, proc.Parameters);
@@ -113,61 +115,6 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
 
     #region Statements
 
-    StringBuilder AppendStatement(StringBuilder o, ReadOnlyScope scope, Statement stmt) => stmt switch {
-        // don't generate Nop statements
-        // their only usage statement in C is in braceless control structures, but we don't have them, so they serve no purpose.
-        // In addition we make get them as a result of parsing errors.
-        Statement.Nop => o,
-        Statement.Alternative alt => AppendAlternative(o, alt),
-        Statement.Builtin builtin => AppendBuiltin(o, builtin),
-        Statement.Assignment assignment => AppendAssignment(o, assignment),
-        Statement.DoWhileLoop doWhile => AppendDoWhileLoop(o, doWhile),
-        Statement.ForLoop @for => AppendForLoop(o, @for),
-        Statement.ProcedureCall call => AppendCall(Indent(o), call).AppendLine(";"),
-        Statement.RepeatLoop repeat => AppendRepeatLoop(o, repeat),
-        Statement.Return ret => AppendReturn(o, ret),
-        Statement.Switch @switch => AppendSwitch(o, @switch),
-        Statement.LocalVariable varDecl => AppendVariableDeclaration(o, varDecl, scope),
-        Statement.WhileLoop whileLoop => AppendWhileLoop(o, whileLoop),
-        _ => throw stmt.ToUnmatchedException(),
-    };
-
-    StringBuilder AppendBuiltin(StringBuilder o, Statement.Builtin builtin) => builtin switch {
-        Statement.Builtin.EcrireEcran ee => AppendEcrireEcran(o, ee),
-        Statement.Builtin.LireClavier lc => AppendLireClavier(o, lc),
-        _ => throw builtin.ToUnmatchedException(),
-    };
-
-    StringBuilder AppendEcrireEcran(StringBuilder o, Statement.Builtin.EcrireEcran ecrireEcran)
-    {
-        _includes.Ensure(IncludeSet.StdIo);
-
-        var (format, arguments) = BuildFormatString(ecrireEcran.Arguments);
-
-        Indent(o).Append($@"printf(""{format}\n""");
-
-        foreach (Expression arg in arguments) {
-            AppendExpression(o.Append(", "), arg);
-        }
-
-        return o.AppendLine(");");
-    }
-
-    StringBuilder AppendLireClavier(StringBuilder o, Statement.Builtin.LireClavier lireClavier)
-    {
-        _includes.Ensure(IncludeSet.StdIo);
-
-        var (format, arguments) = BuildFormatString(lireClavier.ArgumentVariable.Yield());
-
-        Indent(o).Append($@"scanf(""{format}""");
-
-        foreach (Expression arg in arguments) {
-            AppendExpression(o.Append(", &"), arg);
-        }
-
-        return o.AppendLine(");");
-    }
-
     StringBuilder AppendAlternative(StringBuilder o, Statement.Alternative alternative)
     {
         AppendAlternativeClause(Indent(o), "if", alternative.If.Condition, alternative.If);
@@ -194,6 +141,15 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
         }
     }
 
+    StringBuilder AppendAssignment(StringBuilder o, Statement.Assignment assignment)
+    {
+        Indent(o);
+        AppendExpression(o, assignment.Target);
+        o.Append(" = ");
+        AppendExpression(o, assignment.Value);
+        return o.AppendLine(";");
+    }
+
     StringBuilder AppendBlock(StringBuilder o, BlockNode node, Action<StringBuilder>? suffix = null)
     {
         o.AppendLine("{");
@@ -215,14 +171,100 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
         return o;
     }
 
-    StringBuilder AppendAssignment(StringBuilder o, Statement.Assignment assignment)
+    StringBuilder AppendBuiltin(StringBuilder o, Statement.Builtin builtin) => builtin switch {
+        Statement.Builtin.EcrireEcran ee => AppendEcrireEcran(o, ee),
+        Statement.Builtin.LireClavier lc => AppendLireClavier(o, lc),
+        _ => throw builtin.ToUnmatchedException(),
+    };
+
+    StringBuilder AppendDoWhileLoop(StringBuilder o, Statement.DoWhileLoop doWhileLoop)
     {
-        Indent(o);
-        AppendExpression(o, assignment.Target);
-        o.Append(" = ");
-        AppendExpression(o, assignment.Value);
+        Indent(o).Append("do ");
+        AppendBlock(o, doWhileLoop).Append(" while ");
+        AppendBracketedExpression(o, doWhileLoop.Condition);
         return o.AppendLine(";");
     }
+
+    StringBuilder AppendEcrireEcran(StringBuilder o, Statement.Builtin.EcrireEcran ecrireEcran)
+    {
+        _includes.Ensure(IncludeSet.StdIo);
+
+        var (format, arguments) = BuildFormatString(ecrireEcran.Arguments);
+
+        Indent(o).Append($@"printf(""{format}\n""");
+
+        foreach (Expression arg in arguments) {
+            AppendExpression(o.Append(", "), arg);
+        }
+
+        return o.AppendLine(");");
+    }
+
+    StringBuilder AppendForLoop(StringBuilder o, Statement.ForLoop forLoop)
+    {
+        Indent(o);
+        AppendExpression(o.Append("for ("), forLoop.Variant).Append(" = ");
+        AppendExpression(o, forLoop.Start);
+
+        AppendExpression(o.Append("; "), forLoop.Variant).Append(" <= ");
+        AppendExpression(o, forLoop.End);
+
+        AppendExpression(o.Append("; "), forLoop.Variant);
+        forLoop.Step.Match(
+            step => AppendExpression(o.Append(" += "), step),
+            none: () => o.Append("++"));
+
+        return AppendBlock(o.Append(") "), forLoop).AppendLine();
+    }
+
+    StringBuilder AppendLireClavier(StringBuilder o, Statement.Builtin.LireClavier lireClavier)
+    {
+        _includes.Ensure(IncludeSet.StdIo);
+
+        var (format, arguments) = BuildFormatString(lireClavier.ArgumentVariable.Yield());
+
+        Indent(o).Append($@"scanf(""{format}""");
+
+        foreach (Expression arg in arguments) {
+            AppendExpression(o.Append(", &"), arg);
+        }
+
+        return o.AppendLine(");");
+    }
+
+    StringBuilder AppendRepeatLoop(StringBuilder o, Statement.RepeatLoop repeatLoop)
+    {
+        Indent(o).Append("do ");
+        AppendBlock(o, repeatLoop).Append(" while (!");
+        AppendBracketedExpression(o, repeatLoop.Condition);
+        return o.AppendLine(");");
+    }
+
+    StringBuilder AppendReturn(StringBuilder o, Statement.Return ret)
+    {
+        Indent(o).Append($"return ");
+        AppendExpression(o, ret.Value);
+        return o.AppendLine(";");
+    }
+
+    StringBuilder AppendStatement(StringBuilder o, ReadOnlyScope scope, Statement stmt) => stmt switch {
+        // don't generate Nop statements
+        // their only usage statement in C is in braceless control structures, but we don't have them, so they serve no purpose.
+        // In addition we make get them as a result of parsing errors.
+        Statement.Nop => o,
+        Statement.Alternative alt => AppendAlternative(o, alt),
+        Statement.Builtin builtin => AppendBuiltin(o, builtin),
+        Statement.Assignment assignment => AppendAssignment(o, assignment),
+        Statement.DoWhileLoop doWhile => AppendDoWhileLoop(o, doWhile),
+        Statement.ForLoop @for => AppendForLoop(o, @for),
+        Statement.ProcedureCall call => AppendCall(Indent(o), call).AppendLine(";"),
+        Statement.RepeatLoop repeat => AppendRepeatLoop(o, repeat),
+        Statement.Return ret => AppendReturn(o, ret),
+        Statement.Switch @switch => AppendSwitch(o, @switch),
+        Statement.LocalVariable varDecl => AppendVariableDeclaration(o, varDecl, scope),
+        Statement.WhileLoop whileLoop => AppendWhileLoop(o, whileLoop),
+        _ => throw stmt.ToUnmatchedException(),
+    };
 
     StringBuilder AppendSwitch(StringBuilder o, Statement.Switch @switch)
     {
@@ -259,8 +301,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
         foreach (string header in type.RequiredHeaders) {
             _includes.Ensure(header);
         }
-        o.Append(type.GenerateDeclaration(names));
-        return o;
+        return o.Append(type.GenerateDeclaration(names));
     }
 
     StringBuilder AppendWhileLoop(StringBuilder o, Statement.WhileLoop whileLoop)
@@ -270,52 +311,23 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
         return AppendBlock(o.Append(' '), whileLoop).AppendLine();
     }
 
-    StringBuilder AppendDoWhileLoop(StringBuilder o, Statement.DoWhileLoop doWhileLoop)
-    {
-        Indent(o).Append("do ");
-        AppendBlock(o, doWhileLoop).Append(" while ");
-        AppendBracketedExpression(o, doWhileLoop.Condition);
-        return o.AppendLine(";");
-    }
-
-    StringBuilder AppendRepeatLoop(StringBuilder o, Statement.RepeatLoop repeatLoop)
-    {
-        Indent(o).Append("do ");
-        AppendBlock(o, repeatLoop).Append(" while (!");
-        AppendBracketedExpression(o, repeatLoop.Condition);
-        return o.AppendLine(");");
-    }
-
-    StringBuilder AppendForLoop(StringBuilder o, Statement.ForLoop forLoop)
-    {
-        Indent(o);
-        AppendExpression(o.Append("for ("), forLoop.Variant).Append(" = ");
-        AppendExpression(o, forLoop.Start);
-
-        AppendExpression(o.Append("; "), forLoop.Variant).Append(" <= ");
-        AppendExpression(o, forLoop.End);
-
-        AppendExpression(o.Append("; "), forLoop.Variant);
-        forLoop.Step.Match(
-            step => AppendExpression(o.Append(" += "), step),
-            none: () => o.Append("++"));
-
-        return AppendBlock(o.Append(") "), forLoop).AppendLine();
-    }
-
-    StringBuilder AppendReturn(StringBuilder o, Statement.Return ret)
-    {
-        Indent(o).Append($"return ");
-        AppendExpression(o, ret.Value);
-        return o.AppendLine(";");
-    }
-
     #endregion Statements
 
     #region Expressions
 
+    StringBuilder AppendArraySubscript(StringBuilder o, Expression.Lvalue.ArraySubscript arrSub)
+    {
+        AppendExpression(o, arrSub.Array, ShouldBracket(arrSub));
+
+        foreach (Expression index in arrSub.Indexes) {
+            AppendExpression(o.Append('['), index.Alter(BinaryOperator.Subtract, 1)).Append(']');
+        }
+
+        return o;
+    }
+
     StringBuilder AppendBracketedExpression(StringBuilder o, Expression expr)
-     => AppendExpression(o, expr, expr is not NodeBracketedExpression);
+         => AppendExpression(o, expr, expr is not NodeBracketedExpression);
 
     StringBuilder AppendExpression(StringBuilder o, Expression expr, bool bracketed = false)
     {
@@ -323,7 +335,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
             o.Append('(');
         }
         _ = expr switch {
-            Expression.Bracketed b => AppendExpression(o, b.ContainedExpression, !bracketed),
+            NodeBracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracketed),
             Expression.FunctionCall call => AppendCall(o, call),
             Expression.Literal.Character litChar => o.Append($"'{FormatValue(litChar.Value)}'"),
             Expression.Literal.False l => AppendLiteralBoolean(l),
@@ -331,7 +343,6 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
             Expression.Literal.True l => AppendLiteralBoolean(l),
             Expression.Literal literal => o.Append(FormatValue(literal.Value)),
             Expression.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
-            Expression.Lvalue.Bracketed b => AppendExpression(o, b.ContainedLvalue, !bracketed),
             Expression.Lvalue.ComponentAccess compAccess
              => AppendExpression(o, compAccess.Structure, ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
             Expression.Lvalue.VariableReference variable => o.Append(variable.Name),
@@ -349,17 +360,6 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
             _includes.Ensure(IncludeSet.StdBool);
             return o.Append(FormatValue(l.Value));
         }
-    }
-
-    StringBuilder AppendArraySubscript(StringBuilder o, Expression.Lvalue.ArraySubscript arrSub)
-    {
-        AppendExpression(o, arrSub.Array, ShouldBracket(arrSub));
-
-        foreach (Expression index in arrSub.Indexes) {
-            AppendExpression(o.Append('['), index.Alter(BinaryOperator.Subtract, 1)).Append(']');
-        }
-
-        return o;
     }
 
     StringBuilder AppendOperationBinary(StringBuilder o, Expression.BinaryOperation opBin)
@@ -380,13 +380,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
 
     #region Helpers
 
-    StringBuilder AppendFileHeader(StringBuilder o) => o.AppendLine($"""
-        /** @file
-         * @brief {_ast.Root.Name}
-         * @author {Environment.UserName}
-         * @date {DateOnly.FromDateTime(DateTime.Now)}
-         */
-        """);
+    static bool RequiresPointer(ParameterMode mode) => mode != ParameterMode.In;
 
     StringBuilder AppendCall(StringBuilder o, NodeCall call)
     {
@@ -405,12 +399,18 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst
         return o.Append(')');
     }
 
+    StringBuilder AppendFileHeader(StringBuilder o) => o.AppendLine($"""
+        /** @file
+         * @brief {_ast.Root.Name}
+         * @author {Environment.UserName}
+         * @date {DateOnly.FromDateTime(DateTime.Now)}
+         */
+        """);
+
     TypeInfoC CreateTypeInfo(EvaluatedType evaluatedType)
      => TypeInfoC.Create(evaluatedType, expr => AppendExpression(new(), expr).ToString());
 
     StringBuilder Indent(StringBuilder o) => _indent.Indent(o);
-
-    static bool RequiresPointer(ParameterMode mode) => mode != ParameterMode.In;
 
     #endregion Helpers
 }

@@ -1,4 +1,5 @@
 using System.Collections;
+
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
@@ -7,6 +8,7 @@ class SourceTokens : IEnumerable<Token>
 {
     readonly Lazy<Range> _inputRange;
     readonly IEnumerable<Token> _tokens;
+
     public SourceTokens(IEnumerable<Token> tokens, int count)
     {
         Count = count;
@@ -26,5 +28,6 @@ class SourceTokens : IEnumerable<Token>
     public Range InputRange => _inputRange.Value;
 
     public IEnumerator<Token> GetEnumerator() => _tokens.GetEnumerator();
+
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_tokens).GetEnumerator();
 }

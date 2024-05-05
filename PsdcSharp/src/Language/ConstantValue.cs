@@ -9,40 +9,10 @@ enum OperationError
 interface ConstantValue
 {
     public EvaluatedType Type { get; }
+
     public Option<ConstantValue, OperationError> Operate(UnaryOperator op);
+
     public Option<ConstantValue, OperationError> Operate(BinaryOperator op, ConstantValue o);
-
-    internal readonly struct Integer(int val) : ConstantValue
-    {
-        public EvaluatedType Type => EvaluatedType.Numeric.GetInstance(NumericType.Integer);
-        public int Value => val;
-
-        public Option<ConstantValue, OperationError> Operate(UnaryOperator op) => (op switch {
-            UnaryOperator.Minus => new Integer(-val),
-            UnaryOperator.Plus => this,
-            _ => default(ConstantValue),
-        }).SomeNotNull(OperationError.UnsupportedOperator);
-
-        public Option<ConstantValue, OperationError> Operate(BinaryOperator op, ConstantValue other) => other is Integer o
-        ? op switch {
-            BinaryOperator.Divide => o.Value == 0
-                ? OperationError.DivisionByZero.None<ConstantValue, OperationError>()
-                : new Integer(val / o.Value).Some<ConstantValue, OperationError>(),
-            _ => (op switch {
-                BinaryOperator.Equal => new Boolean(val == o.Value),
-                BinaryOperator.GreaterThan => new Boolean(val > o.Value),
-                BinaryOperator.GreaterThanOrEqual => new Boolean(val >= o.Value),
-                BinaryOperator.LessThan => new Boolean(val < o.Value),
-                BinaryOperator.LessThanOrEqual => new Boolean(val <= o.Value),
-                BinaryOperator.Subtract => new Integer(val - o.Value),
-                BinaryOperator.Mod => new Integer(val % o.Value),
-                BinaryOperator.Multiply => new Integer(val * o.Value),
-                BinaryOperator.NotEqual => new Boolean(val != o.Value),
-                BinaryOperator.Add => new Integer(val + o.Value),
-                _ => default(ConstantValue),
-            }).SomeNotNull(OperationError.UnsupportedOperator),
-        } : OperationError.UnsupportedOperator.None<ConstantValue, OperationError>();
-    }
 
     internal readonly struct Boolean(bool val) : ConstantValue
     {
@@ -82,6 +52,38 @@ interface ConstantValue
             _ => default(ConstantValue),
         }).SomeNotNull(OperationError.UnsupportedOperator)
         : OperationError.UnsupportedOperator.None<ConstantValue, OperationError>();
+    }
+
+    internal readonly struct Integer(int val) : ConstantValue
+    {
+        public EvaluatedType Type => EvaluatedType.Numeric.GetInstance(NumericType.Integer);
+        public int Value => val;
+
+        public Option<ConstantValue, OperationError> Operate(UnaryOperator op) => (op switch {
+            UnaryOperator.Minus => new Integer(-val),
+            UnaryOperator.Plus => this,
+            _ => default(ConstantValue),
+        }).SomeNotNull(OperationError.UnsupportedOperator);
+
+        public Option<ConstantValue, OperationError> Operate(BinaryOperator op, ConstantValue other) => other is Integer o
+        ? op switch {
+            BinaryOperator.Divide => o.Value == 0
+                ? OperationError.DivisionByZero.None<ConstantValue, OperationError>()
+                : new Integer(val / o.Value).Some<ConstantValue, OperationError>(),
+            _ => (op switch {
+                BinaryOperator.Equal => new Boolean(val == o.Value),
+                BinaryOperator.GreaterThan => new Boolean(val > o.Value),
+                BinaryOperator.GreaterThanOrEqual => new Boolean(val >= o.Value),
+                BinaryOperator.LessThan => new Boolean(val < o.Value),
+                BinaryOperator.LessThanOrEqual => new Boolean(val <= o.Value),
+                BinaryOperator.Subtract => new Integer(val - o.Value),
+                BinaryOperator.Mod => new Integer(val % o.Value),
+                BinaryOperator.Multiply => new Integer(val * o.Value),
+                BinaryOperator.NotEqual => new Boolean(val != o.Value),
+                BinaryOperator.Add => new Integer(val + o.Value),
+                _ => default(ConstantValue),
+            }).SomeNotNull(OperationError.UnsupportedOperator),
+        } : OperationError.UnsupportedOperator.None<ConstantValue, OperationError>();
     }
 
     internal readonly struct Real(decimal val) : ConstantValue

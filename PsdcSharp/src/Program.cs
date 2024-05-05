@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+
 using Scover.Psdc.CodeGeneration.C;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
@@ -11,9 +12,6 @@ static class Program
 {
     const string StdinPlaceholder = "-";
 
-    static void WriteError(string message)
-     => Console.Error.WriteLine($"psdc: {message}");
-
     static int Main(string[] args)
     {
         if (args.Length != 1) {
@@ -24,13 +22,11 @@ static class Program
         const bool Debug = false;
 
         string input;
-        try
-        {
+        try {
             input = args[0] == StdinPlaceholder
                 ? Console.In.ReadToEnd()
                 : File.ReadAllText(args[0]);
-        } catch (Exception e) when (e.IsFileSystemExogenous())
-        {
+        } catch (Exception e) when (e.IsFileSystemExogenous()) {
             WriteError(e.Message);
             return SysExits.NoInput;
         }
@@ -61,11 +57,13 @@ static class Program
         return SysExits.Ok;
     }
 
+    static void WriteError(string message)
+         => Console.Error.WriteLine($"psdc: {message}");
+
     sealed class PrintMessenger : Messenger
     {
-        static TextWriter Stderr => Console.Error;
-
         readonly Dictionary<MessageSeverity, int> _msgCountsBySeverity = [];
+        static TextWriter Stderr => Console.Error;
 
         public void PrintConclusion()
          => Stderr.WriteLine($"""

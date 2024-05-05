@@ -33,7 +33,7 @@ enum MessageCode
     FloatingPointEquality,
 
     CustomWarning = 1999,
-    
+
     #endregion Warnings
 
     #region Suggestions

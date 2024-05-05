@@ -4,6 +4,13 @@ using Scover.Psdc.Tokenization;
 namespace Scover.Psdc.Parsing;
 
 /// <summary>
+/// A branch in a parsing operation to parse a specific type of node.
+/// </summary>
+/// <typeparam name="T">The type of node this branch parses.</typeparam>
+/// <param name="operation">The current parsing operation.</param>
+/// <returns>The current <see cref="ParseOperation"> and a result creator to use to retrieve the result based on the final read tokens of the parse operation.</returns>
+delegate (ParseOperation, ResultCreator<T>) Branch<T>(ParseOperation operation);
+/// <summary>
 /// A function that parses a production rule.
 /// </summary>
 /// <typeparam name="T">The type of the AST node this function produces.</typeparam>
@@ -20,23 +27,21 @@ delegate ParseResult<T> Parser<out T>(IEnumerable<Token> tokens);
 delegate T ResultCreator<out T>(SourceTokens sourceTokens);
 
 /// <summary>
-/// A branch in a parsing operation to parse a specific type of node.
-/// </summary>
-/// <typeparam name="T">The type of node this branch parses.</typeparam>
-/// <param name="operation">The current parsing operation.</param>
-/// <returns>The current <see cref="ParseOperation"> and a result creator to use to retrieve the result based on the final read tokens of the parse operation.</returns>
-delegate (ParseOperation, ResultCreator<T>) Branch<T>(ParseOperation operation);
-
-/// <summary>
 /// A fluent class to parse production rules.
 /// </summary>
 abstract class ParseOperation
 {
-    int _readCount;
     readonly IEnumerable<Token> _tokens;
-    
+    int _readCount;
+
     ParseOperation(IEnumerable<Token> tokens, int readCount)
      => (_tokens, _readCount) = (tokens, readCount);
+
+    /// <summary>
+    /// Get the tokens that have been read so far.
+    /// </summary>
+    /// <value>A new <see cref="SourceTokens"/> instance containing the tokens that have been read so far.</value>
+    protected SourceTokens ReadTokens => new(_tokens, _readCount);
 
     /// <summary>
     /// Start a parsing operation.
@@ -48,33 +53,10 @@ abstract class ParseOperation
     public static ParseOperation Start(Messenger messenger, IEnumerable<Token> tokens, string production)
      => new SuccessfulSoFarOperation(tokens, messenger, production);
 
-    /// <summary>
-    /// Skims <paramref name="n"/> tokens.
-    /// Skims <paramref name="n"/> tokens.
-    /// </summary>
-    /// <param name="n">The number of token to skim.</param>
-    /// <returns>The current <see cref="ParseOperation">.</returns>
-    public abstract ParseOperation Skim(int n);
-
-    /// <summary>
-    /// Get the tokens that have been read so far.
-    /// </summary>
-    /// <value>A new <see cref="SourceTokens"/> instance containing the tokens that have been read so far.</value>
-    protected SourceTokens ReadTokens => new(_tokens, _readCount);
-
-    /// <summary>
-    /// Fork the parse operation based on a previously chosen branch.
-    /// </summary>
-    /// <typeparam name="T">The type of node to parse.</typeparam>
-    /// <param name="result">Assigned to the result creator. Pass it to <see cref="MapResult"/> to retrieve the parse result.</param>
-    /// <param name="branch">The branch to execute.</param>
-    /// <returns>The current <see cref="ParseOperation">.</returns>
-    public abstract ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch);
-
     public ParseOperation ChooseBranch<T>(
-        out Branch<T> branch,
-        Dictionary<TokenType, Branch<T>> branches)
-     => ChooseBranch(out branch, (IReadOnlyDictionary<TokenType, Branch<T>>)branches);
+            out Branch<T> branch,
+            Dictionary<TokenType, Branch<T>> branches)
+         => ChooseBranch(out branch, (IReadOnlyDictionary<TokenType, Branch<T>>)branches);
 
     /// <summary>
     /// Choose a branch to execute based on the type of the next token.
@@ -88,12 +70,13 @@ abstract class ParseOperation
         IReadOnlyDictionary<TokenType, Branch<T>> branches);
 
     /// <summary>
-    /// Retrieve the final result of a parse operation.
+    /// Fork the parse operation based on a previously chosen branch.
     /// </summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>
-    /// <param name="resultCreator">The result creator function.</param>
-    /// <returns>An Ok result containing the parsed node, or a failure result with a error indicating what went wrong.</returns>
-    public abstract ParseResult<T> MapResult<T>(ResultCreator<T> resultCreator);
+    /// <param name="result">Assigned to the result creator. Pass it to <see cref="MapResult"/> to retrieve the parse result.</param>
+    /// <param name="branch">The branch to execute.</param>
+    /// <returns>The current <see cref="ParseOperation">.</returns>
+    public abstract ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch);
 
     /// <summary>
     /// Get an intermidiate result based on the tokens read so far; the parsing operation continues.
@@ -104,11 +87,16 @@ abstract class ParseOperation
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation GetIntermediateResult<T>(out T result, ResultCreator<T> resultCreator);
 
-    /// <returns>The current <see cref="ParseOperation">.</returns>
-    public abstract ParseOperation Parse<T>(out T result, Parser<T> parse);
+    /// <summary>
+    /// Retrieve the final result of a parse operation.
+    /// </summary>
+    /// <typeparam name="T">The type of node to parse.</typeparam>
+    /// <param name="resultCreator">The result creator function.</param>
+    /// <returns>An Ok result containing the parsed node, or a failure result with a error indicating what went wrong.</returns>
+    public abstract ParseResult<T> MapResult<T>(ResultCreator<T> resultCreator);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
-    public abstract ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse);
+    public abstract ParseOperation Parse<T>(out T result, Parser<T> parse);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true);
@@ -117,10 +105,13 @@ abstract class ParseOperation
     public abstract ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
-    public abstract ParseOperation ParseTokenValue(out string result, TokenType type);
+    public abstract ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseToken(TokenType type);
+
+    /// <returns>The current <see cref="ParseOperation">.</returns>
+    public abstract ParseOperation ParseTokenValue(out string result, TokenType type);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true);
@@ -128,15 +119,88 @@ abstract class ParseOperation
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens);
 
-    sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, Messenger messenger, string production) : ParseOperation(tokens, 0)
+    /// <summary>
+    /// Skims <paramref name="n"/> tokens.
+    /// Skims <paramref name="n"/> tokens.
+    /// </summary>
+    /// <param name="n">The number of token to skim.</param>
+    /// <returns>The current <see cref="ParseOperation">.</returns>
+    public abstract ParseOperation Skim(int n);
+
+    sealed class FailedOperation(IEnumerable<Token> tokens, int readCount, ParseError error) : ParseOperation(tokens, readCount)
     {
-        IEnumerable<Token> ParsingTokens => _tokens.Skip(_readCount);
+        readonly ParseError _error = error;
+
+        public override ParseOperation ChooseBranch<T>(out Branch<T> branch, IReadOnlyDictionary<TokenType, Branch<T>> branches)
+        {
+            branch = null!;
+            return this;
+        }
+
+        public override ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch)
+        {
+            result = null!;
+            return this;
+        }
 
         public override ParseOperation GetIntermediateResult<T>(out T result, ResultCreator<T> resultCreator)
         {
-            result = resultCreator(ReadTokens);
+            result = default!;
             return this;
         }
+
+        public override ParseResult<T> MapResult<T>(ResultCreator<T> result) => ParseResult.Fail<T>(ReadTokens, _error);
+
+        public override ParseOperation Parse<T>(out T result, Parser<T> parse)
+        {
+            result = default!;
+            return this;
+        }
+
+        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true)
+        {
+            result = Array.Empty<T>();
+            return this;
+        }
+
+        public override ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
+        {
+            result = Array.Empty<T>();
+            return this;
+        }
+
+        public override ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse)
+        {
+            result = Option.None<T>();
+            return this;
+        }
+
+        public override ParseOperation ParseToken(TokenType type) => this;
+
+        public override ParseOperation ParseTokenValue(out string result, TokenType type)
+        {
+            result = null!;
+            return this;
+        }
+
+        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
+        {
+            result = Array.Empty<T>();
+            return this;
+        }
+
+        public override ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
+        {
+            result = Array.Empty<T>();
+            return this;
+        }
+
+        public override ParseOperation Skim(int n) => this;
+    }
+
+    sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, Messenger messenger, string production) : ParseOperation(tokens, 0)
+    {
+        IEnumerable<Token> ParsingTokens => _tokens.Skip(_readCount);
 
         public override ParseOperation ChooseBranch<T>(out Branch<T> branch, IReadOnlyDictionary<TokenType, Branch<T>> branches)
         {
@@ -155,7 +219,14 @@ abstract class ParseOperation
             return p;
         }
 
+        public override ParseOperation GetIntermediateResult<T>(out T result, ResultCreator<T> resultCreator)
+        {
+            result = resultCreator(ReadTokens);
+            return this;
+        }
+
         public override ParseResult<T> MapResult<T>(ResultCreator<T> resultCreator) => MakeOkResult(resultCreator(ReadTokens));
+
         public override ParseOperation Parse<T>(out T result, Parser<T> parse)
         {
             var pr = parse(ParsingTokens);
@@ -169,11 +240,48 @@ abstract class ParseOperation
             }
         }
 
-        ParseError MakeOurs(ParseError error)
-         => production == error.FailedProduction
-            ? error
-            : ParseError.ForProduction(production,
-                error.ErroneousToken, error.ExpectedTokens, error.FailedProduction);
+        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
+        {
+            List<T> items = [];
+            result = items;
+
+            var item = parse(ParsingTokens);
+
+            if (!item.HasValue && NextParsingTokenIs(end).ValueOr(true)) {
+                return Fail(MakeOurs(item.Error));
+            }
+
+            _readCount += Math.Max(1, item.SourceTokens.Count);
+            AddOrSyntaxError(items, item);
+
+            ParseWhile(items, parse, () => CheckAndConsumeToken(ParsingTokens, separator),
+                skimWhile: () => !NextParsingTokenIs(separator, end).ValueOr(true));
+
+            if (readEndToken) {
+                _ = CheckAndConsumeToken(ParsingTokens, end);
+            }
+
+            return this;
+        }
+
+        public override ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
+        {
+            List<T> items = [];
+            result = items;
+
+            ParseResult<T> item = parse(ParsingTokens);
+            _readCount += Math.Max(1, item.SourceTokens.Count);
+
+            AddOrSyntaxError(items, item);
+
+            if (!item.HasValue) {
+                return Fail(MakeOurs(item.Error));
+            }
+
+            ParseWhile(items, parse, () => !NextParsingTokenIs(endTokens).ValueOr(true));
+
+            return this;
+        }
 
         public override ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse)
         {
@@ -208,30 +316,6 @@ abstract class ParseOperation
             return Fail(ParseError.ForTerminal(production, token, type));
         }
 
-        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
-        {
-            List<T> items = [];
-            result = items;
-
-            var item = parse(ParsingTokens);
-
-            if (!item.HasValue && NextParsingTokenIs(end).ValueOr(true)) {
-                return Fail(MakeOurs(item.Error));
-            }
-
-            _readCount += Math.Max(1, item.SourceTokens.Count);
-            AddOrSyntaxError(items, item);
-
-            ParseWhile(items, parse, () => CheckAndConsumeToken(ParsingTokens, separator),
-                skimWhile: () => !NextParsingTokenIs(separator, end).ValueOr(true));
-
-            if (readEndToken) {
-                _ = CheckAndConsumeToken(ParsingTokens, end);
-            }
-
-            return this;
-        }
-
         public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
         {
             List<T> items = [];
@@ -257,6 +341,50 @@ abstract class ParseOperation
             return this;
         }
 
+        public override ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
+        {
+            List<T> items = [];
+            result = items;
+
+            ParseWhile(items, parse, () => !NextParsingTokenIs(endTokens).ValueOr(true));
+
+            return this;
+        }
+
+        public override ParseOperation Skim(int n)
+        {
+            _readCount += n;
+            return this;
+        }
+
+        void AddOrSyntaxError<T>(ICollection<T> items, ParseResult<T> item)
+         => item.Match(
+                some: items.Add,
+                none: error => messenger.Report(Message.ErrorSyntax(item.SourceTokens, error))
+            );
+
+        bool CheckAndConsumeToken(IEnumerable<Token> tokens, params TokenType[] types)
+        {
+            bool nextIsSeparator = tokens.NextIsOfType(types).ValueOr(false);
+            if (nextIsSeparator) {
+                _readCount++;
+            }
+            return nextIsSeparator;
+        }
+
+        FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error);
+
+        ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(new(_tokens, _readCount), result);
+
+        ParseError MakeOurs(ParseError error)
+                                                                                                         => production == error.FailedProduction
+            ? error
+            : ParseError.ForProduction(production,
+                error.ErroneousToken, error.ExpectedTokens, error.FailedProduction);
+
+        Option<bool> NextParsingTokenIs(params TokenType[] types)
+         => ParsingTokens.NextIsOfType(types);
+
         void ParseWhile<T>(ICollection<T> items, Parser<T> parse, Func<bool> keepGoingWhile, Func<bool>? skimWhile = null)
         {
             while (skimWhile?.Invoke() ?? false) {
@@ -279,126 +407,6 @@ abstract class ParseOperation
                     }
                 }
             }
-        }
-
-        public override ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
-        {
-            List<T> items = [];
-            result = items;
-
-            ParseResult<T> item = parse(ParsingTokens);
-            _readCount += Math.Max(1, item.SourceTokens.Count);
-
-            AddOrSyntaxError(items, item);
-
-            if (!item.HasValue) {
-                return Fail(MakeOurs(item.Error));
-            }
-
-            ParseWhile(items, parse, () => !NextParsingTokenIs(endTokens).ValueOr(true));
-
-            return this;
-        }
-
-        public override ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
-        {
-            List<T> items = [];
-            result = items;
-
-            ParseWhile(items, parse, () => !NextParsingTokenIs(endTokens).ValueOr(true));
-
-            return this;
-        }
-
-        ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(new(_tokens, _readCount), result);
-        bool CheckAndConsumeToken(IEnumerable<Token> tokens, params TokenType[] types)
-        {
-            bool nextIsSeparator = tokens.NextIsOfType(types).ValueOr(false);
-            if (nextIsSeparator) {
-                _readCount++;
-            }
-            return nextIsSeparator;
-        }
-
-        void AddOrSyntaxError<T>(ICollection<T> items, ParseResult<T> item)
-         => item.Match(
-                some: items.Add,
-                none: error => messenger.Report(Message.ErrorSyntax(item.SourceTokens, error))
-            );
-
-        FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error);
-
-        Option<bool> NextParsingTokenIs(params TokenType[] types)
-         => ParsingTokens.NextIsOfType(types);
-
-        public override ParseOperation Skim(int n)
-        {
-            _readCount += n;
-            return this;
-        }
-    }
-
-    sealed class FailedOperation(IEnumerable<Token> tokens, int readCount, ParseError error) : ParseOperation(tokens, readCount)
-    {
-        readonly ParseError _error = error;
-
-        public override ParseResult<T> MapResult<T>(ResultCreator<T> result) => ParseResult.Fail<T>(ReadTokens, _error);
-        public override ParseOperation Parse<T>(out T result, Parser<T> parse)
-        {
-            result = default!;
-            return this;
-        }
-        public override ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse)
-        {
-            result = Option.None<T>();
-            return this;
-        }
-        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true)
-        {
-            result = Array.Empty<T>();
-            return this;
-        }
-
-        public override ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
-        {
-            result = Array.Empty<T>();
-            return this;
-        }
-        public override ParseOperation ParseTokenValue(out string result, TokenType type)
-        {
-            result = null!;
-            return this;
-        }
-        public override ParseOperation ParseToken(TokenType type) => this;
-        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyCollection<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
-        {
-            result = Array.Empty<T>();
-            return this;
-        }
-
-        public override ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens)
-        {
-            result = Array.Empty<T>();
-            return this;
-        }
-
-        public override ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch)
-        {
-            result = null!;
-            return this;
-        }
-
-        public override ParseOperation ChooseBranch<T>(out Branch<T> branch, IReadOnlyDictionary<TokenType, Branch<T>> branches)
-        {
-            branch = null!;
-            return this;
-        }
-
-        public override ParseOperation Skim(int n) => this;
-        public override ParseOperation GetIntermediateResult<T>(out T result, ResultCreator<T> resultCreator)
-        {
-            result = default!;
-            return this;
         }
     }
 }

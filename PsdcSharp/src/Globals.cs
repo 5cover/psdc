@@ -1,8 +1,13 @@
 namespace Scover.Psdc;
 
-public static class Globals
+static class Globals
 {
     static string? input = null;
+
+    /// <summary>
+    /// The original, unmodified input code.
+    /// </summary>
+    public static string Input => input.NotNull($"{nameof(Input)} not initialized");
 
     public static void Initialize(string input)
     {
@@ -11,9 +16,4 @@ public static class Globals
         }
         Globals.input = input;
     }
-
-    /// <summary>
-    /// The original, unmodified input code.
-    /// </summary>
-    public static string Input => input.NotNull($"{nameof(Input)} not initialized");
 }

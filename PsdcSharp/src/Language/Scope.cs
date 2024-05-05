@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 
@@ -25,6 +26,15 @@ sealed class Scope(Scope? scope) : ReadOnlyScope
         ? Message.ErrorUndefinedSymbol<T>(name, symbol).None<T, Message>()
         : t.Some<T, Message>();
 
+    public bool TryAdd(Symbol symbol) => _symbolTable.TryAdd(symbol.Name, symbol);
+
+    public bool TryAdd(Symbol symbol, [NotNullWhen(false)] out Symbol? existingSymbol)
+    {
+        var added = _symbolTable.TryAdd(symbol.Name, symbol);
+        existingSymbol = added ? null : _symbolTable[symbol.Name];
+        return added;
+    }
+
     public bool TryGetSymbol<T>(Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol
     {
         if (TryGetSymbol(name, out var foundSymbol) && foundSymbol is T t) {
@@ -33,15 +43,6 @@ sealed class Scope(Scope? scope) : ReadOnlyScope
         }
         symbol = default;
         return false;
-    }
-
-    public bool TryAdd(Symbol symbol) => _symbolTable.TryAdd(symbol.Name, symbol);
-
-    public bool TryAdd(Symbol symbol, [NotNullWhen(false)] out Symbol? existingSymbol)
-    {
-        var added = _symbolTable.TryAdd(symbol.Name, symbol);
-        existingSymbol = added ? null : _symbolTable[symbol.Name];
-        return added;
     }
 
     public bool TryGetSymbol(Identifier name, [NotNullWhen(true)] out Symbol? symbol)

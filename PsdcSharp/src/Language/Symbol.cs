@@ -1,5 +1,5 @@
-
 using Scover.Psdc.Parsing;
+
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.Language;
@@ -8,6 +8,7 @@ interface CallableSymbol : Symbol
 {
     public bool HasBeenDefined { get; }
     public IReadOnlyCollection<Parameter> Parameters { get; }
+
     public void MarkAsDefined();
 }
 
@@ -66,7 +67,6 @@ interface Symbol : EquatableSemantics<Symbol>
          && o.Name.SemanticsEqual(Name)
          && o.Parameters.AllSemanticsEqual(Parameters)
          && o.ReturnType.SemanticsEqual(ReturnType);
-
     }
 
     internal sealed record Parameter(Identifier Name, SourceTokens SourceTokens,
@@ -91,5 +91,6 @@ static class SymbolExtensions
     };
 
     public static string GetKind(this Symbol s) => symbolKinds[s.GetType()];
+
     public static string GetKind<T>() where T : Symbol => symbolKinds[typeof(T)];
 }
