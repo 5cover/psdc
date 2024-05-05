@@ -2,9 +2,9 @@ using System.Text.RegularExpressions;
 
 namespace Scover.Psdc.Tokenization;
 
-internal sealed class RegexTokenRule : TokenRule
+sealed class RegexTokenRule : TokenRule
 {
-    private readonly Regex _pattern;
+    readonly Regex _pattern;
 
     public RegexTokenRule(string pattern, RegexOptions flags = RegexOptions.None)
      => _pattern = new($@"\G{pattern}", flags);

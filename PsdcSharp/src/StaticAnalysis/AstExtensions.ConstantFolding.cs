@@ -4,7 +4,7 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-internal static partial class AstExtensions
+static partial class AstExtensions
 {
     public static bool IsConstant(this Expression expression, ReadOnlyScope scope) => expression switch {
         Expression.Bracketed b => b.ContainedExpression.IsConstant(scope),
@@ -48,13 +48,13 @@ internal static partial class AstExtensions
         _ => Option.None<Message>().None<ConstantValue, Option<Message>>(),
     };
 
-    private static Message GetOperationMessage(OperationError error, Expression.UnaryOperation opUn, EvaluatedType operandType) => error switch {
+    static Message GetOperationMessage(OperationError error, Expression.UnaryOperation opUn, EvaluatedType operandType) => error switch {
         OperationError.UnsupportedOperator => Message.ErrorUnsupportedOperation(opUn, operandType),
         OperationError.DivisionByZero => Message.WarningDivisionByZero(opUn.SourceTokens),
         _ => throw error.ToUnmatchedException(),
     };
 
-    private static Message GetOperationMessage(OperationError error, Expression.BinaryOperation opUn, EvaluatedType op1type, EvaluatedType op2type) => error switch {
+    static Message GetOperationMessage(OperationError error, Expression.BinaryOperation opUn, EvaluatedType op1type, EvaluatedType op2type) => error switch {
         OperationError.UnsupportedOperator => Message.ErrorUnsupportedOperation(opUn, op1type, op2type),
         OperationError.DivisionByZero => Message.WarningDivisionByZero(opUn.SourceTokens),
         _ => throw error.ToUnmatchedException(),

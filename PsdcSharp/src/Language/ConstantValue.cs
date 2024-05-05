@@ -1,12 +1,12 @@
 namespace Scover.Psdc.Language;
 
-internal enum OperationError
+enum OperationError
 {
     UnsupportedOperator,
     DivisionByZero
 }
 
-internal interface ConstantValue
+interface ConstantValue
 {
     public EvaluatedType Type { get; }
     public Option<ConstantValue, OperationError> Operate(UnaryOperator op);
@@ -34,11 +34,11 @@ internal interface ConstantValue
                 BinaryOperator.GreaterThanOrEqual => new Boolean(val >= o.Value),
                 BinaryOperator.LessThan => new Boolean(val < o.Value),
                 BinaryOperator.LessThanOrEqual => new Boolean(val <= o.Value),
-                BinaryOperator.Minus => new Integer(val - o.Value),
-                BinaryOperator.Modulus => new Integer(val % o.Value),
+                BinaryOperator.Subtract => new Integer(val - o.Value),
+                BinaryOperator.Mod => new Integer(val % o.Value),
                 BinaryOperator.Multiply => new Integer(val * o.Value),
                 BinaryOperator.NotEqual => new Boolean(val != o.Value),
-                BinaryOperator.Plus => new Integer(val + o.Value),
+                BinaryOperator.Add => new Integer(val + o.Value),
                 _ => default(ConstantValue),
             }).SomeNotNull(OperationError.UnsupportedOperator),
         } : OperationError.UnsupportedOperator.None<ConstantValue, OperationError>();
@@ -102,11 +102,11 @@ internal interface ConstantValue
             BinaryOperator.GreaterThanOrEqual => new Boolean(val >= o.Value),
             BinaryOperator.LessThan => new Boolean(val < o.Value),
             BinaryOperator.LessThanOrEqual => new Boolean(val <= o.Value),
-            BinaryOperator.Minus => new Real(val - o.Value),
-            BinaryOperator.Modulus => new Real(val % o.Value),
+            BinaryOperator.Subtract => new Real(val - o.Value),
+            BinaryOperator.Mod => new Real(val % o.Value),
             BinaryOperator.Multiply => new Real(val * o.Value),
             BinaryOperator.NotEqual => new Boolean(val != o.Value),
-            BinaryOperator.Plus => new Real(val + o.Value),
+            BinaryOperator.Add => new Real(val + o.Value),
             _ => default(ConstantValue),
         }).SomeNotNull(OperationError.UnsupportedOperator)
         : OperationError.UnsupportedOperator.None<ConstantValue, OperationError>();
@@ -114,7 +114,7 @@ internal interface ConstantValue
 
     internal readonly struct String(string val) : ConstantValue
     {
-        public EvaluatedType Type { get; } = EvaluatedType.StringLengthed.Create(val.Length);
+        public EvaluatedType Type { get; } = EvaluatedType.LengthedString.Create(val.Length);
         public string Value => val;
 
         public Option<ConstantValue, OperationError> Operate(UnaryOperator op) => (op switch {

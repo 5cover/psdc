@@ -8,9 +8,9 @@ using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Messages;
 
-internal readonly struct Message
+readonly struct Message
 {
-    private Message(MessageCode code, Option<Range> inputRange, string content)
+    Message(MessageCode code, Option<Range> inputRange, string content)
      => (Code, InputRange, Content) = (code, inputRange, content);
 
     public MessageCode Code { get; }
@@ -153,14 +153,18 @@ internal readonly struct Message
      => Create(sourceTokens, MessageCode.DivisionByZero,
         "division by zero will cause runtime error");
 
-    private static Message Create(Range inputRange, MessageCode code, string content)
+    public static Message WarningFloatingPointEquality(SourceTokens sourceTokens)
+     => Create(sourceTokens, MessageCode.FloatingPointEquality,
+        "floating point equality may be inaccurate - consider comparing absolute difference to an epsilon value instead");
+
+    static Message Create(Range inputRange, MessageCode code, string content)
      => new(code,
             inputRange.Some(),
             content);
             
-    private static Message Create(SourceTokens sourceTokens, MessageCode code, string content)
+    static Message Create(SourceTokens sourceTokens, MessageCode code, string content)
      => Create(sourceTokens.InputRange, code, content);
 
-        private static Message Create(Node sourceNode, MessageCode code, string content)
+        static Message Create(Node sourceNode, MessageCode code, string content)
      => Create(sourceNode.SourceTokens.InputRange, code, content);
 }

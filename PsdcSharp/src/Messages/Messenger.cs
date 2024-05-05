@@ -3,7 +3,7 @@ namespace Scover.Psdc.Messages;
 /// <summary>
 /// An interface to report messages to the user.
 /// </summary>
-internal interface Messenger
+interface Messenger
 {
     /// <summary>
     /// Report a message.

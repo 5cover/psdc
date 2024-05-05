@@ -1,12 +1,12 @@
 namespace Scover.Psdc.Parsing;
 
-internal interface ParseResult<out T> : Option<T, ParseError>
+interface ParseResult<out T> : Option<T, ParseError>
 {
     SourceTokens SourceTokens { get; }
     ParseResult<T> WithSourceTokens(SourceTokens newSourceTokens);
 }
 
-internal static class ParseResult
+static class ParseResult
 {
     public static ParseResult<T> Ok<T>(T result) where T : Node
      => new ParseResultImpl<T>(true, result, null, result.SourceTokens);
@@ -29,7 +29,7 @@ internal static class ParseResult
     public static ParseResult<TResult> FlatMap<T, TResult>(this ParseResult<T> pr, Func<T, ParseResult<TResult>> transform)
      => pr.HasValue ? transform(pr.Value) : Fail<TResult>(pr.SourceTokens, pr.Error);
 
-    private sealed record ParseResultImpl<T>(
+    sealed record ParseResultImpl<T>(
         bool HasValue,
         T? Value,
         ParseError? Error,

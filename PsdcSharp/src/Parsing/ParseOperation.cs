@@ -9,7 +9,7 @@ namespace Scover.Psdc.Parsing;
 /// <typeparam name="T">The type of the AST node this function produces.</typeparam>
 /// <param name="tokens">The input tokens.</param>
 /// <returns>A result that encapsulates <typeparamref name="T"/>.</returns>
-internal delegate ParseResult<T> Parser<out T>(IEnumerable<Token> tokens);
+delegate ParseResult<T> Parser<out T>(IEnumerable<Token> tokens);
 
 /// <summary>
 /// A function that creates a node from source tokens.
@@ -17,7 +17,7 @@ internal delegate ParseResult<T> Parser<out T>(IEnumerable<Token> tokens);
 /// <typeparam name="T">The type of the node to create.</typeparam>
 /// <param name="sourceTokens">The source tokens of the node.</param>
 /// <returns>The resulting node.</returns>
-internal delegate T ResultCreator<out T>(SourceTokens sourceTokens);
+delegate T ResultCreator<out T>(SourceTokens sourceTokens);
 
 /// <summary>
 /// A branch in a parsing operation to parse a specific type of node.
@@ -25,17 +25,17 @@ internal delegate T ResultCreator<out T>(SourceTokens sourceTokens);
 /// <typeparam name="T">The type of node this branch parses.</typeparam>
 /// <param name="operation">The current parsing operation.</param>
 /// <returns>The current <see cref="ParseOperation"> and a result creator to use to retrieve the result based on the final read tokens of the parse operation.</returns>
-internal delegate (ParseOperation, ResultCreator<T>) Branch<T>(ParseOperation operation);
+delegate (ParseOperation, ResultCreator<T>) Branch<T>(ParseOperation operation);
 
 /// <summary>
 /// A fluent class to parse production rules.
 /// </summary>
-internal abstract class ParseOperation
+abstract class ParseOperation
 {
-    private int _readCount;
-    private readonly IEnumerable<Token> _tokens;
+    int _readCount;
+    readonly IEnumerable<Token> _tokens;
     
-    private ParseOperation(IEnumerable<Token> tokens, int readCount)
+    ParseOperation(IEnumerable<Token> tokens, int readCount)
      => (_tokens, _readCount) = (tokens, readCount);
 
     /// <summary>
@@ -128,9 +128,9 @@ internal abstract class ParseOperation
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyCollection<T> result, Parser<T> parse, params TokenType[] endTokens);
 
-    private sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, Messenger messenger, string production) : ParseOperation(tokens, 0)
+    sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, Messenger messenger, string production) : ParseOperation(tokens, 0)
     {
-        private IEnumerable<Token> ParsingTokens => _tokens.Skip(_readCount);
+        IEnumerable<Token> ParsingTokens => _tokens.Skip(_readCount);
 
         public override ParseOperation GetIntermediateResult<T>(out T result, ResultCreator<T> resultCreator)
         {
@@ -169,7 +169,7 @@ internal abstract class ParseOperation
             }
         }
 
-        private ParseError MakeOurs(ParseError error)
+        ParseError MakeOurs(ParseError error)
          => production == error.FailedProduction
             ? error
             : ParseError.ForProduction(production,
@@ -257,7 +257,7 @@ internal abstract class ParseOperation
             return this;
         }
 
-        private void ParseWhile<T>(ICollection<T> items, Parser<T> parse, Func<bool> keepGoingWhile, Func<bool>? skimWhile = null)
+        void ParseWhile<T>(ICollection<T> items, Parser<T> parse, Func<bool> keepGoingWhile, Func<bool>? skimWhile = null)
         {
             while (skimWhile?.Invoke() ?? false) {
                 _readCount++;
@@ -310,8 +310,8 @@ internal abstract class ParseOperation
             return this;
         }
 
-        private ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(new(_tokens, _readCount), result);
-        private bool CheckAndConsumeToken(IEnumerable<Token> tokens, params TokenType[] types)
+        ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(new(_tokens, _readCount), result);
+        bool CheckAndConsumeToken(IEnumerable<Token> tokens, params TokenType[] types)
         {
             bool nextIsSeparator = tokens.NextIsOfType(types).ValueOr(false);
             if (nextIsSeparator) {
@@ -320,15 +320,15 @@ internal abstract class ParseOperation
             return nextIsSeparator;
         }
 
-        private void AddOrSyntaxError<T>(ICollection<T> items, ParseResult<T> item)
+        void AddOrSyntaxError<T>(ICollection<T> items, ParseResult<T> item)
          => item.Match(
                 some: items.Add,
                 none: error => messenger.Report(Message.ErrorSyntax(item.SourceTokens, error))
             );
 
-        private FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error);
+        FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error);
 
-        private Option<bool> NextParsingTokenIs(params TokenType[] types)
+        Option<bool> NextParsingTokenIs(params TokenType[] types)
          => ParsingTokens.NextIsOfType(types);
 
         public override ParseOperation Skim(int n)
@@ -338,9 +338,9 @@ internal abstract class ParseOperation
         }
     }
 
-    private sealed class FailedOperation(IEnumerable<Token> tokens, int readCount, ParseError error) : ParseOperation(tokens, readCount)
+    sealed class FailedOperation(IEnumerable<Token> tokens, int readCount, ParseError error) : ParseOperation(tokens, readCount)
     {
-        private readonly ParseError _error = error;
+        readonly ParseError _error = error;
 
         public override ParseResult<T> MapResult<T>(ResultCreator<T> result) => ParseResult.Fail<T>(ReadTokens, _error);
         public override ParseOperation Parse<T>(out T result, Parser<T> parse)

@@ -4,7 +4,7 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Language;
 
-internal interface ReadOnlyScope
+interface ReadOnlyScope
 {
     public IReadOnlyDictionary<Identifier, Symbol> Symbols { get; }
     public bool TryGetSymbol<T>(Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol;

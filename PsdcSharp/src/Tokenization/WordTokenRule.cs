@@ -1,8 +1,8 @@
 namespace Scover.Psdc.Tokenization;
 
-internal sealed class WordTokenRule(string word, StringComparison comparison) : TokenRule
+sealed class WordTokenRule(string word, StringComparison comparison) : TokenRule
 {
-    private readonly StringTokenRule _stringRule = new(word, comparison);
+    readonly StringTokenRule _stringRule = new(word, comparison);
 
     public string Expected => _stringRule.Expected;
 

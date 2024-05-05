@@ -9,7 +9,7 @@ namespace Scover.Psdc.Language;
 /// <summary>
 /// A type evaluated during the static analysis.
 /// </summary>
-internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedType>
+abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedType>
 {
     public abstract EvaluatedType ToAliasReference(Identifier alias);
 
@@ -53,7 +53,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
     internal class String : EvaluatedType
     {
-        private String(Identifier? alias) : base(alias) { }
+        String(Identifier? alias) : base(alias) { }
 
         public static String Instance { get; } = new(null);
 
@@ -72,7 +72,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
             .Map(dimensions => new Array(elementType, dimensionsExpressions,
                                           dimensions.Select(d => d.Value).ToList(), null));
 
-        private Array(EvaluatedType elementType, IReadOnlyCollection<Expression> dimensionExprs, IReadOnlyCollection<int> dimensions, Identifier? alias) : base(alias)
+        Array(EvaluatedType elementType, IReadOnlyCollection<Expression> dimensionExprs, IReadOnlyCollection<int> dimensions, Identifier? alias) : base(alias)
          => (ElementType, DimensionConstantExpressions, Dimensions) = (elementType, dimensionExprs, dimensions);
 
         public EvaluatedType ElementType { get; }
@@ -95,7 +95,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
     internal sealed class File : EvaluatedType
     {
-        private File(Identifier? alias) : base(alias) { }
+        File(Identifier? alias) : base(alias) { }
         public static File Instance { get; } = new(null);
         protected override string ActualRepresentation => "nomFichierLog";
 
@@ -106,7 +106,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
     internal sealed class Boolean : EvaluatedType
     {
-        private Boolean(Identifier? alias) : base(alias) { }
+        Boolean(Identifier? alias) : base(alias) { }
 
         public static Boolean Instance { get; } = new(null);
 
@@ -118,7 +118,7 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
     internal sealed class Character : EvaluatedType
     {
-        private Character(Identifier? alias) : base(alias) { }
+        Character(Identifier? alias) : base(alias) { }
 
         public static Character Instance { get; } = new(null);
 
@@ -132,14 +132,14 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
     {
         // Precision represents how many values the type can represent.
         // The higher, the wider the value range.
-        private readonly int _precision;
-        private Numeric(NumericType type, int precision, string representation, Identifier? alias = null) : base(alias)
+        readonly int _precision;
+        Numeric(NumericType type, int precision, string representation, Identifier? alias = null) : base(alias)
          => (Type, _precision, ActualRepresentation) = (type, precision, representation);
 
         public NumericType Type { get; }
         public static Numeric GetInstance(NumericType type) => instances.First(i => i.Type == type);
 
-        private static readonly Numeric[] instances = [
+        static readonly Numeric[] instances = [
            new(NumericType.Integer, 2, "entier"),
            new(NumericType.Real, 3, "réel"),
         ];
@@ -155,16 +155,16 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
         protected override string ActualRepresentation { get; }
     }
 
-    internal sealed class StringLengthed : EvaluatedType
+    internal sealed class LengthedString : EvaluatedType
     {
-        public static Option<StringLengthed, Message> Create(Expression lengthExpression, ReadOnlyScope scope)
+        public static Option<LengthedString, Message> Create(Expression lengthExpression, ReadOnlyScope scope)
          => lengthExpression.EvaluateConstantValue<ConstantValue.Integer>(scope, Numeric.GetInstance(NumericType.Integer))
-            .Map(l => new StringLengthed(lengthExpression.Some(), l.Value, null));
+            .Map(l => new LengthedString(lengthExpression.Some(), l.Value, null));
 
-        public static StringLengthed Create(int length)
+        public static LengthedString Create(int length)
          => new(Option.None<Expression>(), length, null);
 
-        private StringLengthed(Option<Expression> lengthExpression, int length, Identifier? alias) : base(alias)
+        LengthedString(Option<Expression> lengthExpression, int length, Identifier? alias) : base(alias)
          => (LengthConstantExpression, Length) = (lengthExpression, length);
 
         public Option<Expression> LengthConstantExpression { get; }
@@ -172,19 +172,19 @@ internal abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<Ev
 
         protected override string ActualRepresentation => $"chaîne({Length})";
 
-        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is StringLengthed o
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is LengthedString o
          && o.Length == Length;
 
         public override bool IsAssignableTo(EvaluatedType other)
          => other is String || ActualSemanticsEqual(other);
-        public override EvaluatedType ToAliasReference(Identifier alias) => new StringLengthed(LengthConstantExpression, Length, alias);
+        public override EvaluatedType ToAliasReference(Identifier alias) => new LengthedString(LengthConstantExpression, Length, alias);
     }
 
     internal sealed class Structure(IReadOnlyDictionary<Identifier, EvaluatedType> components, Identifier? alias = null) : EvaluatedType(alias)
     {
         public IReadOnlyDictionary<Identifier, EvaluatedType> Components => components;
 
-        private readonly Lazy<string> _representation = alias is null ? new(() => {
+        readonly Lazy<string> _representation = alias is null ? new(() => {
             StringBuilder sb = new();
             sb.AppendLine("structure début");
             foreach (var comp in components) {

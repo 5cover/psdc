@@ -4,14 +4,14 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.Language;
 
-internal interface CallableSymbol : Symbol
+interface CallableSymbol : Symbol
 {
     public bool HasBeenDefined { get; }
     public IReadOnlyCollection<Parameter> Parameters { get; }
     public void MarkAsDefined();
 }
 
-internal interface Symbol : EquatableSemantics<Symbol>
+interface Symbol : EquatableSemantics<Symbol>
 {
     public Identifier Name { get; }
     public SourceTokens SourceTokens { get; }
@@ -79,9 +79,9 @@ internal interface Symbol : EquatableSemantics<Symbol>
     }
 }
 
-internal static class SymbolExtensions
+static class SymbolExtensions
 {
-    private static readonly Dictionary<System.Type, string> symbolKinds = new() {
+    static readonly Dictionary<System.Type, string> symbolKinds = new() {
         [typeof(Symbol.Constant)] = "constant",
         [typeof(Symbol.Function)] = "function",
         [typeof(Symbol.Parameter)] = "parameter",

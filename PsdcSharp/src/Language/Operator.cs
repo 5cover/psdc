@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Language;
 
-internal static class OperatorExtensions
+static class OperatorExtensions
 {
     public static string GetRepresentation(this BinaryOperator @operator) => @operator switch {
         BinaryOperator.And => "ET",
@@ -10,12 +10,12 @@ internal static class OperatorExtensions
         BinaryOperator.GreaterThanOrEqual => ">=",
         BinaryOperator.LessThan => "<",
         BinaryOperator.LessThanOrEqual => "<=",
-        BinaryOperator.Minus => "-",
-        BinaryOperator.Modulus => "%",
+        BinaryOperator.Subtract => "-",
+        BinaryOperator.Mod => "%",
         BinaryOperator.Multiply => "*",
         BinaryOperator.NotEqual => "!=",
         BinaryOperator.Or => "OU",
-        BinaryOperator.Plus => "+",
+        BinaryOperator.Add => "+",
         BinaryOperator.Xor => "XOR",
         _ => throw @operator.ToUnmatchedException()
     };
@@ -32,7 +32,7 @@ internal static class OperatorExtensions
 
 }
 
-internal enum BinaryOperator
+enum BinaryOperator
 {
     And,
     Divide,
@@ -41,16 +41,16 @@ internal enum BinaryOperator
     GreaterThanOrEqual,
     LessThan,
     LessThanOrEqual,
-    Minus,
-    Modulus,
+    Subtract,
+    Mod,
     Multiply,
     NotEqual,
     Or,
-    Plus,
+    Add,
     Xor,
 }
 
-internal enum UnaryOperator
+enum UnaryOperator
 {
     Minus,
     Not,

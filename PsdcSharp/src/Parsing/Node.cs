@@ -5,34 +5,34 @@ namespace Scover.Psdc.Parsing;
 
 #region Node traits
 
-internal interface NodeCall : Node
+interface NodeCall : Node
 {
     public Identifier Name { get; }
     public IReadOnlyCollection<ParameterActual> Parameters { get; }
 }
 
-internal interface NodeScoped : Node;
+interface NodeScoped : Node;
 
-internal interface NodeAliasReference : Node
+interface NodeAliasReference : Node
 {
     public Identifier Name { get; }
 }
 
-internal abstract class BlockNode(SourceTokens sourceTokens,
+abstract class BlockNode(SourceTokens sourceTokens,
     IReadOnlyCollection<Node.Statement> block)
 : NodeImpl(sourceTokens), NodeScoped
 {
     public IReadOnlyCollection<Node.Statement> Block => block;
 }
 
-internal interface NodeBracketedExpression : Node.Expression
+interface NodeBracketedExpression : Node.Expression
 {
     public Expression ContainedExpression { get; }
 }
 
 #endregion Node traits
 
-internal interface Node : EquatableSemantics<Node>
+interface Node : EquatableSemantics<Node>
 {
     SourceTokens SourceTokens { get; }
     internal sealed class Algorithm(SourceTokens sourceTokens,
@@ -645,12 +645,12 @@ internal interface Node : EquatableSemantics<Node>
                  && o.Name.SemanticsEqual(Name);
             }
 
-            internal sealed class StringLengthed(SourceTokens sourceTokens,
+            internal sealed class LengthedString(SourceTokens sourceTokens,
                 Expression length)
             : NodeImpl(sourceTokens), Complete
             {
                 public Expression Length => length;
-                public override bool SemanticsEqual(Node other) => other is StringLengthed o
+                public override bool SemanticsEqual(Node other) => other is LengthedString o
                  && o.Length.SemanticsEqual(Length);
             }
 
@@ -721,9 +721,9 @@ internal interface Node : EquatableSemantics<Node>
 }
 
 #region Terminals
-internal sealed class ParameterMode
+sealed class ParameterMode
 {
-    private ParameterMode(string formal, string actual)
+    ParameterMode(string formal, string actual)
      => (RepresentationFormal, RepresentationActual) = (formal, actual);
 
     public string RepresentationFormal { get; }
@@ -734,7 +734,7 @@ internal sealed class ParameterMode
     public static ParameterMode InOut { get; } = new("entF/sortF", "entE/sortE");
 }
 
-internal sealed class Identifier : NodeImpl, IEquatable<Identifier?>
+sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 {
     public Identifier(SourceTokens sourceTokens, string name) : base(sourceTokens)
     {
@@ -763,7 +763,7 @@ internal sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 
 #endregion Terminals
 
-internal abstract class NodeImpl(SourceTokens sourceTokens) : Node
+abstract class NodeImpl(SourceTokens sourceTokens) : Node
 {
     public SourceTokens SourceTokens => sourceTokens;
     public abstract bool SemanticsEqual(Node other);

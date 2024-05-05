@@ -7,14 +7,14 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
 
-internal static class Program
+static class Program
 {
-    private const string StdinPlaceholder = "-";
+    const string StdinPlaceholder = "-";
 
-    private static void WriteError(string message)
+    static void WriteError(string message)
      => Console.Error.WriteLine($"psdc: {message}");
 
-    private static int Main(string[] args)
+    static int Main(string[] args)
     {
         if (args.Length != 1) {
             WriteError("usage: <test_program_filename>");
@@ -61,11 +61,11 @@ internal static class Program
         return SysExits.Ok;
     }
 
-    private sealed class PrintMessenger : Messenger
+    sealed class PrintMessenger : Messenger
     {
-        private static TextWriter Stderr => Console.Error;
+        static TextWriter Stderr => Console.Error;
 
-        private readonly Dictionary<MessageSeverity, int> _msgCountsBySeverity = [];
+        readonly Dictionary<MessageSeverity, int> _msgCountsBySeverity = [];
 
         public void PrintConclusion()
          => Stderr.WriteLine($"""

@@ -4,10 +4,10 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Language;
 
-internal sealed class Scope(Scope? scope) : ReadOnlyScope
+sealed class Scope(Scope? scope) : ReadOnlyScope
 {
-    private readonly Scope? _parentScope = scope;
-    private readonly Dictionary<Identifier, Symbol> _symbolTable = [];
+    readonly Scope? _parentScope = scope;
+    readonly Dictionary<Identifier, Symbol> _symbolTable = [];
 
     public IReadOnlyDictionary<Identifier, Symbol> Symbols => _symbolTable;
 

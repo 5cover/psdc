@@ -6,11 +6,11 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
-internal sealed class TypeInfoC : TypeInfo
+sealed class TypeInfoC : TypeInfo
 {
     public static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression)
      => Create(type, generateExpression, new());
-    private static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression, Indentation indent)
+    static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression, Indentation indent)
     {
         switch (type) {
         case EvaluatedType.Unknown u:
@@ -39,10 +39,10 @@ internal sealed class TypeInfoC : TypeInfo
                 requiredHeaders: arrayType.RequiredHeaders,
                 starCount: arrayType._stars.Length,
                 postModifier: postModifier.ToString());
-        case EvaluatedType.StringLengthed strlen:
+        case EvaluatedType.LengthedString strlen:
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression
-                .Map(len => generateExpression(len.Alter(BinaryOperator.Plus, 1)))
+                .Map(len => generateExpression(len.Alter(BinaryOperator.Add, 1)))
                 .ValueOr((strlen.Length + 1).ToString());
             return new(type, "char", "%s", postModifier: $"[{lengthPlus1}]");
         case EvaluatedType.Structure structure:
@@ -63,9 +63,9 @@ internal sealed class TypeInfoC : TypeInfo
         }
     }
 
-    private readonly string _typeName, _postModifier, _typeQualifier;
-    private readonly string _stars;
-    private TypeInfoC(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders, int starCount = 0, string postModifier = "", string? typeQualifier = null)
+    readonly string _typeName, _postModifier, _typeQualifier;
+    readonly string _stars;
+    TypeInfoC(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders, int starCount = 0, string postModifier = "", string? typeQualifier = null)
      => (_stars, _typeName, _postModifier, _typeQualifier, FormatComponent, RequiredHeaders)
         = (new string('*', starCount),
            typeName,
@@ -74,7 +74,7 @@ internal sealed class TypeInfoC : TypeInfo
            formatComponent,
            requiredHeaders);
 
-    private TypeInfoC(EvaluatedType type, string actualTypeName, string? formatCompnent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
+    TypeInfoC(EvaluatedType type, string actualTypeName, string? formatCompnent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
     : this(type.Alias?.Name ?? actualTypeName,
            formatCompnent.SomeNotNull(),
            requiredHeaders ?? [],
@@ -103,5 +103,5 @@ internal sealed class TypeInfoC : TypeInfo
 
     public string Generate() => $"{_typeName}{_stars}{_postModifier}{_typeQualifier}";
 
-    private static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
+    static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
 }

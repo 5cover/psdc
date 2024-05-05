@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Language;
 
-internal enum NumericType
+enum NumericType
 {
     Integer,
     Real,

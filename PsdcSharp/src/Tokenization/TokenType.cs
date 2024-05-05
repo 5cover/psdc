@@ -3,13 +3,13 @@ using System.Text.RegularExpressions;
 
 namespace Scover.Psdc.Tokenization;
 
-internal abstract class TokenType
+abstract class TokenType
 {
-    private readonly string _repr;
+    readonly string _repr;
 
     public override string ToString() => _repr;
 
-    private TokenType(string repr, bool isStatic)
+    TokenType(string repr, bool isStatic)
      => _repr = isStatic ? $"`{repr}`" : repr;
 
     internal interface Ruled
@@ -28,10 +28,10 @@ internal abstract class TokenType
 
     internal sealed class Valued : Ruled<RegexTokenRule>
     {
-        private Valued(string name, string pattern, RegexOptions options = RegexOptions.None)
+        Valued(string name, string pattern, RegexOptions options = RegexOptions.None)
         : base(name, false, new(pattern, options)) => instances.Add(this);
 
-        private static readonly List<Valued> instances = [];
+        static readonly List<Valued> instances = [];
         public static IReadOnlyCollection<Valued> Instances => instances;
 
         public static Valued CommentMultiline { get; } = new("multiline comment", @"/\*(.*?)\*/", RegexOptions.Singleline);
@@ -45,11 +45,11 @@ internal abstract class TokenType
 
     internal sealed class Operator : Ruled<StringTokenRule>
     {
-        private Operator(string code)
+        Operator(string code)
         : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
          => instances.Add(this);
 
-        private static readonly List<Operator> instances = [];
+        static readonly List<Operator> instances = [];
         public static IReadOnlyCollection<Operator> Instances => instances;
 
         public static Operator Assignment { get; } = new(":=");
@@ -59,10 +59,10 @@ internal abstract class TokenType
         #region Arithmetic
 
         public static Operator Divide { get; } = new("/");
-        public static Operator Minus { get; } = new("-");
-        public static Operator Modulus { get; } = new("%");
+        public static Operator Subtract { get; } = new("-");
+        public static Operator Mod { get; } = new("%");
         public static Operator Multiply { get; } = new("*");
-        public static Operator Plus { get; } = new("+");
+        public static Operator Add { get; } = new("+");
 
         #endregion Arithmetic
 
@@ -89,11 +89,11 @@ internal abstract class TokenType
 
     internal sealed class Punctuation : Ruled<StringTokenRule>
     {
-        private Punctuation(string code)
+        Punctuation(string code)
         : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
          => instances.Add(this);
 
-        private static List<Punctuation> instances = [];
+        static List<Punctuation> instances = [];
         public static IReadOnlyCollection<Punctuation> Instances => instances;
 
         public static Punctuation CloseBrace { get; } = new("}");
@@ -110,11 +110,11 @@ internal abstract class TokenType
 
     internal sealed class Keyword : Ruled<WordTokenRule>
     {
-        private Keyword(string word)
+        Keyword(string word)
         : base(word, true, new WordTokenRule(word, StringComparison.Ordinal))
          => instances.Add(this);
 
-        private static readonly List<Keyword> instances = [];
+        static readonly List<Keyword> instances = [];
         public static IReadOnlyCollection<Keyword> Instances => instances;
 
         public static Keyword Begin { get; } = new("début");
@@ -205,7 +205,7 @@ internal abstract class TokenType
 
     internal sealed class Special : TokenType
     {
-        private Special(string repr) : base(repr, false)
+        Special(string repr) : base(repr, false)
         {
         }
 

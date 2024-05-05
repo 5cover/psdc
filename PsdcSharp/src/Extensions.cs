@@ -8,12 +8,12 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
 
-internal readonly record struct Position(int Line, int Column)
+readonly record struct Position(int Line, int Column)
 {
     public override string ToString() => $"L {Line + 1}, col {Column + 1}";
 }
 
-internal static class Extensions
+static class Extensions
 {
     public static string RemoveDiacritics(this string text)
      => new string(text.Normalize(NormalizationForm.FormD)
@@ -162,10 +162,10 @@ internal static class Extensions
          => tokens.FirstOrNone().Map(token => types.Contains(token.Type));
 }
 
-internal static class Function
+static class Function
 {
     /// <summary>
-    /// Composes an action that executes the specified action for each item in the given collection.
+    /// Compose an action that executes the specified action for each item in the given collection.
     /// </summary>
     /// <typeparam name="T">The type of items in the collection.</typeparam>
     /// <param name="action">The action to be executed for each item.</param>

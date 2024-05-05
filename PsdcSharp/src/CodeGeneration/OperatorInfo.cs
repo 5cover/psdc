@@ -2,7 +2,7 @@ using Scover.Psdc.Language;
 
 namespace Scover.Psdc.CodeGeneration;
 
-internal interface OperatorInfo<TSelf> where TSelf : OperatorInfo<TSelf>
+interface OperatorInfo<TSelf> where TSelf : OperatorInfo<TSelf>
 {
     public string Code { get; }
     public Associativity Associativity { get; }

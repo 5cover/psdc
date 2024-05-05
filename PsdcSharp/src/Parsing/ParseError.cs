@@ -4,7 +4,7 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
 
-internal sealed record ParseError(
+sealed record ParseError(
     string FailedProduction,
     Option<Token> ErroneousToken,
     IImmutableSet<TokenType> ExpectedTokens,

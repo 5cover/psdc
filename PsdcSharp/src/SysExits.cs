@@ -1,6 +1,6 @@
 namespace Scover.Psdc;
 
-internal static class SysExits
+static class SysExits
 {
     public const int Ok = 0;
     public const int Usage = 64;

@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Tokenization;
 
-internal readonly record struct Token(TokenType Type, string? Value, int StartIndex, int Length)
+readonly record struct Token(TokenType Type, string? Value, int StartIndex, int Length)
 {
     public Range InputRange => StartIndex..(StartIndex + Length);
     public override string ToString()

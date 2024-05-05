@@ -6,9 +6,9 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
-internal partial class CodeGeneratorC
+partial class CodeGeneratorC
 {
-    private (string format, IReadOnlyList<Expression> arguments) BuildFormatString(IEnumerable<Expression> parts)
+    (string format, IReadOnlyList<Expression> arguments) BuildFormatString(IEnumerable<Expression> parts)
     {
         List<Expression> arguments = [];
         StringBuilder format = new();
@@ -30,7 +30,7 @@ internal partial class CodeGeneratorC
         return (format.ToString(), arguments);
     }
 
-    private static string FormatValue(ConstantValue value) => value switch {
+    static string FormatValue(ConstantValue value) => value switch {
         ConstantValue.Integer i => i.Value.ToString(CultureInfo.InvariantCulture),
         ConstantValue.Real i => i.Value.ToString(CultureInfo.InvariantCulture),
         ConstantValue.Boolean i => i.Value.ToString(CultureInfo.InvariantCulture),

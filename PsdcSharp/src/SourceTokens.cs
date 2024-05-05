@@ -3,10 +3,10 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
 
-internal class SourceTokens : IEnumerable<Token>
+class SourceTokens : IEnumerable<Token>
 {
-    private readonly Lazy<Range> _inputRange;
-    private readonly IEnumerable<Token> _tokens;
+    readonly Lazy<Range> _inputRange;
+    readonly IEnumerable<Token> _tokens;
     public SourceTokens(IEnumerable<Token> tokens, int count)
     {
         Count = count;

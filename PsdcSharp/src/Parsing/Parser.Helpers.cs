@@ -3,7 +3,7 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
 
-internal partial class Parser
+partial class Parser
 {
     /// <summary>
     /// Returns the result of the first successful parser, or the combined error of all parsers.
@@ -13,7 +13,7 @@ internal partial class Parser
     /// <param name="parsers">The other parsers.</param>
     /// <returns>The result of the first successful parsers or the error of all parsers combined.</returns>
     /// <remarks>Parsers should be ordered by decreasing length for maximum munch.</remakrs>
-    private static Parser<T> ParseFirst<T>(Parser<T> firstParser, params Parser<T>[] parsers)
+    static Parser<T> ParseFirst<T>(Parser<T> firstParser, params Parser<T>[] parsers)
      => tokens => {
         var result = firstParser(tokens);
         var enumParser = parsers.GetGenericEnumerator();
@@ -25,20 +25,20 @@ internal partial class Parser
         return result;
     };
 
-    private static Parser<T> MakeAlwaysOkParser<T>(int tokenCount, Func<SourceTokens, T> makeNode) where T : Node
+    static Parser<T> MakeAlwaysOkParser<T>(int tokenCount, Func<SourceTokens, T> makeNode) where T : Node
      => tokens => ParseResult.Ok(makeNode(new(tokens, tokenCount)));
-    private static Parser<T> MakeAlwaysOkParser<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
+    static Parser<T> MakeAlwaysOkParser<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
      => tokens => ParseResult.Ok(makeNodeWithValue(new(tokens, 1), tokens.First().Value.NotNull()));
 
-    private ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator) => ParseOperation.Start(_messenger, tokens, expectedType.ToString())
+    ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator) => ParseOperation.Start(_messenger, tokens, expectedType.ToString())
         .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => resultCreator(tokens, value));
 
-    private ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator) => ParseOperation.Start(_messenger, tokens, expectedType.ToString())
+    ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator) => ParseOperation.Start(_messenger, tokens, expectedType.ToString())
         .ParseToken(expectedType)
     .MapResult(resultCreator);
 
-    private static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, Parser<T>? fallback = null)
+    static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, Parser<T>? fallback = null)
     {
         var firstToken = tokens.FirstOrNone();
         var error = ParseError.ForProduction(production, firstToken, parserMap.Keys);
@@ -49,7 +49,7 @@ internal partial class Parser
             ?? ParseResult.Fail<T>(SourceTokens.Empty, error);
     }
 
-    private static ParseResult<T> GetByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, T> map)
+    static ParseResult<T> GetByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, T> map)
     {
         var firstToken = tokens.FirstOrNone();
         return firstToken.HasValue && map.TryGetValue(firstToken.Value.Type, out var t)
@@ -57,7 +57,7 @@ internal partial class Parser
             : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.ForProduction(production, firstToken, map.Keys));
     }
 
-    private static ParseResult<Token> ParseTokenOfType(
+    static ParseResult<Token> ParseTokenOfType(
         IEnumerable<Token> tokens,
         string production,
         IEnumerable<TokenType> allowedTokensTypes)

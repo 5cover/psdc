@@ -2,13 +2,13 @@
 
 namespace Scover.Psdc.CodeGeneration;
 
-internal sealed class IncludeSet
+sealed class IncludeSet
 {
     public const string StdBool = "<stdbool.h>";
     public const string StdIo = "<stdio.h>";
     public const string StdLib = "<stdlib.h>";
 
-    private readonly HashSet<string> _headers = [];
+    readonly HashSet<string> _headers = [];
 
     public void Ensure(string name) => _headers.Add(name);
 

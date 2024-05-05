@@ -4,7 +4,7 @@ namespace Scover.Psdc;
 
 // Covariant Option monad
 
-internal interface Option<out T>
+interface Option<out T>
 {
     [MemberNotNullWhen(true, nameof(Value))]
     bool HasValue { get; }
@@ -12,7 +12,7 @@ internal interface Option<out T>
     T? Value { get; }
 }
 
-internal interface Option<out T, out TError>
+interface Option<out T, out TError>
 {
     [MemberNotNullWhen(true, nameof(Value))]
     [MemberNotNullWhen(false, nameof(Error))]
@@ -22,7 +22,7 @@ internal interface Option<out T, out TError>
     TError? Error { get; }
 }
 
-internal static class Option
+static class Option
 {
     public static Option<T> DiscardError<T, TError>(this Option<T, TError> option)
      => new OptionImpl<T>(option.HasValue, option.Value);
@@ -122,11 +122,11 @@ internal static class Option
         ? Some<(T1, T2), TError>((option1.Value, option2.Value))
         : None<(T1, T2), TError>(option1.HasValue ? option2.Error.NotNull() : option1.Error);
 
-    private readonly record struct OptionImpl<T>(bool HasValue, T? Value) : Option<T>;
-    private readonly record struct OptionImpl<T, TError>(bool HasValue, T? Value, TError? Error) : Option<T, TError>;
+    readonly record struct OptionImpl<T>(bool HasValue, T? Value) : Option<T>;
+    readonly record struct OptionImpl<T, TError>(bool HasValue, T? Value, TError? Error) : Option<T, TError>;
 }
 
-internal static class OptionalCollectionExtensions
+static class OptionalCollectionExtensions
 {
     /// <summary>
     /// Accumulates the values and errors from a collection of <see cref="Option{T, TError}"/> instances.

@@ -8,7 +8,7 @@ using Type = Scover.Psdc.Parsing.Node.Type;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-internal static partial class AstExtensions
+static partial class AstExtensions
 {
     public static Option<EvaluatedType, Message> EvaluateType(this Expression expression, ReadOnlyScope scope) => expression switch {
         Expression.BinaryOperation ob => EvaluateTypeOperationBinary(ob, scope),
@@ -57,8 +57,8 @@ internal static partial class AstExtensions
         Type.Complete.File file => EvaluatedType.File.Instance,
         Type.Complete.Boolean => EvaluatedType.Boolean.Instance,
         Type.Complete.Character => EvaluatedType.Character.Instance,
-        Type.Complete.StringLengthed str
-         => EvaluatedType.StringLengthed.Create(str.Length, scope)
+        Type.Complete.LengthedString str
+         => EvaluatedType.LengthedString.Create(str.Length, scope)
             .MatchError(messenger.Report)
             .ValueOr<EvaluatedType>(new EvaluatedType.Unknown(type.SourceTokens)),
         Type.Complete.Structure structure => CreateStructureTypeOrError(structure, scope, messenger),
@@ -79,7 +79,7 @@ internal static partial class AstExtensions
         return new EvaluatedType.Structure(components);
     }
 
-    private static Option<EvaluatedType, Message> EvaluateTypeOperationBinary(Expression.BinaryOperation operationBinary, ReadOnlyScope scope)
+    static Option<EvaluatedType, Message> EvaluateTypeOperationBinary(Expression.BinaryOperation operationBinary, ReadOnlyScope scope)
      => EvaluateType(operationBinary.Left, scope)
         .Combine(EvaluateType(operationBinary.Right, scope))
         .FlatMap((o1, o2) => o1.SemanticsEqual(o2)

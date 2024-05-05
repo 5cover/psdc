@@ -2,11 +2,11 @@ using System.Text;
 
 namespace Scover.Psdc.CodeGeneration;
 
-internal sealed class Indentation
+sealed class Indentation
 {
-    private const char Character = ' ';
-    private const int TabSize = 4;
-    private int _level;
+    const char Character = ' ';
+    const int TabSize = 4;
+    int _level;
 
     public void Decrease() => _level--;
 

@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Tokenization;
 
-internal interface TokenRule
+interface TokenRule
 {
     /// <summary>Attempts to extract a token out of a string.</summary>
     /// <param name="tokenType">The type of token to extract</param>

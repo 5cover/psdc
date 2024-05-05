@@ -6,9 +6,9 @@ using Scover.Psdc.Messages;
 
 namespace Scover.Psdc.Tokenization;
 
-internal sealed class Tokenizer(Messenger messenger, string code)
+sealed class Tokenizer(Messenger messenger, string code)
 {
-    private static readonly IReadOnlyList<Ruled> rules =
+    static readonly IReadOnlyList<Ruled> rules =
         // Variable length
         new List<Ruled> { CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter, }
         // Maximal munch
@@ -19,9 +19,9 @@ internal sealed class Tokenizer(Messenger messenger, string code)
         .Append(Identifier)
         .ToList();
 
-    private static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
+    static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
 
-    private readonly string _code = code;
+    readonly string _code = code;
 
     public IEnumerable<Token> Tokenize()
     {
@@ -59,9 +59,9 @@ internal sealed class Tokenizer(Messenger messenger, string code)
         yield return new Token(Eof, null, index, 0);
     }
 
-    private void AddUnknownTokenMessage(int invalidStart, int index)
+    void AddUnknownTokenMessage(int invalidStart, int index)
      => messenger.Report(Message.ErrorUnknownToken(invalidStart..index));
 
-    private Option<Token> ReadToken(int offset)
+    Option<Token> ReadToken(int offset)
      => rules.Select(t => t.TryExtract(_code, offset)).FirstOrNone(o => o.HasValue);
 }

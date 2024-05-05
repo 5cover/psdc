@@ -2,10 +2,10 @@ using System.Diagnostics;
 
 namespace Scover.Psdc.Tokenization;
 
-internal sealed class StringTokenRule : TokenRule
+sealed class StringTokenRule : TokenRule
 {
-    private readonly StringComparison _comparison;
-    private readonly string _normalizedExpected;
+    readonly StringComparison _comparison;
+    readonly string _normalizedExpected;
 
     public StringTokenRule(string expected, StringComparison comparison)
     {

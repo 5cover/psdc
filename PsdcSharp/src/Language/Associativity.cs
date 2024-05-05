@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Language;
 
-internal enum Associativity {
+enum Associativity {
     LeftToRight,
     RightToLeft,
 }

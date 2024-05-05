@@ -2,7 +2,7 @@ namespace Scover.Psdc;
 
 public static class Globals
 {
-    private static string? input = null;
+    static string? input = null;
 
     public static void Initialize(string input)
     {

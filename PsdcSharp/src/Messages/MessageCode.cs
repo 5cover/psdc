@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Messages;
 
-internal enum MessageCode
+enum MessageCode
 {
     #region Errors
     UnknownToken = 0,
@@ -30,6 +30,7 @@ internal enum MessageCode
     #region Warnings
 
     DivisionByZero = 1000,
+    FloatingPointEquality,
 
     CustomWarning = 1999,
     
