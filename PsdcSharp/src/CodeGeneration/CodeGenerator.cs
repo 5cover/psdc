@@ -1,3 +1,5 @@
+using System.Text;
+using Scover.Psdc.CodeGeneration.C;
 using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.StaticAnalysis;
@@ -7,12 +9,18 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration;
 
-abstract partial class CodeGenerator<TOpInfo>(Messenger messenger, SemanticAst semanticAst)
+static class CodeGenerator
+{
+    public static string GenerateC(Messenger messenger, SemanticAst ast)
+     => new CodeGeneratorC(messenger, ast).Generate();
+}
+
+abstract partial class CodeGenerator<TOpInfo>(Messenger msger, SemanticAst ast)
     where TOpInfo : OperatorInfo<TOpInfo>
 {
-    protected readonly SemanticAst _ast = semanticAst;
+    protected readonly SemanticAst _ast = ast;
     protected readonly Indentation _indent = new();
-    protected readonly Messenger _messenger = messenger;
+    protected readonly Messenger _msger = msger;
 
     public abstract string Generate();
 

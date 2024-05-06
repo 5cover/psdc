@@ -148,21 +148,21 @@ partial class Parser
     }
 
     ParseResult<Expression> ParseBracketed(IEnumerable<Token> tokens)
-     => ParseOperation.Start(_messenger, tokens, "bracketed expression")
+     => ParseOperation.Start(_msger, tokens, "bracketed expression")
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var expression, ParseExpression)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Expression.Bracketed(t, expression));
 
     ParseResult<Expression.Lvalue> ParseBracketedLvalue(IEnumerable<Token> tokens)
-     => ParseOperation.Start(_messenger, tokens, "bracketed lvalue")
+     => ParseOperation.Start(_msger, tokens, "bracketed lvalue")
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var expression, ParseLvalue)
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Expression.Lvalue.Bracketed(t, expression));
 
     ParseResult<Expression.BuiltinFdf> ParseBuiltinFdf(IEnumerable<Token> tokens)
-     => ParseOperation.Start(_messenger, tokens, "FdF call")
+     => ParseOperation.Start(_msger, tokens, "FdF call")
         .ParseToken(Keyword.Fdf)
         .ParseToken(Punctuation.OpenBracket)
         .Parse(out var argNomLog, ParseExpression)
@@ -184,7 +184,7 @@ partial class Parser
         })))))))))(tokens);
 
     ParseResult<Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens)
-     => ParseOperation.Start(_messenger, tokens, "function call")
+     => ParseOperation.Start(_msger, tokens, "function call")
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Punctuation.OpenBracket)
         .ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma, Punctuation.CloseBracket)
@@ -213,7 +213,7 @@ partial class Parser
     ParseResult<Expression.Lvalue> RightParseArraySubscript(
                         Expression expr,
         IEnumerable<Token> rightTokens)
-     => ParseOperation.Start(_messenger, rightTokens, "array subscript")
+     => ParseOperation.Start(_msger, rightTokens, "array subscript")
         .ParseOneOrMoreSeparated(out var indexes, ParseExpression,
             Punctuation.Comma, Punctuation.CloseSquareBracket)
     .MapResult(t => new Expression.Lvalue.ArraySubscript(t, expr, indexes));
@@ -221,7 +221,7 @@ partial class Parser
     ParseResult<Expression.Lvalue> RightParseComponentAccess(
         Expression expr,
         IEnumerable<Token> rightTokens)
-     => ParseOperation.Start(_messenger, rightTokens, "component access")
+     => ParseOperation.Start(_msger, rightTokens, "component access")
         .Parse(out var component, ParseIdentifier)
         .MapResult(t => new Expression.Lvalue.ComponentAccess(t, expr, component));
 }

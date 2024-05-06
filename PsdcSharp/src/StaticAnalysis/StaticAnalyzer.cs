@@ -6,31 +6,36 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
+sealed class StaticAnalyzer
 {
     readonly Dictionary<Expression, EvaluatedType> _inferredTypes = [];
     readonly Dictionary<NodeScoped, Scope> _scopes = [];
+    readonly Messenger _messenger;
     bool _seenMainProgram;
 
-    public SemanticAst AnalyzeSemantics()
+    private StaticAnalyzer(Messenger messenger) => _messenger = messenger;
+
+    public static SemanticAst AnalyzeSemantics(Messenger messenger, Algorithm root)
     {
-        SetParentScope(root, null);
+        StaticAnalyzer a = new(messenger);
+
+        a.SetParentScope(root, null);
         foreach (var decl in root.Declarations) {
-            AnalyzeDeclaration(_scopes[root], decl);
+            a.AnalyzeDeclaration(a._scopes[root], decl);
         }
 
-        if (!_seenMainProgram) {
+        if (!a._seenMainProgram) {
             messenger.Report(Message.ErrorMissingMainProgram(root.SourceTokens));
         }
 
-        return new(root, _scopes, _inferredTypes);
+        return new(root, a._scopes, a._inferredTypes);
     }
 
     void AddParameters(Scope scope, IEnumerable<Symbol.Parameter> parameters)
     {
         foreach (var param in parameters) {
             if (!scope.TryAdd(param, out var existingSymbol)) {
-                messenger.Report(Message.ErrorRedefinedSymbol(param, existingSymbol));
+                _messenger.Report(Message.ErrorRedefinedSymbol(param, existingSymbol));
             }
         }
     }
@@ -49,21 +54,21 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
 
         switch (decl) {
         case Declaration.TypeAlias alias:
-            scope.AddSymbolOrError(messenger, new Symbol.TypeAlias(alias.Name, alias.SourceTokens,
-                alias.Type.CreateTypeOrError(scope, messenger)));
+            scope.AddSymbolOrError(_messenger, new Symbol.TypeAlias(alias.Name, alias.SourceTokens,
+                alias.Type.CreateTypeOrError(scope, _messenger)));
             break;
 
         case Declaration.Constant constant:
             AnalyzeExpression(scope, constant.Value).MatchSome(inferredType => {
-                var declaredType = constant.Type.CreateTypeOrError(scope, messenger);
+                var declaredType = constant.Type.CreateTypeOrError(scope, _messenger);
 
                 if (!declaredType.SemanticsEqual(inferredType)) {
-                    messenger.Report(Message.ErrorDeclaredInferredTypeMismatch(constant.SourceTokens, declaredType, inferredType));
+                    _messenger.Report(Message.ErrorDeclaredInferredTypeMismatch(constant.SourceTokens, declaredType, inferredType));
                 }
                 if (!constant.Value.IsConstant(scope)) {
-                    messenger.Report(Message.ErrorConstantExpressionExpected(constant.SourceTokens));
+                    _messenger.Report(Message.ErrorConstantExpressionExpected(constant.SourceTokens));
                 }
-                scope.AddSymbolOrError(messenger, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, constant.Value));
+                scope.AddSymbolOrError(_messenger, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, constant.Value));
             });
             break;
 
@@ -72,7 +77,7 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                     func.Signature.Name,
                     func.Signature.SourceTokens,
                     CreateParameters(scope, func.Signature.Parameters),
-                    func.Signature.ReturnType.CreateTypeOrError(scope, messenger)));
+                    func.Signature.ReturnType.CreateTypeOrError(scope, _messenger)));
             break;
 
         case Declaration.FunctionDefinition funcDef:
@@ -80,12 +85,12 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
                     funcDef.Signature.Name,
                     funcDef.Signature.SourceTokens,
                     CreateParameters(scope, funcDef.Signature.Parameters),
-                    funcDef.Signature.ReturnType.CreateTypeOrError(scope, messenger)));
+                    funcDef.Signature.ReturnType.CreateTypeOrError(scope, _messenger)));
             break;
 
         case Declaration.MainProgram mainProgram:
             if (_seenMainProgram) {
-                messenger.Report(Message.ErrorRedefinedMainProgram(mainProgram));
+                _messenger.Report(Message.ErrorRedefinedMainProgram(mainProgram));
             }
             _seenMainProgram = true;
             AnalyzeScopedBlock(mainProgram);
@@ -115,7 +120,7 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
         SetParentScopeIfNecessary(expr, scope);
 
         var type = expr.EvaluateType(scope)
-            .MatchError(messenger.Report);
+            .MatchError(_messenger.Report);
 
         type.MatchSome(type => _inferredTypes.Add(expr, type));
 
@@ -125,7 +130,7 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             // No message is reported if the expression isn't constant.
             // Detects indirect division by zero errors. Example : (4 / (2 + 3 - 5))
             expr.EvaluateValue(scope)
-                .MatchError(e => e.MatchSome(messenger.Report));
+                .MatchError(e => e.MatchSome(_messenger.Report));
         }
 
         return type;
@@ -165,7 +170,7 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             AnalyzeExpression(scope, assignment.Target);
             if (assignment.Target is Expression.Lvalue.VariableReference varRef) {
                 scope.GetSymbol<Symbol.Constant>(varRef.Name).MatchSome(constant
-                    => messenger.Report(Message.ErrorConstantAssignment(assignment, constant)));
+                    => _messenger.Report(Message.ErrorConstantAssignment(assignment, constant)));
             }
             AnalyzeExpression(scope, assignment.Value);
             break;
@@ -236,9 +241,9 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             break;
 
         case Statement.LocalVariable varDecl:
-            var type = varDecl.Type.CreateTypeOrError(scope, messenger);
+            var type = varDecl.Type.CreateTypeOrError(scope, _messenger);
             foreach (var name in varDecl.Names) {
-                scope.AddSymbolOrError(messenger, new Symbol.Variable(name, varDecl.SourceTokens, type));
+                scope.AddSymbolOrError(_messenger, new Symbol.Variable(name, varDecl.SourceTokens, type));
             }
             break;
 
@@ -267,11 +272,11 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
     List<Symbol.Parameter> CreateParameters(ReadOnlyScope scope, IEnumerable<ParameterFormal> parameters)
         => parameters.Select(param
             => new Symbol.Parameter(param.Name, param.SourceTokens,
-                param.Type.CreateTypeOrError(scope, messenger), param.Mode))
+                param.Type.CreateTypeOrError(scope, _messenger), param.Mode))
         .ToList();
 
     void HandleCall<TSymbol>(Scope scope, NodeCall call) where TSymbol : CallableSymbol
-        => scope.GetSymbol<TSymbol>(call.Name).MatchError(messenger.Report).Match(callable => {
+        => scope.GetSymbol<TSymbol>(call.Name).MatchError(_messenger.Report).Match(callable => {
             List<string> problems = [];
 
             if (call.Parameters.Count != callable.Parameters.Count) {
@@ -294,7 +299,7 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             }
 
             if (problems.Count > 0) {
-                messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
+                _messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
             }
         }, none: () => {
             // If the callable symbol wasn't found, still analyze the parameter expressions.
@@ -308,10 +313,10 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
         if (!scope.TryAdd(sub, out var existingSymbol)) {
             if (existingSymbol is T existingSub) {
                 if (!sub.SemanticsEqual(existingSub)) {
-                    messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
+                    _messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
                 }
             } else {
-                messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
+                _messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
             }
         }
     }
@@ -322,12 +327,12 @@ sealed class StaticAnalyzer(Messenger messenger, Algorithm root)
             sub.MarkAsDefined();
         } else if (existingSymbol is T existingSub) {
             if (existingSub.HasBeenDefined) {
-                messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSub));
+                _messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSub));
             } else if (!sub.SemanticsEqual(existingSub)) {
-                messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
+                _messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
             }
         } else {
-            messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
+            _messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
         }
     }
 

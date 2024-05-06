@@ -33,7 +33,7 @@ partial class CodeGeneratorC
                 CreateTypeInfo(type).FormatComponent.Match(fmtComp => {
                     format.Append(fmtComp);
                     arguments.Add(part);
-                }, () => _messenger.Report(Message.ErrorTargetLanguage("C", part.SourceTokens,
+                }, () => _msger.Report(Message.ErrorTargetLanguage("C", part.SourceTokens,
                          $"type '{type}' cannot be used in a format string")));
             }
         }

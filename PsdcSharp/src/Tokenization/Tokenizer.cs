@@ -6,7 +6,7 @@ using static Scover.Psdc.Tokenization.TokenType.Valued;
 
 namespace Scover.Psdc.Tokenization;
 
-sealed class Tokenizer(Messenger messenger, string code)
+sealed class Tokenizer
 {
     static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
 
@@ -21,25 +21,30 @@ sealed class Tokenizer(Messenger messenger, string code)
     .Append(Identifier)
     .ToList();
 
-    readonly string _code = code;
+    Tokenizer(Messenger msger, string code) => (_msger, _code) = (msger, code);
 
-    public IEnumerable<Token> Tokenize()
+    readonly Messenger _msger;
+    readonly string _code;
+
+    public static IEnumerable<Token> Tokenize(Messenger messenger, string code)
     {
+        Tokenizer t = new(messenger, code);
+
         int index = 0;
 
         int? invalidStart = null;
 
-        while (index < _code.Length) {
-            if (char.IsWhiteSpace(_code[index])) {
+        while (index < code.Length) {
+            if (char.IsWhiteSpace(code[index])) {
                 index++;
                 continue;
             }
 
-            Option<Token> token = ReadToken(index);
+            Option<Token> token = t.ReadToken(index);
 
             if (token.HasValue) {
                 if (invalidStart is not null) {
-                    AddUnknownTokenMessage(invalidStart.Value, index);
+                    t.ReportUnknownToken(invalidStart.Value, index);
                     invalidStart = null;
                 }
                 index += token.Value.Length;
@@ -53,14 +58,14 @@ sealed class Tokenizer(Messenger messenger, string code)
         }
 
         if (invalidStart is not null) {
-            AddUnknownTokenMessage(invalidStart.Value, index);
+            t.ReportUnknownToken(invalidStart.Value, index);
         }
 
         yield return new Token(Eof, null, index, 0);
     }
 
-    void AddUnknownTokenMessage(int invalidStart, int index)
-     => messenger.Report(Message.ErrorUnknownToken(invalidStart..index));
+    void ReportUnknownToken(int invalidStart, int index)
+     => _msger.Report(Message.ErrorUnknownToken(invalidStart..index));
 
     Option<Token> ReadToken(int offset)
      => rules.Select(t => t.TryExtract(_code, offset)).FirstOrNone(o => o.HasValue);

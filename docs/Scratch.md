@@ -390,3 +390,99 @@ What we need to do
 - Evaluated type ArraySubscript or LenghtedString creation : get the typed value of a constant expression
 
 extract methods from these tasks.
+
+For big projets, to prevent getting lost in the code, separate it in different subprojets.
+
+Example for Psdc:
+
+Problem|input|output
+-|-|-
+Getting the input|File or stdin|string
+Lexing|string|sequence of tokens
+Parsing|sequence of tokens|AST
+Static analysis|AST|AST + ?
+Code generator|AST + ?|C code
+
+Right now i'm having trouble undertsanding the relation between static analysis and the code generator. This is the cause of my current problems.
+
+What do the static analyzer acutally does ?
+
+It generates errors and does some work to facilitate code generation. It enriches AST nodes with additional information:
+
+Static analyzer|Code generator
+-|-
+Fills the scope of scoped nodes with symbols|Retrieves symbols by name from the node, for constant values, type alias types... information that can't be extracted from the node only (example for type alias : what if the type references another alias?)
+Infers the type of each expression|Retrieved the inferred type from the expression node, and uses it to build format strings
+
+Curiously, the code generator doesn't need the static analyzer for generating expressions.
+
+So the only reason to analyze expressions in the static analyzer is :
+
+- to help creating symbols (constant value...)
+- to help with the evaluation of types (array dimensions...)
+- to give helpful diagnostics in the form of messages (division by zero, floating point equality)
+
+So what should we do?
+
+Something to keep in mind, EvaluatedTypes and ConstantValues are loosely coupled. We can get a base EvaluatedType of a ConstantValue.Real, but nothing more precise. That may become an issue later.
+
+Issue 1: evaluating a type does not operate the operations, we just do some rough guesswork in EvaluateTypeOperationBinary. This methods needs to go. We end up missing on a bunch of errors and we may get the wrong EvaluatedType since EvaluateTypeOperationBinary doesn't even take operators into account. This is not flexible and **we need a way to operate on types as well as values**.
+
+Issue 2: evaluating a constant value results in duplicate errors : the ones from EvaluateType, and the ones from EvaluateValue.
+
+Does that mean we need to merge EvaluatedTypes and ConstantValues in a single concept?
+
+Well, does sometimes we want the type and sometimes we want the value? Not really, because a value always has a type. And we never really use the type on its own, except for getting errors and evaluating other expressions.
+
+Soo... are you saying EvaluateType is useless? And this is why i couldn't design a proper abstraction? Because i was trying to fit something useless in it? Because in the span of a few days i forgot how half of my code works and i can't be bothered to read it? Dammit.
+
+No. Actually, expression type evaluation has 2 uses:
+
+- Comapring the actual parameter inferred type to the formal parameter declared type: error if different
+- Comparing the constant value inferred type to the constant declared type: error if different.
+
+A-ha.
+
+Soo.. we need to be able to evaluated type type.
+
+So we should remove all references to EvaluatedType from ConstantValue and return
+
+`Option<(EvaluatedType, IEnumerable<OperationError>, Option<ConstantValue>)>` from `AnalyzeExpression`.
+
+Okay but why the `Option`. It's there in case we can't evaluate the type. That could happen in case of an unsupported operator or symbol not found.
+
+But we already have EvaluatedType.Unknown for these cases. The thing is, right now it's used only when evaluating `Node.Type` (`CreateTypeOrError`) because we need source tokens for its representation.
+
+i didn't add a default instance because i didn't want to have to choose an arbitrary representation. but maybe i don't? maybe i can use the expression sourcetokens?
+
+So what happens when we return a none evaluatedtype from `AnalyzeExpression` ?
+
+- when analyzing a Node.Declaration.Constant, if the inferred value type is none, we don't even add the constant to the symbol table. This will lead to "symbol not found" errors later
+- when analyzing an actual parameter, if the inferred argument type is none, we don't check the assignability (which is ok since unknown types are assignable to everything anyway).
+
+We could but we don't rn:
+
+- Check the assignability of target and value in assignment
+- Check if condition is a boolean in alternatives and loops
+- Check if for loop start, step and end are numeric
+- Check if file arguments to file builtins are files
+- Check if return value corresponds to function's return type
+- Check if expression type is switchable and check the type and const-ness of each case
+
+There's not reason to annoy ourselves with a None when an evaluated type is just as well.
+
+We will change `EvaluatedType.Unknown` to support smart constructor declared type (with sourcetokens) and inferred type (without sourcetokens).
+
+Okay. Now we need to actually implement this.
+
+I propose we
+
+- Get rid of `EvaluateTypeOperationBinary` and associated; it is a relic from a primitive past of (static analyzer)lessness.
+- make a record type `EvaluatedExpression`, containing members `EvaluatedType Type, Option<ConstantValue> Value`
+- remove references to `EvaluatedType` from `ConstantValue`
+- return `EvaluatedExpression` from `AnalyzeExpression`
+
+Implementation of `AnalyzeExpression`
+
+- Switch over every expression type
+- For operations, we call methods

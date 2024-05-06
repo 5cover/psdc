@@ -9,8 +9,8 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
-sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst semanticAst)
-    : CodeGenerator<OperatorInfoC>(messenger, semanticAst)
+sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
+    : CodeGenerator<OperatorInfoC>(messenger, ast)
 {
     readonly IncludeSet _includes = new();
 

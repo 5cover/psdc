@@ -60,11 +60,13 @@ partial class Parser
             : ParseResult.Fail<Token>(SourceTokens.Empty, ParseError.ForProduction(production, firstToken, allowedTokensTypes));
     }
 
-    ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator) => ParseOperation.Start(_messenger, tokens, expectedType.ToString())
+    ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator)
+     => ParseOperation.Start(_msger, tokens, expectedType.ToString())
         .ParseToken(expectedType)
     .MapResult(resultCreator);
 
-    ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator) => ParseOperation.Start(_messenger, tokens, expectedType.ToString())
+    ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator)
+     => ParseOperation.Start(_msger, tokens, expectedType.ToString())
                 .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => resultCreator(tokens, value));
 }

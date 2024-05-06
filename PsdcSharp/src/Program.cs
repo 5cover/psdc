@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
-
-using Scover.Psdc.CodeGeneration.C;
+using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
@@ -35,21 +34,21 @@ static class Program
 
         PrintMessenger messenger = new();
 
-        Tokenizer tokenizer = new(messenger, input);
-        var tokens = "Tokenizing".LogOperation(Debug, () => tokenizer.Tokenize().ToImmutableArray());
+        var tokens = "Tokenizing".LogOperation(Debug,
+            () => Tokenizer.Tokenize(messenger, input).ToImmutableArray());
 
-        Parser parser = new(messenger, tokens);
-        var ast = "Parsing".LogOperation(Debug, parser.Parse).Value;
+        var ast = "Parsing".LogOperation(Debug,
+            () => Parser.Parse(messenger, tokens).Value);
 
         if (ast is null) {
             return SysExits.DataErr;
         }
 
-        StaticAnalyzer semanticAnalyzer = new(messenger, ast);
-        var semanticAst = "Analyzing".LogOperation(Debug, semanticAnalyzer.AnalyzeSemantics);
+        var semanticAst = "Analyzing".LogOperation(Debug,
+            () => StaticAnalyzer.AnalyzeSemantics(messenger, ast));
 
-        CodeGeneratorC codeGenerator = new(messenger, semanticAst);
-        string cCode = "Generating code".LogOperation(Debug, codeGenerator.Generate);
+        string cCode = "Generating code".LogOperation(Debug,
+            () => CodeGenerator.GenerateC(messenger, semanticAst));
 
         Console.Error.WriteLine("Generated C : ");
         Console.WriteLine(cCode);

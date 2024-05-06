@@ -124,7 +124,7 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
         protected override string ActualRepresentation => $"chaîne({Length})";
 
         public static Option<LengthedString, Message> Create(Expression lengthExpression, ReadOnlyScope scope)
-                                         => lengthExpression.EvaluateConstantValue<ConstantValue.Integer>(scope, Numeric.GetInstance(NumericType.Integer))
+         => lengthExpression.EvaluateConstantValue<ConstantValue.Integer>(scope, Numeric.GetInstance(NumericType.Integer))
             .Map(l => new LengthedString(lengthExpression.Some(), l.Value, null));
 
         public static LengthedString Create(int length)
@@ -136,13 +136,13 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
         public override EvaluatedType ToAliasReference(Identifier alias) => new LengthedString(LengthConstantExpression, Length, alias);
 
         protected override bool ActualSemanticsEqual(EvaluatedType other) => other is LengthedString o
-                         && o.Length == Length;
+            && o.Length == Length;
     }
 
     internal sealed class Numeric : EvaluatedType
     {
         static readonly Numeric[] instances = [
-                   new(NumericType.Integer, 2, "entier"),
+            new(NumericType.Integer, 2, "entier"),
             new(NumericType.Real, 3, "réel"),
         ];
 
