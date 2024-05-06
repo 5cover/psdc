@@ -377,7 +377,7 @@ abstract class ParseOperation
         ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(new(_tokens, _readCount), result);
 
         ParseError MakeOurs(ParseError error)
-                                                                                                         => production == error.FailedProduction
+         => production == error.FailedProduction
             ? error
             : ParseError.ForProduction(production,
                 error.ErroneousToken, error.ExpectedTokens, error.FailedProduction);

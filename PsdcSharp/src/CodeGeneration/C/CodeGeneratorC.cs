@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 using Scover.Psdc.Language;
@@ -337,11 +338,11 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
         _ = expr switch {
             NodeBracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracketed),
             Expression.FunctionCall call => AppendCall(o, call),
-            Expression.Literal.Character litChar => o.Append($"'{FormatValue(litChar.Value)}'"),
+            Expression.Literal.Character litChar => o.Append($"'{litChar.ActualValue.ToString(CultureInfo.InvariantCulture)}'"),
             Expression.Literal.False l => AppendLiteralBoolean(l),
-            Expression.Literal.String litStr => o.Append($"\"{FormatValue(litStr.Value)}\""),
+            Expression.Literal.String litStr => o.Append($"\"{litStr.ActualValue.ToString(CultureInfo.InvariantCulture)}\""),
             Expression.Literal.True l => AppendLiteralBoolean(l),
-            Expression.Literal literal => o.Append(FormatValue(literal.Value)),
+            Expression.Literal literal => o.Append(literal.ActualValue.ToString(CultureInfo.InvariantCulture)),
             Expression.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
             Expression.Lvalue.ComponentAccess compAccess
              => AppendExpression(o, compAccess.Structure, ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
@@ -355,10 +356,10 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
         }
         return o;
 
-        StringBuilder AppendLiteralBoolean(Expression.Literal l)
+        StringBuilder AppendLiteralBoolean(Expression.Literal<bool> l)
         {
             _includes.Ensure(IncludeSet.StdBool);
-            return o.Append(FormatValue(l.Value));
+            return o.Append(l.ActualValue ? "true" : "false");
         }
     }
 

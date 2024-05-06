@@ -1,4 +1,3 @@
-using System.Text;
 using Scover.Psdc.CodeGeneration.C;
 using Scover.Psdc.Language;
 using Scover.Psdc.Messages;

@@ -824,3 +824,281 @@ i just find it annoying how we have to put placeholder sourcetokens in order to 
 3. Just continue as we're doing now. Put empty source tokens or maybe a special sourcetokens instance to indicate the node has been generated in vitro.
 
 We're going with solution 3 for now.
+
+## expression evaluation issue
+
+non-constant expressions are simply ignored.
+
+What we need to do
+
+- Static analysis AnalyzeExpression : evaluate the type of an expression.
+- Static analysis > Constant symbol creation : get the untyped value of a constant expression
+- Evaluated type ArraySubscript or LenghtedString creation : get the typed value of a constant expression
+
+extract methods from these tasks.
+
+For big projets, to prevent getting lost in the code, separate it in different subprojets.
+
+Example for Psdc:
+
+Problem|input|output
+-|-|-
+Getting the input|File or stdin|string
+Lexing|string|sequence of tokens
+Parsing|sequence of tokens|AST
+Static analysis|AST|AST + ?
+Code generator|AST + ?|C code
+
+Right now i'm having trouble undertsanding the relation between static analysis and the code generator. This is the cause of my current problems.
+
+What do the static analyzer acutally does ?
+
+It generates errors and does some work to facilitate code generation. It enriches AST nodes with additional information:
+
+Static analyzer|Code generator
+-|-
+Fills the scope of scoped nodes with symbols|Retrieves symbols by name from the node, for constant values, type alias types... information that can't be extracted from the node only (example for type alias : what if the type references another alias?)
+Infers the type of each expression|Retrieved the inferred type from the expression node, and uses it to build format strings
+
+Curiously, the code generator doesn't need the static analyzer for generating expressions.
+
+So the only reason to analyze expressions in the static analyzer is :
+
+- to help creating symbols (constant value...)
+- to help with the evaluation of types (array dimensions...)
+- to give helpful diagnostics in the form of messages (division by zero, floating point equality)
+
+So what should we do?
+
+Something to keep in mind, EvaluatedTypes and ConstantValues are loosely coupled. We can get a base EvaluatedType of a ConstantValue.Real, but nothing more precise. That may become an issue later.
+
+Issue 1: evaluating a type does not operate the operations, we just do some rough guesswork in EvaluateTypeOperationBinary. This methods needs to go. We end up missing on a bunch of errors and we may get the wrong EvaluatedType since EvaluateTypeOperationBinary doesn't even take operators into account. This is not flexible and **we need a way to operate on types as well as values**.
+
+Issue 2: evaluating a constant value results in duplicate errors : the ones from EvaluateType, and the ones from EvaluateValue.
+
+Does that mean we need to merge EvaluatedTypes and ConstantValues in a single concept?
+
+Well, does sometimes we want the type and sometimes we want the value? Not really, because a value always has a type. And we never really use the type on its own, except for getting errors and evaluating other expressions.
+
+Soo... are you saying EvaluateType is useless? And this is why i couldn't design a proper abstraction? Because i was trying to fit something useless in it? Because in the span of a few days i forgot how half of my code works and i can't be bothered to read it? Dammit.
+
+No. Actually, expression type evaluation has 2 uses:
+
+- Comapring the actual parameter inferred type to the formal parameter declared type: error if different
+- Comparing the constant value inferred type to the constant declared type: error if different.
+
+A-ha.
+
+Soo.. we need to be able to evaluated type type.
+
+So we should remove all references to EvaluatedType from ConstantValue and return
+
+`Option<(EvaluatedType, IEnumerable<OperationError>, Option<ConstantValue>)>` from `AnalyzeExpression`.
+
+Okay but why the `Option`. It's there in case we can't evaluate the type. That could happen in case of an unsupported operator or symbol not found.
+
+But we already have EvaluatedType.Unknown for these cases. The thing is, right now it's used only when evaluating `Node.Type` (`CreateTypeOrError`) because we need source tokens for its representation.
+
+i didn't add a default instance because i didn't want to have to choose an arbitrary representation. but maybe i don't? maybe i can use the expression sourcetokens?
+
+So what happens when we return a none evaluatedtype from `AnalyzeExpression` ?
+
+- when analyzing a Node.Declaration.Constant, if the inferred value type is none, we don't even add the constant to the symbol table. This will lead to "symbol not found" errors later
+- when analyzing an actual parameter, if the inferred argument type is none, we don't check the assignability (which is ok since unknown types are assignable to everything anyway).
+
+There's not reason to annoy ourselves with a None when an evaluated type is just as well.
+
+DONE: We will change `EvaluatedType.Unknown` to support smart constructor declared type (with sourcetokens) and inferred type (without sourcetokens).
+
+Okay. Now we need to actually implement this.
+
+I propose we
+
+- DONE: Get rid of `EvaluateTypeOperationBinary` and associated; it is a relic from a primitive past of (static analyzer)lessness.
+- DONE: make a record type `EvaluatedExpression`, containing members `EvaluatedType Type, Option<ConstantValue> Value`
+- DONE: remove references to `EvaluatedType` from `ConstantValue`
+- DONE: return `EvaluatedExpression` from `AnalyzeExpression`
+
+Implementation of `AnalyzeExpression`
+
+- Switch over every expression type
+- For operations, we call methods
+
+Should we report every error directly in the static analyzer or return them from `AstExtensions`?
+
+We do call `EvaluateConstantValue` from `EvaluatedType` but i think we could do it from `StaticAnalyzer`.
+
+So what about `Array` and `LengthedString` types?
+
+They need a constant expression of a certain type (integer here).
+
+But what happens if a non-constant expression or a constant expression of a different type is issued?
+
+`chaîne(2.3)`
+
+`tableau["abc", 'g', 9] de entier`
+
+`chaîne(fdf(fichier))`
+
+`tableau[a, b, c] de entier`
+
+I suggest we do not create the type at all. If we can't get the length of a string or the dimensions of an array, we can't do much with these types.
+
+What do we do with `LenghtedString.Length` and `Array.Dimensions` anyway?
+
+- we use it internally to compare assignability and semantic equality.
+- We also use the expression to generate the TypeInfo.
+- Finally, we will use the value to perform static analysis (array index out of bounds...)
+
+What type does it need to be?
+
+I guess a generic `ConstantExpression<TVal>` is fine.
+
+Maybe it was a mistake to remove `EvaluatedType` from `ConstantValue`. It would be nice to have a guarantee that a constant value is of a type.
+
+### Operating values and constantvalues
+
+Input : `Value`
+
+Output : `OperationResult` &rarr; `(Value, IEnumerable<OperationError>>)`
+
+Implementation : for `ValueImpl`, operate on types. For `ConstantValue`, operate on values
+
+But I'd like to avoid duplicating every operation, because that's a risk of error.
+
+So for operating on either a constant or non-constant value, what we can do is have a `Value.Map<TConstVal` method.
+
+Example : boolean negation :
+
+```cs
+val.Map<Boolean>(val => val switch {
+    Boolean x => new Boolean(!x.Value),
+})
+
+
+```
+
+This Type property... its causing problems.
+
+Syntax i would like :
+
+```cs
+static OperationResult Operate(UnaryOperator op, Value operand) => (op, val) switch {
+    (Minus, Integer x) => new Integer(-x.Value),
+    (Minus, Real x) => new Real(-x.Value),
+    (Not, Boolean x) => new Boolean(!x.Value),
+    (Plus, Real) => val,
+
+    _ => OperationError.UnsupportedOperator,
+};
+
+static OperationResult Operate(BinaryOperator op, Value left, Value right) => (op, left, right) switch {
+    // Equality
+
+    (Equal, Boolean l, Boolean r) => (l, r).Map((l, r) => new Boolean(l == r)),
+    (Equal, Character l, Character r) => (l, r).Map((l, r) => new Boolean(l == r)),
+    (Equal, Integer l, Integer r) => (l, r).Map((l, r) => new Boolean(l == r)),
+    (Equal, Real l, Real r) => (l, r).Map((l, r) => new Boolean(l == r), OperationError.FloatingPointEquality),
+
+    (NotEqual, Boolean l, Boolean r) =>,
+    (NotEqual, Character l, Character r) =>,
+
+    // Comparison
+
+    (GreaterThan) =>,
+
+    (GreaterThanOrEqual) =>,
+
+    (LessThan) =>,
+
+    (LessThanOrEqual) =>,
+
+    // Arithmetic
+
+    (Add) =>,
+
+    (Divide, Integer l, Integer r) =>,
+    (Divide, Real l, Real r) =>,
+
+    (Subtract) =>,
+
+    (Multiply) =>,
+
+    // Boolean
+
+    (And) =>,
+
+    (Or) =>,
+
+    (Xor) =>,
+
+    _ => OperationError.UnsupportedOperator,
+};
+```
+
+Maybe we could combine the types of the left and right operands before switching? That way we wouldn't need inheritance.
+
+```cs
+
+```
+
+The core problem is : we have an operand and operands as Values. We want to compute the result of whichever operation the tuple (operator, operand type...) represents, in value and in type.
+
+Sooo.. switch over `.Type`? In cases, map the value with a certain result type : that result type will be the type given to Value.Of when the current value isn't constant.
+
+```cs
+static OperationResult Operate(UnaryOperator @operator, Value o) => (@operator, o.Type) switch {
+    (Minus, Integer) => o.Map<Integer>(x => new Value.Integer(-x)),
+    (Minus,    Real) => o.Map<Real>   (x => new Value.Real(-x)),
+    (Not,   Boolean) => o.Map<Boolean>(x => new Value.Boolean(!x)),
+    (Plus,  Integer) => val,
+    (Plus,     Real) => val,
+
+    _ => OperationError.UnsupportedOperator,
+};
+```
+
+So make ConstantValue generic based on the EvaluatedType type
+and split Numeric
+
+Okay this was a mistake. There's no way to relate directly from the EvaluatedType to the ConstantValue, let alone to the underlying value type.
+
+Here is the core problem
+
+```cs
+OperationResult EvaluateOperation(UnaryOperator op, Value operand)
+{
+    switch (op) {
+    case Not:
+        if (operand.Type is EvaluatedType.Boolean) {
+            return OperationResult.Ok(operand is ConstantValue.Boolean o
+                ? new ConstantValue.Boolean(!o.Value)
+                : Value.Of<ConstantValue.Boolean>());
+        }
+        break;
+    }
+
+    return OperationError.UnsupportedOperator;
+}
+```
+
+We have to check the type twice : once for the `EvaluatedType` and once for the `ConstantValue` type.
+
+A solution would be to remove the distinction between constant and nonconstant values
+
+```cs
+OperationResult EvaluateOperation(UnaryOperator op, Value operand)
+{
+    switch (op) {
+    case Not:
+        if (operand is Value.Boolean b) {
+            return b.Map(val => !val);
+        }
+        break;
+    }
+
+    return OperationError.UnsupportedOperator;
+}
+```
+
+This works. We might someday need another implementation for non-constant values that can still be operated on.

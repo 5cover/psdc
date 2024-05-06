@@ -1,12 +1,18 @@
 using System.Text;
 
-using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
-using Scover.Psdc.StaticAnalysis;
 
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.Language;
+
+static class ConstantExpression
+{
+    public static ConstantExpression<TValue> Create<TValue>(Expression expression, TValue value)
+     => new(expression, value);
+}
+
+sealed record ConstantExpression<TValue>(Expression Expression, TValue Value);
 
 /// <summary>
 /// A type evaluated during the static analysis.
@@ -45,29 +51,25 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
 
     internal sealed class Array : EvaluatedType
     {
-        Array(EvaluatedType elementType, IReadOnlyCollection<Expression> dimensionExprs, IReadOnlyCollection<int> dimensions, Identifier? alias) : base(alias)
-         => (ElementType, DimensionConstantExpressions, Dimensions) = (elementType, dimensionExprs, dimensions);
+        Array(EvaluatedType elementType, IReadOnlyList<ConstantExpression<int>> dimensions, Identifier? alias) : base(alias)
+         => (ElementType, Dimensions) = (elementType, dimensions);
 
-        public IReadOnlyCollection<Expression> DimensionConstantExpressions { get; }
-
-        public IReadOnlyCollection<int> Dimensions { get; }
+        public IReadOnlyList<ConstantExpression<int>> Dimensions { get; }
 
         public EvaluatedType ElementType { get; }
 
         protected override string ActualRepresentation
          => $"tableau [{string.Join(", ", Dimensions)}] de {ElementType.ActualRepresentation}";
 
-        public static Option<Array, IEnumerable<Message>> Create(EvaluatedType elementType, IReadOnlyCollection<Expression> dimensionsExpressions, ReadOnlyScope scope)
-                                                 => dimensionsExpressions.Select(d
-             => d.EvaluateConstantValue<ConstantValue.Integer>(scope, Numeric.GetInstance(NumericType.Integer))).Accumulate()
-            .Map(dimensions => new Array(elementType, dimensionsExpressions,
-                                          dimensions.Select(d => d.Value).ToList(), null));
+        public static Array Create(EvaluatedType elementType,
+            IReadOnlyList<ConstantExpression<int>> dimensions)
+          => new(elementType, dimensions, null);
 
-        // Arrays can't be reassigned.
+        // Arrays can't be reassigned for now.
         public override bool IsAssignableTo(EvaluatedType other) => false;
 
         public override EvaluatedType ToAliasReference(Identifier alias)
-         => new Array(ElementType, DimensionConstantExpressions, Dimensions, alias);
+         => new Array(ElementType, Dimensions, alias);
 
         protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Array o
                          && o.ElementType.ActualSemanticsEqual(ElementType)
@@ -114,7 +116,7 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
 
     internal sealed class LengthedString : EvaluatedType
     {
-        LengthedString(Option<Expression> lengthExpression, int length, Identifier? alias) : base(alias)
+        LengthedString(Option<Expression> lengthExpression, int length, Identifier? alias = null) : base(alias)
          => (LengthConstantExpression, Length) = (lengthExpression, length);
 
         public int Length { get; }
@@ -123,9 +125,8 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
 
         protected override string ActualRepresentation => $"chaîne({Length})";
 
-        public static Option<LengthedString, Message> Create(Expression lengthExpression, ReadOnlyScope scope)
-         => lengthExpression.EvaluateConstantValue<ConstantValue.Integer>(scope, Numeric.GetInstance(NumericType.Integer))
-            .Map(l => new LengthedString(lengthExpression.Some(), l.Value, null));
+        public static LengthedString Create(ConstantExpression<int> length)
+         => new(length.Expression.Some(), length.Value);
 
         public static LengthedString Create(int length)
          => new(Option.None<Expression>(), length, null);
@@ -139,35 +140,30 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
             && o.Length == Length;
     }
 
-    internal sealed class Numeric : EvaluatedType
+    internal sealed class Integer : EvaluatedType
     {
-        static readonly Numeric[] instances = [
-            new(NumericType.Integer, 2, "entier"),
-            new(NumericType.Real, 3, "réel"),
-        ];
+        Integer(Identifier? alias) : base(alias) { }
 
-        // Precision represents how many values the type can represent.
-        // The higher, the wider the value range.
-        readonly int _precision;
+        public static Integer Instance { get; } = new(null);
+        protected override string ActualRepresentation => "entier";
 
-        Numeric(NumericType type, int precision, string representation, Identifier? alias = null) : base(alias)
-         => (Type, _precision, ActualRepresentation) = (type, precision, representation);
+        public override EvaluatedType ToAliasReference(Identifier alias) => new Integer(alias);
 
-        public NumericType Type { get; }
-        protected override string ActualRepresentation { get; }
+        public override bool IsAssignableTo(EvaluatedType other) => other is Integer or Real;
 
-        public static Numeric GetInstance(NumericType type) => instances.First(i => i.Type == type);
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Integer;
+    }
 
-        public static EvaluatedType GetMostPreciseType(Numeric t1, Numeric t2)
-        => t1._precision > t2._precision ? t1 : t2;
+    internal sealed class Real : EvaluatedType
+    {
+        Real(Identifier? alias) : base(alias) { }
 
-        public override bool IsAssignableTo(EvaluatedType other) => other is Numeric o
-         && o._precision >= _precision;
+        public static Real Instance { get; } = new(null);
+        protected override string ActualRepresentation => "réel";
 
-        public override EvaluatedType ToAliasReference(Identifier alias) => new Numeric(Type, _precision, ActualRepresentation, alias);
+        public override EvaluatedType ToAliasReference(Identifier alias) => new Real(alias);
 
-        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Numeric o
-                         && o.Type == Type;
+        protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Real;
     }
 
     internal class String : EvaluatedType
@@ -207,14 +203,22 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
          && o.Components.Values.AllSemanticsEqual(Components.Values);
     }
 
-    internal sealed class Unknown(SourceTokens sourceTokens, Identifier? alias = null) : EvaluatedType(alias)
+    internal sealed class Unknown : EvaluatedType
     {
-        protected override string ActualRepresentation => Globals.Input[sourceTokens.InputRange];
+        Unknown(string repr, Identifier? alias = null) : base(alias) => ActualRepresentation = repr;
 
-        public override EvaluatedType ToAliasReference(Identifier alias) => new Unknown(sourceTokens, alias);
+        protected override string ActualRepresentation { get; }
+
+        public static Unknown Declared(SourceTokens sourceTokens) => new(Globals.Input[sourceTokens.InputRange]);
+        public static EvaluatedType Declared(Node node) => Declared(node.SourceTokens);
+
+        public static Unknown Inferred { get; } = new("<error-type>");
+
+        public override EvaluatedType ToAliasReference(Identifier alias) => new Unknown(ActualRepresentation, alias);
 
         // Unknown types are semantically equal to every other type.
         // This is to prevent cascading errors when an object of an unknown type is used.
         protected override bool ActualSemanticsEqual(EvaluatedType other) => true;
     }
 }
+

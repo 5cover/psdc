@@ -38,7 +38,7 @@ sealed class TypeInfoC : TypeInfo
     public IEnumerable<string> RequiredHeaders { get; }
 
     public static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression)
-                             => Create(type, generateExpression, new());
+     => Create(type, generateExpression, new());
 
     public string DecorateExpression(string expr)
      => $"{_stars}{expr}";
@@ -69,18 +69,16 @@ sealed class TypeInfoC : TypeInfo
             return new(type, "bool", requiredHeaders: IncludeSet.StdBool.Yield());
         case EvaluatedType.Character:
             return new(type, "char", "%c");
-        case EvaluatedType.Numeric numeric:
-            return numeric.Type switch {
-                NumericType.Integer => new(type, "int", "%d"),
-                NumericType.Real => new(type, "float", "%g"),
-                _ => throw numeric.Type.ToUnmatchedException(),
-            };
+        case EvaluatedType.Real real:
+            return new(type, "float", "%g");
+        case EvaluatedType.Integer integer:
+            return new(type, "int", "%d");
         case EvaluatedType.String:
             return new(type, "char", "%s", starCount: 1);
         case EvaluatedType.Array array:
             var arrayType = Create(array.ElementType, generateExpression, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
-            foreach (var dimension in array.DimensionConstantExpressions.Select(dim => generateExpression(dim))) {
+            foreach (var dimension in array.Dimensions.Select(dim => generateExpression(dim.Expression))) {
                 postModifier.Append($"[{dimension}]");
             }
             return new(type, arrayType._typeName,

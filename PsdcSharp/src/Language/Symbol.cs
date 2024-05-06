@@ -1,7 +1,5 @@
 using Scover.Psdc.Parsing;
 
-using static Scover.Psdc.Parsing.Node;
-
 namespace Scover.Psdc.Language;
 
 interface CallableSymbol : Symbol
@@ -27,11 +25,11 @@ interface Symbol : EquatableSemantics<Symbol>
     }
 
     internal sealed record Constant(Identifier Name, SourceTokens SourceTokens,
-        EvaluatedType Type,
-        Expression Value)
-    : Variable(Name, SourceTokens, Type)
+        Value Value)
+    : Variable(Name, SourceTokens, Value.Type)
     {
         public override bool SemanticsEqual(Symbol other) => other is Constant o
+         && o.Type.SemanticsEqual(Type)
          && o.Value.SemanticsEqual(Value)
          && base.SemanticsEqual(other);
     }

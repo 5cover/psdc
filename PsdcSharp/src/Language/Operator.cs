@@ -2,6 +2,7 @@ namespace Scover.Psdc.Language;
 
 enum BinaryOperator
 {
+    Add,
     And,
     Divide,
     Equal,
@@ -9,12 +10,11 @@ enum BinaryOperator
     GreaterThanOrEqual,
     LessThan,
     LessThanOrEqual,
-    Subtract,
     Mod,
     Multiply,
     NotEqual,
     Or,
-    Add,
+    Subtract,
     Xor,
 }
 

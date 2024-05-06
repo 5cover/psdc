@@ -3,7 +3,6 @@ using System.Text;
 
 using Scover.Psdc.Parsing;
 using static Scover.Psdc.Parsing.Node;
-using Scover.Psdc.Tokenization;
 using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Messages;
@@ -33,10 +32,10 @@ readonly struct Message
         msgContent.Append($"call to {callable.GetKind()} `{callable.Name}` does not correspond to signature:");
 
         if (problems.Count == 1) {
-            msgContent.AppendLine($" {problems.Single()}");
+            msgContent.Append($" {problems.Single()}");
         } else {
             foreach (var problem in problems) {
-                msgContent.AppendLine($"  - {problem}");
+                msgContent.AppendLine().Append($"  - {problem}");
             }
         }
 
@@ -53,16 +52,11 @@ readonly struct Message
 
     public static Message ErrorConstantExpressionExpected(SourceTokens sourceTokens)
      => Create(sourceTokens, MessageCode.ConstantExpressionExpected,
-        "constant expression expected");
+        $"constant expression expected");
 
-    public static Message ErrorConstantExpressionWrongType(Expression expr, EvaluatedType expected, EvaluatedType actual)
-     => Create(expr, MessageCode.ConstantExpressionWrongType,
-        $"wrong type for literal: expected '{expected}', got '{actual}'");
-
-    public static Message ErrorDeclaredInferredTypeMismatch(SourceTokens sourceTokens,
-        EvaluatedType declaredType, EvaluatedType inferredType)
-     => Create(sourceTokens, MessageCode.DeclaredInferredTypeMismatch,
-        $"declared type '{declaredType}' differs from inferred type '{inferredType}'");
+    public static Message ErrorExpressionHasWrongType(SourceTokens sourceTokens, EvaluatedType expected, EvaluatedType actual)
+     => Create(sourceTokens, MessageCode.ExpressionHasWrongType,
+        $"wrong type for expression: expected '{expected}', got '{actual}'");
 
     public static Message ErrorMissingMainProgram(SourceTokens sourceTokens)
      => Create(sourceTokens, MessageCode.MissingMainProgram,
@@ -81,28 +75,35 @@ readonly struct Message
         $"this signature of {newSig.GetKind()} `{newSig.Name}` differs from previous signature (`{Globals.Input[expectedSig.SourceTokens.InputRange]}`)");
 
     public static Message ErrorStructureComponentDoesntExist(Expression.Lvalue.ComponentAccess compAccess,
-        Option<Identifier> structureName)
+        Identifier? structureName)
      => Create(compAccess.ComponentName, MessageCode.StructureComponentDoesntExist,
-            structureName.Match(
-                some: structName => $"`{structName}` has no component named `{compAccess.ComponentName}`",
-                none: () => $"no component named `{compAccess.ComponentName}` in structure"));
+            structureName is null
+                ? $"no component named `{compAccess.ComponentName}` in structure"
+                : $"`{structureName}` has no component named `{compAccess.ComponentName}`");
 
     public static Message ErrorStructureDuplicateComponent(SourceTokens sourceTokens, Identifier componentName)
      => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
         $"duplicate component `{componentName}` in structure");
 
-    public static Message ErrorSubscriptOfNonArray(Expression.Lvalue.ArraySubscript arraySub)
-     => Create(arraySub, MessageCode.SubscriptOfNonArray,
+    public static Message ErrorNonIntegerIndex(SourceTokens sourceTokens)
+     => Create(sourceTokens, MessageCode.NonIntegerIndex,
+        "non integer array index");
+
+    public static Message ErrorSubscriptOfNonArray(Expression.Lvalue.ArraySubscript arrSub)
+     => Create(arrSub, MessageCode.SubscriptOfNonArray,
         $"subscripted value is not an array");
 
     public static Message ErrorSyntax(SourceTokens sourceTokens, ParseError error)
     {
-        StringBuilder msgContent = new($"on {error.FailedProduction}: expected ");
+        StringBuilder msgContent = new("syntax: ");
 
         if (error.ExpectedProductions.Count > 0) {
-            msgContent.AppendJoin(" or ", error.ExpectedProductions);
+            msgContent.Append($"on {error.FailedProduction}: expected ").AppendJoin(" or ", error.ExpectedProductions);
+        } else if (sourceTokens.Count > 0) {
+            // show expected tokens only if failure token isn't the first, or if we successfully read at least 1 token.
+            msgContent.Append($"on {error.FailedProduction}: expected ").AppendJoin(", ", error.ExpectedTokens);
         } else {
-            msgContent.AppendJoin(", ", error.ExpectedTokens);
+            msgContent.Append($"expected {error.FailedProduction}");
         }
 
         error.ErroneousToken.MatchSome(token => msgContent.Append($", got {token}"));
@@ -129,9 +130,9 @@ readonly struct Message
             inputRange.Some(),
             $"stray `{Globals.Input[inputRange]}` in program");
 
-    public static Message ErrorUnsupportedOperation(Expression.BinaryOperation opBin, EvaluatedType operand1Type, EvaluatedType operand2Type)
+    public static Message ErrorUnsupportedOperation(Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType)
      => Create(opBin, MessageCode.UnsupportedOperation,
-        $"unsupported operand types for {opBin.Operator.GetRepresentation()}: '{operand1Type}' and '{operand2Type}'");
+        $"unsupported operand types for {opBin.Operator.GetRepresentation()}: '{leftType}' and '{rightType}'");
 
     public static Message ErrorUnsupportedOperation(Expression.UnaryOperation opUn, EvaluatedType operandType)
      => Create(opUn, MessageCode.UnsupportedOperation,
@@ -142,13 +143,13 @@ readonly struct Message
         $"request for component `{compAccess.ComponentName}` in something not a structure");
 
     public static string ProblemWrongArgumentMode(Identifier name, string expected, string actual)
-     => $"wrong mode for `{name}`: expected {expected}, got {actual}";
+     => $"wrong mode for `{name}`: expected '{expected}', got '{actual}'";
 
     public static string ProblemWrongArgumentType(Identifier name, EvaluatedType expected, EvaluatedType actual)
-     => $"wrong type for `{name}`: expected {expected}, got {actual}";
+     => $"wrong type for `{name}`: expected '{expected}', got '{actual}'";
 
     public static string ProblemWrongNumberOfArguments(int expected, int actual)
-                         => $"wrong number of arguments: expected {expected}, got {actual}";
+     => $"wrong number of arguments: expected {expected}, got {actual}";
 
     public static Message WarningDivisionByZero(SourceTokens sourceTokens)
      => Create(sourceTokens, MessageCode.DivisionByZero,

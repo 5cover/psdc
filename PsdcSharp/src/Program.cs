@@ -94,7 +94,7 @@ static class Program
                 ReadOnlySpan<char> faultyLine = Globals.Input.GetLine(start.Line);
 
                 // Part of line before error
-                Stderr.Write($"{GetErrorLinePrefix(start.Line)}{faultyLine[..start.Column]}");
+                Stderr.Write($"{GetErrorLinePrefix(start.Line + 1)}{faultyLine[..start.Column]}");
 
                 msgColor.SetColor();
                 Stderr.Write($"{faultyLine[start.Column..end.Column]}");

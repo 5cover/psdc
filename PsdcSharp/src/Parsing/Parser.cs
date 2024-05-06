@@ -1,4 +1,3 @@
-using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Tokenization;
 
@@ -42,8 +41,8 @@ sealed partial class Parser
         };
 
         _completeTypeParsers = new Dictionary<TokenType, Parser<Type.Complete>> {
-            [Keyword.Integer] = MakeNumericParser(NumericType.Integer),
-            [Keyword.Real] = MakeNumericParser(NumericType.Real),
+            [Keyword.Integer] = MakeAlwaysOkParser(1, t => new Type.Complete.Integer(t)),
+            [Keyword.Real] = MakeAlwaysOkParser(1, t => new Type.Complete.Real(t)),
             [Keyword.Character] = MakeAlwaysOkParser(1, t => new Type.Complete.Character(t)),
             [Keyword.Boolean] = MakeAlwaysOkParser(1, t => new Type.Complete.Boolean(t)),
             [Keyword.File] = MakeAlwaysOkParser(1, t => new Type.Complete.File(t)),
@@ -52,9 +51,6 @@ sealed partial class Parser
             [Valued.Identifier] = MakeAlwaysOkParser((t, val) => new Type.Complete.AliasReference(t, new(t, val))),
             [Keyword.Structure] = ParseTypeStructure,
         };
-
-        static Parser<Type.Complete.Numeric> MakeNumericParser(NumericType type)
-         => MakeAlwaysOkParser(1, t => new Type.Complete.Numeric(t, type));
 
         _literalParsers = new Dictionary<TokenType, Parser<Expression>> {
             [Keyword.False] = tokens
