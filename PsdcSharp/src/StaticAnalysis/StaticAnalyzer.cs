@@ -352,7 +352,7 @@ sealed partial class StaticAnalyzer
 
             if (call.Parameters.Count != callable.Parameters.Count) {
                 problems.Add(Message.ProblemWrongNumberOfArguments(
-                    call.Parameters.Count, callable.Parameters.Count));
+                    callable.Parameters.Count, call.Parameters.Count));
             }
 
             foreach (var (actual, formal) in call.Parameters.Zip(callable.Parameters)) {

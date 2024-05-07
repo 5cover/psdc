@@ -4,17 +4,25 @@ using System.Text;
 using Scover.Psdc.Parsing;
 using static Scover.Psdc.Parsing.Node;
 using Scover.Psdc.Language;
+using System.Collections.Immutable;
 
 namespace Scover.Psdc.Messages;
 
 readonly struct Message
 {
-    Message(MessageCode code, Option<Range> inputRange, string content)
-     => (Code, InputRange, Content) = (code, inputRange, content);
+    Message(Range inputRange, MessageCode code, string content)
+     => (InputRange, Code, Content) = (inputRange, code, content);
+
+    Message(SourceTokens sourceTokens, MessageCode code, string content)
+     => (Code, InputRange, Content) = (code, sourceTokens.InputRange, content);
+
+    Message(SourceTokens sourceTokens, MessageCode code, string content, IReadOnlyList<string> advicePieces)
+     => (Code, InputRange, Content, AdvicePieces) = (code, sourceTokens.InputRange, content, advicePieces);
 
     public MessageCode Code { get; }
     public string Content { get; }
-    public Option<Range> InputRange { get; }
+    public IReadOnlyList<string> AdvicePieces { get; } = ImmutableList<string>.Empty;
+    public Range InputRange { get; }
 
     public MessageSeverity Severity {
         get {
@@ -25,72 +33,57 @@ readonly struct Message
     }
 
     public static Message ErrorCallParameterMismatch(SourceTokens sourceTokens,
-        CallableSymbol callable, IReadOnlyCollection<string> problems)
-    {
-        Debug.Assert(problems.Count > 0);
-        StringBuilder msgContent = new();
-        msgContent.Append($"call to {callable.GetKind()} `{callable.Name}` does not correspond to signature:");
-
-        if (problems.Count == 1) {
-            msgContent.Append($" {problems.Single()}");
-        } else {
-            foreach (var problem in problems) {
-                msgContent.AppendLine().Append($"  - {problem}");
-            }
-        }
-
-        return Create(sourceTokens, MessageCode.CallParameterMismatch, msgContent.ToString());
-    }
-
-    public static Message ErrorCantInferTypeOfExpression(SourceTokens sourceTokens)
-     => Create(sourceTokens, MessageCode.CantInferType,
-        "can't infer type of expression");
+        CallableSymbol callable, IReadOnlyList<string> problems)
+     => new(sourceTokens, MessageCode.CallParameterMismatch,
+        $"call to {callable.GetKind()} `{callable.Name}` does not correspond to signature",
+        problems);
 
     public static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
-     => Create(assignment.SourceTokens, MessageCode.ConstantAssignment,
+     => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
         $"reassigning constant `{constant.Name}`");
 
     public static Message ErrorConstantExpressionExpected(SourceTokens sourceTokens)
-     => Create(sourceTokens, MessageCode.ConstantExpressionExpected,
+     => new(sourceTokens, MessageCode.ConstantExpressionExpected,
         $"constant expression expected");
 
-    public static Message ErrorExpressionHasWrongType(SourceTokens sourceTokens, EvaluatedType expected, EvaluatedType actual)
-     => Create(sourceTokens, MessageCode.ExpressionHasWrongType,
+    public static Message ErrorExpressionHasWrongType(SourceTokens sourceTokens,
+        EvaluatedType expected, EvaluatedType actual)
+     => new(sourceTokens, MessageCode.ExpressionHasWrongType,
         $"wrong type for expression: expected '{expected}', got '{actual}'");
 
     public static Message ErrorMissingMainProgram(SourceTokens sourceTokens)
-     => Create(sourceTokens, MessageCode.MissingMainProgram,
+     => new(sourceTokens, MessageCode.MissingMainProgram,
         "main program missing");
 
     public static Message ErrorRedefinedMainProgram(Declaration.MainProgram mainProgram)
-     => Create(mainProgram.SourceTokens, MessageCode.RedefinedMainProgram,
+     => new(mainProgram.SourceTokens, MessageCode.RedefinedMainProgram,
         $"more than one main program");
 
     public static Message ErrorRedefinedSymbol(Symbol newSymbol, Symbol existingSymbol)
-     => Create(newSymbol.Name.SourceTokens, MessageCode.RedefinedSymbol,
+     => new(newSymbol.Name.SourceTokens, MessageCode.RedefinedSymbol,
         $"{newSymbol.GetKind()} `{existingSymbol.Name}` is a redefinition (a {existingSymbol.GetKind()} already exists)");
 
     public static Message ErrorSignatureMismatch<TSymbol>(TSymbol newSig, TSymbol expectedSig) where TSymbol : Symbol
-     => Create(newSig.SourceTokens, MessageCode.SignatureMismatch,
+     => new(newSig.SourceTokens, MessageCode.SignatureMismatch,
         $"this signature of {newSig.GetKind()} `{newSig.Name}` differs from previous signature (`{Globals.Input[expectedSig.SourceTokens.InputRange]}`)");
 
     public static Message ErrorStructureComponentDoesntExist(Expression.Lvalue.ComponentAccess compAccess,
         Identifier? structureName)
-     => Create(compAccess.ComponentName, MessageCode.StructureComponentDoesntExist,
+     => new(compAccess.ComponentName.SourceTokens, MessageCode.StructureComponentDoesntExist,
             structureName is null
                 ? $"no component named `{compAccess.ComponentName}` in structure"
                 : $"`{structureName}` has no component named `{compAccess.ComponentName}`");
 
     public static Message ErrorStructureDuplicateComponent(SourceTokens sourceTokens, Identifier componentName)
-     => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
+     => new(sourceTokens, MessageCode.StructureDuplicateComponent,
         $"duplicate component `{componentName}` in structure");
 
     public static Message ErrorNonIntegerIndex(SourceTokens sourceTokens, EvaluatedType actualIndexType)
-     => Create(sourceTokens, MessageCode.NonIntegerIndex,
+     => new(sourceTokens, MessageCode.NonIntegerIndex,
         $"non integer ('{actualIndexType}') array index");
 
     public static Message ErrorSubscriptOfNonArray(Expression.Lvalue.ArraySubscript arrSub, EvaluatedType actualArrayType)
-     => Create(arrSub, MessageCode.SubscriptOfNonArray,
+     => new(arrSub.SourceTokens, MessageCode.SubscriptOfNonArray,
         $"subscripted value ('{actualArrayType}') is not an array");
 
     public static Message ErrorSyntax(SourceTokens sourceTokens, ParseError error)
@@ -108,38 +101,37 @@ readonly struct Message
 
         error.ErroneousToken.MatchSome(token => msgContent.Append($", got {token}"));
 
-        return Create(error.ErroneousToken
+        return new(error.ErroneousToken
             .Map(t => t.InputRange)
             .ValueOr(sourceTokens.InputRange),
             MessageCode.SyntaxError, msgContent.ToString());
     }
 
     public static Message ErrorTargetLanguage(string targetLanguageName, SourceTokens sourceTokens, string content)
-     => Create(sourceTokens, MessageCode.TargetLanguageError, $"{targetLanguageName}: {content}");
+     => new(sourceTokens, MessageCode.TargetLanguageError, $"{targetLanguageName}: {content}");
 
     public static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier) where TSymbol : Symbol
-     => Create(identifier.SourceTokens, MessageCode.UndefinedSymbol,
+     => new(identifier.SourceTokens, MessageCode.UndefinedSymbol,
         $"undefined {SymbolExtensions.GetKind<TSymbol>()} `{identifier}`");
 
     public static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier, Symbol existingSymbol) where TSymbol : Symbol
-     => Create(identifier.SourceTokens, MessageCode.UndefinedSymbol,
+     => new(identifier.SourceTokens, MessageCode.UndefinedSymbol,
         $"`{identifier}` is a {existingSymbol.GetKind()}, {SymbolExtensions.GetKind<TSymbol>()} expected");
 
     public static Message ErrorUnknownToken(Range inputRange)
-                                                                         => new(MessageCode.UnknownToken,
-            inputRange.Some(),
+     => new(inputRange, MessageCode.UnknownToken,
             $"stray `{Globals.Input[inputRange]}` in program");
 
     public static Message ErrorUnsupportedOperation(Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType)
-     => Create(opBin, MessageCode.UnsupportedOperation,
+     => new(opBin.SourceTokens, MessageCode.UnsupportedOperation,
         $"unsupported operand types for {opBin.Operator.GetRepresentation()}: '{leftType}' and '{rightType}'");
 
     public static Message ErrorUnsupportedOperation(Expression.UnaryOperation opUn, EvaluatedType operandType)
-     => Create(opUn, MessageCode.UnsupportedOperation,
+     => new(opUn.SourceTokens, MessageCode.UnsupportedOperation,
         $"unsupported operand type for {opUn.Operator.GetRepresentation()}: '{operandType}'");
 
     public static Message ErrrorComponentAccessOfNonStruct(Expression.Lvalue.ComponentAccess compAccess, EvaluatedType actualStructType)
-     => Create(compAccess, MessageCode.ComponentAccessOfNonStruct,
+     => new(compAccess.SourceTokens, MessageCode.ComponentAccessOfNonStruct,
         $"request for component `{compAccess.ComponentName}` in something ('{actualStructType}') not a structure");
 
     public static string ProblemWrongArgumentMode(Identifier name, string expected, string actual)
@@ -152,21 +144,11 @@ readonly struct Message
      => $"wrong number of arguments: expected {expected}, got {actual}";
 
     public static Message WarningDivisionByZero(SourceTokens sourceTokens)
-     => Create(sourceTokens, MessageCode.DivisionByZero,
+     => new(sourceTokens, MessageCode.DivisionByZero,
         "division by zero will cause runtime error");
 
     public static Message WarningFloatingPointEquality(SourceTokens sourceTokens)
-     => Create(sourceTokens, MessageCode.FloatingPointEquality,
-        "floating point equality may be inaccurate - consider comparing absolute difference to an epsilon value instead");
-
-    static Message Create(Range inputRange, MessageCode code, string content)
-     => new(code,
-            inputRange.Some(),
-            content);
-
-    static Message Create(SourceTokens sourceTokens, MessageCode code, string content)
-     => Create(sourceTokens.InputRange, code, content);
-
-    static Message Create(Node sourceNode, MessageCode code, string content)
- => Create(sourceNode.SourceTokens.InputRange, code, content);
+     => new(sourceTokens, MessageCode.FloatingPointEquality,
+        "floating point equality may be inaccurate",
+        ["consider comparing absolute difference to an epsilon value instead"]);
 }

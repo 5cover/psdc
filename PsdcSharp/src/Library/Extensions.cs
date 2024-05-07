@@ -4,10 +4,9 @@ using System.Globalization;
 using System.Text;
 
 using Scover.Psdc.Messages;
-using Scover.Psdc.Parsing;
 using Scover.Psdc.Tokenization;
 
-namespace Scover.Psdc;
+namespace Scover.Psdc.Library;
 
 readonly record struct Position(int Line, int Column)
 {

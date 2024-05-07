@@ -1,4 +1,4 @@
-namespace Scover.Psdc;
+namespace Scover.Psdc.Library;
 
 static class OptionCollectionExtensions
 {

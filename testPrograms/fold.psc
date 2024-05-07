@@ -17,7 +17,7 @@ début
     proc(entE s1, entE s1);
     proc(entE s2, entE s2);
     proc(entE s3, entE s3);
-    proc(entE "01234567890123456789");
+    proc(entE 1);
 
     b : booléen;
     b := 0.1 == 0.2;

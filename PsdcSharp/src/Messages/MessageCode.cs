@@ -5,7 +5,6 @@ enum MessageCode
     #region Errors
     UnknownToken = 0,
     SyntaxError,
-    CantInferType,
     UndefinedSymbol,
     RedefinedSymbol,
     RedefinedMainProgram,

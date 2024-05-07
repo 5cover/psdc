@@ -9,4 +9,8 @@
     <PublishAot>true</PublishAot>
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Scover.Psdc.Library"/>
+  </ItemGroup>
 </Project>

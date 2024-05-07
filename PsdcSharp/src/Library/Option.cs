@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Scover.Psdc;
+namespace Scover.Psdc.Library;
 
 // Covariant Option monad
 

@@ -13,16 +13,16 @@ static class Program
 
     static int Main(string[] args)
     {
-        if (args.Length != 1) {
+        const bool Debug = false;
+
+        if (args.Length > 1) {
             WriteError("usage: <test_program_filename>");
             return SysExits.Usage;
         }
 
-        const bool Debug = false;
-
         string input;
         try {
-            input = args[0] == StdinPlaceholder
+            input = args.Length == 0 || args[0] == StdinPlaceholder
                 ? Console.In.ReadToEnd()
                 : File.ReadAllText(args[0]);
         } catch (Exception e) when (e.IsFileSystemExogenous()) {
@@ -50,6 +50,8 @@ static class Program
         string cCode = "Generating code".LogOperation(Debug,
             () => CodeGenerator.GenerateC(messenger, semanticAst));
 
+        messenger.PrintConclusion();
+
         Console.Error.WriteLine("Generated C : ");
         Console.WriteLine(cCode);
 
@@ -61,16 +63,13 @@ static class Program
 
     sealed class PrintMessenger : Messenger
     {
-        readonly Dictionary<MessageSeverity, int> _msgCountsBySeverity = [];
+        readonly DefaultDictionary<MessageSeverity, int> _msgCountsBySeverity = new(0);
         static TextWriter Stderr => Console.Error;
 
         public void PrintConclusion()
-         => Stderr.WriteLine($"""
-            Compilation terminated
-             ({_msgCountsBySeverity[MessageSeverity.Error]} errors,
-             {_msgCountsBySeverity[MessageSeverity.Warning]} warnings,
-             {_msgCountsBySeverity[MessageSeverity.Suggestion]} suggestions).
-            """);
+         => Stderr.WriteLine($"Compilation terminated ({_msgCountsBySeverity[MessageSeverity.Error]} errors, "
+                           + $"{_msgCountsBySeverity[MessageSeverity.Warning]} warnings, "
+                           + $"{_msgCountsBySeverity[MessageSeverity.Suggestion]} suggestions).");
 
         public void Report(Message message)
         {
@@ -80,39 +79,56 @@ static class Program
             var msgColor = message.Severity.GetConsoleColor();
             msgColor.DoInColor(() => Stderr.Write($"[P{(int)message.Code:d4}] "));
 
-            message.InputRange.Match(range => {
-                Position start = Globals.Input.GetPositionAt(range.Start);
-                Position end = Globals.Input.GetPositionAt(range.End);
+            Position start = Globals.Input.GetPositionAt(message.InputRange.Start);
+            Position end = Globals.Input.GetPositionAt(message.InputRange.End);
 
-                // If the error spans over multiple line, show only the last line.
-                if (start.Line != end.Line) {
-                    start = new(end.Line, 0);
-                }
+            // If the error spans over multiple line, show only the last line.
+            if (start.Line != end.Line) {
+                start = new(end.Line, 0);
+            }
 
-                Stderr.WriteLine($"{start}: {message.Severity.ToString().ToLower()}: {message.Content}");
+            const string LineNoMargin = "    ";
+            const string Bar = " | ";
 
-                ReadOnlySpan<char> faultyLine = Globals.Input.GetLine(start.Line);
+            Stderr.WriteLine($"{start}: {message.Severity.ToString().ToLower()}: {message.Content}");
 
-                // Part of line before error
-                Stderr.Write($"{GetErrorLinePrefix(start.Line + 1)}{faultyLine[..start.Column]}");
+            ReadOnlySpan<char> faultyLine = Globals.Input.GetLine(start.Line);
+
+            // Faulty line
+            WriteLineStart(withLineNumber: true);
+            {
+                Stderr.Write(faultyLine[..start.Column]); // keep indentation
 
                 msgColor.SetColor();
                 Stderr.Write($"{faultyLine[start.Column..end.Column]}");
                 Console.ResetColor();
 
-                // Part of line after error
                 Stderr.WriteLine($"{faultyLine[end.Column..].TrimEnd()}");
+            }
 
-                // Arrow below to indicate the precise location of the error even if colors aren't available
-                Stderr.Write(GetErrorLinePrefix(new string(' ', start.Line.DigitCount())));
+            // Caret line
+            WriteLineStart();
+            {
                 var offset = Math.Max(faultyLine.GetLeadingWhitespaceCount(), start.Column);
                 Stderr.WriteNTimes(offset, ' ');
                 msgColor.DoInColor(() => Stderr.WriteNTimes(end.Column - offset, '^'));
+                Stderr.WriteLine();
+            }
 
-                static string GetErrorLinePrefix(object lineNo) => $"    {lineNo} | ";
-            },
-            none: () => Stderr.WriteLine($"{message.Severity}: {message.Content}"));
+            // Advice line
+            foreach (var advice in message.AdvicePieces) {
+                WriteLineStart();
+                Stderr.WriteLine(advice);
+            };
+
             Stderr.WriteLine();
+
+            void WriteLineStart(bool withLineNumber = false)
+            {
+                Stderr.Write(LineNoMargin);
+                Stderr.Write(withLineNumber ? start.Line + 1 : new string(' ', start.Line.DigitCount()));
+                Stderr.Write(Bar);
+            }
         }
     }
 }
