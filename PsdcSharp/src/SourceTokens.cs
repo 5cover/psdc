@@ -4,7 +4,7 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc;
 
-class SourceTokens : IEnumerable<Token>
+public class SourceTokens : IEnumerable<Token>
 {
     readonly Lazy<Range> _inputRange;
     readonly IEnumerable<Token> _tokens;

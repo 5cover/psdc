@@ -74,4 +74,14 @@ static class OptionCollectionExtensions
         }
         return Option.None<T>();
     }
+
+    public static Option<T> FirstSome<T>(this IEnumerable<Option<T>> source)
+    {
+        foreach (var item in source) {
+            if (item.HasValue) {
+                return item;
+            }
+        }
+        return Option.None<T>();
+    }
 }

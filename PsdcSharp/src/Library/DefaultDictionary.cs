@@ -5,7 +5,7 @@ namespace Scover.Psdc.Library;
 
 public class DefaultDictionary<TKey, TValue>(TValue defaultValue) : IDictionary<TKey, TValue> where TKey : notnull
 {
-    private readonly Dictionary<TKey, TValue> _dic = [];
+    readonly Dictionary<TKey, TValue> _dic = [];
 
     public TValue DefaultValue { get; set; } = defaultValue;
 

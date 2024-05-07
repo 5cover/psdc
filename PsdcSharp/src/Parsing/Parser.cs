@@ -8,7 +8,7 @@ using Type = Scover.Psdc.Parsing.Node.Type;
 
 namespace Scover.Psdc.Parsing;
 
-sealed partial class Parser
+public sealed partial class Parser
 {
     readonly IReadOnlyDictionary<TokenType, Parser<Type.Complete>> _completeTypeParsers;
     readonly IReadOnlyDictionary<TokenType, Parser<Declaration>> _declarationParsers;

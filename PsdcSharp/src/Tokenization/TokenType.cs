@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Scover.Psdc.Tokenization;
 
-abstract class TokenType
+public abstract class TokenType
 {
     readonly string _repr;
 

@@ -128,8 +128,8 @@ static class Extensions
         ? first.Value.SemanticsEqual(second.Value)
         : first.HasValue == second.HasValue;
 
-    public static string RemoveDiacritics(this string text)
-                                                             => new string(text.Normalize(NormalizationForm.FormD)
+    public static string DiacriticsRemoved(this string text)
+     => new string(text.Normalize(NormalizationForm.FormD)
         .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
         .ToArray()).Normalize(NormalizationForm.FormC);
 

@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Messages;
 
-enum MessageSeverity
+public enum MessageSeverity
 {
     Error = 0,
     Warning = 1,

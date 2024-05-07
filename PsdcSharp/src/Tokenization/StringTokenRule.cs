@@ -9,21 +9,22 @@ sealed class StringTokenRule : TokenRule
 
     public StringTokenRule(string expected, StringComparison comparison)
     {
-        (Expected, _normalizedExpected, _comparison) = (expected, expected.RemoveDiacritics(), comparison);
+        (Expected, _normalizedExpected, _comparison) = (expected, expected.DiacriticsRemoved(), comparison);
         // Without diacritics should be the same length
         Debug.Assert(_normalizedExpected.Length == Expected.Length);
     }
 
     public string Expected { get; }
 
-    public Option<Token> TryExtract(TokenType tokenType, string code, int startIndex)
+    public Option<Token> TryExtract(TokenType tokenType, string input, int startIndex)
     {
         // Not >= as startIndex is already the index of the first character
-        if (startIndex + Expected.Length > code.Length) {
+        if (startIndex + Expected.Length > input.Length) {
             return Option.None<Token>();
         }
 
-        string target = code.Substring(startIndex, Expected.Length).RemoveDiacritics();
+        // Assume that the input has already been normalized.
+        var target = input.AsSpan().Slice(startIndex, Expected.Length);
 
         return target.Equals(_normalizedExpected, _comparison)
             ? new Token(

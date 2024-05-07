@@ -14,9 +14,9 @@ sealed partial class StaticAnalyzer
     readonly Messenger _messenger;
     bool _seenMainProgram;
 
-    private StaticAnalyzer(Messenger messenger) => _messenger = messenger;
+    StaticAnalyzer(Messenger messenger) => _messenger = messenger;
 
-    public static SemanticAst AnalyzeSemantics(Messenger messenger, Algorithm root)
+    public static SemanticAst Analyze(Messenger messenger, Algorithm root)
     {
         StaticAnalyzer a = new(messenger);
 
@@ -419,7 +419,7 @@ sealed partial class StaticAnalyzer
         NodeAliasReference alias
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MatchError(_messenger.Report)
                 .Map(aliasType => aliasType.TargetType.ToAliasReference(alias.Name))
-            .ValueOr(EvaluatedType.Unknown.Declared(type)),
+            .ValueOr(EvaluatedType.Unknown.Declared(_messenger.Input, type)),
         Type.Complete.Array array => EvaluateArrayType(scope, array),
         Type.Complete.Boolean => EvaluatedType.Boolean.Instance,
         Type.Complete.Character => EvaluatedType.Character.Instance,
@@ -436,13 +436,13 @@ sealed partial class StaticAnalyzer
      => GetConstantExpression<Value.Integer, int>(scope, str.Length)
         .MatchError(e => e.MatchSome(_messenger.Report))
         .Map(EvaluatedType.LengthedString.Create)
-        .ValueOr(EvaluatedType.Unknown.Declared(str));
+        .ValueOr(EvaluatedType.Unknown.Declared(_messenger.Input, str));
 
     EvaluatedType EvaluateArrayType(ReadOnlyScope scope, Type.Complete.Array array)
      => array.Dimensions.Select(d => GetConstantExpression<Value.Integer, int>(scope, d)).Accumulate()
         .MatchError(Function.Foreach<Option<Message>>(e => e.MatchSome(_messenger.Report)))
         .Map(values => EvaluatedType.Array.Create(EvaluateType(scope, array.Type), values.ToList()))
-        .ValueOr(EvaluatedType.Unknown.Declared(array));
+        .ValueOr(EvaluatedType.Unknown.Declared(_messenger.Input, array));
 
     Option<ConstantExpression<TValue>, Option<Message>> GetConstantExpression<TVal, TValue>(ReadOnlyScope scope, Expression expr)
         where TVal : Value<TVal>, Value<TVal, TValue>

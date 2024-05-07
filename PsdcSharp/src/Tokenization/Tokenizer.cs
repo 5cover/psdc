@@ -6,7 +6,7 @@ using static Scover.Psdc.Tokenization.TokenType.Valued;
 
 namespace Scover.Psdc.Tokenization;
 
-sealed class Tokenizer
+public sealed class Tokenizer
 {
     static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
 
@@ -26,47 +26,60 @@ sealed class Tokenizer
     readonly Messenger _msger;
     readonly string _code;
 
+    const int NA = -1;
+
     public static IEnumerable<Token> Tokenize(Messenger messenger, string code)
     {
-        Tokenizer t = new(messenger, code);
+        Tokenizer t = new(messenger, code.DiacriticsRemoved());
 
         int index = 0;
+        int invalidStart = NA;
 
-        int? invalidStart = null;
-
-        while (index < code.Length) {
-            if (char.IsWhiteSpace(code[index])) {
-                index++;
+        while (index < t._code.Length) {
+            if (char.IsWhiteSpace(t._code[index])) {
+                t.ReportAnyUnknownToken(ref invalidStart, index);
+                ++index;
                 continue;
             }
 
-            Option<Token> token = t.ReadToken(index);
+            Option<Token> token = t.ReadToken(ref index);
 
             if (token.HasValue) {
-                if (invalidStart is not null) {
-                    t.ReportUnknownToken(invalidStart.Value, index);
-                    invalidStart = null;
-                }
-                index += token.Value.Length;
+                t.ReportAnyUnknownToken(ref invalidStart, index);
                 if (!ignoredTokens.Contains(token.Value.Type)) {
                     yield return token.Value;
                 }
             } else {
-                invalidStart ??= index;
+                if (invalidStart == NA) {
+                    invalidStart = index;
+                }
                 index++;
             }
         }
 
-        if (invalidStart is not null) {
-            t.ReportUnknownToken(invalidStart.Value, index);
-        }
+        t.ReportAnyUnknownToken(ref invalidStart, index);
 
         yield return new Token(Eof, null, index, 0);
+
     }
 
-    void ReportUnknownToken(int invalidStart, int index)
-     => _msger.Report(Message.ErrorUnknownToken(invalidStart..index));
+    void ReportAnyUnknownToken(ref int invalidStart, int index)
+    {
+        if (invalidStart != NA) {
+            _msger.Report(Message.ErrorUnknownToken(invalidStart..index));
+            invalidStart = NA;
+        }
+    }
 
-    Option<Token> ReadToken(int offset)
-     => rules.Select(t => t.TryExtract(_code, offset)).FirstOrNone(o => o.HasValue);
+    Option<Token> ReadToken(ref int offset)
+    {
+        foreach (var rule in rules) {
+            var token = rule.TryExtract(_code, offset);
+            if (token.HasValue) {
+                offset += token.Value.Length;
+                return token;
+            }
+        }
+        return Option.None<Token>();
+    }
 }

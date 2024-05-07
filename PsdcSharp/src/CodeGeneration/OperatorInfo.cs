@@ -2,7 +2,7 @@ using Scover.Psdc.Language;
 
 namespace Scover.Psdc.CodeGeneration;
 
-interface OperatorInfo<TSelf> where TSelf : OperatorInfo<TSelf>
+public interface OperatorInfo<TSelf> where TSelf : OperatorInfo<TSelf>
 {
     public static abstract TSelf ArraySubscript { get; }
     public static abstract TSelf ComponentAccess { get; }

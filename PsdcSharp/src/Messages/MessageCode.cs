@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Messages;
 
-enum MessageCode
+public enum MessageCode
 {
     #region Errors
     UnknownToken = 0,

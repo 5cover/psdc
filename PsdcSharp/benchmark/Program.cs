@@ -1,10 +1,23 @@
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Running;
+
+internal class Program
+{
+    private static void Main(string[] args)
+     => BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args,
+        ManualConfig.Create(DefaultConfig.Instance)
+        .WithOptions(ConfigOptions.JoinSummary)
+        .WithOptions(ConfigOptions.DisableLogFile));
+
+    public const string Code =
+"""
 /*
 Algorithme programme principal Sudoku
 */
 programme Sudoku c'est
 
 // Un jeu de Sudoku
-&&&
+
 constante entier N := 3;
 constante entier NB_FICHIERS_GRILLES := 10;
 constante entier LONGUEUR_MAX_COMMANDE := 64;
@@ -43,3 +56,5 @@ début
         écrireEcran("Bravo, vous avez gagné !");
     finsi
 fin
+""";
+}

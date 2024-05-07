@@ -33,17 +33,22 @@ interface NodeBracketedExpression : Node.Expression
 
 #endregion Node traits
 
-interface Node : EquatableSemantics<Node>
+public interface Node : EquatableSemantics<Node>
 {
     SourceTokens SourceTokens { get; }
 
-    internal sealed class Algorithm(SourceTokens sourceTokens,
-        Identifier name,
-        IReadOnlyCollection<Declaration> declarations)
-    : NodeImpl(sourceTokens), NodeScoped
+    public sealed class Algorithm : NodeImpl, NodeScoped
     {
-        public Identifier Name => name;
-        public IReadOnlyCollection<Declaration> Declarations => declarations;
+        internal Algorithm(SourceTokens sourceTokens,
+            Identifier name,
+            IReadOnlyCollection<Declaration> declarations) : base(sourceTokens)
+        {
+            Name = name;
+            Declarations = declarations;
+        }
+
+        internal Identifier Name { get; }
+        internal IReadOnlyCollection<Declaration> Declarations { get; }
 
         public override bool SemanticsEqual(Node other) => other is Algorithm o
          && o.Name.SemanticsEqual(Name)
@@ -854,7 +859,7 @@ sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 
 #endregion Terminals
 
-abstract class NodeImpl(SourceTokens sourceTokens) : Node
+public abstract class NodeImpl(SourceTokens sourceTokens) : Node
 {
     public SourceTokens SourceTokens => sourceTokens;
 

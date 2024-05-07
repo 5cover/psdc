@@ -4,7 +4,7 @@ namespace Scover.Psdc.Tokenization;
 
 sealed class RegexTokenRule(string pattern, RegexOptions flags = RegexOptions.None) : TokenRule
 {
-    readonly Regex _pattern = new($@"\G{pattern}", flags);
+    readonly Regex _pattern = new($@"\G{pattern}", flags | RegexOptions.Compiled);
 
     public Option<Token> TryExtract(TokenType tokenType, string code, int startIndex)
     {

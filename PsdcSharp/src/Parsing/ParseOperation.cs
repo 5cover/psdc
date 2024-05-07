@@ -121,7 +121,6 @@ abstract class ParseOperation
 
     /// <summary>
     /// Skims <paramref name="n"/> tokens.
-    /// Skims <paramref name="n"/> tokens.
     /// </summary>
     /// <param name="n">The number of token to skim.</param>
     /// <returns>The current <see cref="ParseOperation">.</returns>

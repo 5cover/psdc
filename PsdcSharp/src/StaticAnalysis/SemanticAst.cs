@@ -5,12 +5,19 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-sealed class SemanticAst(
-    Algorithm root,
-    IReadOnlyDictionary<NodeScoped, Scope> scopes,
-    IReadOnlyDictionary<Expression, Option<EvaluatedType>> inferredTypes)
+public sealed class SemanticAst
 {
-    public IReadOnlyDictionary<Expression, Option<EvaluatedType>> InferredTypes => inferredTypes;
-    public Algorithm Root => root;
-    public IReadOnlyDictionary<NodeScoped, Scope> Scopes => scopes;
+    internal SemanticAst(
+        Algorithm root,
+        IReadOnlyDictionary<NodeScoped, Scope> scopes,
+        IReadOnlyDictionary<Expression, Option<EvaluatedType>> inferredTypes) {
+        Root = root;
+        Scopes = scopes;
+        InferredTypes = inferredTypes;
+    }
+
+    internal IReadOnlyDictionary<Expression, Option<EvaluatedType>> InferredTypes { get; }
+    internal Algorithm Root { get; }
+    internal IReadOnlyDictionary<NodeScoped, Scope> Scopes { get; }
+
 }

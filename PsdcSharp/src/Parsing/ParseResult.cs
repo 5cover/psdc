@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Parsing;
 
-interface ParseResult<out T> : Option<T, ParseError>
+public interface ParseResult<out T> : Option<T, ParseError>
 {
     SourceTokens SourceTokens { get; }
 

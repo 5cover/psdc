@@ -1,6 +1,6 @@
 namespace Scover.Psdc;
 
-interface EquatableSemantics<in T>
+public interface EquatableSemantics<in T>
 {
     /// <summary>
     /// Determines whether this object and another carry equal semantics.

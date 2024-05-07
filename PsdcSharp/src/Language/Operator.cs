@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Language;
 
-enum BinaryOperator
+public enum BinaryOperator
 {
     Add,
     And,
@@ -50,7 +50,7 @@ static class OperatorExtensions
     };
 }
 
-enum UnaryOperator
+public enum UnaryOperator
 {
     Minus,
     Not,

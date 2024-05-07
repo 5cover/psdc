@@ -30,22 +30,20 @@ static class Program
             return SysExits.NoInput;
         }
 
-        Globals.Initialize(input);
-
-        PrintMessenger messenger = new();
+        PrintMessenger messenger = new(input);
 
         var tokens = "Tokenizing".LogOperation(Debug,
             () => Tokenizer.Tokenize(messenger, input).ToImmutableArray());
 
         var ast = "Parsing".LogOperation(Debug,
-            () => Parser.Parse(messenger, tokens).Value);
+            () => Parser.Parse(messenger, tokens));
 
-        if (ast is null) {
+        if (!ast.HasValue) {
             return SysExits.DataErr;
         }
 
         var semanticAst = "Analyzing".LogOperation(Debug,
-            () => StaticAnalyzer.AnalyzeSemantics(messenger, ast));
+            () => StaticAnalyzer.Analyze(messenger, ast.Value));
 
         string cCode = "Generating code".LogOperation(Debug,
             () => CodeGenerator.GenerateC(messenger, semanticAst));
@@ -61,8 +59,10 @@ static class Program
     static void WriteError(string message)
          => Console.Error.WriteLine($"psdc: {message}");
 
-    sealed class PrintMessenger : Messenger
+    sealed class PrintMessenger(string input) : Messenger
     {
+        public string Input => input;
+
         readonly DefaultDictionary<MessageSeverity, int> _msgCountsBySeverity = new(0);
         static TextWriter Stderr => Console.Error;
 
@@ -79,8 +79,8 @@ static class Program
             var msgColor = message.Severity.GetConsoleColor();
             msgColor.DoInColor(() => Stderr.Write($"[P{(int)message.Code:d4}] "));
 
-            Position start = Globals.Input.GetPositionAt(message.InputRange.Start);
-            Position end = Globals.Input.GetPositionAt(message.InputRange.End);
+            Position start = input.GetPositionAt(message.InputRange.Start);
+            Position end = input.GetPositionAt(message.InputRange.End);
 
             // If the error spans over multiple line, show only the last line.
             if (start.Line != end.Line) {
@@ -90,9 +90,9 @@ static class Program
             const string LineNoMargin = "    ";
             const string Bar = " | ";
 
-            Stderr.WriteLine($"{start}: {message.Severity.ToString().ToLower()}: {message.Content}");
+            Stderr.WriteLine($"{start}: {message.Severity.ToString().ToLower()}: {message.Content.Get(input)}");
 
-            ReadOnlySpan<char> faultyLine = Globals.Input.GetLine(start.Line);
+            ReadOnlySpan<char> faultyLine = input.GetLine(start.Line);
 
             // Faulty line
             WriteLineStart(withLineNumber: true);

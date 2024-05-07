@@ -8,7 +8,7 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration;
 
-static class CodeGenerator
+public static class CodeGenerator
 {
     public static string GenerateC(Messenger messenger, SemanticAst ast)
      => new CodeGeneratorC(messenger, ast).Generate();

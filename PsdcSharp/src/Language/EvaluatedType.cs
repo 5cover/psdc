@@ -209,10 +209,10 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
 
         protected override string ActualRepresentation { get; }
 
-        public static Unknown Declared(SourceTokens sourceTokens) => new(Globals.Input[sourceTokens.InputRange]);
+        public static Unknown Declared(string input, SourceTokens sourceTokens) => new(input[sourceTokens.InputRange]);
 
         // Provied an alternative overload which returns a more generic type for implicit operators
-        public static EvaluatedType Declared(Node node) => Declared(node.SourceTokens);
+        public static EvaluatedType Declared(string input, Node node) => Declared(input, node.SourceTokens);
 
         public override EvaluatedType ToAliasReference(Identifier alias) => new Unknown(ActualRepresentation, alias);
 

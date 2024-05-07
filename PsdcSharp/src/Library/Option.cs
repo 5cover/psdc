@@ -4,7 +4,7 @@ namespace Scover.Psdc.Library;
 
 // Covariant Option monad
 
-interface Option<out T>
+public interface Option<out T>
 {
     [MemberNotNullWhen(true, nameof(Value))]
     bool HasValue { get; }
@@ -16,7 +16,7 @@ interface Option<out T>
     public static Option<T> Of(ValueOption<T> option) => option;
 }
 
-interface Option<out T, out TError>
+public interface Option<out T, out TError>
 {
     TError? Error { get; }
 
@@ -31,21 +31,22 @@ interface Option<out T, out TError>
     public static Option<T, TError> Of(ValueOption<T, TError> option) => option;
 }
 
-readonly record struct ValueOption<T>(bool HasValue, T? Value) : Option<T>
+public readonly record struct ValueOption<T>(bool HasValue, T? Value) : Option<T>
 {
     public static implicit operator ValueOption<T>(T value) => new(true, value);
 }
 
-readonly record struct ValueOption<T, TError>(bool HasValue, T? Value, TError? Error) : Option<T, TError>
+public readonly record struct ValueOption<T, TError>(bool HasValue, T? Value, TError? Error) : Option<T, TError>
 {
     public static implicit operator ValueOption<T, TError>(T value) => new(true, value, default);
     public static implicit operator ValueOption<T, TError>(TError error) => new(false, default, error);
 }
 
-static class Option
+public static class Option
 {
-    public static T Unwrap<T>(this Option<T> option)
+    public static T Unwrap<T, TError>(this Option<T, TError> option)
      => option.HasValue ? option.Value : throw new InvalidOperationException("Option has no value");
+    
 
     public static Option<(T1, T2)> Combine<T1, T2>(this Option<T1> option1, Option<T2> option2)
      => (option1.HasValue && option2.HasValue)

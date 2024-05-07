@@ -9,7 +9,7 @@ using String = Scover.Psdc.Language.Value.String;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-partial class StaticAnalyzer
+public partial class StaticAnalyzer
 {
     static OperationResult<Value> EvaluateOperation(UnaryOperator op, Value operand) => (op, operand) switch {
         (_, Unknown u) => u,

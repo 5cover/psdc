@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Language;
 
-internal abstract class ValueImpl<TSelf, TVal> : Value<TSelf, TVal>
+abstract class ValueImpl<TSelf, TVal> : Value<TSelf, TVal>
     where TSelf : Value<TSelf, TVal>, Value<TSelf>
 {
     protected ValueImpl(TVal value) => Value = value.Some();
