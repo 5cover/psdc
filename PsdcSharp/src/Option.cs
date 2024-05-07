@@ -63,17 +63,17 @@ static class Option
     public static Option<T> DiscardError<T, TError>(this Option<T, TError> option)
          => new ValueOption<T>(option.HasValue, option.Value);
 
-    public static Option<TResult> FlatCast<T, TResult>(this Option<T> option)
+    public static Option<TResult> Cast<T, TResult>(this Option<T> option)
      => option.HasValue && option.Value is TResult result ? result.Some() : None<TResult>();
 
-    public static Option<TResult> FlatMap<T, TResult>(this Option<T> option, Func<T, Option<TResult>> transform)
+    public static Option<TResult> Bind<T, TResult>(this Option<T> option, Func<T, Option<TResult>> transform)
      => option.HasValue ? transform(option.Value) : None<TResult>();
 
-    public static Option<TResult, TError> FlatMap<T, TError, TResult>(this Option<T, TError> option,
+    public static Option<TResult, TError> Bind<T, TError, TResult>(this Option<T, TError> option,
         Func<T, Option<TResult, TError>> transform)
      => option.HasValue ? transform(option.Value) : None<TResult, TError>(option.Error);
 
-    public static Option<TResult, TError> FlatMap<T1, T2, TError, TResult>(this Option<(T1, T2), TError> option,
+    public static Option<TResult, TError> Bind<T1, T2, TError, TResult>(this Option<(T1, T2), TError> option,
         Func<T1, T2, Option<TResult, TError>> transform)
         => option.HasValue ? transform(option.Value.Item1, option.Value.Item2) : None<TResult, TError>(option.Error);
 
@@ -146,6 +146,23 @@ static class Option
         }
     }
 
+    public static void MatchSome<T1, T2>(this Option<(T1, T2)> option, Action<T1, T2> action)
+    {
+        if (option.HasValue) {
+            action(option.Value.Item1, option.Value.Item2);
+        }
+    }
+
+    /// <summary>
+    /// Applies a filter to this option.
+    /// </summary>
+    /// <typeparam name="T">The value type.</typeparam>
+    /// <param name="option">The option.</param>
+    /// <param name="predicate">The predicate to match the option's value against</param>
+    /// <returns>A Some option that matched the predicate or a None option.</returns>
+    public static Option<T> When<T>(this Option<T> option, Func<T, bool> predicate)
+     => option.HasValue && predicate(option.Value) ? option : None<T>();
+
     public static Option<T> None<T>() => new ValueOption<T>(false, default);
 
     public static Option<T, TError> None<T, TError>(this TError error) => new ValueOption<T, TError>(false, default, error);
@@ -167,80 +184,4 @@ static class Option
 
     public static T ValueOr<T, TError>(this Option<T, TError> option, T defaultValue)
      => option.HasValue ? option.Value : defaultValue;
-}
-
-static class OptionalCollectionExtensions
-{
-    /// <summary>
-    /// Accumulates either all the values, or the errors from a collection of <see cref="Option{T, TError}"/> instances.
-    /// </summary>
-    /// <typeparam name="T">The type of the value.</typeparam>
-    /// <typeparam name="TError">The type of the error.</typeparam>
-    /// <param name="options">The collection of <see cref="Option{T, TError}"/> instances.</param>
-    /// <returns>An <see cref="Option{T, TError}"/> instance containing either the accumulated values or errors.</returns>
-    public static Option<IEnumerable<T>, IEnumerable<TError>> Accumulate<T, TError>(this IEnumerable<Option<T, TError>> options)
-    {
-        List<T> values = [];
-        List<TError> errors = [];
-
-        // Make sure to only iterate the input sequence once.
-        foreach (var option in options) {
-            if (option.HasValue) {
-                values.Add(option.Value);
-            } else {
-                errors.Add(option.Error);
-            }
-        }
-
-        return errors.Count > 0
-            ? errors.None<IEnumerable<T>, IEnumerable<TError>>()
-            : values.Some<IEnumerable<T>, IEnumerable<TError>>();
-    }
-
-    public static Option<T> ElementAtOrNone<T>(this IEnumerable<T> source, int index)
-    {
-        if (index >= 0) {
-            if (source is IReadOnlyList<T> list) {
-                if (index < list.Count) {
-                    return list[index].Some();
-                }
-            } else {
-                using var enumerator = source.GetEnumerator();
-                while (enumerator.MoveNext()) {
-                    if (index-- == 0) {
-                        return enumerator.Current.Some();
-                    }
-                }
-            }
-        }
-        return Option.None<T>();
-    }
-
-    public static Option<T> FirstOrNone<T>(this IEnumerable<Option<T>> source, Func<Option<T>, bool> predicate)
-     => source.FirstOrDefault(predicate, Option.None<T>());
-
-    public static Option<T> FirstOrNone<T>(this IEnumerable<T> source, Func<T, bool> predicate)
-    {
-        foreach (var element in source) {
-            if (predicate(element)) {
-                return element.Some();
-            }
-        }
-        return Option.None<T>();
-    }
-
-    public static Option<T> FirstOrNone<T>(this IEnumerable<T> source)
-    {
-        if (source is IReadOnlyList<T> list) {
-            if (list.Count > 0) {
-                return list[0].Some();
-            }
-        } else {
-            using var enumerator = source.GetEnumerator();
-            if (enumerator.MoveNext()) {
-                return enumerator.Current.Some();
-            }
-        }
-        return Option.None<T>();
-    }
 }

@@ -20,15 +20,11 @@ partial class CodeGeneratorC
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
             } else {
-                var type = _ast.InferredTypes[part];
-                // Don't show error for an unknown inferred type. They don't have a useful representation.
-                if (type != EvaluatedType.Unknown.Inferred) {
-                    CreateTypeInfo(type).FormatComponent.Match(fmtComp => {
-                        format.Append(fmtComp);
-                        arguments.Add(part);
-                    }, () => _msger.Report(Message.ErrorTargetLanguage("C", part.SourceTokens,
-                             $"type '{type}' cannot be used in a format string")));
-                }
+                _ast.InferredTypes[part].MatchSome(t => CreateTypeInfo(t).FormatComponent.Match(fmtComp => {
+                    format.Append(fmtComp);
+                    arguments.Add(part);
+                }, () => _msger.Report(Message.ErrorTargetLanguage("C", part.SourceTokens,
+                    $"type '{t}' cannot be used in a format string"))));
             }
         }
 

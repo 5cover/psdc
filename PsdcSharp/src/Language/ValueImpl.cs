@@ -7,6 +7,7 @@ internal abstract class ValueImpl<TSelf, TVal> : Value<TSelf, TVal>
     protected ValueImpl() => Value = Option.None<TVal>();
 
     public abstract EvaluatedType Type { get; }
+    Option<EvaluatedType> Value.Type => Type.Some();
 
     public Option<TVal> Value { get; }
     public bool IsConstant => Value.HasValue;

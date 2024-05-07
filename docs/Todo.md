@@ -1,8 +1,5 @@
 # Todo list
 
-- representation tostring
-- fix star on expressions
-
 - Alternative keywords
     - finPour in place of fin
     - lowercase boolean operators
@@ -21,23 +18,24 @@
 - ~~Fix syntax error handling~~
 - ~~Lvalues~~
 - ~~Constant folding for type checking and division by zero~~
+- ~~allow optional brackets in control structures : update FG and parser~~
+- File handling (low priority)
 - Brace initialization (voir TD14 ex 1), array literals
+- More static analysis
+- string literal escape sequences
 - CLI (use nuget package)
     - customize header?
     - special behaviors (ecrireEcran newlines...)
+    - -d, --documentation : none, all, file
 - step-by-step benchmarks
 - Tests?
     - Errors
     - Valid code
-- File handling (low priority)
 - Documentation
 - Release
-- More static analysis
 - customize formatting
-- **allow optional brackets in control structures** : update FG and parser
-- string literal escape sequences
-
 - Have formal grammar follow parsing order in choices.
+
 
 - C-specific configuration
     - non null-terminated string proof format strings : width specifier for lengthed strings (usually useless since null-terminated, but could be useful if non null-terminated strings are used)

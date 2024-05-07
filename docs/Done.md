@@ -1102,3 +1102,22 @@ OperationResult EvaluateOperation(UnaryOperator op, Value operand)
 ```
 
 This works. We might someday need another implementation for non-constant values that can still be operated on.
+
+## Was evaluatedtype.unknown a mistake
+
+It makes type checking tedious as everytime we have to check that we're not dealing with an unknown and not report an error.
+
+When we had options, we just had to map it.
+
+The point of EvaluatedType.Unknown was initially to have a type to give to symbols with invalid declared types (function, variable...). Now it's used for inferred types to, when we can't evaluate an expression.
+
+Maybe we should have a MatchType method in Value that prevents use from dealing with unknown types directly.
+
+Or we could go back to the Option solution. After all, the unknown inferred carries no information about itself, it just "exists".
+
+Should we removed Unknown.Inferred and make Value.Type an `Option<EvaluatedType>`?
+
+The idea is that there is a difference between unknown declared and unknown inferred types, but we need to word it:
+
+- Unknown declared types are types that are expressed in code but cannot be given semantics, e.g. a referance to a non-existing type alias
+- Unknown inferred types are used as a placeholder when we need a type but have no information : e.g. the return type of a function symbol that was not found, or the result of an invalid operation. There is no EvaluatedType instance.

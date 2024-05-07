@@ -9,7 +9,7 @@ namespace Scover.Psdc.StaticAnalysis;
 
 sealed partial class StaticAnalyzer
 {
-    readonly Dictionary<Expression, EvaluatedType> _inferredTypes = [];
+    readonly Dictionary<Expression, Option<EvaluatedType>> _inferredTypes = [];
     readonly Dictionary<NodeScoped, Scope> _scopes = [];
     readonly Messenger _messenger;
     bool _seenMainProgram;
@@ -66,16 +66,19 @@ sealed partial class StaticAnalyzer
             if (!value.IsConstant) {
                 _messenger.Report(Message.ErrorConstantExpressionExpected(constant.Value.SourceTokens));
             }
-            if (!value.Type.SemanticsEqual(declaredType)) {
-                _messenger.Report(Message.ErrorExpressionHasWrongType(constant.Value.SourceTokens,
-                    declaredType, value.Type));
+
+            if (value.Type.Map(t => !t.SemanticsEqual(declaredType)).ValueOr(true)) {
+                
+                value.Type.MatchSome(t => _messenger.Report(Message.ErrorExpressionHasWrongType(
+                    constant.Value.SourceTokens, declaredType, t)));
+
                 // if the provided value wasn't of the right type, use a non-const value of the declared type.
                 // the constant is still added to the scope.
                 value = Value.Of(declaredType);
             }
 
             scope.AddSymbolOrError(_messenger,
-                new Symbol.Constant(constant.Name, constant.SourceTokens, value));
+                new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, value));
 
             break;
         }
@@ -140,58 +143,63 @@ sealed partial class StaticAnalyzer
             var left = AnalyzeExpression(scope, opBin.Left);
             var right = AnalyzeExpression(scope, opBin.Right);
             var res = EvaluateOperation(opBin.Operator, left, right);
-            foreach (var error in res.Errors) {
-                _messenger.Report(GetOperationMessage(error, opBin, left.Type, right.Type));
-            }
+            left.Type.Combine(right.Type).MatchSome((tleft, tright) => {
+                foreach (var error in res.Errors) {
+                    _messenger.Report(GetOperationMessage(error, opBin, tleft, tright));
+                }
+            });
             return res.Value;
         }
         case Expression.UnaryOperation opUn: {
             var operand = AnalyzeExpression(scope, opUn.Operand);
             var res = EvaluateOperation(opUn.Operator, operand);
-            foreach (var error in res.Errors) {
-                _messenger.Report(GetOperationMessage(error, opUn, operand.Type));
-            }
+            operand.Type.MatchSome(t => {
+                foreach (var error in res.Errors) {
+                    _messenger.Report(GetOperationMessage(error, opUn, t));
+                }
+            });
             return res.Value;
         }
         case Expression.FunctionCall call:
-            return Value.Of(
-                HandleCall<Symbol.Function>(scope, call)
-                .Map(f => f.ReturnType)
-                .ValueOr(EvaluatedType.Unknown.Inferred));
+            return HandleCall<Symbol.Function>(scope, call)
+                .Map(f => Value.Of(f.ReturnType))
+                .ValueOr(Value.UnknownInferred);
         case Expression.BuiltinFdf fdf:
             AnalyzeExpression(scope, fdf.ArgumentNomLog);
             return Value.Of(EvaluatedType.Boolean.Instance);
 
         case Expression.Lvalue.ArraySubscript arrSub:
             foreach (var index in arrSub.Indexes) {
-                var indexExpr = AnalyzeExpression(scope, index);
-                if (!indexExpr.Type.SemanticsEqual(EvaluatedType.Integer.Instance)) {
-                    _messenger.Report(Message.ErrorNonIntegerIndex(index.SourceTokens));
-                }
+                AnalyzeExpression(scope, index).Type
+                    .When(t => !t.SemanticsEqual(EvaluatedType.Integer.Instance))
+                    .MatchSome(t => _messenger.Report(Message.ErrorNonIntegerIndex(index.SourceTokens, t)));
             }
-            if (AnalyzeExpression(scope, arrSub.Array) is not { Type: EvaluatedType.Array arrayType }) {
-                _messenger.Report(Message.ErrorSubscriptOfNonArray(arrSub));
-                return Value.Of(EvaluatedType.Unknown.Inferred);
-            }
-            return Value.Of(arrayType.ElementType);
+
+            var arrayType = AnalyzeExpression(scope, arrSub.Array).Type;
+
+            arrayType.When(t => t is not EvaluatedType.Array)
+                    .MatchSome(t => _messenger.Report(Message.ErrorSubscriptOfNonArray(arrSub, t)));
+
+            return Value.Of(arrayType);
 
         case Expression.Lvalue.ComponentAccess compAccess:
-            if (AnalyzeExpression(scope, compAccess.Structure) is not { Type: EvaluatedType.Structure structType }) {
-                _messenger.Report(Message.ErrrorComponentAccessOfNonStruct(compAccess));
-            } else if (!structType.Components.TryGetValue(compAccess.ComponentName, out var compType)) {
-                _messenger.Report(Message.ErrorStructureComponentDoesntExist(compAccess, structType.Alias));
-            } else {
-                return Value.Of(compType);
-            }
-            return Value.Of(EvaluatedType.Unknown.Inferred);
-
+            return Value.Of(AnalyzeExpression(scope, compAccess.Structure).Type.Bind(t => {
+                if (t is not EvaluatedType.Structure structType) {
+                    _messenger.Report(Message.ErrrorComponentAccessOfNonStruct(compAccess, t));
+                } else if (!structType.Components.TryGetValue(compAccess.ComponentName, out var compType)) {
+                    _messenger.Report(Message.ErrorStructureComponentDoesntExist(compAccess, structType.Alias));
+                } else {
+                    return compType.Some();
+                }
+                return Option.None<EvaluatedType>();
+            }));
         case Expression.Lvalue.VariableReference varRef:
             return scope.GetSymbol<Symbol.Variable>(varRef.Name)
             .MatchError(_messenger.Report)
             .Map(variable => variable is Symbol.Constant constant
                 ? constant.Value
                 : Value.Of(variable.Type))
-                .ValueOr(Value.Of(EvaluatedType.Unknown.Inferred));
+            .ValueOr(Value.UnknownInferred);
         default:
             throw expr.ToUnmatchedException();
         }
@@ -353,11 +361,9 @@ sealed partial class StaticAnalyzer
                         actual.Mode.RepresentationActual, formal.Mode.RepresentationFormal));
                 }
 
-                var actualType = AnalyzeExpression(scope, actual.Value).Type;
-                if (!actualType.IsAssignableTo(formal.Type)) {
-                    problems.Add(Message.ProblemWrongArgumentType(formal.Name,
-                        formal.Type, actualType));
-                }
+                AnalyzeExpression(scope, actual.Value).Type
+                    .When(t => !t.IsAssignableTo(formal.Type))
+                    .MatchSome(t => problems.Add(Message.ProblemWrongArgumentType(formal.Name, formal.Type, t)));
             }
 
             if (problems.Count > 0) {
@@ -428,25 +434,25 @@ sealed partial class StaticAnalyzer
 
     EvaluatedType EvaluateLengthedStringType(ReadOnlyScope scope, Type.Complete.LengthedString str)
      => GetConstantExpression<Value.Integer, int>(scope, str.Length)
-        .MatchError(_messenger.Report)
+        .MatchError(e => e.MatchSome(_messenger.Report))
         .Map(EvaluatedType.LengthedString.Create)
         .ValueOr(EvaluatedType.Unknown.Declared(str));
 
     EvaluatedType EvaluateArrayType(ReadOnlyScope scope, Type.Complete.Array array)
      => array.Dimensions.Select(d => GetConstantExpression<Value.Integer, int>(scope, d)).Accumulate()
-        .MatchError(Function.Foreach<Message>(_messenger.Report))
+        .MatchError(Function.Foreach<Option<Message>>(e => e.MatchSome(_messenger.Report)))
         .Map(values => EvaluatedType.Array.Create(EvaluateType(scope, array.Type), values.ToList()))
         .ValueOr(EvaluatedType.Unknown.Declared(array));
 
-    Option<ConstantExpression<TValue>, Message> GetConstantExpression<TVal, TValue>(ReadOnlyScope scope, Expression expr)
+    Option<ConstantExpression<TValue>, Option<Message>> GetConstantExpression<TVal, TValue>(ReadOnlyScope scope, Expression expr)
         where TVal : Value<TVal>, Value<TVal, TValue>
     {
         var value = AnalyzeExpression(scope, expr);
         return value is TVal tval
-            ? tval.Value.Match<TValue, ValueOption<ConstantExpression<TValue>, Message>>(
-                val => ConstantExpression.Create(expr, val),
-                () => Message.ErrorConstantExpressionExpected(expr.SourceTokens))
-            : Message.ErrorExpressionHasWrongType(expr.SourceTokens, TVal.ExpectedType, value.Type);
+            ? tval.Value.Map(val => ConstantExpression.Create(expr, val))
+                .OrWithError(Message.ErrorConstantExpressionExpected(expr.SourceTokens).Some())
+            : value.Type.Map(t => Message.ErrorExpressionHasWrongType(expr.SourceTokens, TVal.ExpectedType, t))
+                .None<ConstantExpression<TValue>, Option<Message>>();
     }
 
     EvaluatedType.Structure EvaluateStructureType(ReadOnlyScope scope, Type.Complete.Structure structure)

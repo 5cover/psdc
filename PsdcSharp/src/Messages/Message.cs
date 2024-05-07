@@ -85,13 +85,13 @@ readonly struct Message
      => Create(sourceTokens, MessageCode.StructureDuplicateComponent,
         $"duplicate component `{componentName}` in structure");
 
-    public static Message ErrorNonIntegerIndex(SourceTokens sourceTokens)
+    public static Message ErrorNonIntegerIndex(SourceTokens sourceTokens, EvaluatedType actualIndexType)
      => Create(sourceTokens, MessageCode.NonIntegerIndex,
-        "non integer array index");
+        $"non integer ('{actualIndexType}') array index");
 
-    public static Message ErrorSubscriptOfNonArray(Expression.Lvalue.ArraySubscript arrSub)
+    public static Message ErrorSubscriptOfNonArray(Expression.Lvalue.ArraySubscript arrSub, EvaluatedType actualArrayType)
      => Create(arrSub, MessageCode.SubscriptOfNonArray,
-        $"subscripted value is not an array");
+        $"subscripted value ('{actualArrayType}') is not an array");
 
     public static Message ErrorSyntax(SourceTokens sourceTokens, ParseError error)
     {
@@ -138,9 +138,9 @@ readonly struct Message
      => Create(opUn, MessageCode.UnsupportedOperation,
         $"unsupported operand type for {opUn.Operator.GetRepresentation()}: '{operandType}'");
 
-    public static Message ErrrorComponentAccessOfNonStruct(Expression.Lvalue.ComponentAccess compAccess)
+    public static Message ErrrorComponentAccessOfNonStruct(Expression.Lvalue.ComponentAccess compAccess, EvaluatedType actualStructType)
      => Create(compAccess, MessageCode.ComponentAccessOfNonStruct,
-        $"request for component `{compAccess.ComponentName}` in something not a structure");
+        $"request for component `{compAccess.ComponentName}` in something ('{actualStructType}') not a structure");
 
     public static string ProblemWrongArgumentMode(Identifier name, string expected, string actual)
      => $"wrong mode for `{name}`: expected '{expected}', got '{actual}'";

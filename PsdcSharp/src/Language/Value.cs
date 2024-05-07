@@ -62,6 +62,9 @@ interface Value : EquatableSemantics<Value>
 {
     bool IsConstant { get; }
 
+    public static Value Of(Option<EvaluatedType> optType)
+     => optType.HasValue ? Of(optType.Value) : UnknownInferred;
+
     /// <summary>
     /// Create a non-constant value of the specified type.
     /// </summary>
@@ -74,15 +77,18 @@ interface Value : EquatableSemantics<Value>
         EvaluatedType.String => String.NoValue,
         EvaluatedType.LengthedString ls => new String(ls),
         EvaluatedType.Real => Real.NoValue,
+        EvaluatedType.Unknown u => new Unknown(u.Some()),
+        // We could just add the non const types to the default pattern, but we want to fail fast if we addded a new EvaluatedType and forgot to add it here.
         EvaluatedType.Array
         or EvaluatedType.File
-        or EvaluatedType.Structure
-        or EvaluatedType.Unknown => new Unknown(type),
+        or EvaluatedType.Structure => new NonConst(type),
 
         _ => throw type.ToUnmatchedException(),
     };
 
-    public EvaluatedType Type { get; }
+    public static Value UnknownInferred { get; } = new Unknown(Option.None<EvaluatedType.Unknown>());
+
+    public Option<EvaluatedType> Type { get; }
 
     internal sealed class Boolean : ValueImpl<Boolean, bool>, Value<Boolean>
     {
@@ -155,11 +161,19 @@ interface Value : EquatableSemantics<Value>
         protected override String Create(string val) => new();
     }
 
-    internal sealed class Unknown(EvaluatedType type) : Value
+    internal sealed class NonConst(EvaluatedType type) : Value
     {
-        public EvaluatedType Type => type;
+        public Option<EvaluatedType> Type { get; } = type.Some();
         public bool IsConstant => false;
-        public bool SemanticsEqual(Value other) => other is Unknown o
-         && o.Type.SemanticsEqual(Type);
+        public bool SemanticsEqual(Value other) => other is NonConst o
+         && o.Type.OptionSemanticsEqual(Type);
+    }
+
+    internal sealed class Unknown(Option<EvaluatedType.Unknown> type) : Value
+    {
+        public Option<EvaluatedType> Type => type;
+        public bool IsConstant => false;
+        public bool SemanticsEqual(Value other) => other is NonConst o
+         && o.Type.OptionSemanticsEqual(Type);
     }
 }

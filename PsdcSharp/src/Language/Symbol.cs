@@ -25,8 +25,8 @@ interface Symbol : EquatableSemantics<Symbol>
     }
 
     internal sealed record Constant(Identifier Name, SourceTokens SourceTokens,
-        Value Value)
-    : Variable(Name, SourceTokens, Value.Type)
+        EvaluatedType Type, Value Value)
+    : Variable(Name, SourceTokens, Type)
     {
         public override bool SemanticsEqual(Symbol other) => other is Constant o
          && o.Type.SemanticsEqual(Type)

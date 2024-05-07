@@ -426,13 +426,3 @@ It create more cascading errors if the failed token is the start of another prod
 What we can do. Try to parse including the failure token. If failed, read it. Or better, just skim each token that follows the failure token (including it) until we manage to parse.
 
 In any case, we can just make a bajillion error productions to counteract this.
-
-## Was evaluatedtype.unknown a mistake
-
-It makes type checking tedious as everytime we have to check that we're not dealing with an unknown and not report an error.
-
-When we had options, we just had to map it.
-
-The point of EvaluatedType.Unknown was initially to have a type to give to symbols with invalid declared types (function, variable...). Now it's used for inferred types to, when we can't evaluate an expression.
-
-Maybe we should have a MatchType method in Value that prevents use from dealing with unknown types directly.

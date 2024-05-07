@@ -124,7 +124,7 @@ static class Extensions
         return t;
     }
 
-    public static bool OptionSemanticsEqual(this Option<Node> first, Option<Node> second)
+    public static bool OptionSemanticsEqual<T>(this Option<T> first, Option<T> second) where T : EquatableSemantics<T>
      => first.HasValue && second.HasValue
         ? first.Value.SemanticsEqual(second.Value)
         : first.HasValue == second.HasValue;
