@@ -21,6 +21,8 @@ public enum MessageCode
     ExpressionHasWrongType,
     NonIntegerIndex,
     TargetLanguageError,
+    ReturnInNonFunction,
+    NonConstSwitchCase,
 
     CustomError = 999,
 

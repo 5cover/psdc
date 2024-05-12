@@ -12,7 +12,9 @@ sealed partial class StaticAnalyzer
     readonly Dictionary<Expression, Option<EvaluatedType>> _inferredTypes = [];
     readonly Dictionary<NodeScoped, Scope> _scopes = [];
     readonly Messenger _messenger;
+
     bool _seenMainProgram;
+    ValueOption<Symbol.Function> _currentFunction;
 
     StaticAnalyzer(Messenger messenger) => _messenger = messenger;
 
@@ -67,8 +69,7 @@ sealed partial class StaticAnalyzer
                 _messenger.Report(Message.ErrorConstantExpressionExpected(constant.Value.SourceTokens));
             }
 
-            if (value.Type.Map(t => !t.SemanticsEqual(declaredType)).ValueOr(true)) {
-                
+            if (value.Type.Map(t => !t.IsAssignableTo(declaredType)).ValueOr(true)) {
                 value.Type.MatchSome(t => _messenger.Report(Message.ErrorExpressionHasWrongType(
                     constant.Value.SourceTokens, declaredType, t)));
 
@@ -90,14 +91,17 @@ sealed partial class StaticAnalyzer
                     EvaluateType(scope, func.Signature.ReturnType)));
             break;
 
-        case Declaration.FunctionDefinition funcDef:
-            AnalyzeCallableDefinition(scope, funcDef, new Symbol.Function(
-                    funcDef.Signature.Name,
-                    funcDef.Signature.SourceTokens,
-                    CreateParameters(scope, funcDef.Signature.Parameters),
-                    EvaluateType(scope, funcDef.Signature.ReturnType)));
+        case Declaration.FunctionDefinition funcDef: {
+            Symbol.Function func = new(
+                funcDef.Signature.Name,
+                funcDef.Signature.SourceTokens,
+                CreateParameters(scope, funcDef.Signature.Parameters),
+                EvaluateType(scope, funcDef.Signature.ReturnType));
+            _currentFunction = func;
+            AnalyzeCallableDefinition(scope, funcDef, func);
+            _currentFunction = default;
             break;
-
+        }
         case Declaration.MainProgram mainProgram:
             if (_seenMainProgram) {
                 _messenger.Report(Message.ErrorRedefinedMainProgram(mainProgram));
@@ -125,14 +129,31 @@ sealed partial class StaticAnalyzer
         }
     }
 
+    Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, Option<EvaluatedType> expectedType)
+    {
+        var value = AnalyzeExpression(scope, expr);
+        expectedType.MatchSome(expectedType
+         => value.Type.When(t => !t.IsAssignableTo(expectedType)).MatchSome(t
+             => _messenger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, expectedType, t))));
+        return value;
+    }
+
+    Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, EvaluatedType expectedType)
+    {
+        var value = AnalyzeExpression(scope, expr);
+        value.Type.When(t => !t.IsAssignableTo(expectedType)).MatchSome(t
+         => _messenger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, expectedType, t)));
+        return value;
+    }
+
     Value AnalyzeExpression(ReadOnlyScope scope, Expression expr)
     {
-        var value = EvaluateExpression(scope, expr);
+        var value = EvaluateValue(scope, expr);
         _inferredTypes.Add(expr, value.Type);
         return value;
     }
 
-    Value EvaluateExpression(ReadOnlyScope scope, Expression expr)
+    Value EvaluateValue(ReadOnlyScope scope, Expression expr)
     {
         switch (expr) {
         case Expression.Literal lit:
@@ -221,11 +242,11 @@ sealed partial class StaticAnalyzer
             break;
 
         case Statement.Alternative alternative:
-            AnalyzeExpression(scope, alternative.If.Condition);
+            AnalyzeExpression(scope, alternative.If.Condition, EvaluatedType.Boolean.Instance);
             SetParentScope(alternative.If, scope);
             AnalyzeScopedBlock(alternative.If);
             foreach (var elseIf in alternative.ElseIfs) {
-                AnalyzeExpression(scope, elseIf.Condition);
+                AnalyzeExpression(scope, elseIf.Condition, EvaluatedType.Boolean.Instance);
                 SetParentScope(elseIf, scope);
                 AnalyzeScopedBlock(elseIf);
             }
@@ -235,20 +256,20 @@ sealed partial class StaticAnalyzer
             });
             break;
 
-        case Statement.Assignment assignment:
-            AnalyzeExpression(scope, assignment.Target);
+        case Statement.Assignment assignment: {
+            Value target = AnalyzeExpression(scope, assignment.Target);
             if (assignment.Target is Expression.Lvalue.VariableReference varRef) {
                 scope.GetSymbol<Symbol.Constant>(varRef.Name).MatchSome(constant
                     => _messenger.Report(Message.ErrorConstantAssignment(assignment, constant)));
             }
-            AnalyzeExpression(scope, assignment.Value);
-            break;
+            AnalyzeExpression(scope, assignment.Value, target.Type);
 
+            break;
+        }
         case Statement.DoWhileLoop doWhileLoop:
             AnalyzeScopedBlock(doWhileLoop);
-            AnalyzeExpression(scope, doWhileLoop.Condition);
+            AnalyzeExpression(scope, doWhileLoop.Condition, EvaluatedType.Boolean.Instance);
             break;
-
         case Statement.ForLoop forLoop:
             AnalyzeExpression(scope, forLoop.Start);
             forLoop.Step.MatchSome(step => AnalyzeExpression(scope, step));
@@ -303,28 +324,39 @@ sealed partial class StaticAnalyzer
 
         case Statement.RepeatLoop repeatLoop:
             AnalyzeScopedBlock(repeatLoop);
+            AnalyzeExpression(scope, repeatLoop.Condition, EvaluatedType.Boolean.Instance);
             break;
 
         case Statement.Return ret:
-            AnalyzeExpression(scope, ret.Value);
+            _currentFunction.Match(
+                func => AnalyzeExpression(scope, ret.Value, func.ReturnType),
+                () => {
+                    AnalyzeExpression(scope, ret.Value);
+                    _messenger.Report(Message.ErrorReturnInNonFunction(ret.SourceTokens));
+                });
             break;
 
-        case Statement.LocalVariable varDecl:
+        case Statement.LocalVariable varDecl: {
             var type = EvaluateType(scope, varDecl.Type);
             foreach (var name in varDecl.Names) {
                 scope.AddSymbolOrError(_messenger, new Symbol.Variable(name, varDecl.SourceTokens, type));
             }
             break;
-
-        case Statement.WhileLoop whileLoop:
+        }
+        case Statement.WhileLoop whileLoop: {
             AnalyzeScopedBlock(whileLoop);
+            Value condition = AnalyzeExpression(scope, whileLoop.Condition, EvaluatedType.Boolean.Instance);
             break;
-
-        case Statement.Switch switchCase:
-            AnalyzeExpression(scope, switchCase.Expression);
+        }
+        case Statement.Switch switchCase: {
+            var type = AnalyzeExpression(scope, switchCase.Expression).Type;
             foreach (var @case in switchCase.Cases) {
-                AnalyzeExpression(scope, @case.When);
                 SetParentScope(@case, scope);
+                
+                Value val = AnalyzeExpression(scope, @case.When, type);
+                if (!val.IsConstant) {
+                    _messenger.Report(Message.ErrorNonConstSwitchCase(@case.When.SourceTokens));
+                }
                 AnalyzeScopedBlock(@case);
             }
             switchCase.Default.MatchSome(@default => {
@@ -332,7 +364,7 @@ sealed partial class StaticAnalyzer
                 AnalyzeScopedBlock(@default);
             });
             break;
-
+        }
         default:
             throw stmt.ToUnmatchedException();
         }

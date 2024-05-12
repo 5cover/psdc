@@ -234,6 +234,34 @@ Ideas for error productions :
 - Incomplete type where complete type was expected
 - faire instead of alors / alors instead of faire
 
+## should we consume the failure token
+
+The following syntax error:
+
+```text
+si (n == 0) faire
+        retourne faux;
+finsi
+```
+
+`faire` instead of `alors`.
+
+We read up to `)`, then we fail parsing the `Alternative` on the `faire`
+
+The `faire` is interpreted as the beginning do..while loop, which goes on forever since there is no `tant que` in sight, causing cascading errors.
+
+We would still get some cascading errors, but we wouldn't have the same issue.
+
+So should we read that tokens?
+
+Well i don't know. It would be a bad idea to if it hid useful errors or create more cascading errors. But maybe it doesn't?
+
+It create more cascading errors if the failed token is the start of another production.
+
+What we can do. Try to parse including the failure token. If failed, read it. Or better, just skim each token that follows the failure token (including it) until we manage to parse.
+
+In any case, we can just make a bajillion error productions to counteract this.
+
 ## Create a representation of the AST being built
 
 We know the ast is build from the bottom up, but it could be interesting to see it animated.
@@ -337,6 +365,10 @@ when we generate an identifier, check it against the reserved keywords and give 
 
 maybe we can give a warning and rename the identifier? no, modifying the user's code is weird.
 
+## call a function as a statement
+
+self-explanatory.
+
 ## Code generation newlines
 
 We need to define were empty spacing lines should be. Maybe a state machine could be useful for that. A typical C program is divided in several sections.
@@ -361,6 +393,8 @@ character
 lengthedString["chaîne(<i>N</i>)"] --> string
 integer --> real
 ```
+
+Actually, we don't really need implicit conversions since the issue is already solved by assignability rules.
 
 **Characters are not integers**. Yes, they are represented by integers, but that's an implementation detail. Pseudocode focuses on semantics, not technicalities.
 
@@ -392,37 +426,14 @@ In Alter, if left operand (base expression) is a literal, just merge the two ins
 
 ## more expression static analysis
 
-- Check the assignability of target and value in assignment
-- Check if condition is a boolean in alternatives and loops
-- Check if for loop start, step and end are numeric
 - Check if file arguments to file builtins are files
+- Check for loop start, step and end
+    - start must be assignable to variant
+    - variant and step must support operator '+'
+    - variant and end must support operator '<'
+    - so I need a way to query which operators are supported between 2 types. Oh no.
+
+- Check the type and const-ness of each case
+- Check if condition is a boolean in alternatives and loops
+- Check the assignability of target and value in assignment
 - Check if return value corresponds to function's return type
-- Check if expression type is switchable and check the type and const-ness of each case
-
-## should we consume the failure token
-
-The following syntax error:
-
-```text
-si (n == 0) faire
-        retourne faux;
-finsi
-```
-
-`faire` instead of `alors`.
-
-We read up to `)`, then we fail parsing the `Alternative` on the `faire`
-
-The `faire` is interpreted as the beginning do..while loop, which goes on forever since there is no `tant que` in sight, causing cascading errors.
-
-We would still get some cascading errors, but we wouldn't have the same issue.
-
-So should we read that tokens?
-
-Well i don't know. It would be a bad idea to if it hid useful errors or create more cascading errors. But maybe it doesn't?
-
-It create more cascading errors if the failed token is the start of another production.
-
-What we can do. Try to parse including the failure token. If failed, read it. Or better, just skim each token that follows the failure token (including it) until we manage to parse.
-
-In any case, we can just make a bajillion error productions to counteract this.

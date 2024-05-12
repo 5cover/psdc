@@ -49,11 +49,19 @@ public readonly struct Message
     internal static Message ErrorExpressionHasWrongType(SourceTokens sourceTokens,
         EvaluatedType expected, EvaluatedType actual)
      => new(sourceTokens, MessageCode.ExpressionHasWrongType,
-        $"wrong type for expression: expected '{expected}', got '{actual}'");
+        $"can't convert expression of type '{expected}' to '{actual}'");
 
     internal static Message ErrorMissingMainProgram(SourceTokens sourceTokens)
      => new(sourceTokens, MessageCode.MissingMainProgram,
         "main program missing");
+
+    internal static Message ErrorReturnInNonFunction(SourceTokens sourceTokens)
+     => new(sourceTokens, MessageCode.ReturnInNonFunction,
+        "return in something not a function");
+
+    internal static Message ErrorNonConstSwitchCase(SourceTokens sourceTokens)
+     => new(sourceTokens, MessageCode.NonConstSwitchCase,
+        "switch case expression must be const");
 
     internal static Message ErrorRedefinedMainProgram(Declaration.MainProgram mainProgram)
      => new(mainProgram.SourceTokens, MessageCode.RedefinedMainProgram,
