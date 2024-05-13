@@ -398,19 +398,9 @@ Each of these sections is separated by an empty line (so 2 newlines)
 - Check the assignability of target and value in assignment
 - Check if return value corresponds to function's return type
 
-## Proper inversion of boolean expression in repeat loop code generation
-
-Currently we just add a bang and parentheses in front of it. That's dirty. We will need proper precedence and associativity control before that though.
-
 ## array literals
 
 we will only support array literals for assignation of arrays. That will require a change in `EvaluatedType`.
-
-## fix redundancy of information
-
-Symbol.Name is in the dict key and in the type
-
-SourceTokens is in the ParseResult and in the Node
 
 ## values is a generic mess
 
@@ -419,3 +409,14 @@ The complexity comes from the fact that Values are generic based on the underlyi
 Maybe this is a mistake and we should have used encapsulated object downcasts.
 
 We could have done a better job with C++ template metaprogramming.
+
+## ast nodes contain sourcetokens
+
+They shouldn't. Since we create AST nodes after parsing we need to pass empty sourcetokens to them. This makes no sense.
+
+I see 2 solutions
+
+1. Make Node SourceTokens optional
+2. Remove SourceTokens property from Node and put the source tokens in a lookup table somewhere.
+
+Or maybe we can stay with what we have now. Maybe this is ok.

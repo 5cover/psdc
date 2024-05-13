@@ -49,4 +49,31 @@ static partial class AstExtensions
         _ => throw value.ToUnmatchedException(),
     };
 
+    /// <summary>
+    /// Invert an expression, assuming it is boolean.
+    /// </summary>
+    /// <param name="expr">The expression.</param>
+    /// <returns>The inverse of <paramref name="expr"/> assuming it is a boolean expression.</returns>
+    public static Expression Invert(this Expression expr) => expr switch {
+        Expression.Literal.True e => new Expression.Literal.False(e.SourceTokens),
+        Expression.Literal.False e => new Expression.Literal.True(e.SourceTokens),
+        NodeBracketedExpression e => e.ContainedExpression.Invert(),
+        Expression.UnaryOperation uo when uo.Operator is UnaryOperator.Not => uo.Operand,
+        Expression.BinaryOperation bo => bo.Operator switch {
+            BinaryOperator.Equal => new(bo.SourceTokens, bo.Left, BinaryOperator.NotEqual, bo.Right),
+            BinaryOperator.NotEqual => new(bo.SourceTokens, bo.Left, BinaryOperator.Equal, bo.Right),
+            BinaryOperator.GreaterThan => new(bo.SourceTokens, bo.Left, BinaryOperator.LessThanOrEqual, bo.Right),
+            BinaryOperator.GreaterThanOrEqual => new(bo.SourceTokens, bo.Left, BinaryOperator.LessThan, bo.Right),
+            BinaryOperator.LessThan => new(bo.SourceTokens, bo.Left, BinaryOperator.GreaterThanOrEqual, bo.Right),
+            BinaryOperator.LessThanOrEqual => new(bo.SourceTokens, bo.Left, BinaryOperator.GreaterThan, bo.Right),
+            // NOT (A AND B) <=> NOT A OR NOT B
+            BinaryOperator.And => new(bo.SourceTokens, bo.Left.Invert(), BinaryOperator.Or, bo.Right.Invert()),
+            // NOT (A OR B) <=> NOT A AND NOT B
+            BinaryOperator.Or => new(bo.SourceTokens, bo.Left.Invert(), BinaryOperator.And, bo.Right.Invert()),
+            // NOT (A XOR B) <=> A = B
+            BinaryOperator.Xor => new(bo.SourceTokens, bo.Left, BinaryOperator.Equal, bo.Right),
+            _ => bo
+        },
+        _ => new Expression.UnaryOperation(SourceTokens.Empty, UnaryOperator.Not, expr),
+    };
 }

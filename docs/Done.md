@@ -1157,6 +1157,12 @@ Booleans are not considered integers, as this is a behavior inherited from C and
 
 How do we implement them?
 
-## alter collapse constant expressions
+## alter collapse literals
 
 In Alter, if left operand (base expression) is a literal, just merge the two instead of creating a binary expression.
+
+We chose to collapse literals and not all constant expressions because we want to keep the semantics of the code as close as possible to those of the input. Folding literals is acceptable, but not constant references or other types of constant expressions.
+
+## Proper inversion of boolean expression in repeat loop code generation
+
+Currently we just add a bang and parentheses in front of it. That's dirty. We will need proper precedence and associativity control before that though.

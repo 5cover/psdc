@@ -238,9 +238,9 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
     StringBuilder AppendRepeatLoop(StringBuilder o, Statement.RepeatLoop repeatLoop)
     {
         Indent(o).Append("do ");
-        AppendBlock(o, repeatLoop).Append(" while (!");
-        AppendBracketedExpression(o, repeatLoop.Condition);
-        return o.AppendLine(");");
+        AppendBlock(o, repeatLoop).Append(" while ");
+        AppendBracketedExpression(o, repeatLoop.Condition.Invert());
+        return o.AppendLine(";");
     }
 
     StringBuilder AppendReturn(StringBuilder o, Statement.Return ret)
