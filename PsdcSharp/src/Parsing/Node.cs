@@ -571,90 +571,59 @@ public interface Node : EquatableSemantics<Node>
              && o.ContainedExpression.SemanticsEqual(ContainedExpression);
         }
 
-        internal interface Literal<TValue> : Literal where TValue : IConvertible
+        internal abstract class Literal<TValue, TUnderlying>(SourceTokens sourceTokens, TValue value)
+            : NodeImpl(sourceTokens), Literal
+            where TValue : Value<TValue, TUnderlying>
+            where TUnderlying : IConvertible, IEquatable<TUnderlying>
         {
-            public new TValue ActualValue { get; }
-            IConvertible Literal.ActualValue => ActualValue;
+            // The provided Value for a literal must always have a value
+            public TUnderlying Value { get; } = value.Value.Value.NotNull();
+            public TValue EvaluatedValue { get; } = value;
+            IConvertible Literal.Value => Value;
+            Value Literal.EvaluatedValue => EvaluatedValue;
+
+            public override bool SemanticsEqual(Node other) => other is Literal<TValue, TUnderlying> o
+             && o.Value.Equals(Value);
         }
 
         internal interface Literal : Expression
         {
-            IConvertible ActualValue { get; }
-            Value Value { get; }
+            IConvertible Value { get; }
+            Value EvaluatedValue { get; }
             internal sealed class True(SourceTokens sourceTokens)
-            : NodeImpl(sourceTokens), Expression, Literal<bool>
+            : Literal<Value.Boolean, bool>(sourceTokens, new(true))
             {
-                public bool ActualValue { get; } = true;
-                public Value Value { get; } = new Value.Boolean(true);
-
-                public override bool SemanticsEqual(Node other) => other is True;
             }
 
             internal sealed class False(SourceTokens sourceTokens)
-            : NodeImpl(sourceTokens), Expression, Literal<bool>
+            : Literal<Value.Boolean, bool>(sourceTokens, new(false))
             {
-                public bool ActualValue { get; } = false;
-                public Value Value { get; } = new Value.Boolean(false);
-                public override bool SemanticsEqual(Node other) => other is False;
             }
 
-            internal sealed class Character : NodeImpl, Literal<char>
+            internal sealed class Character(SourceTokens sourceTokens, char value)
+            : Literal<Value.Character, char>(sourceTokens, new(value))
             {
-                public char ActualValue { get; }
-                public Value Value { get; }
-
-                public Character(SourceTokens sourceTokens,
-                    string valueStr) : base(sourceTokens)
-                {
-                    ActualValue = char.Parse(valueStr);
-                    Value = new Value.Character(ActualValue);
-                }
-
-                public override bool SemanticsEqual(Node other) => other is Character o
-                 && o.ActualValue == ActualValue;
+                public Character(SourceTokens sourceTokens, string valueStr)
+                : this(sourceTokens, char.Parse(valueStr)) { }
             }
 
-            internal sealed class Integer : NodeImpl, Literal<int>
+            internal sealed class Integer(SourceTokens sourceTokens, int value)
+            : Literal<Value.Integer, int>(sourceTokens, new(value))
             {
-                public int ActualValue { get; }
-                public Value Value { get; }
-
-                public Integer(SourceTokens sourceTokens,
-                    string valueStr) : base(sourceTokens)
-                {
-                    ActualValue = int.Parse(valueStr, CultureInfo.InvariantCulture);
-                    Value = new Value.Integer(ActualValue);
-                }
-
-                public override bool SemanticsEqual(Node other) => other is Integer o
-                 && o.ActualValue == ActualValue;
+                public Integer(SourceTokens sourceTokens, string valueStr)
+                : this(sourceTokens, int.Parse(valueStr, CultureInfo.InvariantCulture)) { }
             }
 
-            internal sealed class Real : NodeImpl, Literal<decimal>
+            internal sealed class Real(SourceTokens sourceTokens, decimal value)
+            : Literal<Value.Real, decimal>(sourceTokens, new(value))
             {
-                public decimal ActualValue { get; }
-                public Value Value { get; }
-
-                public Real(SourceTokens sourceTokens, string valueStr) : base(sourceTokens)
-                {
-                    ActualValue = decimal.Parse(valueStr, CultureInfo.InvariantCulture);
-                    Value = new Value.Real(ActualValue);
-                }
-
-                public override bool SemanticsEqual(Node other) => other is Real o
-                 && o.ActualValue == ActualValue;
-            }
+                public Real(SourceTokens sourceTokens, string valueStr)
+                : this(sourceTokens, decimal.Parse(valueStr, CultureInfo.InvariantCulture)) { }
+            };
 
             internal sealed class String(SourceTokens sourceTokens,
-                string valueStr)
-            : NodeImpl(sourceTokens), Literal<string>
-            {
-                public string ActualValue { get; } = valueStr;
-                public Value Value { get; } = new Value.String(valueStr);
-
-                public override bool SemanticsEqual(Node other) => other is String o
-                 && o.ActualValue == ActualValue;
-            }
+                string value)
+            : Literal<Value.String, string>(sourceTokens, new(value));
         }
     }
 

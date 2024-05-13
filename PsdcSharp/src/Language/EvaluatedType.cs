@@ -34,11 +34,11 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
     protected abstract string ActualRepresentation { get; }
 
     /// <summary>
-    /// Determines whether a value of this type can be assigned to a variable of type <paramref name="other"/>.
+    /// Determines whether this type implicitly converts to type <paramref name="other"/>.
     /// </summary>
     /// <param name="other">The type to compare with the current type</param>
-    /// <returns>Whether a value of this type can be assigned to a variable of type <paramref name="other"/>.</returns>
-    public virtual bool IsAssignableTo(EvaluatedType other) => ActualSemanticsEqual(other);
+    /// <returns>Whether this type is implicitly convertible to <paramref name="other"/>.</returns>
+    public virtual bool IsConvertibleTo(EvaluatedType other) => ActualSemanticsEqual(other);
 
     public bool SemanticsEqual(EvaluatedType other)
      => ActualSemanticsEqual(other) || other.ActualSemanticsEqual(this);
@@ -66,7 +66,7 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
           => new(elementType, dimensions, null);
 
         // Arrays can't be reassigned for now.
-        public override bool IsAssignableTo(EvaluatedType other) => false;
+        public override bool IsConvertibleTo(EvaluatedType other) => false;
 
         public override EvaluatedType ToAliasReference(Identifier alias)
          => new Array(ElementType, Dimensions, alias);
@@ -131,7 +131,7 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
         public static LengthedString Create(int length)
          => new(Option.None<Expression>(), length, null);
 
-        public override bool IsAssignableTo(EvaluatedType other)
+        public override bool IsConvertibleTo(EvaluatedType other)
          => other is String || ActualSemanticsEqual(other);
 
         public override EvaluatedType ToAliasReference(Identifier alias) => new LengthedString(LengthConstantExpression, Length, alias);
@@ -149,7 +149,7 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
 
         public override EvaluatedType ToAliasReference(Identifier alias) => new Integer(alias);
 
-        public override bool IsAssignableTo(EvaluatedType other) => other is Integer or Real;
+        public override bool IsConvertibleTo(EvaluatedType other) => other is Integer or Real;
 
         protected override bool ActualSemanticsEqual(EvaluatedType other) => other is Integer;
     }

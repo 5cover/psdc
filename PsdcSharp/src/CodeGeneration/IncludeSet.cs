@@ -7,6 +7,7 @@ sealed class IncludeSet
     public const string StdBool = "<stdbool.h>";
     public const string StdIo = "<stdio.h>";
     public const string StdLib = "<stdlib.h>";
+    public const string String = "<string.h>";
 
     readonly HashSet<string> _headers = [];
 

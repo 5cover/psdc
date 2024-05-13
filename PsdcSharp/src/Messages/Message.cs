@@ -49,7 +49,7 @@ public readonly struct Message
     internal static Message ErrorExpressionHasWrongType(SourceTokens sourceTokens,
         EvaluatedType expected, EvaluatedType actual)
      => new(sourceTokens, MessageCode.ExpressionHasWrongType,
-        $"can't convert expression of type '{expected}' to '{actual}'");
+        $"can't convert expression of type '{actual}' to '{expected}'");
 
     internal static Message ErrorMissingMainProgram(SourceTokens sourceTokens)
      => new(sourceTokens, MessageCode.MissingMainProgram,

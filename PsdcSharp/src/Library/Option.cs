@@ -46,7 +46,7 @@ public static class Option
 {
     public static T Unwrap<T, TError>(this Option<T, TError> option)
      => option.HasValue ? option.Value : throw new InvalidOperationException("Option has no value");
-    
+
 
     public static Option<(T1, T2)> Combine<T1, T2>(this Option<T1> option1, Option<T2> option2)
      => (option1.HasValue && option2.HasValue)

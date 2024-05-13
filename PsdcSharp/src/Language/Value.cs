@@ -17,45 +17,45 @@ interface Value<out TSelf> : Value
     static abstract TSelf NoValue { get; }
 }
 
-interface Value<TSelf, TVal> : Value where TSelf : Value<TSelf, TVal>
+interface Value<TSelf, TUnderlying> : Value where TSelf : Value<TSelf, TUnderlying>
 {
-    Option<TVal> Value { get; }
+    Option<TUnderlying> Value { get; }
 
     // Binary
     public OperationResult<TResult> OperateWith<TResult>(TSelf other,
-        Func<TVal, TVal, OperationResult<TResult>> transform)
+        Func<TUnderlying, TUnderlying, OperationResult<TResult>> transform)
         where TResult : Value<TResult>;
 
     // Binary error-less
     public TResult OperateWith<TResult>(TSelf other,
-        Func<TVal, TVal, TResult> transform)
+        Func<TUnderlying, TUnderlying, TResult> transform)
         where TResult : Value<TResult>;
 
     // Binary internal
     public OperationResult<TSelf> OperateWith(TSelf other,
-        Func<TVal, TVal, OperationResult<TSelf>> transform);
+        Func<TUnderlying, TUnderlying, OperationResult<TSelf>> transform);
 
     // Binary internal error-less
     public TSelf OperateWith(TSelf other,
-       Func<TVal, TVal, TVal> transform);
+       Func<TUnderlying, TUnderlying, TUnderlying> transform);
 
     // Unary
     public OperationResult<TResult> Operate<TResult>(
-        Func<TVal, OperationResult<TResult>> transform)
+        Func<TUnderlying, OperationResult<TResult>> transform)
         where TResult : Value<TResult>;
 
     // Unary error-less
     public TResult Operate<TResult>(
-        Func<TVal, TResult> transform)
+        Func<TUnderlying, TResult> transform)
         where TResult : Value<TResult>;
 
     // Unary internal
     public OperationResult<TSelf> Operate(
-        Func<TVal, OperationResult<TSelf>> transform);
+        Func<TUnderlying, OperationResult<TSelf>> transform);
 
     // Unary internal error-less
     public TSelf Operate(
-        Func<TVal, TVal> transform);
+        Func<TUnderlying, TUnderlying> transform);
 }
 
 interface Value : EquatableSemantics<Value>
@@ -118,7 +118,7 @@ interface Value : EquatableSemantics<Value>
         public static new Integer NoValue { get; } = IntegerImpl.NoValue;
         public static new EvaluatedType ExpectedType => IntegerImpl.ExpectedType;
         public override EvaluatedType Type => _impl.Type;
-        Option<int> Value<Integer, int>.Value => _impl.Value;
+        public new Option<int> Value => _impl.Value;
 
         sealed class IntegerImpl : ValueImpl<Integer, int>, Value<Integer>
         {

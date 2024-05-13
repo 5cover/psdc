@@ -952,7 +952,7 @@ What do we do with `LenghtedString.Length` and `Array.Dimensions` anyway?
 
 What type does it need to be?
 
-I guess a generic `ConstantExpression<TVal>` is fine.
+I guess a generic `ConstantExpression<TUnderlying>` is fine.
 
 Maybe it was a mistake to remove `EvaluatedType` from `ConstantValue`. It would be nice to have a guarantee that a constant value is of a type.
 
@@ -1121,3 +1121,38 @@ The idea is that there is a difference between unknown declared and unknown infe
 
 - Unknown declared types are types that are expressed in code but cannot be given semantics, e.g. a referance to a non-existing type alias
 - Unknown inferred types are used as a placeholder when we need a type but have no information : e.g. the return type of a function symbol that was not found, or the result of an invalid operation. There is no EvaluatedType instance.
+
+## String comparison
+
+We need to support special syntax for comparisons between certain types.
+
+We could add it to typeinfoc or just check the type and operator in appendbinaryoperation and generate a strcmp appropriately.
+
+There will be concerns with precedence
+
+Are there other special operations ?
+
+operation|c
+-|-
+string1 == string2|strcmp(string1, string2) == 0
+string1 != string2|strcmp(string1, string2) != 0
+
+## Implicit conversions
+
+```mermaid
+flowchart TD
+boolean
+character
+lengthedString["chaîne(<i>N</i>)"] --> string
+integer --> real
+```
+
+Actually, we don't really need implicit conversions since the issue is already solved by assignability rules.
+
+**Characters are not integers**. Yes, they are represented by integers, but that's an implementation detail. Pseudocode focuses on semantics, not technicalities.
+
+Strings with a known length are considered unlenghted strings. The length is specified at declaration but is not needed for consumption since the strings are null-terminated.
+
+Booleans are not considered integers, as this is a behavior inherited from C and it doesn't make sense to perform arithmetic operations on booleans. The true/false concept is separate from integers, and the fact that it maps to 0/1 is an implementation detail.
+
+How do we implement them?

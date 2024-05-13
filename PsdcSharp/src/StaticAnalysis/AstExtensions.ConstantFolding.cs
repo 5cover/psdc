@@ -9,9 +9,9 @@ using String = Scover.Psdc.Language.Value.String;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-public partial class StaticAnalyzer
+partial class AstExtensions
 {
-    static OperationResult<Value> EvaluateOperation(UnaryOperator op, Value operand) => (op, operand) switch {
+    internal static OperationResult<Value> EvaluateOperation(this UnaryOperator op, Value operand) => (op, operand) switch {
         (_, Unknown u) => u,
         (Minus, Integer x) => x.Operate(x => -x),
         (Minus, Real x) => x.Operate(x => -x),
@@ -21,7 +21,7 @@ public partial class StaticAnalyzer
         _ => OperationError.UnsupportedOperator,
     };
 
-    static OperationResult<Value> EvaluateOperation(BinaryOperator op, Value left, Value right) => (op, left, right) switch {
+    internal static OperationResult<Value> EvaluateOperation(this BinaryOperator op, Value left, Value right) => (op, left, right) switch {
         // Propagate unknown types
         (_, Unknown u, _) => u,
         (_, _, Unknown u) => u,
@@ -71,12 +71,12 @@ public partial class StaticAnalyzer
         _ => OperationError.UnsupportedOperator,
     };
 
-    static Message GetOperationMessage(OperationError error, Expression.UnaryOperation opUn, EvaluatedType operandType) => error switch {
+    internal static Message GetOperationMessage(this OperationError error, Expression.UnaryOperation opUn, EvaluatedType operandType) => error switch {
         OperationError.UnsupportedOperator => Message.ErrorUnsupportedOperation(opUn, operandType),
         _ => throw error.ToUnmatchedException(),
     };
 
-    static Message GetOperationMessage(OperationError error, Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType) => error switch {
+    internal static Message GetOperationMessage(this OperationError error, Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType) => error switch {
         OperationError.UnsupportedOperator => Message.ErrorUnsupportedOperation(opBin, leftType, rightType),
         OperationError.DivisionByZero => Message.WarningDivisionByZero(opBin.SourceTokens),
         OperationError.FloatingPointEquality => Message.WarningFloatingPointEquality(opBin.SourceTokens),

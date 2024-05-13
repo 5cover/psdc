@@ -15,7 +15,7 @@ partial class CodeGeneratorC
 
         foreach (var part in parts) {
             if (part is Expression.Literal literal) {
-                format.Append(literal.ActualValue.ToString(CultureInfo.InvariantCulture)
+                format.Append(literal.Value.ToString(CultureInfo.InvariantCulture)
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
             } else {

@@ -9,7 +9,8 @@ public class CodeGenerationBenchmark
 {
     private SemanticAst _ast;
     [GlobalSetup]
-    public void Setup() {
+    public void Setup()
+    {
         StaticAnalysisBenchmark b = new();
         b.Setup();
         _ast = b.Run();

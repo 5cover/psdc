@@ -10,6 +10,12 @@ public interface Messenger
     /// </summary>
     /// <param name="message">The message to report.</param>
     public void Report(Message message);
+    public void ReportAll(IEnumerable<Message> messages)
+    {
+        foreach (var m in messages) {
+            Report(m);
+        }
+    }
 
     /// <summary>
     /// Get the input code.

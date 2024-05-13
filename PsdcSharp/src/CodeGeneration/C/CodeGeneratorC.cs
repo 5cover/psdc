@@ -321,7 +321,9 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
         AppendExpression(o, arrSub.Array, ShouldBracket(arrSub));
 
         foreach (Expression index in arrSub.Indexes) {
-            AppendExpression(o.Append('['), index.Alter(BinaryOperator.Subtract, 1)).Append(']');
+            var (expression, messages) = index.Alter(BinaryOperator.Subtract, 1);
+            _msger.ReportAll(messages);
+            AppendExpression(o.Append('['), expression).Append(']');
         }
 
         return o;
@@ -338,11 +340,11 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
         _ = expr switch {
             NodeBracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracketed),
             Expression.FunctionCall call => AppendCall(o, call),
-            Expression.Literal.Character litChar => o.Append($"'{litChar.ActualValue.ToString(CultureInfo.InvariantCulture)}'"),
-            Expression.Literal.False l => AppendLiteralBoolean(l),
-            Expression.Literal.String litStr => o.Append($"\"{litStr.ActualValue.ToString(CultureInfo.InvariantCulture)}\""),
-            Expression.Literal.True l => AppendLiteralBoolean(l),
-            Expression.Literal literal => o.Append(literal.ActualValue.ToString(CultureInfo.InvariantCulture)),
+            Expression.Literal.Character litChar => o.Append($"'{litChar.Value.ToString(CultureInfo.InvariantCulture)}'"),
+            Expression.Literal.False l => AppendLiteralBoolean(l.Value),
+            Expression.Literal.String litStr => o.Append($"\"{litStr.Value.ToString(CultureInfo.InvariantCulture)}\""),
+            Expression.Literal.True l => AppendLiteralBoolean(l.Value),
+            Expression.Literal literal => o.Append(literal.Value.ToString(CultureInfo.InvariantCulture)),
             Expression.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
             Expression.Lvalue.ComponentAccess compAccess
              => AppendExpression(o, compAccess.Structure, ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
@@ -356,15 +358,24 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
         }
         return o;
 
-        StringBuilder AppendLiteralBoolean(Expression.Literal<bool> l)
+        StringBuilder AppendLiteralBoolean(bool b)
         {
             _includes.Ensure(IncludeSet.StdBool);
-            return o.Append(l.ActualValue ? "true" : "false");
+            return o.Append(b ? "true" : "false");
         }
     }
 
     StringBuilder AppendOperationBinary(StringBuilder o, Expression.BinaryOperation opBin)
     {
+        if (_ast.InferredTypes[opBin.Left].Map(t => t.IsConvertibleTo(EvaluatedType.String.Instance)).ValueOr(false)
+         && _ast.InferredTypes[opBin.Right].Map(t => t.IsConvertibleTo(EvaluatedType.String.Instance)).ValueOr(false)
+         && opBin.Operator is BinaryOperator.Equal or BinaryOperator.NotEqual) {
+            _includes.Ensure(IncludeSet.String);
+            AppendExpression(o.Append("strcmp("), opBin.Left);
+            AppendExpression(o.Append(", "), opBin.Right);
+            return o.Append($") {(opBin.Operator is BinaryOperator.Equal ? '=' : '!')}= 0");
+        }
+
         var (bracketLeft, bracketRight) = ShouldBracket(opBin);
         AppendExpression(o, opBin.Left, bracketLeft);
         o.Append($" {OperatorInfoC.Get(opBin.Operator).Code} ");
@@ -409,7 +420,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
         """);
 
     TypeInfoC CreateTypeInfo(EvaluatedType evaluatedType)
-     => TypeInfoC.Create(evaluatedType, expr => AppendExpression(new(), expr).ToString());
+     => TypeInfoC.Create(evaluatedType, _msger, expr => AppendExpression(new(), expr).ToString());
 
     StringBuilder Indent(StringBuilder o) => _indent.Indent(o);
 

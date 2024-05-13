@@ -69,7 +69,7 @@ sealed partial class StaticAnalyzer
                 _messenger.Report(Message.ErrorConstantExpressionExpected(constant.Value.SourceTokens));
             }
 
-            if (value.Type.Map(t => !t.IsAssignableTo(declaredType)).ValueOr(true)) {
+            if (value.Type.Map(t => !t.IsConvertibleTo(declaredType)).ValueOr(true)) {
                 value.Type.MatchSome(t => _messenger.Report(Message.ErrorExpressionHasWrongType(
                     constant.Value.SourceTokens, declaredType, t)));
 
@@ -133,7 +133,7 @@ sealed partial class StaticAnalyzer
     {
         var value = AnalyzeExpression(scope, expr);
         expectedType.MatchSome(expectedType
-         => value.Type.When(t => !t.IsAssignableTo(expectedType)).MatchSome(t
+         => value.Type.When(t => !t.IsConvertibleTo(expectedType)).MatchSome(t
              => _messenger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, expectedType, t))));
         return value;
     }
@@ -141,7 +141,7 @@ sealed partial class StaticAnalyzer
     Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, EvaluatedType expectedType)
     {
         var value = AnalyzeExpression(scope, expr);
-        value.Type.When(t => !t.IsAssignableTo(expectedType)).MatchSome(t
+        value.Type.When(t => !t.IsConvertibleTo(expectedType)).MatchSome(t
          => _messenger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, expectedType, t)));
         return value;
     }
@@ -157,26 +157,26 @@ sealed partial class StaticAnalyzer
     {
         switch (expr) {
         case Expression.Literal lit:
-            return lit.Value;
+            return lit.EvaluatedValue;
         case NodeBracketedExpression b:
             return AnalyzeExpression(scope, b.ContainedExpression);
         case Expression.BinaryOperation opBin: {
             var left = AnalyzeExpression(scope, opBin.Left);
             var right = AnalyzeExpression(scope, opBin.Right);
-            var res = EvaluateOperation(opBin.Operator, left, right);
+            var res = opBin.Operator.EvaluateOperation(left, right);
             left.Type.Combine(right.Type).MatchSome((tleft, tright) => {
                 foreach (var error in res.Errors) {
-                    _messenger.Report(GetOperationMessage(error, opBin, tleft, tright));
+                    _messenger.Report(error.GetOperationMessage(opBin, tleft, tright));
                 }
             });
             return res.Value;
         }
         case Expression.UnaryOperation opUn: {
             var operand = AnalyzeExpression(scope, opUn.Operand);
-            var res = EvaluateOperation(opUn.Operator, operand);
+            var res = opUn.Operator.EvaluateOperation(operand);
             operand.Type.MatchSome(t => {
                 foreach (var error in res.Errors) {
-                    _messenger.Report(GetOperationMessage(error, opUn, t));
+                    _messenger.Report(error.GetOperationMessage(opUn, t));
                 }
             });
             return res.Value;
@@ -185,6 +185,7 @@ sealed partial class StaticAnalyzer
             return HandleCall<Symbol.Function>(scope, call)
                 .Map(f => Value.Of(f.ReturnType))
                 .ValueOr(Value.UnknownInferred);
+
         case Expression.BuiltinFdf fdf:
             AnalyzeExpression(scope, fdf.ArgumentNomLog);
             return Value.Of(EvaluatedType.Boolean.Instance);
@@ -192,16 +193,20 @@ sealed partial class StaticAnalyzer
         case Expression.Lvalue.ArraySubscript arrSub:
             foreach (var index in arrSub.Indexes) {
                 AnalyzeExpression(scope, index).Type
-                    .When(t => !t.SemanticsEqual(EvaluatedType.Integer.Instance))
+                    .When(t => !t.IsConvertibleTo(EvaluatedType.Integer.Instance))
                     .MatchSome(t => _messenger.Report(Message.ErrorNonIntegerIndex(index.SourceTokens, t)));
             }
 
             var arrayType = AnalyzeExpression(scope, arrSub.Array).Type;
 
-            arrayType.When(t => t is not EvaluatedType.Array)
-                    .MatchSome(t => _messenger.Report(Message.ErrorSubscriptOfNonArray(arrSub, t)));
-
-            return Value.Of(arrayType);
+            return arrayType.Map(t => {
+                if (t is EvaluatedType.Array at) {
+                    return Value.Of(at.ElementType);
+                } else {
+                    _messenger.Report(Message.ErrorSubscriptOfNonArray(arrSub, t));
+                    return Value.UnknownInferred;
+                }
+            }).ValueOr(Value.UnknownInferred);
 
         case Expression.Lvalue.ComponentAccess compAccess:
             return Value.Of(AnalyzeExpression(scope, compAccess.Structure).Type.Bind(t => {
@@ -352,7 +357,7 @@ sealed partial class StaticAnalyzer
             var type = AnalyzeExpression(scope, switchCase.Expression).Type;
             foreach (var @case in switchCase.Cases) {
                 SetParentScope(@case, scope);
-                
+
                 Value val = AnalyzeExpression(scope, @case.When, type);
                 if (!val.IsConstant) {
                     _messenger.Report(Message.ErrorNonConstSwitchCase(@case.When.SourceTokens));
@@ -394,7 +399,7 @@ sealed partial class StaticAnalyzer
                 }
 
                 AnalyzeExpression(scope, actual.Value).Type
-                    .When(t => !t.IsAssignableTo(formal.Type))
+                    .When(t => !t.IsConvertibleTo(formal.Type))
                     .MatchSome(t => problems.Add(Message.ProblemWrongArgumentType(formal.Name, formal.Type, t)));
             }
 
@@ -476,14 +481,14 @@ sealed partial class StaticAnalyzer
         .Map(values => EvaluatedType.Array.Create(EvaluateType(scope, array.Type), values.ToList()))
         .ValueOr(EvaluatedType.Unknown.Declared(_messenger.Input, array));
 
-    Option<ConstantExpression<TValue>, Option<Message>> GetConstantExpression<TVal, TValue>(ReadOnlyScope scope, Expression expr)
-        where TVal : Value<TVal>, Value<TVal, TValue>
+    Option<ConstantExpression<TValue>, Option<Message>> GetConstantExpression<TUnderlying, TValue>(ReadOnlyScope scope, Expression expr)
+        where TUnderlying : Value<TUnderlying>, Value<TUnderlying, TValue>
     {
         var value = AnalyzeExpression(scope, expr);
-        return value is TVal tval
+        return value is TUnderlying tval
             ? tval.Value.Map(val => ConstantExpression.Create(expr, val))
                 .OrWithError(Message.ErrorConstantExpressionExpected(expr.SourceTokens).Some())
-            : value.Type.Map(t => Message.ErrorExpressionHasWrongType(expr.SourceTokens, TVal.ExpectedType, t))
+            : value.Type.Map(t => Message.ErrorExpressionHasWrongType(expr.SourceTokens, TUnderlying.ExpectedType, t))
                 .None<ConstantExpression<TValue>, Option<Message>>();
     }
 

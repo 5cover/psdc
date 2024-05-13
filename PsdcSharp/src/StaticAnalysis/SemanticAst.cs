@@ -10,7 +10,8 @@ public sealed class SemanticAst
     internal SemanticAst(
         Algorithm root,
         IReadOnlyDictionary<NodeScoped, Scope> scopes,
-        IReadOnlyDictionary<Expression, Option<EvaluatedType>> inferredTypes) {
+        IReadOnlyDictionary<Expression, Option<EvaluatedType>> inferredTypes)
+    {
         Root = root;
         Scopes = scopes;
         InferredTypes = inferredTypes;

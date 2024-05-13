@@ -1,6 +1,7 @@
 using System.Text;
 
 using Scover.Psdc.Language;
+using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
 
@@ -37,8 +38,8 @@ sealed class TypeInfoC : TypeInfo
 
     public IEnumerable<string> RequiredHeaders { get; }
 
-    public static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression)
-     => Create(type, generateExpression, new());
+    public static TypeInfoC Create(EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression)
+     => Create(type, messenger, generateExpression, new());
 
     public string DecorateExpression(string expr)
      => $"{_stars}{expr}";
@@ -58,7 +59,7 @@ sealed class TypeInfoC : TypeInfo
 
     static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
 
-    static TypeInfoC Create(EvaluatedType type, Func<Expression, string> generateExpression, Indentation indent)
+    static TypeInfoC Create(EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression, Indentation indent)
     {
         switch (type) {
         case EvaluatedType.Unknown u:
@@ -76,7 +77,7 @@ sealed class TypeInfoC : TypeInfo
         case EvaluatedType.String:
             return new(type, "char", "%s", starCount: 1);
         case EvaluatedType.Array array:
-            var arrayType = Create(array.ElementType, generateExpression, indent);
+            var arrayType = Create(array.ElementType, messenger, generateExpression, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
             foreach (var dimension in array.Dimensions.Select(dim => generateExpression(dim.Expression))) {
                 postModifier.Append($"[{dimension}]");
@@ -88,14 +89,18 @@ sealed class TypeInfoC : TypeInfo
         case EvaluatedType.LengthedString strlen:
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression
-                .Map(len => generateExpression(len.Alter(BinaryOperator.Add, 1)))
+                .Map(len => {
+                    var (expression, messages) = len.Alter(BinaryOperator.Add, 1);
+                    messenger.ReportAll(messages);
+                    return generateExpression(expression);
+                })
                 .ValueOr((strlen.Length + 1).ToString());
             return new(type, "char", "%s", postModifier: $"[{lengthPlus1}]");
         case EvaluatedType.Structure structure:
             StringBuilder sb = new("struct {");
             sb.AppendLine();
             indent.Increase();
-            var components = structure.Components.ToDictionary(kv => kv.Key, kv => Create(kv.Value, generateExpression, indent));
+            var components = structure.Components.ToDictionary(kv => kv.Key, kv => Create(kv.Value, messenger, generateExpression, indent));
             foreach (var comp in components) {
                 indent.Indent(sb).Append(comp.Value.GenerateDeclaration(comp.Key.Yield())).AppendLine(";");
             }

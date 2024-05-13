@@ -384,46 +384,6 @@ We need to define were empty spacing lines should be. Maybe a state machine coul
 
 Each of these sections is separated by an empty line (so 2 newlines)
 
-## Implicit conversions
-
-```mermaid
-flowchart TD
-boolean
-character
-lengthedString["chaîne(<i>N</i>)"] --> string
-integer --> real
-```
-
-Actually, we don't really need implicit conversions since the issue is already solved by assignability rules.
-
-**Characters are not integers**. Yes, they are represented by integers, but that's an implementation detail. Pseudocode focuses on semantics, not technicalities.
-
-Strings with a known length are considered unlenghted strings. The length is specified at declaration but is not needed for consumption since the strings are null-terminated.
-
-Booleans are not considered integers, as this is a behavior inherited from C and it doesn't make sense to perform arithmetic operations on booleans. The true/false concept is separate from integers, and the fact that it maps to 0/1 is an implementation detail.
-
-How do we implement them?
-
-## Proper inversion of boolean expression in repeat loop code generation
-
-Currently we just add a bang and parentheses in front of it. That's dirty. We will need proper precedence and associativity control before that though.
-
-## array literals
-
-we will only support array literals for assignation of arrays. That will require a change in `EvaluatedType`.
-
-## String comparison
-
-We need to support special syntax for comparisons between certain types.
-
-We could add it to typeinfoc or just check the type and operator in appendbinaryoperation and generate a strcmp appropriately.
-
-There will be concerns with precedence
-
-## alter collapse constant expressions
-
-In Alter, if left operand (base expression) is a literal, just merge the two instead of creating a binary expression.
-
 ## more expression static analysis
 
 - Check if file arguments to file builtins are files
@@ -437,3 +397,29 @@ In Alter, if left operand (base expression) is a literal, just merge the two ins
 - Check if condition is a boolean in alternatives and loops
 - Check the assignability of target and value in assignment
 - Check if return value corresponds to function's return type
+
+## Proper inversion of boolean expression in repeat loop code generation
+
+Currently we just add a bang and parentheses in front of it. That's dirty. We will need proper precedence and associativity control before that though.
+
+## array literals
+
+we will only support array literals for assignation of arrays. That will require a change in `EvaluatedType`.
+
+## alter collapse constant expressions
+
+In Alter, if left operand (base expression) is a literal, just merge the two instead of creating a binary expression.
+
+## fix redundancy of information
+
+Symbol.Name is in the dict key and in the type
+
+SourceTokens is in the ParseResult and in the Node
+
+## values is a generic mess
+
+The complexity comes from the fact that Values are generic based on the underlying type.
+
+Maybe this is a mistake and we should have used encapsulated object downcasts.
+
+We could have done a better job with C++ template metaprogramming.

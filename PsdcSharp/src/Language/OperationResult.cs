@@ -11,7 +11,7 @@ static class OperationResult
 
 readonly struct OperationResult<TValue> where TValue : Value
 {
-    public OperationResult(TValue value, IEnumerable<OperationError> errors) : this((Value)value, errors) {}    
+    public OperationResult(TValue value, IEnumerable<OperationError> errors) : this((Value)value, errors) { }
     OperationResult(Value value, IEnumerable<OperationError> errors)
      => (Value, Errors) = (value, errors);
 
