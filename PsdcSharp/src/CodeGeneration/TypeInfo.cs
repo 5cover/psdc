@@ -8,5 +8,5 @@ interface TypeInfo
 
     public string Generate();
 
-    public string GenerateDeclaration(IEnumerable<Identifier> names);
+    public string GenerateDeclaration(IEnumerable<string> names);
 }

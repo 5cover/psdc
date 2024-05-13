@@ -22,7 +22,7 @@ public enum MessageCode
     NonIntegerIndex,
     TargetLanguageError,
     ReturnInNonFunction,
-    NonConstSwitchCase,
+    TargetLanguageReservedKeyword,
 
     CustomError = 999,
 

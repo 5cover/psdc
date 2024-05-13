@@ -813,8 +813,6 @@ sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 
     public string Name { get; }
 
-    public override string ToString() => Name;
-
     public override bool SemanticsEqual(Node other) => other is Identifier o
      && o.Name == Name;
 

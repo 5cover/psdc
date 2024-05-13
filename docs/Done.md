@@ -1166,3 +1166,9 @@ We chose to collapse literals and not all constant expressions because we want t
 ## Proper inversion of boolean expression in repeat loop code generation
 
 Currently we just add a bang and parentheses in front of it. That's dirty. We will need proper precedence and associativity control before that though.
+
+## reserved keywords in target language
+
+when we generate an identifier, check it against the reserved keywords and give a target language error if it matches.
+
+maybe we can give a warning and rename the identifier? no, modifying the user's code is weird.

@@ -360,7 +360,7 @@ sealed partial class StaticAnalyzer
 
                 Value val = AnalyzeExpression(scope, @case.When, type);
                 if (!val.IsConstant) {
-                    _messenger.Report(Message.ErrorNonConstSwitchCase(@case.When.SourceTokens));
+                    _messenger.Report(Message.ErrorConstantExpressionExpected(@case.When.SourceTokens));
                 }
                 AnalyzeScopedBlock(@case);
             }

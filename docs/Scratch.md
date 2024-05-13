@@ -359,12 +359,6 @@ And what happens if we return a file or pass it to a function/procedure. We shou
 
 Also what happens of closing the file occurs in a if statement? How do we know for sure it's been closed? Can we analyze the truthfulness of the condition? You can push static analysis further and further to support scenarios that are unlikely to happen in real code anyway. It's difficult to implement. I won't do that.
 
-## reserved keywords in target language
-
-when we generate an identifier, check it against the reserved keywords and give a target language error if it matches.
-
-maybe we can give a warning and rename the identifier? no, modifying the user's code is weird.
-
 ## call a function as a statement
 
 self-explanatory.

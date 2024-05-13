@@ -14,12 +14,15 @@ public static class CodeGenerator
      => new CodeGeneratorC(messenger, ast).Generate();
 }
 
-abstract partial class CodeGenerator<TOpInfo>(Messenger msger, SemanticAst ast)
+abstract partial class CodeGenerator<TOpInfo>(Messenger msger, SemanticAst ast, KeywordTable keywordTable)
     where TOpInfo : OperatorInfo<TOpInfo>
 {
     protected readonly SemanticAst _ast = ast;
     protected readonly Indentation _indent = new();
     protected readonly Messenger _msger = msger;
+    protected readonly KeywordTable _kwTable = keywordTable;
+
+    protected string ValidateIdentifier(Identifier ident) => _kwTable.Validate(ident, _msger);
 
     public abstract string Generate();
 

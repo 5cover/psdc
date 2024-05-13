@@ -55,13 +55,13 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.MissingMainProgram,
         "main program missing");
 
+    internal static Message ErrorTargetLanguageReservedKeyword(SourceTokens sourceTokens, string ident, string targetLanguageName)
+     => CreateTargetLanguage(sourceTokens, MessageCode.TargetLanguageReservedKeyword,
+        targetLanguageName, $"`{ident}` is a reserved {targetLanguageName} keyword and thus cannot be used as an identifier");
+
     internal static Message ErrorReturnInNonFunction(SourceTokens sourceTokens)
      => new(sourceTokens, MessageCode.ReturnInNonFunction,
         "return in something not a function");
-
-    internal static Message ErrorNonConstSwitchCase(SourceTokens sourceTokens)
-     => new(sourceTokens, MessageCode.NonConstSwitchCase,
-        "switch case expression must be const");
 
     internal static Message ErrorRedefinedMainProgram(Declaration.MainProgram mainProgram)
      => new(mainProgram.SourceTokens, MessageCode.RedefinedMainProgram,
@@ -69,7 +69,7 @@ public readonly struct Message
 
     internal static Message ErrorRedefinedSymbol(Symbol newSymbol, Symbol existingSymbol)
      => new(newSymbol.Name.SourceTokens, MessageCode.RedefinedSymbol,
-        $"{newSymbol.GetKind()} `{existingSymbol.Name}` is a redefinition (a {existingSymbol.GetKind()} already exists)");
+        $"{newSymbol.GetKind()} `{existingSymbol.Name}` redefines a {existingSymbol.GetKind()} of the same name");
 
     internal static Message ErrorSignatureMismatch<TSymbol>(TSymbol newSig, TSymbol expectedSig) where TSymbol : Symbol
      => new(newSig.SourceTokens, MessageCode.SignatureMismatch,
@@ -115,9 +115,8 @@ public readonly struct Message
             MessageCode.SyntaxError, msgContent.ToString());
     }
 
-    internal static Message ErrorTargetLanguage(string targetLanguageName, SourceTokens sourceTokens, string content)
-     => new(sourceTokens, MessageCode.TargetLanguageError,
-        $"{targetLanguageName}: {content}");
+    internal static Message ErrorTargetLanguage(SourceTokens sourceTokens, string targetLanguageName, string content)
+     => CreateTargetLanguage(sourceTokens, MessageCode.TargetLanguageError, targetLanguageName, content);
 
     internal static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier) where TSymbol : Symbol
      => new(identifier.SourceTokens, MessageCode.UndefinedSymbol,
@@ -160,4 +159,8 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.FloatingPointEquality,
         "floating point equality may be inaccurate",
         ["consider comparing absolute difference to an epsilon value instead"]);
+
+    private static Message CreateTargetLanguage(SourceTokens sourceTokens, MessageCode code,
+        string targetLanguageName, string content)
+     => new(sourceTokens, code, $"{targetLanguageName}: {content}");
 }

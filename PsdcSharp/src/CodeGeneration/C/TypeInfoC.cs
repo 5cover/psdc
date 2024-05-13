@@ -24,8 +24,8 @@ sealed class TypeInfoC : TypeInfo
            formatComponent,
            requiredHeaders);
 
-    TypeInfoC(EvaluatedType type, string actualTypeName, string? formatCompnent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
-    : this(type.Alias?.Name ?? actualTypeName,
+    TypeInfoC(string typeName, string? formatCompnent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
+    : this(typeName,
            formatCompnent.SomeNotNull(),
            requiredHeaders ?? [],
            starCount,
@@ -38,16 +38,16 @@ sealed class TypeInfoC : TypeInfo
 
     public IEnumerable<string> RequiredHeaders { get; }
 
-    public static TypeInfoC Create(EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression)
-     => Create(type, messenger, generateExpression, new());
+    public static TypeInfoC Create(EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression, KeywordTable keywordTable)
+     => Create(type, messenger, generateExpression, keywordTable, new());
 
     public string DecorateExpression(string expr)
      => $"{_stars}{expr}";
 
     public string Generate() => $"{_typeName}{_stars}{_postModifier}{_typeQualifier}";
 
-    public string GenerateDeclaration(IEnumerable<Identifier> names)
-     => $"{_typeName}{_typeQualifier} {string.Join(", ", names.Select(name => _stars + name.Name + _postModifier))}";
+    public string GenerateDeclaration(IEnumerable<string> names)
+     => $"{_typeName}{_typeQualifier} {string.Join(", ", names.Select(name => _stars + name + _postModifier))}";
 
     public TypeInfoC ToConst()
      => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length, _postModifier,
@@ -59,30 +59,30 @@ sealed class TypeInfoC : TypeInfo
 
     static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
 
-    static TypeInfoC Create(EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression, Indentation indent)
+    static TypeInfoC Create(EvaluatedType type, Messenger msger, Func<Expression, string> generateExpression, KeywordTable keywordTable, Indentation indent)
     {
         switch (type) {
         case EvaluatedType.Unknown u:
-            return new(type, u.Representation);
+            return new(AliasNameOr(keywordTable.Validate(u.SourceTokens, u.Representation, msger)));
         case EvaluatedType.File:
-            return new(type, "FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield());
+            return new(AliasNameOr("FILE"), starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield());
         case EvaluatedType.Boolean:
-            return new(type, "bool", requiredHeaders: IncludeSet.StdBool.Yield());
+            return new(AliasNameOr("bool"), requiredHeaders: IncludeSet.StdBool.Yield());
         case EvaluatedType.Character:
-            return new(type, "char", "%c");
+            return new(AliasNameOr("char"), "%c");
         case EvaluatedType.Real real:
-            return new(type, "float", "%g");
+            return new(AliasNameOr("float"), "%g");
         case EvaluatedType.Integer integer:
-            return new(type, "int", "%d");
+            return new(AliasNameOr("int"), "%d");
         case EvaluatedType.String:
-            return new(type, "char", "%s", starCount: 1);
+            return new(AliasNameOr("char"), "%s", starCount: 1);
         case EvaluatedType.Array array:
-            var arrayType = Create(array.ElementType, messenger, generateExpression, indent);
+            var arrayType = Create(array.ElementType, msger, generateExpression, keywordTable, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
             foreach (var dimension in array.Dimensions.Select(dim => generateExpression(dim.Expression))) {
                 postModifier.Append($"[{dimension}]");
             }
-            return new(type, arrayType._typeName,
+            return new(AliasNameOr(arrayType._typeName),
                 requiredHeaders: arrayType.RequiredHeaders,
                 starCount: arrayType._stars.Length,
                 postModifier: postModifier.ToString());
@@ -91,26 +91,30 @@ sealed class TypeInfoC : TypeInfo
             string lengthPlus1 = strlen.LengthConstantExpression
                 .Map(len => {
                     var (expression, messages) = len.Alter(BinaryOperator.Add, 1);
-                    messenger.ReportAll(messages);
+                    msger.ReportAll(messages);
                     return generateExpression(expression);
                 })
                 .ValueOr((strlen.Length + 1).ToString());
-            return new(type, "char", "%s", postModifier: $"[{lengthPlus1}]");
+            return new(AliasNameOr("char"), "%s", postModifier: $"[{lengthPlus1}]");
         case EvaluatedType.Structure structure:
             StringBuilder sb = new("struct {");
             sb.AppendLine();
             indent.Increase();
-            var components = structure.Components.ToDictionary(kv => kv.Key, kv => Create(kv.Value, messenger, generateExpression, indent));
+            var components = structure.Components.ToDictionary(kv => kv.Key,
+                kv => Create(kv.Value, msger, generateExpression, keywordTable, indent));
             foreach (var comp in components) {
-                indent.Indent(sb).Append(comp.Value.GenerateDeclaration(comp.Key.Yield())).AppendLine(";");
+                indent.Indent(sb).Append(comp.Value.GenerateDeclaration(keywordTable.Validate(comp.Key, msger).Yield())).AppendLine(";");
             }
             indent.Decrease();
             sb.Append('}');
-            return new(type, sb.ToString(),
+            return new(AliasNameOr(sb.ToString()),
                 // it's ok if there are duplicate headers, since IncludeSet.Ensure will ignore duplicates.
                 requiredHeaders: components.Values.SelectMany(type => type.RequiredHeaders));
         default:
             throw type.ToUnmatchedException();
         }
+
+        string AliasNameOr(string baseName)
+         => type.Alias is null ? baseName : keywordTable.Validate(type.Alias, msger);
     }
 }

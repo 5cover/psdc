@@ -44,7 +44,21 @@
         - caractère &rarr; char, tchar_t, wchar_t?
     - parameter names in prototypes?
     - doxygen documentation skeleton?
-    - i++ or ++iw
+    - i++ or ++i
+
+## Target languages
+
+- C
+- C#
+- CimPU
+- Java
+- JavaScript
+- Pascal
+- Perl
+- PHP
+- Python
+- Shell
+- SQL
 
 ## Sample programs
 

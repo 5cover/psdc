@@ -205,16 +205,18 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
 
     internal sealed class Unknown : EvaluatedType
     {
-        Unknown(string repr, Identifier? alias = null) : base(alias) => ActualRepresentation = repr;
+        Unknown(SourceTokens sourceTokens, string repr, Identifier? alias = null) : base(alias)
+         => (SourceTokens, ActualRepresentation) = (sourceTokens, repr);
 
         protected override string ActualRepresentation { get; }
+        public SourceTokens SourceTokens { get; }
 
-        public static Unknown Declared(string input, SourceTokens sourceTokens) => new(input[sourceTokens.InputRange]);
+        public static Unknown Declared(string input, SourceTokens sourceTokens) => new(sourceTokens, input[sourceTokens.InputRange]);
 
         // Provied an alternative overload which returns a more generic type for implicit operators
         public static EvaluatedType Declared(string input, Node node) => Declared(input, node.SourceTokens);
 
-        public override EvaluatedType ToAliasReference(Identifier alias) => new Unknown(ActualRepresentation, alias);
+        public override EvaluatedType ToAliasReference(Identifier alias) => new Unknown(SourceTokens, ActualRepresentation, alias);
 
         // Unknown types are semantically equal to every other type.
         // This is to prevent cascading errors when an object of an unknown type is used.

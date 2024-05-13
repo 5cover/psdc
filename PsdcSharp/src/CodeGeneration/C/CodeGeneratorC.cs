@@ -11,7 +11,7 @@ using static Scover.Psdc.Parsing.Node;
 namespace Scover.Psdc.CodeGeneration.C;
 
 sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
-    : CodeGenerator<OperatorInfoC>(messenger, ast)
+    : CodeGenerator<OperatorInfoC>(messenger, ast, KeywordTableC.Instance)
 {
     readonly IncludeSet _includes = new();
 
@@ -32,12 +32,12 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
     StringBuilder AppendAliasDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration.TypeAlias alias)
      => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).Map(alias => {
          var type = CreateTypeInfo(alias.TargetType);
-         return Indent(o.AppendLine()).AppendLine($"typedef {type.GenerateDeclaration(alias.Name.Yield())};");
+         return Indent(o.AppendLine()).AppendLine($"typedef {type.GenerateDeclaration(ValidateIdentifier(alias.Name).Yield())};");
      }).ValueOr(o);
 
     StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant)
     {
-        Indent(o).Append($"#define {constant.Name} ");
+        Indent(o).Append($"#define {ValidateIdentifier(constant.Name)} ");
         return AppendExpression(o, constant.Value, GetPrecedence(constant.Value) > 1).AppendLine();
     }
 
@@ -88,7 +88,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendSignature(StringBuilder o, string cReturnType, Identifier name, IEnumerable<Symbol.Parameter> parameters)
     {
-        o.Append($"{cReturnType} {name}(");
+        o.Append($"{cReturnType} {ValidateIdentifier(name)}(");
         if (parameters.Any()) {
             o.AppendJoin(", ", parameters.Select(GenerateParameter));
         } else {
@@ -304,7 +304,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
         foreach (string header in type.RequiredHeaders) {
             _includes.Ensure(header);
         }
-        return o.Append(type.GenerateDeclaration(names));
+        return o.Append(type.GenerateDeclaration(names.Select(ValidateIdentifier)));
     }
 
     StringBuilder AppendWhileLoop(StringBuilder o, Statement.WhileLoop whileLoop)
@@ -350,7 +350,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
             Expression.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
             Expression.Lvalue.ComponentAccess compAccess
              => AppendExpression(o, compAccess.Structure, ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
-            Expression.Lvalue.VariableReference variable => o.Append(variable.Name),
+            Expression.Lvalue.VariableReference variable => o.Append(ValidateIdentifier(variable.Name)),
             Expression.BinaryOperation opBin => AppendOperationBinary(o, opBin),
             Expression.UnaryOperation opUn => AppendOperationUnary(o, opUn),
             _ => throw expr.ToUnmatchedException(),
@@ -400,7 +400,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
     {
         const string ParameterSeparator = ", ";
 
-        o.Append($"{call.Name}(");
+        o.Append($"{ValidateIdentifier(call.Name)}(");
         foreach (var param in call.Parameters) {
             if (RequiresPointer(param.Mode)) {
                 o.Append('&');
@@ -422,7 +422,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
         """);
 
     TypeInfoC CreateTypeInfo(EvaluatedType evaluatedType)
-     => TypeInfoC.Create(evaluatedType, _msger, expr => AppendExpression(new(), expr).ToString());
+     => TypeInfoC.Create(evaluatedType, _msger, expr => AppendExpression(new(), expr).ToString(), _kwTable);
 
     StringBuilder Indent(StringBuilder o) => _indent.Indent(o);
 

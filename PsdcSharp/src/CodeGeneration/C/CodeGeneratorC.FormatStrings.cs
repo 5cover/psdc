@@ -22,7 +22,7 @@ partial class CodeGeneratorC
                 _ast.InferredTypes[part].MatchSome(t => CreateTypeInfo(t).FormatComponent.Match(fmtComp => {
                     format.Append(fmtComp);
                     arguments.Add(part);
-                }, () => _msger.Report(Message.ErrorTargetLanguage("C", part.SourceTokens,
+                }, () => _msger.Report(Message.ErrorTargetLanguage(part.SourceTokens, LanguageName.C,
                     $"type '{t}' cannot be used in a format string"))));
             }
         }
