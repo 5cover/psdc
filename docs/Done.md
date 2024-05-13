@@ -1172,3 +1172,38 @@ Currently we just add a bang and parentheses in front of it. That's dirty. We wi
 when we generate an identifier, check it against the reserved keywords and give a target language error if it matches.
 
 maybe we can give a warning and rename the identifier? no, modifying the user's code is weird.
+
+## Code generation newlines
+
+We need to define were empty spacing lines should be. Maybe a state machine could be useful for that. A typical C program is divided in several sections.
+
+We need to make groups separated by 1 empty line. But we don't want to move declarations around. If there a prototypes in the middle of the code, leave them there.
+
+Groups :
+
+- Header
+- Includes
+- Macros
+- Types
+- Prototypes
+- Function and proecdures (each one is its own group)
+- Main
+
+Implementartion : keep track of what group we're in with an enum, and append empty line if group changes. For functions and procedures, always append empty line before
+
+## Type relationships
+
+type|semantically equal to|implicitly convertible to|assignable to
+-|-|-|-
+Array|Array of a semantically equal element type with equal dimensions||**nothing**|
+Boolean|Boolean|||
+Character|Character|||
+File|File|||
+LengthedString|LenghedString of the same length|String|LengthedString of a greater length|
+Integer|Integer|Real||
+Real|Real|||
+String|String|||
+Structure|Structure with the same components|||
+Unknown|everything|||
+
+The relationships work on an incremental basis. That is, if type A is semantically equal to B, it is also implicitly convertible and assignable to B.

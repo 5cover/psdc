@@ -363,21 +363,6 @@ Also what happens of closing the file occurs in a if statement? How do we know f
 
 self-explanatory.
 
-## Code generation newlines
-
-We need to define were empty spacing lines should be. Maybe a state machine could be useful for that. A typical C program is divided in several sections.
-
-1. Doxygen header
-2. Includes
-3. Macros
-4. Types (typedefs, structures, unions)
-5. Prototypes
-6. Main function
-7. Function 1
-8. Function 2..
-
-Each of these sections is separated by an empty line (so 2 newlines)
-
 ## more expression static analysis
 
 - Check if file arguments to file builtins are files
@@ -414,3 +399,7 @@ I see 2 solutions
 2. Remove SourceTokens property from Node and put the source tokens in a lookup table somewhere.
 
 Or maybe we can stay with what we have now. Maybe this is ok.
+
+## write FG in BNF and check for ambiguity
+
+maybe there's an online tool to build FGs and check for ambiguity.

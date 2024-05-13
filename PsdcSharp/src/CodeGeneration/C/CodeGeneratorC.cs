@@ -14,6 +14,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
     : CodeGenerator<OperatorInfoC>(messenger, ast, KeywordTableC.Instance)
 {
     readonly IncludeSet _includes = new();
+    Group _currentGroup = Group.None;
 
     public override string Generate()
     {
@@ -31,12 +32,14 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendAliasDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration.TypeAlias alias)
      => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).Map(alias => {
-         var type = CreateTypeInfo(alias.TargetType);
-         return Indent(o.AppendLine()).AppendLine($"typedef {type.GenerateDeclaration(ValidateIdentifier(alias.Name).Yield())};");
-     }).ValueOr(o);
+        SetGroup(o, Group.Types);
+        var type = CreateTypeInfo(alias.TargetType);
+        return Indent(o).AppendLine($"typedef {type.GenerateDeclaration(ValidateIdentifier(alias.Name).Yield())};");
+    }).ValueOr(o);
 
     StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant)
     {
+        SetGroup(o, Group.Macros);
         Indent(o).Append($"#define {ValidateIdentifier(constant.Name)} ");
         return AppendExpression(o, constant.Value, GetPrecedence(constant.Value) > 1).AppendLine();
     }
@@ -54,7 +57,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendFunctionDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration.Function func)
      => scope.GetSymbol<Symbol.Function>(func.Signature.Name)
-    .Map(sig => AppendFunctionSignature(o, sig).AppendLine(";")).ValueOr(o);
+    .Map(sig => AppendFunctionSignature(SetGroup(o, Group.Prototypes), sig).AppendLine(";")).ValueOr(o);
 
     StringBuilder AppendFunctionDefinition(StringBuilder o, ReadOnlyScope scope, Declaration.FunctionDefinition funcDef)
     => scope.GetSymbol<Symbol.Function>(funcDef.Signature.Name).Map(sig => {
@@ -67,7 +70,8 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendMainProgram(StringBuilder o, Declaration.MainProgram mainProgram)
     {
-        Indent(o.AppendLine()).Append("int main() ");
+        SetGroup(o, Group.Main);
+        Indent(o).Append("int main() ");
         return AppendBlock(o, mainProgram,
             sb => Indent(sb.AppendLine()).AppendLine("return 0;"))
         .AppendLine();
@@ -75,7 +79,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendProcedureDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration.Procedure proc)
      => scope.GetSymbol<Symbol.Procedure>(proc.Signature.Name)
-     .Map(sig => AppendProcedureSignature(o, sig).AppendLine(";")).ValueOr(o);
+     .Map(sig => AppendProcedureSignature(SetGroup(o, Group.Prototypes), sig).AppendLine(";")).ValueOr(o);
 
     StringBuilder AppendProcedureDefinition(StringBuilder o, ReadOnlyScope scope, Declaration.ProcedureDefinition procDef)
         => scope.GetSymbol<Symbol.Procedure>(procDef.Signature.Name).Map(sig => {
@@ -419,6 +423,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
          * @author {Environment.UserName}
          * @date {DateOnly.FromDateTime(DateTime.Now)}
          */
+
         """);
 
     TypeInfoC CreateTypeInfo(EvaluatedType evaluatedType)
@@ -426,5 +431,22 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
 
     StringBuilder Indent(StringBuilder o) => _indent.Indent(o);
 
+    StringBuilder SetGroup(StringBuilder o, Group newGroup)
+    {
+        if (_currentGroup != newGroup) {
+            _currentGroup = newGroup;
+            o.AppendLine();
+        }
+        return o;
+    }
+
     #endregion Helpers
+
+    enum Group {
+        None,
+        Macros,
+        Types,
+        Prototypes,
+        Main,
+    }
 }

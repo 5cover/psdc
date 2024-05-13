@@ -129,19 +129,21 @@ sealed partial class StaticAnalyzer
         }
     }
 
-    Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, Option<EvaluatedType> expectedType)
+    Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, TypeEquivalencePredicate typesPredicate, Option<EvaluatedType> expectedType)
     {
         var value = AnalyzeExpression(scope, expr);
         expectedType.MatchSome(expectedType
-         => value.Type.When(t => !t.IsConvertibleTo(expectedType)).MatchSome(t
+         => value.Type.When(t => !typesPredicate(t, expectedType)).MatchSome(t
              => _messenger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, expectedType, t))));
         return value;
     }
 
-    Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, EvaluatedType expectedType)
+    delegate bool TypeEquivalencePredicate(EvaluatedType actual, EvaluatedType expected);
+
+    Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, TypeEquivalencePredicate typesPredicate, EvaluatedType expectedType)
     {
         var value = AnalyzeExpression(scope, expr);
-        value.Type.When(t => !t.IsConvertibleTo(expectedType)).MatchSome(t
+        value.Type.When(t => !typesPredicate(t, expectedType)).MatchSome(t
          => _messenger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, expectedType, t)));
         return value;
     }
@@ -247,11 +249,11 @@ sealed partial class StaticAnalyzer
             break;
 
         case Statement.Alternative alternative:
-            AnalyzeExpression(scope, alternative.If.Condition, EvaluatedType.Boolean.Instance);
+            AnalyzeExpression(scope, alternative.If.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
             SetParentScope(alternative.If, scope);
             AnalyzeScopedBlock(alternative.If);
             foreach (var elseIf in alternative.ElseIfs) {
-                AnalyzeExpression(scope, elseIf.Condition, EvaluatedType.Boolean.Instance);
+                AnalyzeExpression(scope, elseIf.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
                 SetParentScope(elseIf, scope);
                 AnalyzeScopedBlock(elseIf);
             }
@@ -267,13 +269,12 @@ sealed partial class StaticAnalyzer
                 scope.GetSymbol<Symbol.Constant>(varRef.Name).MatchSome(constant
                     => _messenger.Report(Message.ErrorConstantAssignment(assignment, constant)));
             }
-            AnalyzeExpression(scope, assignment.Value, target.Type);
-
+            AnalyzeExpression(scope, assignment.Value, EvaluatedType.IsAssignableTo, target.Type);
             break;
         }
         case Statement.DoWhileLoop doWhileLoop:
             AnalyzeScopedBlock(doWhileLoop);
-            AnalyzeExpression(scope, doWhileLoop.Condition, EvaluatedType.Boolean.Instance);
+            AnalyzeExpression(scope, doWhileLoop.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
             break;
         case Statement.ForLoop forLoop:
             AnalyzeExpression(scope, forLoop.Start);
@@ -329,12 +330,12 @@ sealed partial class StaticAnalyzer
 
         case Statement.RepeatLoop repeatLoop:
             AnalyzeScopedBlock(repeatLoop);
-            AnalyzeExpression(scope, repeatLoop.Condition, EvaluatedType.Boolean.Instance);
+            AnalyzeExpression(scope, repeatLoop.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
             break;
 
         case Statement.Return ret:
             _currentFunction.Match(
-                func => AnalyzeExpression(scope, ret.Value, func.ReturnType),
+                func => AnalyzeExpression(scope, ret.Value, EvaluatedType.IsConvertibleTo, func.ReturnType),
                 () => {
                     AnalyzeExpression(scope, ret.Value);
                     _messenger.Report(Message.ErrorReturnInNonFunction(ret.SourceTokens));
@@ -350,7 +351,7 @@ sealed partial class StaticAnalyzer
         }
         case Statement.WhileLoop whileLoop: {
             AnalyzeScopedBlock(whileLoop);
-            Value condition = AnalyzeExpression(scope, whileLoop.Condition, EvaluatedType.Boolean.Instance);
+            Value condition = AnalyzeExpression(scope, whileLoop.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
             break;
         }
         case Statement.Switch switchCase: {
@@ -358,7 +359,7 @@ sealed partial class StaticAnalyzer
             foreach (var @case in switchCase.Cases) {
                 SetParentScope(@case, scope);
 
-                Value val = AnalyzeExpression(scope, @case.When, type);
+                Value val = AnalyzeExpression(scope, @case.When, EvaluatedType.IsConvertibleTo, type);
                 if (!val.IsConstant) {
                     _messenger.Report(Message.ErrorConstantExpressionExpected(@case.When.SourceTokens));
                 }
