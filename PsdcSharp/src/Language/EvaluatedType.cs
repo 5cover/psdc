@@ -15,7 +15,7 @@ static class ConstantExpression
 sealed record ConstantExpression<TValue>(Expression Expression, TValue Value);
 
 /// <summary>
-/// A type evaluated during the static analysis.
+/// A type evaluated during static analysis.
 /// </summary>
 abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedType>
 {
@@ -36,12 +36,11 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
     // Static methods used for method groups
     public static bool IsConvertibleTo(EvaluatedType me, EvaluatedType other) => me.IsConvertibleTo(other);
     public static bool IsAssignableTo(EvaluatedType me, EvaluatedType other) => me.IsAssignableTo(other);
-    public static bool SemanticsEqual(EvaluatedType me, EvaluatedType other) => me.SemanticsEqual(other);
 
     /// <summary>
     /// Determine whether this type implicitly converts to type <paramref name="other"/>.
     /// </summary>
-    /// <param name="other">The type to compare with the current type</param>
+    /// <param name="other">The type to compare with the current type.</param>
     /// <returns>Whether this type is implicitly convertible to <paramref name="other"/>.</returns>
     /// <remarks>Overrides will usually want to call base method in <see cref="EvaluatedType"/> in an logical disjunction.</remarks>
     public virtual bool IsConvertibleTo(EvaluatedType other) => SemanticsEqual(other);
@@ -52,7 +51,14 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
     /// <param name="other">The type of the variable a value of this type would be assigned to.</param>
     /// <returns>Whether this type is assignable to <paramref name="other"/></returns>
     /// <remarks>Overrides will usually want to call base in <see cref="EvaluatedType"/> an logical disjunction.</remarks>
-    public virtual bool IsAssignableTo(EvaluatedType other) => IsConvertibleTo(other);
+    public virtual bool IsAssignableTo(EvaluatedType other) => IsConvertibleTo(other) || other.IsConvertibleFrom(this);
+
+    /// <summary>
+    /// Determine whether <paramref name="other"/> implicitly converts to this type.
+    /// </summary>
+    /// <param name="other">The type to compare with the current type.</param>
+    /// <returns>Whether <paramref name="other"/> is implicitly convertinle to this type.</returns>
+    protected virtual bool IsConvertibleFrom(EvaluatedType other) => false;
 
     public abstract bool SemanticsEqual(EvaluatedType other);
 
@@ -227,9 +233,13 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
 
         public override EvaluatedType ToAliasReference(Identifier alias) => new Unknown(SourceTokens, ActualRepresentation, alias);
 
-        // Unknown types are semantically equal to every other type.
+        // Unknown is convertible to every other type, and every type is convertible to Unknwon.
         // This is to prevent cascading errors when an object of an unknown type is used.
-        public override bool SemanticsEqual(EvaluatedType other) => true;
+        public override bool IsConvertibleTo(EvaluatedType other) => true;
+        protected override bool IsConvertibleFrom(EvaluatedType other) => true;
+
+        public override bool SemanticsEqual(EvaluatedType other) => other is Unknown o
+         && o.SourceTokens.SequenceEqual(SourceTokens);
     }
 }
 

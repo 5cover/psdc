@@ -1195,15 +1195,17 @@ Implementartion : keep track of what group we're in with an enum, and append emp
 
 type|semantically equal to|implicitly convertible to|assignable to
 -|-|-|-
-Array|Array of a semantically equal element type with equal dimensions||**nothing**|
-Boolean|Boolean|||
-Character|Character|||
-File|File|||
-LengthedString|LenghedString of the same length|String|LengthedString of a greater length|
-Integer|Integer|Real||
-Real|Real|||
-String|String|||
-Structure|Structure with the same components|||
-Unknown|everything|||
+Array|Array of a semantically equal element type with equal dimensions|Unknown|**nothing**|
+Boolean|Boolean|Unknown||
+Character|Character|Unknown||
+File|File|Unknown||
+LengthedString|LenghedString of the same length|Unknown, String|LengthedString of a greater length|
+Integer|Integer|Unknown, Real||
+Real|Real|Unknown||
+String|String|Unknown||
+Structure|Structure with the same components|Unknown||
+Unknown|Unknown|everything||
 
 The relationships work on an incremental basis. That is, if type A is semantically equal to B, it is also implicitly convertible and assignable to B.
+
+Out of the 3 relationships, only semantic equality is commutative.
