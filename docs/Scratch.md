@@ -406,10 +406,6 @@ Currently we just add a bang and parentheses in front of it. That's dirty. We wi
 
 we will only support array literals for assignation of arrays. That will require a change in `EvaluatedType`.
 
-## alter collapse constant expressions
-
-In Alter, if left operand (base expression) is a literal, just merge the two instead of creating a binary expression.
-
 ## fix redundancy of information
 
 Symbol.Name is in the dict key and in the type

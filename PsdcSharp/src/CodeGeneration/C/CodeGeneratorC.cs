@@ -211,9 +211,11 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
         AppendExpression(o, forLoop.End);
 
         AppendExpression(o.Append("; "), forLoop.Variant);
-        forLoop.Step.Match(
-            step => AppendExpression(o.Append(" += "), step),
-            none: () => o.Append("++"));
+        forLoop.Step.When(
+            // replace += by ++ when the step is a literal 1
+            step => step is not Expression.Literal.Integer { Value: 1 })
+            .Match(step => AppendExpression(o.Append(" += "), step),
+                   none: () => o.Append("++"));
 
         return AppendBlock(o.Append(") "), forLoop).AppendLine();
     }

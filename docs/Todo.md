@@ -44,6 +44,7 @@
         - caractère &rarr; char, tchar_t, wchar_t?
     - parameter names in prototypes?
     - doxygen documentation skeleton?
+    - i++ or ++iw
 
 ## Sample programs
 
