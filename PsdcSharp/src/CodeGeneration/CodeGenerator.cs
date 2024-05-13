@@ -1,6 +1,6 @@
 using Scover.Psdc.CodeGeneration.C;
-using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
+using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
 
 using static Scover.Psdc.Language.Associativity;
@@ -30,8 +30,7 @@ abstract partial class CodeGenerator<TOpInfo>(Messenger msger, SemanticAst ast)
          Expression.UnaryOperation opUn => TOpInfo.Get(opUn.Operator).Precedence,
          Expression.Lvalue.ArraySubscript => TOpInfo.ArraySubscript.Precedence,
          Expression.Lvalue.ComponentAccess => TOpInfo.ComponentAccess.Precedence,
-         Expression.Lvalue.VariableReference or Expression.Literal
-             or Expression.Bracketed or Expression.Lvalue.Bracketed => int.MinValue,
+         Expression.Lvalue.VariableReference or Expression.Literal or NodeBracketedExpression => int.MinValue,
          _ => throw expr.ToUnmatchedException(),
      };
 
@@ -39,32 +38,22 @@ abstract partial class CodeGenerator<TOpInfo>(Messenger msger, SemanticAst ast)
      => ShouldBracket(
         GetPrecedence(opBin.Left),
         GetPrecedence(opBin.Right),
-        TOpInfo.Get(opBin.Operator),
-        opBin.Operator.GetAssociativity());
+        TOpInfo.Get(opBin.Operator));
 
     protected static bool ShouldBracket(Expression.UnaryOperation opUn)
-     => ShouldBracket(opUn.Operand, TOpInfo.Get(opUn.Operator), opUn.Operator.GetAssociativity());
+     => ShouldBracket(opUn.Operand, TOpInfo.Get(opUn.Operator));
 
     protected static bool ShouldBracket(Expression.Lvalue.ComponentAccess compAccess)
-     => ShouldBracket(compAccess.Structure, TOpInfo.ComponentAccess, LeftToRight);
+     => ShouldBracket(compAccess.Structure, TOpInfo.ComponentAccess);
 
     protected static bool ShouldBracket(Expression.Lvalue.ArraySubscript arrSub)
-     => ShouldBracket(arrSub.Array, TOpInfo.ArraySubscript, LeftToRight);
+     => ShouldBracket(arrSub.Array, TOpInfo.ArraySubscript);
 
-    static (bool bracketLeft, bool bracketRight) ShouldBracket(int precedenceLeft, int precedenceRight, TOpInfo me, Associativity psdcAssociativity)
+    static (bool bracketLeft, bool bracketRight) ShouldBracket(int precedenceLeft, int precedenceRight, TOpInfo me)
      => (bracketLeft: precedenceLeft > me.Precedence
-                   || precedenceLeft == me.Precedence
-                        && me.Associativity == RightToLeft
-                        && psdcAssociativity == LeftToRight,
+                   || precedenceLeft == me.Precedence && me.Associativity == RightToLeft,
         bracketRight: precedenceRight > me.Precedence
-                   || precedenceRight == me.Precedence
-                        && me.Associativity == LeftToRight
-                        && psdcAssociativity == RightToLeft);
+                   || precedenceRight == me.Precedence && me.Associativity == LeftToRight);
 
-    static bool ShouldBracket(Expression operand, TOpInfo me, Associativity psdcAssociativity)
-    {
-        var precedence = GetPrecedence(operand);
-        return precedence > me.Precedence
-            || precedence == me.Precedence && me.Associativity != psdcAssociativity;
-    }
+    static bool ShouldBracket(Expression operand, TOpInfo me) => GetPrecedence(operand) > me.Precedence;
 }

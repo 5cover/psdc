@@ -170,7 +170,7 @@ partial class Parser
     .MapResult(t => new Expression.BuiltinFdf(t, argNomLog));
 
     ParseResult<Expression> ParseExpression(IEnumerable<Token> tokens)
-                                         => ParseBinaryOperation(operatorsOr,
+     => ParseBinaryOperation(operatorsOr,
         ParseBinaryOperation(operatorsAnd,
         ParseBinaryOperation(operatorsXor,
         ParseBinaryOperation(operatorsEquality,

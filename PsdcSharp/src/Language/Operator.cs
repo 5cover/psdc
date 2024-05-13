@@ -20,10 +20,6 @@ public enum BinaryOperator
 
 static class OperatorExtensions
 {
-    public static Associativity GetAssociativity(this BinaryOperator @operator) => Associativity.LeftToRight;
-
-    public static Associativity GetAssociativity(this UnaryOperator @operator) => Associativity.RightToLeft;
-
     public static string GetRepresentation(this BinaryOperator @operator) => @operator switch {
         BinaryOperator.And => "ET",
         BinaryOperator.Divide => "/",
