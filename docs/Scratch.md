@@ -1,5 +1,9 @@
 # Scratch area
 
+## LLVM target
+
+## VSCode Extension
+
 ## Errors that go token after token
 
 fix errors going one from one token:
@@ -399,7 +403,3 @@ I see 2 solutions
 2. Remove SourceTokens property from Node and put the source tokens in a lookup table somewhere.
 
 Or maybe we can stay with what we have now. Maybe this is ok.
-
-## write FG in BNF and check for ambiguity
-
-maybe there's an online tool to build FGs and check for ambiguity.

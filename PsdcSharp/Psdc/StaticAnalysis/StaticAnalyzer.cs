@@ -7,7 +7,7 @@ using Type = Scover.Psdc.Parsing.Node.Type;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-sealed partial class StaticAnalyzer
+public sealed partial class StaticAnalyzer
 {
     readonly Dictionary<Expression, Option<EvaluatedType>> _inferredTypes = [];
     readonly Dictionary<NodeScoped, Scope> _scopes = [];

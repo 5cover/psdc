@@ -50,7 +50,7 @@ static class Program
 
         messenger.PrintConclusion();
 
-        Console.Error.WriteLine("Generated C : ");
+        Console.Error.WriteLine("Generated C: ");
         Console.WriteLine(cCode);
 
         return SysExits.Ok;
