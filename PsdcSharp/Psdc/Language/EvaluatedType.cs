@@ -197,12 +197,12 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
         public override bool SemanticsEqual(EvaluatedType other) => other is String;
     }
 
-    internal sealed class Structure(IReadOnlyDictionary<Identifier, EvaluatedType> components, Identifier? alias = null) : EvaluatedType(alias)
+    internal sealed class Structure(ReadOnlyOrderedMap<Identifier, EvaluatedType> components, Identifier? alias = null) : EvaluatedType(alias)
     {
         readonly Lazy<string> _representation = alias is null ? new(() => {
             StringBuilder sb = new();
             sb.AppendLine("structure début");
-            foreach (var comp in components) {
+            foreach (var comp in components.Map) {
                 sb.AppendLine($"{comp.Key} : {comp.Value.ActualRepresentation};");
             }
             sb.Append("fin");
@@ -211,14 +211,14 @@ abstract class EvaluatedType(Identifier? alias) : EquatableSemantics<EvaluatedTy
         // To avoid long type representations, use the alias name if available.
         : new(alias.Name);
 
-        public IReadOnlyDictionary<Identifier, EvaluatedType> Components => components;
+        public ReadOnlyOrderedMap<Identifier, EvaluatedType> Components => components;
         protected override string ActualRepresentation => _representation.Value;
 
         public override EvaluatedType ToAliasReference(Identifier alias) => new Structure(Components, alias);
 
         public override bool SemanticsEqual(EvaluatedType other) => other is Structure o
-         && o.Components.Keys.AllSemanticsEqual(Components.Keys)
-         && o.Components.Values.AllSemanticsEqual(Components.Values);
+         && o.Components.Map.Keys.AllSemanticsEqual(Components.Map.Keys)
+         && o.Components.Map.Values.AllSemanticsEqual(Components.Map.Values);
     }
 
     internal sealed class Unknown : EvaluatedType

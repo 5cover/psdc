@@ -8,8 +8,8 @@ item|apperance|description
 `⟨NonTerminal⟩ \to ...`|$⟨NonTerminal⟩ \to ...$|Inline production definition. Name matches `[A-Za-z0-9]+`.
 `terminal`|$terminal$|reference to a named terminal. Name matches `[A-Za-z0-9_]+`.
 `\text{bare\ text}`|$\text{bare text}$|exact string (unnamed terminal)
-`\{...\}`|$...$|grouping
-`\begin{cases}...\\...\end{cases}`|$\begin{cases}...\\...\end{cases}$|alternative. choices are separated by newlines (`\\`). A trailing newline on the last choice is useless but allowed.
+`\begin{pmatrix}...\end{pmatrix}`|$\begin{pmatrix}...\end{pmatrix}$|grouping
+`\begin{Bmatrix*}[l]......\\...\end{Bmatrix*}`|$\begin{Bmatrix*}[l]......\\...\end{Bmatrix*}$|alternative. choices are separated by newlines (`\\`). A trailing newline on the last choice is useless but allowed.
 `\begin{split}...\\...\end{split}`|$$\begin{split}...\\...\end{split}$$|split a long line for readability. Represents its contents, akin to a grouping.
 
 Note : the Epsilon (&epsilon;) special rule can be matched with the empty grouping `{}`.
@@ -21,8 +21,8 @@ modfier|appearance|description
 `*`|$^*$|zero or more (repetition)
 `+`|$^+$|one or more
 `?`|$^?$|zero or one (optional)
-`*\|[item]`|$^{*\|item}$|zero or more separated
-`+\|[item]`|$^{+\|item}$|one or more separated
+`{*\#}`|$^{*\#}$|zero or more, separated by commas (trailing comma not allowed)
+`{+\#}`|$^{+\#}$|one or more, separated by commas (trailing comma not allowed)
 
 Whitespace in the metasyntax and in the defined language is insignificant and cannot be matched.
 
@@ -39,30 +39,21 @@ $$
 
 \\&\textbf{Declarations}\\
 
-&⟨Declaration⟩ \to \begin{cases}
-    ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier = ⟨Type⟩
-    \\
-    ⟨DeclarationCompleteTypeAlias⟩ \to \text{type}\ Identifier = ⟨TypeComplete⟩
-    \\
-    ⟨DeclarationConstant⟩ \to \text{constante} ⟨TypeComplete⟩ Identifier \text{:=} ⟨Expr⟩\text{;}
-    \\
-    ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin}
-    \\
-    ⟨FunctionSignature⟩ \to  \text{c'est\ début} ⟨Block⟩ \text{fin}
-    \\
-    ⟨FunctionSignature⟩ \to \text{;}
-    \\
-    ⟨ProcedureSignature⟩ \to  \text{c'est\ début} ⟨Block⟩ \text{fin}
-    \\
-    ⟨ProcedureSignature⟩ \to \text{;}
-    \\
-    \text{début} ⟨Block⟩ \text{fin}
-    \\
-\end{cases}
+&⟨Declaration⟩ \to \begin{Bmatrix*}[l]
+    ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier = ⟨Type⟩ \\
+    ⟨DeclarationCompleteTypeAlias⟩ \to \text{type}\ Identifier = ⟨TypeComplete⟩ \\
+    ⟨DeclarationConstant⟩ \to \text{constante} ⟨TypeComplete⟩ Identifier \text{:=} ⟨Expr⟩\text{;} \\
+    ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin} \\
+    ⟨FunctionDeclaration⟩ \to ⟨FunctionSignature⟩ \text{;} \\
+    ⟨FunctionDefinition⟩ \to ⟨FunctionSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
+    ⟨ProcedureDeclaration⟩ \to ⟨Procedureignature⟩ \text{;} \\
+    ⟨ProcedureDefinition⟩ \to ⟨ProcedureSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
+    \text{début} ⟨Block⟩ \text{fin} \\
+\end{Bmatrix*}
 
 \\&\textbf{Statements}\\
 
-&⟨Statement⟩ \to \begin{cases}
+&⟨Statement⟩ \to \begin{Bmatrix*}[l]
     ⟨Alternative⟩ \to \begin{split}
     &   ⟨Alternative.If⟩\\
     &   ⟨Alternative.ElseIf⟩^*\\
@@ -76,10 +67,10 @@ $$
     \\
     ⟨ForLoop⟩ \to \begin{split}
     \\
-    &   \begin{cases}
-            \text{pour}\ Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \{\text{pas} ⟨Expr⟩\}^?\\
-            \text{pour}(Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \{\text{pas} ⟨Expr⟩\}^?)\\
-        \end{cases}
+    &   \begin{Bmatrix*}[l]
+            \text{pour}\ Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \begin{pmatrix}\text{pas} ⟨Expr⟩\end{pmatrix}^?\\
+            \text{pour}(Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \begin{pmatrix}\text{pas} ⟨Expr⟩\end{pmatrix}^?)\\
+        \end{Bmatrix*}
         \text{faire} \\
     &   ⟨Block⟩ \\
     &   \text{finfaire}
@@ -98,7 +89,7 @@ $$
     &   \text{finselon}\\
     \end{split}
     \\
-    ⟨LocalVariable⟩ \to Identifier^{+|\text{,}} : ⟨TypeComplete⟩\text{;}
+    ⟨LocalVariable⟩ \to Identifier^{+\#} : ⟨TypeComplete⟩\text{;}
     \\
     ⟨Return⟩ \to \text{retourne} ⟨Expr⟩\text{;}
     \\
@@ -106,7 +97,7 @@ $$
     \\
     ⟨BuiltinEcrire⟩ \to \text{écrire}(⟨Expr⟩, ⟨Expr⟩)\text{;}
     \\
-    ⟨BuiltinEcrireEcran⟩ \to \text{écrireÉcran}(⟨Expr⟩^{*|\text{,}})\text{;}
+    ⟨BuiltinEcrireEcran⟩ \to \text{écrireÉcran}(⟨Expr⟩^{*\#})\text{;}
     \\
     ⟨BuiltinFermer⟩ \to \text{fermer}(⟨Expr⟩)\text{;}
     \\
@@ -114,14 +105,14 @@ $$
     \\
     ⟨BuiltinLireClavier⟩ \to \text{lireClavier}(⟨Lvalue⟩)\text{;}
     \\
-    ⟨BuiltinOuvrirAjout⟩ \to \text{ouvrirAjout}(⟨Expr⟩)
+    ⟨BuiltinOuvrirAjout⟩ \to \text{ouvrirAjout}(⟨Expr⟩)\text{;}
     \\
     ⟨BuiltinOuvrirEcriture⟩ \to \text{ouvrirÉcriture}(⟨Expr⟩)\text{;}
     \\
     ⟨BuiltinOuvrirLecture⟩ \to \text{ouvrirLecture}(⟨Expr⟩)\text{;}
     \\
     ⟨Nop⟩ \to \text{;}
-\end{cases}
+\end{Bmatrix*}
 \\
 &⟨Alternative.If⟩ \to \text{si} ⟨Expr⟩ \text{alors} ⟨Block⟩
 \\
@@ -137,119 +128,146 @@ $$
 
 &⟨Expr⟩ \to ⟨Expr_{Or}⟩
 \\
-&⟨Expr_{Or}⟩ \to ⟨Expr_{And}⟩\{
+&⟨Expr_{Or}⟩ \to ⟨Expr_{And}⟩\begin{pmatrix}
 \text{OU}
-⟨Expr_{And}⟩\}^*
+⟨Expr_{And}⟩\end{pmatrix}^*
 \\
-&⟨Expr_{And}⟩ \to ⟨Expr_{Xor}⟩\{
+&⟨Expr_{And}⟩ \to ⟨Expr_{Xor}⟩\begin{pmatrix}
 \text{ET}
-⟨Expr_{Xor}⟩\}^*
+⟨Expr_{Xor}⟩\end{pmatrix}^*
 \\
-&⟨Expr_{Xor}⟩ \to ⟨Expr_{Equality}⟩\{
+&⟨Expr_{Xor}⟩ \to ⟨Expr_{Equality}⟩\begin{pmatrix}
 \text{XOR}
-⟨Expr_{Equality}⟩\}^*
+⟨Expr_{Equality}⟩\end{pmatrix}^*
 \\
-&⟨Expr_{Equality}⟩ \to ⟨Expr_{Comparison}⟩\{
-\begin{cases}
+&⟨Expr_{Equality}⟩ \to ⟨Expr_{Comparison}⟩\begin{pmatrix}
+\begin{Bmatrix*}[l]
     \text{!=}\\
     \text{==}\\
-\end{cases}
-⟨Expr_{Comparison}⟩\}^*
+\end{Bmatrix*}
+⟨Expr_{Comparison}⟩\end{pmatrix}^*
 \\
-&⟨Expr_{Comparison}⟩ \to ⟨Expr_{AddSub}⟩\{
-\begin{cases}
+&⟨Expr_{Comparison}⟩ \to ⟨Expr_{AddSub}⟩\begin{pmatrix}
+\begin{Bmatrix*}[l]
     \text{<}\\
     \text{<=}\\
     \text{>}\\
     \text{>=}\\
-\end{cases}
-⟨Expr_{AddSub}⟩\}^*
+\end{Bmatrix*}
+⟨Expr_{AddSub}⟩\end{pmatrix}^*
 \\
-&⟨Expr_{AddSub}⟩ \to ⟨Expr_{MulDivMod}⟩\{
-\begin{cases}
+&⟨Expr_{AddSub}⟩ \to ⟨Expr_{MulDivMod}⟩\begin{pmatrix}
+\begin{Bmatrix*}[l]
     \text{-}\\
     \text{+}\\
-\end{cases}
-⟨Expr_{MulDivMod}⟩\}^*
+\end{Bmatrix*}
+⟨Expr_{MulDivMod}⟩\end{pmatrix}^*
 \\
-&⟨Expr_{MulDivMod}⟩ \to ⟨Expr_{Unary}⟩\{
-\begin{cases}
+&⟨Expr_{MulDivMod}⟩ \to ⟨Expr_{Unary}⟩\begin{pmatrix}
+\begin{Bmatrix*}[l]
     \text{*}\\
     \text{/}\\
     \text{\%}\\
-\end{cases}
-⟨Expr_{Unary}⟩\}^*
+\end{Bmatrix*}
+⟨Expr_{Unary}⟩\end{pmatrix}^*
 \\
-&⟨Expr_{Unary}⟩ \to \begin{cases}
-    \begin{cases}
+&⟨Expr_{Unary}⟩ \to \begin{Bmatrix*}[l]
+    \begin{Bmatrix*}[l]
         \text{-}\\
         \text{+}\\
         \text{NON}\\
-    \end{cases} ⟨Expr_{Unary}⟩\\
+    \end{Bmatrix*} ⟨Expr_{Unary}⟩\\
     ⟨Expr_{Primary}⟩\\
-\end{cases}
+\end{Bmatrix*}
 \\
-&⟨Expr_{Primary}⟩ \to \begin{cases}
+&⟨Expr_{Primary}⟩ \to \begin{Bmatrix*}[l]
     ⟨Lvalue⟩\\
     ⟨TerminalRvalue⟩\\
-\end{cases}
+\end{Bmatrix*}
 \\
-&⟨Lvalue⟩ \to \begin{cases}
+&⟨Lvalue⟩ \to \begin{Bmatrix*}[l]
     ⟨ArraySubscript⟩\\
     ⟨ComponentAccess⟩\\
     ⟨TerminalLvalue⟩\\
-\end{cases}
+\end{Bmatrix*}
 \\
-&⟨ArraySubscript⟩ \to ⟨TerminalRvalue⟩\{\text{[}⟨Expr⟩^{+|\text{,}}\text{]}\}^+
+&⟨ArraySubscript⟩ \to ⟨TerminalRvalue⟩⟨Index⟩^+
 \\
-&⟨ComponentAccess⟩ \to ⟨TerminalRvalue⟩\{\text{.}⟨Identifier⟩\}^+
+&⟨ComponentAccess⟩ \to ⟨TerminalRvalue⟩⟨Component⟩^+
 \\
-&⟨TerminalLvalue⟩ \to \begin{cases}
+&⟨TerminalLvalue⟩ \to \begin{Bmatrix*}[l]
     ⟨BracketedLvalue⟩ \to (⟨Lvalue⟩)
     \\
     ⟨IdentifierReference⟩ \to Identifier
-\end{cases}
+\end{Bmatrix*}
 \\
-&⟨TerminalRvalue⟩ \to \begin{cases}
+&⟨TerminalRvalue⟩ \to \begin{Bmatrix*}[l]
     ⟨Bracketed⟩ \to (⟨Expr⟩)
     \\
-    ⟨Literal⟩ \to \begin{cases}
-        LiteralString\\
+    ⟨Literal⟩ \to \begin{Bmatrix*}[l]
         LiteralCharacter\\
         LiteralInteger\\
         LiteralReal\\
+        LiteralString\\
+        ⟨LiteralStructure⟩ \to \text{\{}
+            \begin{pmatrix}
+                \begin{pmatrix}
+                    ⟨Component⟩
+                    ⟨Designator⟩
+                \end{pmatrix}^?
+                ⟨Expr⟩
+            \end{pmatrix}^{*\#}
+        \text{,}^? \text{\}}\\
+        ⟨LiteralArray⟩ \to \text{\{}
+            \begin{pmatrix}
+                \begin{pmatrix}
+                    ⟨Index⟩
+                    ⟨Designator⟩
+                \end{pmatrix}^?
+                ⟨Expr⟩
+            \end{pmatrix}^{*\#}
+        \text{,}^? \text{\}}\\
         \text{vrai}\\
         \text{faux}\\
-    \end{cases}
+    \end{Bmatrix*}
     \\
     ⟨Call⟩
     \\
     ⟨BuiltinFdf⟩ \to \text{FdF}(⟨Expr⟩)
     \\
     ⟨TerminalLvalue⟩
-\end{cases}
+\end{Bmatrix*}
 \\
-&⟨Call⟩ \to Identifier(⟨ParameterActual⟩^{*|\text{,}})
+&⟨Call⟩ \to Identifier(⟨ParameterActual⟩^{*\#})
+\\
+&⟨Designator⟩ \to \begin{Bmatrix*}[l]
+    ⟨Component⟩\\
+    ⟨Index⟩\\
+\end{Bmatrix*}^*\text{=}
+\\
+&⟨Component⟩ \to \text{.}Identifier
+\\
+&⟨Index⟩ \to \text{[}⟨Expr⟩^{+\#}\text{]}
 
 \\&\textbf{Types}\\
 
-&⟨Type⟩ \to \begin{cases}
+&⟨Type⟩ \to \begin{Bmatrix*}[l]
     ⟨TypeComplete⟩
     \\
     ⟨TypeAliasReference⟩ \to Identifier
     \\
 &    ⟨String⟩ \to \text{chaîne}
-\end{cases}
+\end{Bmatrix*}
 \\
-&⟨TypeComplete⟩ \to \begin{cases}
+&⟨TypeComplete⟩ \to \begin{Bmatrix*}[l]
     ⟨TypeCompleteAliasReference⟩ \to Identifier
     \\
-    ⟨TypeNumeric⟩ \to \begin{cases}
+    ⟨TypeNumeric⟩ \to \begin{Bmatrix*}[l]
         \text{booléen}\\
         \text{caractère}\\
         \text{entier}\\
         \text{réel}\\
-    \end{cases}
+    \end{Bmatrix*}
     \\
     ⟨File⟩ \to \text{nomFichierLog}
     \\
@@ -258,25 +276,25 @@ $$
     ⟨Structure⟩ \to \text{structure\ début} ⟨LocalVariable⟩^+ \text{fin}
     \\
     ⟨TypeArray⟩ \to \text{tableau} {\text{[}⟨Expr⟩\text{]}}^+ \text{de} ⟨TypeComplete⟩
-\end{cases}
+\end{Bmatrix*}
 
 \\&\textbf{Other}\\
 
-&⟨ParameterFormal⟩ \to \begin{cases}
+&⟨ParameterFormal⟩ \to \begin{Bmatrix*}[l]
     \text{entF}\\
     \text{sortF}\\
     \text{entF/sortF}\\
-\end{cases} Identifier\text{:}⟨Type⟩
+\end{Bmatrix*} Identifier\text{:}⟨Type⟩
 \\
-&⟨ParameterActual⟩ \to \begin{cases}
+&⟨ParameterActual⟩ \to \begin{Bmatrix*}[l]
     \text{entE}\\
     \text{sortE}\\
     \text{entE/sortE}\\
-\end{cases} ⟨Expr⟩\
+\end{Bmatrix*} ⟨Expr⟩\
 \\
-&⟨FunctionSignature⟩ \to \text{fonction}\ Identifier(⟨ParameterFormal⟩^{*|\text{,}}) \text{délivre} ⟨Type⟩
+&⟨FunctionSignature⟩ \to \text{fonction}\ Identifier(⟨ParameterFormal⟩^{*\#}) \text{délivre} ⟨Type⟩
 \\
-&⟨ProcedureSignature⟩ \to \text{procédure}\ Identifier(⟨ParameterFormal⟩^{*|\text{,}})
+&⟨ProcedureSignature⟩ \to \text{procédure}\ Identifier(⟨ParameterFormal⟩^{*\#})
 
 \end{align*}
 $$

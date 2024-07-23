@@ -18,7 +18,7 @@ partial class AstExtensions
         (Not, Boolean x) => x.Operate(x => !x),
         (Plus, Real x) => x,
 
-        _ => OperationError.UnsupportedOperator,
+        _ => OperationMessage.ErrorUnsupportedOperator,
     };
 
     internal static OperationResult<Value> EvaluateOperation(this BinaryOperator op, Value left, Value right) => (op, left, right) switch {
@@ -31,14 +31,14 @@ partial class AstExtensions
         (Equal, Character l, Character r) => l.OperateWith(r, (l, r) => new Boolean(l == r)),
         (Equal, String l, String r) => l.OperateWith(r, (l, r) => new Boolean(l == r)),
         (Equal, Integer l, Integer r) => l.OperateWith(r, (l, r) => new Boolean(l == r)),
-        (Equal, Real l, Real r) => l.OperateWith(r, (l, r) => OperationResult.Ok(new Boolean(l == r), OperationError.FloatingPointEquality)),
+        (Equal, Real l, Real r) => l.OperateWith(r, (l, r) => OperationResult.Ok(new Boolean(l == r), OperationMessage.WarningFloatingPointEquality)),
 
         // Unequality
         (NotEqual, Boolean l, Boolean r) => l.OperateWith(r, (l, r) => l != r),
         (NotEqual, Character l, Character r) => l.OperateWith(r, (l, r) => new Boolean(l != r)),
         (NotEqual, String l, String r) => l.OperateWith(r, (l, r) => new Boolean(l != r)),
         (NotEqual, Integer l, Integer r) => l.OperateWith(r, (l, r) => new Boolean(l != r)),
-        (NotEqual, Real l, Real r) => l.OperateWith(r, (l, r) => OperationResult.Ok(new Boolean(l != r), OperationError.FloatingPointEquality)),
+        (NotEqual, Real l, Real r) => l.OperateWith(r, (l, r) => OperationResult.Ok(new Boolean(l != r), OperationMessage.WarningFloatingPointEquality)),
 
         // Comparison
         (GreaterThan, Integer l, Integer r) => l.OperateWith(r, (l, r) => new Boolean(l > r)),
@@ -53,7 +53,7 @@ partial class AstExtensions
         // Arithmetic
         (Add, Integer l, Integer r) => l.OperateWith(r, (l, r) => l + r),
         (Add, Real l, Real r) => l.OperateWith(r, (l, r) => l + r),
-        (Divide, Integer l, Integer r) => l.OperateWith(r, (l, r) => r == 0 ? OperationError.DivisionByZero : new Integer(l / r)),
+        (Divide, Integer l, Integer r) => l.OperateWith(r, (l, r) => r == 0 ? OperationMessage.WarningDivisionByZero : new Integer(l / r)),
         (Divide, Real l, Real r) => l.OperateWith(r, (l, r) => l / r),
         (Mod, Integer l, Integer r) => l.OperateWith(r, (l, r) => l % r),
         (Mod, Real l, Real r) => l.OperateWith(r, (l, r) => l % r),
@@ -68,18 +68,18 @@ partial class AstExtensions
         (Or, Boolean l, Boolean r) => l.OperateWith(r, (l, r) => l || r),
         (Xor, Boolean l, Boolean r) => l.OperateWith(r, (l, r) => l ^ r),
 
-        _ => OperationError.UnsupportedOperator,
+        _ => OperationMessage.ErrorUnsupportedOperator,
     };
 
-    internal static Message GetOperationMessage(this OperationError error, Expression.UnaryOperation opUn, EvaluatedType operandType) => error switch {
-        OperationError.UnsupportedOperator => Message.ErrorUnsupportedOperation(opUn, operandType),
+    internal static Message GetOperationMessage(this OperationMessage error, Expression.UnaryOperation opUn, EvaluatedType operandType) => error switch {
+        OperationMessage.ErrorUnsupportedOperator => Message.ErrorUnsupportedOperation(opUn, operandType),
         _ => throw error.ToUnmatchedException(),
     };
 
-    internal static Message GetOperationMessage(this OperationError error, Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType) => error switch {
-        OperationError.UnsupportedOperator => Message.ErrorUnsupportedOperation(opBin, leftType, rightType),
-        OperationError.DivisionByZero => Message.WarningDivisionByZero(opBin.SourceTokens),
-        OperationError.FloatingPointEquality => Message.WarningFloatingPointEquality(opBin.SourceTokens),
+    internal static Message GetOperationMessage(this OperationMessage error, Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType) => error switch {
+        OperationMessage.ErrorUnsupportedOperator => Message.ErrorUnsupportedOperation(opBin, leftType, rightType),
+        OperationMessage.WarningDivisionByZero => Message.WarningDivisionByZero(opBin.SourceTokens),
+        OperationMessage.WarningFloatingPointEquality => Message.WarningFloatingPointEquality(opBin.SourceTokens),
         _ => throw error.ToUnmatchedException(),
     };
 }

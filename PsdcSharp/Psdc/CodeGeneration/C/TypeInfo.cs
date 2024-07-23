@@ -110,7 +110,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             StringBuilder sb = new("struct {");
             sb.AppendLine();
             indent.Increase();
-            var components = structure.Components.ToDictionary(kv => kv.Key,
+            var components = structure.Components.Map.ToDictionary(kv => kv.Key,
                 kv => Create(kv.Value, msger, generateExpression, keywordTable, indent));
             foreach (var comp in components) {
                 indent.Indent(sb).Append(comp.Value.GenerateDeclaration(keywordTable.Validate(comp.Key, msger).Yield())).AppendLine(";");

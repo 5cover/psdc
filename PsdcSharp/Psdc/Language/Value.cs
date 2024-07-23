@@ -1,10 +1,10 @@
 namespace Scover.Psdc.Language;
 
-enum OperationError
+enum OperationMessage
 {
-    UnsupportedOperator,
-    DivisionByZero,
-    FloatingPointEquality,
+    ErrorUnsupportedOperator,
+    WarningDivisionByZero,
+    WarningFloatingPointEquality,
 }
 
 interface Value<out TSelf> : Value
@@ -21,39 +21,39 @@ interface Value<TSelf, TUnderlying> : Value where TSelf : Value<TSelf, TUnderlyi
 {
     Option<TUnderlying> Value { get; }
 
-    // Binary
+    /// <summary>Perform a binary operation.</summary>
     public OperationResult<TResult> OperateWith<TResult>(TSelf other,
         Func<TUnderlying, TUnderlying, OperationResult<TResult>> transform)
         where TResult : Value<TResult>;
 
-    // Binary error-less
+    /// <summary>Perform a binary infallible operation.</summary>
     public TResult OperateWith<TResult>(TSelf other,
         Func<TUnderlying, TUnderlying, TResult> transform)
         where TResult : Value<TResult>;
 
-    // Binary internal
+    /// <summary>Perform a binary internal operation.</summary>
     public OperationResult<TSelf> OperateWith(TSelf other,
         Func<TUnderlying, TUnderlying, OperationResult<TSelf>> transform);
 
-    // Binary internal error-less
+    /// <summary>Perform a binary internal infallible operation.</summary>
     public TSelf OperateWith(TSelf other,
        Func<TUnderlying, TUnderlying, TUnderlying> transform);
 
-    // Unary
+    /// <summary>Perform an unary operation.</summary>
     public OperationResult<TResult> Operate<TResult>(
         Func<TUnderlying, OperationResult<TResult>> transform)
         where TResult : Value<TResult>;
 
-    // Unary error-less
+    /// <summary>Perform an unary infallible operation.</summary>
     public TResult Operate<TResult>(
         Func<TUnderlying, TResult> transform)
         where TResult : Value<TResult>;
 
-    // Unary internal
+    /// <summary>Perform an unary internal operation.</summary>
     public OperationResult<TSelf> Operate(
         Func<TUnderlying, OperationResult<TSelf>> transform);
 
-    // Unary internal error-less
+    /// <summary>Perform an unary internal infallible operation.</summary>
     public TSelf Operate(
         Func<TUnderlying, TUnderlying> transform);
 }

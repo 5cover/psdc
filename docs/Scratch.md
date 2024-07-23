@@ -381,25 +381,22 @@ self-explanatory.
 - Check the assignability of target and value in assignment
 - Check if return value corresponds to function's return type
 
-## array literals
+## Trailing commas
+
+Allow trailing commas in parameter lists, local variable lists, array subscripts.
+
+## Structure and array literals
 
 we will only support array literals for assignation of arrays. That will require a change in `EvaluatedType`.
 
-## values is a generic mess
+First things first let's standardize the syntax and add it to the grammar.
 
-The complexity comes from the fact that Values are generic based on the underlying type.
+Array and structure literals follow the same syntax as brace initialization in C. They work as standalone expressions too, however, unlike in C where they can only be used as an initializer.
 
-Maybe this is a mistake and we should have used encapsulated object downcasts.
+The main difficulty is that array and structure literal have no intrinsic type and no intrinsic value - their actual value depends on the recieving type (the type of the variable they initialize or of the parameter they are passed to)
 
-We could have done a better job with C++ template metaprogramming.
+Is that so? Shouldn't we give them an intrinsic type that is implicitly convertible to the recieving type? That wouldn't work for string literals with anonymous values though.
 
-## ast nodes contain sourcetokens
+C restricts their usage as initializers to keep compilation fast &mdash; except we're not in th 70s anymore.
 
-They shouldn't. Since we create AST nodes after parsing we need to pass empty sourcetokens to them. This makes no sense.
-
-I see 2 solutions
-
-1. Make Node SourceTokens optional
-2. Remove SourceTokens property from Node and put the source tokens in a lookup table somewhere.
-
-Or maybe we can stay with what we have now. Maybe this is ok.
+Soo.. maybe i should just give them placeholder type like `<struct-literal>`, and for arrays, i can give the actual type.

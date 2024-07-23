@@ -4,8 +4,6 @@ using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Parsing;
 
-#region Node interfaces
-
 interface NodeCall : Node
 {
     public Identifier Name { get; }
@@ -30,8 +28,6 @@ interface NodeBracketedExpression : Node.Expression
 {
     public Expression ContainedExpression { get; }
 }
-
-#endregion Node interfaces
 
 public interface Node : EquatableSemantics<Node>
 {
@@ -711,10 +707,10 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed class Structure(SourceTokens sourceTokens,
-                IReadOnlyCollection<Statement.LocalVariable> components)
+                IReadOnlyList<Statement.LocalVariable> components)
             : NodeImpl(sourceTokens), Complete
             {
-                public IReadOnlyCollection<Statement.LocalVariable> Components => components;
+                public IReadOnlyList<Statement.LocalVariable> Components => components;
 
                 public override bool SemanticsEqual(Node other) => other is Structure o
                  && o.Components.AllSemanticsEqual(Components);

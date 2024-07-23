@@ -1209,3 +1209,16 @@ Unknown|Unknown|everything||
 The relationships work on an incremental basis. That is, if type A is semantically equal to B, it is also implicitly convertible and assignable to B.
 
 Out of the 3 relationships, only semantic equality is commutative.
+
+## should ast nodes contain sourcetokens
+
+They shouldn't. Since we create AST nodes after parsing we need to pass empty sourcetokens to them. This makes no sense.
+
+I see 2 solutions
+
+1. Make Node SourceTokens optional
+2. Remove SourceTokens property from Node and put the source tokens in a lookup table somewhere.
+
+Or maybe we can stay with what we have now. Maybe this is ok.
+
+Yes, this is probably fine. We already have SourceTokens.Empty as a special case, indicating that this node was created *ex nihilo*.

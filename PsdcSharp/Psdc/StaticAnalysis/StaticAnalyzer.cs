@@ -214,7 +214,7 @@ public sealed partial class StaticAnalyzer
             return Value.Of(AnalyzeExpression(scope, compAccess.Structure).Type.Bind(t => {
                 if (t is not EvaluatedType.Structure structType) {
                     _messenger.Report(Message.ErrrorComponentAccessOfNonStruct(compAccess, t));
-                } else if (!structType.Components.TryGetValue(compAccess.ComponentName, out var compType)) {
+                } else if (!structType.Components.Map.TryGetValue(compAccess.ComponentName, out var compType)) {
                     _messenger.Report(Message.ErrorStructureComponentDoesntExist(compAccess, structType.Alias));
                 } else {
                     return compType.Some();
@@ -495,14 +495,17 @@ public sealed partial class StaticAnalyzer
 
     EvaluatedType.Structure EvaluateStructureType(ReadOnlyScope scope, Type.Complete.Structure structure)
     {
-        Dictionary<Identifier, EvaluatedType> components = [];
+        Dictionary<Identifier, EvaluatedType> componentsMap = [];
+        List<(Identifier, EvaluatedType)> componentsList = [];
         foreach (var comp in structure.Components) {
             foreach (var name in comp.Names) {
-                if (!components.TryAdd(name, EvaluateType(scope, comp.Type))) {
+                var type = EvaluateType(scope, comp.Type);
+                if (!componentsMap.TryAdd(name, type)) {
                     _messenger.Report(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
                 }
+                componentsList.Add((name, type));
             }
         }
-        return new EvaluatedType.Structure(components);
+        return new EvaluatedType.Structure(new(componentsMap, componentsList));
     }
 }
