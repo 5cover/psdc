@@ -24,9 +24,9 @@ sealed class TypeInfoC : TypeInfo
            formatComponent,
            requiredHeaders);
 
-    TypeInfoC(string typeName, string? formatCompnent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
+    TypeInfoC(string typeName, string? formatComponent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
     : this(typeName,
-           formatCompnent.SomeNotNull(),
+           formatComponent.SomeNotNull(),
            requiredHeaders ?? [],
            starCount,
            postModifier,
