@@ -4,7 +4,7 @@ using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Parsing;
 
-#region Node traits
+#region Node interfaces
 
 interface NodeCall : Node
 {
@@ -31,7 +31,7 @@ interface NodeBracketedExpression : Node.Expression
     public Expression ContainedExpression { get; }
 }
 
-#endregion Node traits
+#endregion Node interfaces
 
 public interface Node : EquatableSemantics<Node>
 {

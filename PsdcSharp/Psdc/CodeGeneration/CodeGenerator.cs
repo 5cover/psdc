@@ -1,4 +1,3 @@
-using Scover.Psdc.CodeGeneration.C;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
@@ -11,7 +10,7 @@ namespace Scover.Psdc.CodeGeneration;
 public static class CodeGenerator
 {
     public static string GenerateC(Messenger messenger, SemanticAst ast)
-     => new CodeGeneratorC(messenger, ast).Generate();
+     => new C.CodeGenerator(messenger, ast).Generate();
 }
 
 abstract partial class CodeGenerator<TOpInfo>(Messenger msger, SemanticAst ast, KeywordTable keywordTable)

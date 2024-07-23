@@ -9,13 +9,13 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
-sealed class TypeInfoC : TypeInfo
+sealed class TypeInfo : CodeGeneration.TypeInfo
 {
     readonly string _stars;
 
     readonly string _typeName, _postModifier, _typeQualifier;
 
-    TypeInfoC(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders, int starCount = 0, string postModifier = "", string? typeQualifier = null)
+    TypeInfo(string typeName, Option<string> formatComponent, IEnumerable<string> requiredHeaders, int starCount = 0, string postModifier = "", string? typeQualifier = null)
      => (_stars, _typeName, _postModifier, _typeQualifier, FormatComponent, RequiredHeaders)
         = (new string('*', starCount),
            typeName,
@@ -24,7 +24,7 @@ sealed class TypeInfoC : TypeInfo
            formatComponent,
            requiredHeaders);
 
-    TypeInfoC(string typeName, string? formatComponent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
+    TypeInfo(string typeName, string? formatComponent = null, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
     : this(typeName,
            formatComponent.SomeNotNull(),
            requiredHeaders ?? [],
@@ -38,7 +38,7 @@ sealed class TypeInfoC : TypeInfo
 
     public IEnumerable<string> RequiredHeaders { get; }
 
-    public static TypeInfoC Create(EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression, KeywordTable keywordTable)
+    public static TypeInfo Create(EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable)
      => Create(type, messenger, generateExpression, keywordTable, new());
 
     public string DecorateExpression(string expr)
@@ -49,19 +49,19 @@ sealed class TypeInfoC : TypeInfo
     public string GenerateDeclaration(IEnumerable<string> names)
      => $"{_typeName}{_typeQualifier} {string.Join(", ", names.Select(name => _stars + name + _postModifier))}";
 
-    public TypeInfoC ToConst()
+    public TypeInfo ToConst()
      => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length, _postModifier,
         "const");
 
-    public TypeInfoC ToPointer(int level)
+    public TypeInfo ToPointer(int level)
      => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length + level,
         _postModifier, null);
 
     static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
 
-    static TypeInfoC Create(EvaluatedType type, Messenger msger, Func<Expression, string> generateExpression, KeywordTable keywordTable, Indentation indent)
+    static TypeInfo Create(EvaluatedType type, Messenger msger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable, Indentation indent)
     {
-        TypeInfoC typeInfo = type switch {
+        TypeInfo typeInfo = type switch {
             EvaluatedType.Unknown u => new(keywordTable.Validate(u.SourceTokens, u.Representation, msger)),
             EvaluatedType.File => new("FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield()),
             EvaluatedType.Boolean => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
@@ -76,10 +76,10 @@ sealed class TypeInfoC : TypeInfo
         };
 
         return type.Alias is { } alias
-            ? new TypeInfoC(keywordTable.Validate(alias, msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders)
+            ? new TypeInfo(keywordTable.Validate(alias, msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders)
             : typeInfo;
 
-        TypeInfoC CreateArrayType(EvaluatedType.Array array)
+        TypeInfo CreateArrayType(EvaluatedType.Array array)
         {
             var arrayType = Create(array.ElementType, msger, generateExpression, keywordTable, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
@@ -92,7 +92,7 @@ sealed class TypeInfoC : TypeInfo
                 postModifier: postModifier.ToString());
         }
 
-        TypeInfoC CreateLengthedString(EvaluatedType.LengthedString strlen)
+        TypeInfo CreateLengthedString(EvaluatedType.LengthedString strlen)
         {
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression
@@ -105,7 +105,7 @@ sealed class TypeInfoC : TypeInfo
             return new("char", "%s", postModifier: $"[{lengthPlus1}]");
         }
 
-        TypeInfoC CreateStructure(EvaluatedType.Structure structure)
+        TypeInfo CreateStructure(EvaluatedType.Structure structure)
         {
             StringBuilder sb = new("struct {");
             sb.AppendLine();

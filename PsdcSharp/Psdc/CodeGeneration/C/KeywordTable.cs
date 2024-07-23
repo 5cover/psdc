@@ -2,10 +2,10 @@ using Scover.Psdc.Messages;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
-sealed class KeywordTableC : KeywordTable
+sealed class KeywordTable : CodeGeneration.KeywordTable
 {
-    private KeywordTableC() { }
-    public static KeywordTableC Instance { get; } = new();
+    private KeywordTable() { }
+    public static KeywordTable Instance { get; } = new();
 
     public string Validate(SourceTokens sourceTokens, string ident, Messenger msger)
     {

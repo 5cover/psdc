@@ -10,8 +10,8 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
-sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
-    : CodeGenerator<OperatorInfoC>(messenger, ast, KeywordTableC.Instance)
+sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
+    : CodeGenerator<OperatorInfo>(messenger, ast, KeywordTable.Instance)
 {
     readonly IncludeSet _includes = new();
     Group _currentGroup = Group.None;
@@ -303,7 +303,7 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
          return AppendVariableDeclaration(o, CreateTypeInfo(variable.Type), varDecl.Names).AppendLine(";");
      }).ValueOr(o);
 
-    StringBuilder AppendVariableDeclaration(StringBuilder o, TypeInfoC type, IEnumerable<Identifier> names)
+    StringBuilder AppendVariableDeclaration(StringBuilder o, TypeInfo type, IEnumerable<Identifier> names)
     {
         foreach (string header in type.RequiredHeaders) {
             _includes.Ensure(header);
@@ -384,13 +384,13 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
 
         var (bracketLeft, bracketRight) = ShouldBracket(opBin);
         AppendExpression(o, opBin.Left, bracketLeft);
-        o.Append($" {OperatorInfoC.Get(opBin.Operator).Code} ");
+        o.Append($" {OperatorInfo.Get(opBin.Operator).Code} ");
         return AppendExpression(o, opBin.Right, bracketRight);
     }
 
     StringBuilder AppendOperationUnary(StringBuilder o, Expression.UnaryOperation opUn)
     {
-        o.Append(OperatorInfoC.Get(opUn.Operator).Code);
+        o.Append(OperatorInfo.Get(opUn.Operator).Code);
         return AppendExpression(o, opUn.Operand, ShouldBracket(opUn));
     }
 
@@ -426,8 +426,8 @@ sealed partial class CodeGeneratorC(Messenger messenger, SemanticAst ast)
 
         """);
 
-    TypeInfoC CreateTypeInfo(EvaluatedType evaluatedType)
-     => TypeInfoC.Create(evaluatedType, _msger, expr => AppendExpression(new(), expr).ToString(), _kwTable);
+    TypeInfo CreateTypeInfo(EvaluatedType evaluatedType)
+     => TypeInfo.Create(evaluatedType, _msger, expr => AppendExpression(new(), expr).ToString(), _kwTable);
 
     StringBuilder Indent(StringBuilder o) => _indent.Indent(o);
 

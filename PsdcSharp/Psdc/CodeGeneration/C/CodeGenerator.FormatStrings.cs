@@ -6,7 +6,7 @@ using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
-partial class CodeGeneratorC
+partial class CodeGenerator
 {
     (string format, IReadOnlyList<Expression> arguments) BuildFormatString(IEnumerable<Expression> parts)
     {

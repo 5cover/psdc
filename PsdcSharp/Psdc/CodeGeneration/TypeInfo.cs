@@ -1,5 +1,3 @@
-using Scover.Psdc.Parsing;
-
 namespace Scover.Psdc.CodeGeneration;
 
 interface TypeInfo
