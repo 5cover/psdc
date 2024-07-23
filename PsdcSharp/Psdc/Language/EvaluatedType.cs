@@ -12,7 +12,10 @@ static class ConstantExpression
      => new(expression, value);
 }
 
-sealed record ConstantExpression<TValue>(Expression Expression, TValue Value);
+sealed record ConstantExpression<TValue>(Expression Expression, TValue Value)
+{
+    public override string? ToString() => Value?.ToString();
+}
 
 /// <summary>
 /// A type evaluated during static analysis.

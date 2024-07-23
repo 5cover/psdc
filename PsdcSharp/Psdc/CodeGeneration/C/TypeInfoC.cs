@@ -61,32 +61,39 @@ sealed class TypeInfoC : TypeInfo
 
     static TypeInfoC Create(EvaluatedType type, Messenger msger, Func<Expression, string> generateExpression, KeywordTable keywordTable, Indentation indent)
     {
-        switch (type) {
-        case EvaluatedType.Unknown u:
-            return new(AliasNameOr(keywordTable.Validate(u.SourceTokens, u.Representation, msger)));
-        case EvaluatedType.File:
-            return new(AliasNameOr("FILE"), starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield());
-        case EvaluatedType.Boolean:
-            return new(AliasNameOr("bool"), requiredHeaders: IncludeSet.StdBool.Yield());
-        case EvaluatedType.Character:
-            return new(AliasNameOr("char"), "%c");
-        case EvaluatedType.Real real:
-            return new(AliasNameOr("float"), "%g");
-        case EvaluatedType.Integer integer:
-            return new(AliasNameOr("int"), "%d");
-        case EvaluatedType.String:
-            return new(AliasNameOr("char"), "%s", starCount: 1);
-        case EvaluatedType.Array array:
+        TypeInfoC typeInfo = type switch {
+            EvaluatedType.Unknown u => new(keywordTable.Validate(u.SourceTokens, u.Representation, msger)),
+            EvaluatedType.File => new("FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield()),
+            EvaluatedType.Boolean => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
+            EvaluatedType.Character => new("char", "%c"),
+            EvaluatedType.Real real => new("float", "%g"),
+            EvaluatedType.Integer integer => new("int", "%d"),
+            EvaluatedType.String => new("char", "%s", starCount: 1),
+            EvaluatedType.Array array => CreateArrayType(array),
+            EvaluatedType.LengthedString strlen => CreateLengthedString(strlen),
+            EvaluatedType.Structure structure => CreateStructure(structure),
+            _ => throw type.ToUnmatchedException(),
+        };
+
+        return type.Alias is { } alias
+            ? new TypeInfoC(keywordTable.Validate(alias, msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders)
+            : typeInfo;
+
+        TypeInfoC CreateArrayType(EvaluatedType.Array array)
+        {
             var arrayType = Create(array.ElementType, msger, generateExpression, keywordTable, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
             foreach (var dimension in array.Dimensions.Select(dim => generateExpression(dim.Expression))) {
                 postModifier.Append($"[{dimension}]");
             }
-            return new(AliasNameOr(arrayType._typeName),
+            return new(arrayType._typeName,
                 requiredHeaders: arrayType.RequiredHeaders,
                 starCount: arrayType._stars.Length,
                 postModifier: postModifier.ToString());
-        case EvaluatedType.LengthedString strlen:
+        }
+
+        TypeInfoC CreateLengthedString(EvaluatedType.LengthedString strlen)
+        {
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression
                 .Map(len => {
@@ -95,8 +102,11 @@ sealed class TypeInfoC : TypeInfo
                     return generateExpression(expression);
                 })
                 .ValueOr((strlen.Length + 1).ToString());
-            return new(AliasNameOr("char"), "%s", postModifier: $"[{lengthPlus1}]");
-        case EvaluatedType.Structure structure:
+            return new("char", "%s", postModifier: $"[{lengthPlus1}]");
+        }
+
+        TypeInfoC CreateStructure(EvaluatedType.Structure structure)
+        {
             StringBuilder sb = new("struct {");
             sb.AppendLine();
             indent.Increase();
@@ -107,14 +117,9 @@ sealed class TypeInfoC : TypeInfo
             }
             indent.Decrease();
             sb.Append('}');
-            return new(AliasNameOr(sb.ToString()),
+            return new(sb.ToString(),
                 // it's ok if there are duplicate headers, since IncludeSet.Ensure will ignore duplicates.
                 requiredHeaders: components.Values.SelectMany(type => type.RequiredHeaders));
-        default:
-            throw type.ToUnmatchedException();
         }
-
-        string AliasNameOr(string baseName)
-         => type.Alias is null ? baseName : keywordTable.Validate(type.Alias, msger);
     }
 }
