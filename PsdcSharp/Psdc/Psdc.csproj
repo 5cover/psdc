@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <RootNamespace>Scover.Psdc</RootNamespace>
     <OutputType>Exe</OutputType>
     <AssemblyName>psdc</AssemblyName>
     <TargetFramework>net8.0</TargetFramework>
