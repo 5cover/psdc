@@ -15,6 +15,15 @@ readonly record struct Position(int Line, int Column)
 
 static class Extensions
 {
+    public static IReadOnlyList<int> Shape(this Array array)
+    {
+        List<int> shape = [];
+        for (int i = 0; i < array.Rank; i++) {
+            shape.Add(array.GetLength(i));
+        }
+        return shape;
+    }
+
     public static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T>
      => first.AllZipped(second, (f, s) => f.SemanticsEqual(s));
 

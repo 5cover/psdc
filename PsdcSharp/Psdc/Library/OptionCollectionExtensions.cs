@@ -3,7 +3,7 @@ namespace Scover.Psdc.Library;
 static class OptionCollectionExtensions
 {
     /// <summary>
-    /// Accumulates either all the values, or the errors from a collection of <see cref="Option{T, TError}"/> instances.
+    /// Accumulates either all the values, or all the errors from a collection of <see cref="Option{T, TError}"/> instances.
     /// </summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <typeparam name="TError">The type of the error.</typeparam>

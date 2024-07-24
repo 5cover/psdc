@@ -1,5 +1,4 @@
 using System.Globalization;
-
 using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Parsing;
@@ -567,51 +566,55 @@ public interface Node : EquatableSemantics<Node>
              && o.ContainedExpression.SemanticsEqual(ContainedExpression);
         }
 
-        internal abstract class Literal<TValue, TUnderlying>(SourceTokens sourceTokens, TValue value)
+        internal abstract class Literal<TType, TValue, TUnderlying>(SourceTokens sourceTokens, TType type, TUnderlying value)
             : NodeImpl(sourceTokens), Literal
-            where TValue : Value<TValue, TUnderlying>
-            where TUnderlying : IConvertible, IEquatable<TUnderlying>
+            where TUnderlying : IConvertible
+            where TValue : Value
+            where TType : EvaluatedType, InstantiableType<TValue, TUnderlying>
         {
-            // The provided Value for a literal must always have a value
-            public TUnderlying Value { get; } = value.Value.Value.NotNull();
-            public TValue EvaluatedValue { get; } = value;
+            public TUnderlying Value { get; } = value;
+            public TType ValueType { get; } = type;
             IConvertible Literal.Value => Value;
-            Value Literal.EvaluatedValue => EvaluatedValue;
+            EvaluatedType Literal.ValueType => ValueType;
 
-            public override bool SemanticsEqual(Node other) => other is Literal<TValue, TUnderlying> o
+            public Value CreateValue() => ValueType.CreateValue(Value.Some());
+
+            public override bool SemanticsEqual(Node other) => other is Literal<TType, TValue, TUnderlying> o
              && o.Value.Equals(Value);
         }
 
         internal interface Literal : Expression
         {
             IConvertible Value { get; }
-            Value EvaluatedValue { get; }
+            EvaluatedType ValueType { get; }
+            Value CreateValue();
+
             internal sealed class True(SourceTokens sourceTokens)
-            : Literal<Value.Boolean, bool>(sourceTokens, new(true))
+            : Literal<EvaluatedType.Boolean, EvaluatedType.Boolean.Value, bool>(sourceTokens, EvaluatedType.Boolean.Instance, true)
             {
             }
 
             internal sealed class False(SourceTokens sourceTokens)
-            : Literal<Value.Boolean, bool>(sourceTokens, new(false))
+            : Literal<EvaluatedType.Boolean, EvaluatedType.Boolean.Value, bool>(sourceTokens, EvaluatedType.Boolean.Instance, false)
             {
             }
 
             internal sealed class Character(SourceTokens sourceTokens, char value)
-            : Literal<Value.Character, char>(sourceTokens, new(value))
+            : Literal<EvaluatedType.Character, EvaluatedType.Character.Value, char>(sourceTokens, EvaluatedType.Character.Instance, value)
             {
                 public Character(SourceTokens sourceTokens, string valueStr)
                 : this(sourceTokens, char.Parse(valueStr)) { }
             }
 
             internal sealed class Integer(SourceTokens sourceTokens, int value)
-            : Literal<Value.Integer, int>(sourceTokens, new(value))
+            : Literal<EvaluatedType.Integer, EvaluatedType.Integer.Value, int>(sourceTokens, EvaluatedType.Integer.Instance, value)
             {
                 public Integer(SourceTokens sourceTokens, string valueStr)
                 : this(sourceTokens, int.Parse(valueStr, CultureInfo.InvariantCulture)) { }
             }
 
             internal sealed class Real(SourceTokens sourceTokens, decimal value)
-            : Literal<Value.Real, decimal>(sourceTokens, new(value))
+            : Literal<EvaluatedType.Real, EvaluatedType.Real.Value, decimal>(sourceTokens, EvaluatedType.Real.Instance, value)
             {
                 public Real(SourceTokens sourceTokens, string valueStr)
                 : this(sourceTokens, decimal.Parse(valueStr, CultureInfo.InvariantCulture)) { }
@@ -619,7 +622,7 @@ public interface Node : EquatableSemantics<Node>
 
             internal sealed class String(SourceTokens sourceTokens,
                 string value)
-            : Literal<Value.String, string>(sourceTokens, new(value));
+            : Literal<EvaluatedType.LengthedString, EvaluatedType.LengthedString.Value, string>(sourceTokens, EvaluatedType.LengthedString.Create(value.Length), value);
         }
     }
 

@@ -19,11 +19,11 @@ partial class CodeGenerator
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
             } else {
-                _ast.InferredTypes[part].MatchSome(t => CreateTypeInfo(t).FormatComponent.Match(fmtComp => {
+                CreateTypeInfo(_ast.InferredTypes[part]).FormatComponent.Match(fmtComp => {
                     format.Append(fmtComp);
                     arguments.Add(part);
                 }, () => _msger.Report(Message.ErrorTargetLanguage(part.SourceTokens, LanguageName.C,
-                    $"type '{t}' cannot be used in a format string"))));
+                    $"type '{_ast.InferredTypes[part]}' cannot be used in a format string")));
             }
         }
 

@@ -1222,3 +1222,47 @@ I see 2 solutions
 Or maybe we can stay with what we have now. Maybe this is ok.
 
 Yes, this is probably fine. We already have SourceTokens.Empty as a special case, indicating that this node was created *ex nihilo*.
+
+## Simplify Values
+
+The core need is for constant folding and expression type evaluation
+
+If both values of a binary operation are constant, we're able to evaluate the type AND the value
+
+If one of the values isn't constant, we can only evaluate the type
+
+We need to express expression logic in a way that computes the value if possible, but always computes the type
+
+What i was doing until now : making the underlying value of Value optional. But this means we use Values just to wrap EvaluatedTypes. It would be better to operate with EvaluatedTypes directly.
+
+Does Value.NonConst even make sense? Having a Value implies that we have a value? Unless we define Value as an abstraction for where a value is expected, which may or may not be compile-time known.
+
+In this case NonConst shouldn't exist. My main issue with this is that we're pretty much duplicating the hierarchy between EvaluatedType and Value. Is this a problem?
+
+Could these two hierarchies evolve in different directions? In other words, could we have value classes that don't map to an obvious type?
+
+A value is of a type? IF A value is of type boolean, is it a boolean value? Yes! AND It couldn't be any other way!
+
+### CreateValue in EvaluatedType
+
+Maybe a CreateValue method in EvaluatedType? So a type can create an instance of itself given a implementation-defined primitive type
+
+But what if it can't? There is no such thing as a file literal? Then, simply don't provide a CreateValue method.
+
+Who will call this method? The same ones who call Value constructors, that is:
+
+- Literals
+
+### No more generics
+
+You know, this is a mess. A big mess. Becuase i have to pass around the underlying type in order to operate on it. How is this problem solved in CraftinInterpreters?
+
+- Pass underlying values as `Object`
+- Cast them to the proper type depending on the operator
+- Catch cast failure and emit an error message for the expression
+
+Values are not wrapped and expressed directly as their underlying type. This is a problem for me - String and LengthedString are different types that happen to have the same underlying type.
+
+Still, i coud simply have a `Value` class with a `Type` and `UnderlyingValue` as `object` &mdash; in `ConstantFolding`, switch on `Type` and downcast `UnderlyingValue`.
+
+But if we know the `Type`, we should let it perform the cast; it's the one responsible for choosing the underlying type after all. So maybe we call `TUnderlying InstantiableType.GetUnderlyingValue(Value value) => (TUnderlying)value.UnderlyingType` (static abstract)

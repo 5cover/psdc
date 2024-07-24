@@ -32,10 +32,10 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendAliasDeclaration(StringBuilder o, ReadOnlyScope scope, Declaration.TypeAlias alias)
      => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).Map(alias => {
-        SetGroup(o, Group.Types);
-        var type = CreateTypeInfo(alias.TargetType);
-        return Indent(o).AppendLine($"typedef {type.GenerateDeclaration(ValidateIdentifier(alias.Name).Yield())};");
-    }).ValueOr(o);
+         SetGroup(o, Group.Types);
+         var type = CreateTypeInfo(alias.TargetType);
+         return Indent(o).AppendLine($"typedef {type.GenerateDeclaration(ValidateIdentifier(alias.Name).Yield())};");
+     }).ValueOr(o);
 
     StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant)
     {
@@ -373,8 +373,8 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendOperationBinary(StringBuilder o, Expression.BinaryOperation opBin)
     {
-        if (_ast.InferredTypes[opBin.Left].Map(t => t.IsConvertibleTo(EvaluatedType.String.Instance)).ValueOr(false)
-         && _ast.InferredTypes[opBin.Right].Map(t => t.IsConvertibleTo(EvaluatedType.String.Instance)).ValueOr(false)
+        if (_ast.InferredTypes[opBin.Left].IsConvertibleTo(EvaluatedType.String.Instance)
+         && _ast.InferredTypes[opBin.Right].IsConvertibleTo(EvaluatedType.String.Instance)
          && opBin.Operator is BinaryOperator.Equal or BinaryOperator.NotEqual) {
             _includes.Ensure(IncludeSet.String);
             AppendExpression(o.Append("strcmp("), opBin.Left);
@@ -442,7 +442,8 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
 
     #endregion Helpers
 
-    enum Group {
+    enum Group
+    {
         None,
         Macros,
         Types,

@@ -19,6 +19,6 @@ readonly struct OperationResult<TValue> where TValue : Value
     public IEnumerable<OperationMessage> Errors { get; }
 
     public static implicit operator OperationResult<TValue>(TValue val) => new(val, []);
-    public static implicit operator OperationResult<TValue>(OperationMessage error) => new(Value.UnknownInferred, error.Yield());
+    public static implicit operator OperationResult<TValue>(OperationMessage error) => new(EvaluatedType.Unknown.Inferred.UnknownValue, error.Yield());
     public static implicit operator OperationResult<Value>(OperationResult<TValue> other) => new(other.Value, other.Errors);
 }

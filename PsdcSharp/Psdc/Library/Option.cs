@@ -10,10 +10,6 @@ public interface Option<out T>
     bool HasValue { get; }
 
     T? Value { get; }
-
-    /// <summary>Returns an <see cref="ValueOption{T}"/> as an <see cref="Option{T}"/></summary>
-    /// <remarks>Used to circumvent implicit casting limitations.</remarks>
-    public static Option<T> Of(ValueOption<T> option) => option;
 }
 
 public interface Option<out T, out TError>
@@ -25,10 +21,6 @@ public interface Option<out T, out TError>
     bool HasValue { get; }
 
     T? Value { get; }
-
-    /// <summary>Returns an <see cref="ValueOption{T, TError}"/> as an <see cref="Option{T, TError}"/></summary>
-    /// <remarks>Used to circumvent implicit casting limitations.</remarks>
-    public static Option<T, TError> Of(ValueOption<T, TError> option) => option;
 }
 
 public readonly record struct ValueOption<T>(bool HasValue, T? Value) : Option<T>
@@ -63,9 +55,6 @@ public static class Option
 
     public static Option<T> DiscardError<T, TError>(this Option<T, TError> option)
          => new ValueOption<T>(option.HasValue, option.Value);
-
-    public static Option<TResult> Cast<T, TResult>(this Option<T> option)
-     => option.HasValue && option.Value is TResult result ? result.Some() : None<TResult>();
 
     public static Option<TResult> Bind<T, TResult>(this Option<T> option, Func<T, Option<TResult>> transform)
      => option.HasValue ? transform(option.Value) : None<TResult>();
