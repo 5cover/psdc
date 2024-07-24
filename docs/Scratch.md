@@ -1,8 +1,12 @@
 # Scratch area
 
-## LLVM target
+## Test suite
 
-## VSCode Extension
+Do they check character by character or C tokens? In other words, do they depend on formatting?
+
+## Custom formatting
+
+Output a minified version of the code and run a formatter, either from C# or external process
 
 ## Errors that go token after token
 
@@ -385,18 +389,57 @@ self-explanatory.
 
 Allow trailing commas in parameter lists, local variable lists, array subscripts.
 
-## Structure and array literals
-
-we will only support array literals for assignation of arrays. That will require a change in `EvaluatedType`.
+## Structure and array ~~literals~~ initializers
 
 First things first let's standardize the syntax and add it to the grammar.
 
-Array and structure literals follow the same syntax as brace initialization in C. They work as standalone expressions too, however, unlike in C where they can only be used as an initializer.
+Array and structure ~~literals~~ initializers follow the same syntax as brace initialization in C. ~~They work as standalone expressions too, however, unlike in C where they can only be used as an initializer.~~
 
-The main difficulty is that array and structure literal have no intrinsic type and no intrinsic value - their actual value depends on the recieving type (the type of the variable they initialize or of the parameter they are passed to)
+~~The main difficulty is that array and structure literal have no intrinsic type and no intrinsic value - their actual value depends on the recieving type (the type of the variable they initialize or of the parameter they are passed to)~~
 
-Is that so? Shouldn't we give them an intrinsic type that is implicitly convertible to the recieving type? That wouldn't work for string literals with anonymous values though.
+~~Is that so? Shouldn't we give them an intrinsic type that is implicitly convertible to the recieving type? That wouldn't work for string literals with anonymous values though.~~
 
-C restricts their usage as initializers to keep compilation fast &mdash; except we're not in th 70s anymore.
+~~C restricts their usage as initializers to keep compilation fast &mdash; except we're not in th 70s anymore.~~
 
-Soo.. maybe i should just give them placeholder type like `<struct-literal>`, and for arrays, i can give the actual type.
+~~Soo.. maybe i should just give them placeholder type like `<struct-literal>`, and for arrays, i can give the actual type.~~
+
+### Array
+
+~~What is the value of an array literal? Does it have a value of its own?~~
+
+~~We can take the mode of the types of its elements and fail for any element whose type is not implicitly convertible to it.~~
+
+~~So `{1, 2, 3.4}` has a type of `tableau[3] de entier` and the `3.4` raises an error.~~
+
+~~But this is confusing. What if we have `{1, 2.5}`? Then `réel` and `entier` are both valid element types. This is invalid code, so there will be an error in either case~~
+
+### Strucutre
+
+We definitely need context here because otherwise, undesignated values have no meaning. Whiat is `{'a', 2, "str"}`?
+
+Unless we create an implicit struct type and make struct types implicitly convertible when they have the same components types in the same order, regardless of names.
+
+Or maybe we only allow this conversion for implicit structs (meaning a new `EvaluatedType` subclass), so crazy things like
+
+```psc
+point : structure début
+    x, y : réel;
+fin;
+
+rect : structure début
+    l, L : réel:
+fin;
+
+point := {5, 6};
+rect := point; // Dear god...
+```
+
+~~Sooo, we'll have an `EvaluatedType.ImplicitStruct` class, and we'll use the existing implicit conversion facilities to convert them to struct as needed.~~
+
+---
+
+I'm starting to think it would be better to keep it as initializers only. It will remove a lot of confusion, result in less fragile code, and avoid crossing the boundaris of what may not be allowed in a DS. Keep the parallel with C since it will be the main target language.
+
+We might add suport for [compound literals](https://en.cppreference.com/w/c/language/compound_literal) in the future
+
+Change the FG so it only supports structure and array initializers.

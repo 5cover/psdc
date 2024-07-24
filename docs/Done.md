@@ -8,12 +8,12 @@ There are 3 possible outcomes of a parsing method:
 - Light failure : return the failed result, keep going
 - Critical failure : return the failed result, switch to the failure implementation
 
-The failure either has to go to a place and only one place, either in the out ParseResult parameter, or in the return value.
+The failure either has to go to a place and only one place, either in the out `ParseResult` parameter, or in the return value.
 We should make failures "light" as much as possible.
 
-So for `ParseToken(TokenType type, out ParseResult<string> value)`, we will never return an ErroneousOperation and failure will be indicated by assigning value to a failed ParseResult.
+So for `ParseToken(TokenType type, out ParseResult<string> value)`, we will never return an `ErroneousOperation` and failure will be indicated by assigning value to a failed ParseResult.
 
-But for `ParseToken(TokenType type)`, we don't have anywhere else for the value to go so we return an ErroneousOperation as we currenlty do.
+But for `ParseToken(TokenType type)`, we don't have anywhere else for the value to go so we return an `ErroneousOperation` as we currenlty do.
 
 ## Multiple possibilities in parsing
 
@@ -27,7 +27,7 @@ Currently, we do this for
 
 There is also an alternative for parsing expressions, but we're using a different method:
 
-We're calling the ParseResult.Else() extension method to try each alternative until one succeeds
+We're calling the `ParseResult.Else` extension method to try each alternative until one succeeds
 
 This method combines the errors that occur.
 
@@ -96,7 +96,7 @@ CompleteType --> StringLengthed
 CompleteType --> Structure
 ```
 
-When we need a Type, we will first parse a CompleteType (since it can do more than an incomplete type), which includes CompleteTypeAliasReference. It that fails, we will `.Else()` to TypeAliasReference and lastly String.
+When we need a Type, we will first parse a `CompleteType` (since it can do more than an incomplete type), which includes `CompleteTypeAliasReference`. It that fails, we will `.Else()` to `TypeAliasReference` and lastly `String`.
 
 ## For loops
 
@@ -117,7 +117,7 @@ Solution 3 : require *step* to be a compile-time constant so we can choose to ei
 
 Rule for what belongs in a parse result:
 
-Don't ParseResult collections, parse result the element type. Having collection properties basically means that we have a variadic node.
+Don't `ParseResult` collections, parse result the element type. Having collection properties basically means that we have a variadic node.
 
 No parse result if the node can't exist without it such as when
 
@@ -199,7 +199,7 @@ Remaining Elses to eliminate
 
 ## Map operator types
 
-Right now operators in bin and unary expressions are TokenType. This makes no sense.
+Right now operators in bin and unary expressions are `TokenType`. This makes no sense.
 
 ## Symbol table tree
 
@@ -241,7 +241,7 @@ Now in static analysis we can populate these symbol tables and consume them in t
 
 ## ~~Node~~ Symbol equality
 
-Node equality doesn't depend on SourceTokens.
+Node equality doesn't depend on `SourceTokens`.
 
 actually we didn't need it, we need **Symbol Equality** (which need Node.Expression equality so it's ok)
 
