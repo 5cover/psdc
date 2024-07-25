@@ -120,7 +120,7 @@ public abstract class TokenType
          => instances.Add(this);
 
         public static Operator Assignment { get; } = new(":=");
-        public static Operator ComponentAccess { get; } = new(".");
+        public static Operator Dot { get; } = new(".");
         public static IReadOnlyCollection<Operator> Instances => instances;
         public static Operator TypeAssignment { get; } = new("=");
 

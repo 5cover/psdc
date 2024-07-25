@@ -50,7 +50,7 @@ partial class Parser
     readonly IReadOnlyDictionary<TokenType, Parser<Expression>> _literalParsers;
     delegate ParseResult<TRight> RightParser<in TLeft, out TRight>(TLeft left, IEnumerable<Token> rightTokens);
 
-    static Parser<T> ParseBinary<T>(
+    static Parser<T> ParserBinary<T>(
         Parser<T> leftParser,
         Dictionary<TokenType, RightParser<T, T>> rightParsers)
      => tokens => {
@@ -66,7 +66,7 @@ partial class Parser
          return result.WithSourceTokens(new(tokens, count));
      };
 
-    static Parser<TRight> ParseBinaryAtLeast1<TLeft, TRight>(
+    static Parser<TRight> ParserBinaryAtLeast1<TLeft, TRight>(
         string production,
         Parser<TLeft> leftParser,
         Dictionary<TokenType, RightParser<TLeft, TRight>> rightParsers)
@@ -98,7 +98,7 @@ partial class Parser
          return result.WithSourceTokens(new(tokens, count));
      };
 
-    static Parser<Expression> ParseBinaryOperation(
+    static Parser<Expression> ParserBinaryOperation(
         IReadOnlyDictionary<TokenType, BinaryOperator> operators,
         Parser<Expression> descentParser)
      => tokens => {
@@ -119,7 +119,7 @@ partial class Parser
          return result;
      };
 
-    static Parser<Expression> ParseUnaryOperation(
+    static Parser<Expression> ParserUnaryOperation(
         IReadOnlyDictionary<TokenType, UnaryOperator> operators,
         Parser<Expression> descentParser)
      => tokens => {
@@ -169,19 +169,21 @@ partial class Parser
         .ParseToken(Punctuation.CloseBracket)
     .MapResult(t => new Expression.BuiltinFdf(t, argNomLog));
 
+    private Parser<Expression>? _expressionParser;
     ParseResult<Expression> ParseExpression(IEnumerable<Token> tokens)
-     => ParseBinaryOperation(operatorsOr,
-        ParseBinaryOperation(operatorsAnd,
-        ParseBinaryOperation(operatorsXor,
-        ParseBinaryOperation(operatorsEquality,
-        ParseBinaryOperation(operatorsComparison,
-        ParseBinaryOperation(operatorsAddSub,
-        ParseBinaryOperation(operatorsMulDivMod,
-        ParseUnaryOperation(operatorsUnary,
-        ParseBinary(ParseTerminalRvalue, new() {
+     => (_expressionParser ??=
+        ParserBinaryOperation(operatorsOr,
+        ParserBinaryOperation(operatorsAnd,
+        ParserBinaryOperation(operatorsXor,
+        ParserBinaryOperation(operatorsEquality,
+        ParserBinaryOperation(operatorsComparison,
+        ParserBinaryOperation(operatorsAddSub,
+        ParserBinaryOperation(operatorsMulDivMod,
+        ParserUnaryOperation(operatorsUnary,
+        ParserBinary(ParseTerminalRvalue, new() {
             [Punctuation.OpenSquareBracket] = RightParseArraySubscript,
-            [Operator.ComponentAccess] = RightParseComponentAccess,
-        })))))))))(tokens);
+            [Operator.Dot] = RightParseComponentAccess,
+        }))))))))))(tokens);
 
     ParseResult<Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "function call")
@@ -191,27 +193,70 @@ partial class Parser
     .MapResult(t => new Expression.FunctionCall(t, name, parameters));
 
     ParseResult<Expression.Lvalue> ParseLvalue(IEnumerable<Token> tokens)
-     => ParseFirst(ParseBinaryAtLeast1<Expression, Expression.Lvalue>("lvalue", ParseTerminalRvalue, new() {
+     => ParserFirst(ParserBinaryAtLeast1<Expression, Expression.Lvalue>("lvalue", ParseTerminalRvalue, new() {
          [Punctuation.OpenSquareBracket] = RightParseArraySubscript,
-         [Operator.ComponentAccess] = RightParseComponentAccess,
+         [Operator.Dot] = RightParseComponentAccess,
      }), ParseTerminalLvalue)(tokens);
 
     ParseResult<Expression.Lvalue> ParseTerminalLvalue(IEnumerable<Token> tokens)
-     => ParseFirst(
+     => ParserFirst(
             t => ParseIdentifier(tokens)
                 .Map((t, name) => new Expression.Lvalue.VariableReference(t, name)),
             ParseBracketedLvalue)(tokens);
 
     ParseResult<Expression> ParseTerminalRvalue(IEnumerable<Token> tokens)
-     => ParseFirst(
+     => ParserFirst(
             t => ParseByTokenType(t, "literal", _literalParsers),
+            ParseArrayLiteral,
+            ParseStructureLiteral,
             ParseFunctionCall,
             ParseTerminalLvalue,
             ParseBracketed,
             ParseBuiltinFdf)(tokens);
 
+    ParseResult<Expression> ParseArrayLiteral(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_msger, tokens, "array literal")
+        .ParseToken(Punctuation.OpenBrace)
+        .ParseZeroOrMoreSeparated(out var values, (tokens)
+            => ParseOperation.Start(_msger, tokens, "array literal value")
+                .ParseOptional(out var designator, tokens => ParseOperation.Start(_msger, tokens, "array literal designator")
+                    .Parse(out var first, ParseArrayDesignator)
+                    .ParseZeroOrMoreUntilToken(out var others, ParseDesignator, Operator.Equal)
+            .MapResult(t => (first, others)))
+            .Parse(out var expression, ParseExpression)
+        .MapResult(t => (designator, expression)), Punctuation.Comma, Punctuation.CloseBrace)
+    .MapResult(t => new Expression.BracedLiteral<Designator.Array>(t, values));
+
+    ParseResult<Expression> ParseStructureLiteral(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_msger, tokens, "structure literal")
+        .ParseToken(Punctuation.OpenBrace)
+        .ParseZeroOrMoreSeparated(out var values, (tokens)
+            => ParseOperation.Start(_msger, tokens, "structure literal value")
+                .ParseOptional(out var designator, tokens => ParseOperation.Start(_msger, tokens, "structure literal designator")
+                    .Parse(out var first, ParseStructureDesignator)
+                    .ParseZeroOrMoreUntilToken(out var others, ParseDesignator, Operator.Equal)
+            .MapResult(t => (first, others)))
+            .Parse(out var expression, ParseExpression)
+        .MapResult(t => (designator, expression)), Punctuation.Comma, Punctuation.CloseBrace)
+    .MapResult(t => new Expression.BracedLiteral<Designator.Structure>(t, values));
+
+    ParseResult<Designator> ParseDesignator(IEnumerable<Token> tokens)
+     => ParserFirst<Designator>(ParseArrayDesignator, ParseStructureDesignator)(tokens);
+
+    ParseResult<Designator.Array> ParseArrayDesignator(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_msger, tokens, "array designator")
+        .ParseToken(Punctuation.OpenSquareBracket)
+        .ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma, Punctuation.CloseSquareBracket)
+        .MapResult(t => new Designator.Array(t, indexes));
+
+    ParseResult<Designator.Structure> ParseStructureDesignator(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_msger, tokens, "structure designator")
+        .ParseToken(Operator.Dot)
+        .Parse(out var component, ParseIdentifier)
+        .MapResult(t => new Designator.Structure(t, component));
+
     ParseResult<Expression.Lvalue> RightParseArraySubscript(
-                        Expression expr,
+        Expression expr,
         IEnumerable<Token> rightTokens)
      => ParseOperation.Start(_msger, rightTokens, "array subscript")
         .ParseOneOrMoreSeparated(out var indexes, ParseExpression,

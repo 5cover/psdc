@@ -583,6 +583,25 @@ public interface Node : EquatableSemantics<Node>
              && o.Value.Equals(Value);
         }
 
+        internal sealed class BracedLiteral<TLeadingDesignator>(SourceTokens sourceTokens,
+            IReadOnlyList<(Option<(TLeadingDesignator, IReadOnlyList<Designator>)>, Expression)> values)
+        : NodeImpl(sourceTokens), Expression
+        where TLeadingDesignator : Designator
+        {
+            public IReadOnlyList<(
+                Option<(
+                    TLeadingDesignator First,
+                    IReadOnlyList<Designator> Others)> Designator,
+                Expression Expression)> Values => values;
+
+            public override bool SemanticsEqual(Node other) => other is BracedLiteral<TLeadingDesignator> o
+             && o.Values.AllZipped(Values, (ov, v)
+                => ov.Designator.IsEqualTo(v.Designator, (ovd, vd)
+                    => ovd.First.SemanticsEqual(vd.First)
+                    && ovd.Others.AllSemanticsEqual(vd.Others))
+                && ov.Expression.Equals(v.Expression));
+        }
+
         internal interface Literal : Expression
         {
             IConvertible Value { get; }
@@ -623,6 +642,25 @@ public interface Node : EquatableSemantics<Node>
             internal sealed class String(SourceTokens sourceTokens,
                 string value)
             : Literal<EvaluatedType.LengthedString, EvaluatedType.LengthedString.Value, string>(sourceTokens, EvaluatedType.LengthedString.Create(value.Length), value);
+        }
+    }
+
+    internal interface Designator : Node
+    {
+        internal sealed class Array(SourceTokens sourceTokens, IReadOnlyList<Expression> indexes) : NodeImpl(sourceTokens), Designator
+        {
+            public IReadOnlyList<Expression> Indexes => indexes;
+
+            public override bool SemanticsEqual(Node other) => other is Array o
+             && o.Indexes.AllSemanticsEqual(Indexes);
+        }
+
+        internal sealed class Structure(SourceTokens sourceTokens, Identifier component) : NodeImpl(sourceTokens), Designator
+        {
+            public Identifier Component => component;
+
+            public override bool SemanticsEqual(Node other) => other is Structure o
+             && o.Component.SemanticsEqual(Component);
         }
     }
 

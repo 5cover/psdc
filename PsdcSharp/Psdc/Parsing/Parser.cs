@@ -29,7 +29,7 @@ public sealed partial class Parser
         };
 
         _statementParsers = new Dictionary<TokenType, Parser<Statement>>() {
-            [Valued.Identifier] = ParseFirst(ParseAssignment, ParserVariableDeclarationOrProcedureCall),
+            [Valued.Identifier] = ParserFirst(ParseAssignment, ParserVariableDeclarationOrProcedureCall),
             [Keyword.Do] = ParseDoWhileLoop,
             [Keyword.For] = ParseForLoop,
             [Keyword.If] = ParseAlternative,
@@ -41,14 +41,14 @@ public sealed partial class Parser
         };
 
         _completeTypeParsers = new Dictionary<TokenType, Parser<Type.Complete>> {
-            [Keyword.Integer] = MakeAlwaysOkParser(1, t => new Type.Complete.Integer(t)),
-            [Keyword.Real] = MakeAlwaysOkParser(1, t => new Type.Complete.Real(t)),
-            [Keyword.Character] = MakeAlwaysOkParser(1, t => new Type.Complete.Character(t)),
-            [Keyword.Boolean] = MakeAlwaysOkParser(1, t => new Type.Complete.Boolean(t)),
-            [Keyword.File] = MakeAlwaysOkParser(1, t => new Type.Complete.File(t)),
+            [Keyword.Integer] = ParserAlwaysOk(1, t => new Type.Complete.Integer(t)),
+            [Keyword.Real] = ParserAlwaysOk(1, t => new Type.Complete.Real(t)),
+            [Keyword.Character] = ParserAlwaysOk(1, t => new Type.Complete.Character(t)),
+            [Keyword.Boolean] = ParserAlwaysOk(1, t => new Type.Complete.Boolean(t)),
+            [Keyword.File] = ParserAlwaysOk(1, t => new Type.Complete.File(t)),
             [Keyword.String] = ParseTypeLengthedString,
             [Keyword.Array] = ParseTypeArray,
-            [Valued.Identifier] = MakeAlwaysOkParser((t, val) => new Type.Complete.AliasReference(t, new(t, val))),
+            [Valued.Identifier] = ParserAlwaysOk((t, val) => new Type.Complete.AliasReference(t, new(t, val))),
             [Keyword.Structure] = ParseTypeStructure,
         };
 
@@ -91,7 +91,7 @@ public sealed partial class Parser
         .MapResult(t => new Algorithm(t, name, declarations));
 
     ParseResult<Type> ParseType(IEnumerable<Token> tokens)
-     => ParseFirst<Type>(ParseTypeComplete, ParseTypeAliasReference, ParseTypeString)(tokens);
+     => ParserFirst<Type>(ParseTypeComplete, ParseTypeAliasReference, ParseTypeString)(tokens);
 
     #region Declarations
 
@@ -254,7 +254,7 @@ public sealed partial class Parser
     ParseResult<Statement.ForLoop> ParseForLoop(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "for loop")
         .ParseToken(Keyword.For)
-        .Parse(out var head, ParseFirst(
+        .Parse(out var head, ParserFirst(
             t => ParseOperation.Start(_msger, t, "for loop")
                 .Parse(out var variant, ParseLvalue)
                 .ParseToken(Keyword.From)

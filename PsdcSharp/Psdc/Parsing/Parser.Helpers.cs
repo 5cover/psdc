@@ -12,10 +12,10 @@ partial class Parser
             : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.ForProduction(production, firstToken, map.Keys));
     }
 
-    static Parser<T> MakeAlwaysOkParser<T>(int tokenCount, Func<SourceTokens, T> makeNode) where T : Node
+    static Parser<T> ParserAlwaysOk<T>(int tokenCount, Func<SourceTokens, T> makeNode) where T : Node
          => tokens => ParseResult.Ok(makeNode(new(tokens, tokenCount)));
 
-    static Parser<T> MakeAlwaysOkParser<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
+    static Parser<T> ParserAlwaysOk<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
          => tokens => ParseResult.Ok(makeNodeWithValue(new(tokens, 1), tokens.First().Value.NotNull()));
 
     static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, Parser<T>? fallback = null)
@@ -37,7 +37,7 @@ partial class Parser
     /// <param name="parsers">The other parsers.</param>
     /// <returns>The result of the first successful parsers or the error of all parsers combined.</returns>
     /// <remarks>Parsers should be ordered by decreasing length for maximum munch.</remakrs>
-    static Parser<T> ParseFirst<T>(Parser<T> firstParser, params Parser<T>[] parsers)
+    static Parser<T> ParserFirst<T>(Parser<T> firstParser, params Parser<T>[] parsers)
      => tokens => {
          var result = firstParser(tokens);
          var enumParser = parsers.GetGenericEnumerator();

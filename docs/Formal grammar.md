@@ -209,24 +209,6 @@ $$
         LiteralInteger\\
         LiteralReal\\
         LiteralString\\
-        ⟨LiteralStructure⟩ \to \text{\{}
-            \begin{pmatrix}
-                \begin{pmatrix}
-                    ⟨Component⟩
-                    ⟨Designator⟩
-                \end{pmatrix}^?
-                ⟨Expr⟩
-            \end{pmatrix}^{*\#}
-        \text{,}^? \text{\}}\\
-        ⟨LiteralArray⟩ \to \text{\{}
-            \begin{pmatrix}
-                \begin{pmatrix}
-                    ⟨Index⟩
-                    ⟨Designator⟩
-                \end{pmatrix}^?
-                ⟨Expr⟩
-            \end{pmatrix}^{*\#}
-        \text{,}^? \text{\}}\\
         \text{vrai}\\
         \text{faux}\\
     \end{Bmatrix*}
