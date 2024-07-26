@@ -298,10 +298,37 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
     }
 
     StringBuilder AppendVariableDeclaration(StringBuilder o, Statement.LocalVariable varDecl, ReadOnlyScope scope)
-     => scope.GetSymbol<Symbol.Variable>(varDecl.Names.First()).Map(variable => {
+     => scope.GetSymbol<Symbol.Variable>(varDecl.Binding.Names.First()).Map(variable => {
          Indent(o);
-         return AppendVariableDeclaration(o, CreateTypeInfo(variable.Type), varDecl.Names).AppendLine(";");
+         AppendVariableDeclaration(o, CreateTypeInfo(variable.Type), varDecl.Binding.Names);
+         varDecl.Initializer.MatchSome(init => AppendInitializer(o.Append(" = "), init));
+         return o.AppendLine(";");
      }).ValueOr(o);
+
+    StringBuilder AppendInitializer(StringBuilder o, Initializer initializer) => initializer switch {
+        Expression expr => AppendExpression(o, expr),
+        Initializer.Braced<Designator.Array> array => AppendArrayInitializer(o, array),
+        Initializer.Braced<Designator.Structure> array => AppendStructureInitializer(o, array),
+        _ => throw initializer.ToUnmatchedException(),
+    };
+
+    StringBuilder AppendArrayInitializer(StringBuilder o, Initializer.Braced<Designator.Array> array)
+    {
+        o.Append("{ ");
+        foreach (var value in array.Values) {
+            value.Designator.MatchSome(d => AppendIndex(o, d.Index).Append(" = "));
+            AppendInitializer(o, value.Initializer);
+            o.Append(", ");
+        }
+        return o.Append('}');
+    }
+
+    StringBuilder AppendStructureInitializer(StringBuilder o, Initializer.Braced<Designator.Structure> structure)
+    {
+        o.Append("{ ");
+        // todo: implement
+        return o.Append('}');
+    }
 
     StringBuilder AppendVariableDeclaration(StringBuilder o, TypeInfo type, IEnumerable<Identifier> names)
     {
@@ -325,13 +352,17 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
     StringBuilder AppendArraySubscript(StringBuilder o, Expression.Lvalue.ArraySubscript arrSub)
     {
         AppendExpression(o, arrSub.Array, ShouldBracket(arrSub));
+        AppendIndex(o, arrSub.Index);
+        return o;
+    }
 
-        foreach (Expression index in arrSub.Indexes) {
-            var (expression, messages) = index.Alter(BinaryOperator.Subtract, 1);
+    StringBuilder AppendIndex(StringBuilder o, IReadOnlyList<Expression> index)
+    {
+        foreach (Expression i in index) {
+            var (expression, messages) = i.Alter(BinaryOperator.Subtract, 1);
             _msger.ReportAll(messages);
             AppendExpression(o.Append('['), expression).Append(']');
         }
-
         return o;
     }
 
@@ -373,8 +404,8 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendOperationBinary(StringBuilder o, Expression.BinaryOperation opBin)
     {
-        if (_ast.InferredTypes[opBin.Left].IsConvertibleTo(EvaluatedType.String.Instance)
-         && _ast.InferredTypes[opBin.Right].IsConvertibleTo(EvaluatedType.String.Instance)
+        if (_ast.InferredTypes[opBin.Left].IsConvertibleTo(StringType.Instance)
+         && _ast.InferredTypes[opBin.Right].IsConvertibleTo(StringType.Instance)
          && opBin.Operator is BinaryOperator.Equal or BinaryOperator.NotEqual) {
             _includes.Ensure(IncludeSet.String);
             AppendExpression(o.Append("strcmp("), opBin.Left);

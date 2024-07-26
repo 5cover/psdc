@@ -307,8 +307,13 @@ public sealed partial class Parser
     ParseResult<Statement> ParserVariableDeclarationOrProcedureCall(IEnumerable<Token> tokens)
     {
         (ParseOperation, ResultCreator<Statement.LocalVariable>) FinishVariableDeclaration(ParseOperation o, IEnumerable<Identifier> names)
-         => (o.Parse(out var type, ParseTypeComplete),
-             t => new Statement.LocalVariable(t, names.ToList(), type));
+         => (o.Parse(out var type, ParseTypeComplete)
+             .GetIntermediateResult(out var binding, t => new NameTypeBinding(t, names.ToList(), type))
+             .ParseOptional(out var initializer, (tokens) => ParseOperation.Start(_msger, tokens, "initializer")
+                .ParseToken(Operator.Assignment)
+                .Parse(out var initializer, ParseInitializer)
+                .MapResult(t => initializer)),
+             t => new Statement.LocalVariable(t, binding, initializer));
 
         return ParseOperation.Start(_msger, tokens, "variable declaration or procedure call")
         .Parse(out var ident, ParseIdentifier)
@@ -327,7 +332,7 @@ public sealed partial class Parser
     }
 
     ParseResult<Statement> ParseStatement(IEnumerable<Token> tokens)
-                                         => ParseByTokenType(tokens, "statement", _statementParsers, ParseBuiltin);
+     => ParseByTokenType(tokens, "statement", _statementParsers, ParseBuiltin);
 
     ParseResult<Statement.Switch> ParseSwitch(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "switch statement")
@@ -353,12 +358,11 @@ public sealed partial class Parser
         .ParseToken(Keyword.EndSwitch)
     .MapResult(t => new Statement.Switch(t, expression, cases, @default));
 
-    ParseResult<Statement.LocalVariable> ParseVariableDeclaration(IEnumerable<Token> tokens)
-         => ParseOperation.Start(_msger, tokens, "variable declaration")
+    ParseResult<NameTypeBinding> ParseNameTypeBinding(IEnumerable<Token> tokens)
+         => ParseOperation.Start(_msger, tokens, "name(s)->type binding")
         .ParseOneOrMoreSeparated(out var names, ParseIdentifier, Punctuation.Comma, Punctuation.Colon)
         .Parse(out var type, ParseTypeComplete)
-        .ParseToken(Punctuation.Semicolon)
-    .MapResult(t => new Statement.LocalVariable(t, names, type));
+    .MapResult(t => new NameTypeBinding(t, names, type));
 
     ParseResult<Statement.WhileLoop> ParseWhileLoop(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "while loop")
@@ -407,7 +411,11 @@ public sealed partial class Parser
      => ParseOperation.Start(_msger, tokens, "structure type")
         .ParseToken(Keyword.Structure)
         .ParseToken(Keyword.Begin)
-        .ParseZeroOrMoreUntilToken(out var components, ParseVariableDeclaration, Keyword.End)
+        .ParseZeroOrMoreUntilToken(out var components, (tokens)
+            => ParseOperation.Start(_msger, tokens, "component")
+                .Parse(out var binding, ParseNameTypeBinding)
+                .ParseToken(Punctuation.Semicolon)
+            .MapResult(t => binding), Keyword.End) // the binding won't have the same source tokens as its parseresult
         .ParseToken(Keyword.End)
     .MapResult(t => new Type.Complete.Structure(t, components));
 
@@ -428,6 +436,46 @@ public sealed partial class Parser
         .ParseToken(Punctuation.Colon)
         .Parse(out var type, ParseType)
     .MapResult(t => new ParameterFormal(t, mode, name, type));
+
+    ParseResult<Initializer> ParseInitializer(IEnumerable<Token> tokens) => ParseOperation.Start(_msger, tokens, "initializer")
+        .Parse(out var initializer, ParserFirst(ParseArrayInitializer, ParseStructureInitializer, ParseExpression))
+        .MapResult(t => initializer);
+
+    ParseResult<Initializer> ParseArrayInitializer(IEnumerable<Token> tokens)
+         => ParseOperation.Start(_msger, tokens, "array initializer")
+            .ParseToken(Punctuation.OpenBrace)
+            .ParseZeroOrMoreSeparated(out var values, (tokens)
+                => ParseOperation.Start(_msger, tokens, "array initializer value")
+                .ParseOptional(out var designator, ParseArrayDesignator)
+                .Parse(out var value, ParseInitializer)
+            .MapResult(t => new Initializer.Braced<Designator.Array>.Value(t, designator, value)),
+            Punctuation.Comma, Punctuation.CloseBrace)
+        .MapResult(t => new Initializer.Braced<Designator.Array>(t, values));
+
+    ParseResult<Initializer> ParseStructureInitializer(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_msger, tokens, "structure initializer")
+        .ParseToken(Punctuation.OpenBrace)
+        .ParseZeroOrMoreSeparated(out var values, (tokens)
+            => ParseOperation.Start(_msger, tokens, "structure initializer value")
+                .ParseOptional(out var designator, ParseStructureDesignator)
+            .Parse(out var value, ParseInitializer)
+        .MapResult(t => new Initializer.Braced<Designator.Structure>.Value(t, designator, value)),
+        Punctuation.Comma, Punctuation.CloseBrace)
+    .MapResult(t => new Initializer.Braced<Designator.Structure>(t, values));
+
+    ParseResult<Designator.Array> ParseArrayDesignator(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_msger, tokens, "array designator")
+        .ParseToken(Punctuation.OpenSquareBracket)
+        .ParseOneOrMoreSeparated(out var indexes, ParseExpression, Punctuation.Comma, Punctuation.CloseSquareBracket)
+        .ParseToken(Operator.Assignment)
+        .MapResult(t => new Designator.Array(t, indexes));
+
+    ParseResult<Designator.Structure> ParseStructureDesignator(IEnumerable<Token> tokens)
+     => ParseOperation.Start(_msger, tokens, "structure designator")
+        .ParseToken(Operator.Dot)
+        .Parse(out var component, ParseIdentifier)
+        .ParseToken(Operator.Assignment)
+        .MapResult(t => new Designator.Structure(t, component));
 
     #endregion Other
 

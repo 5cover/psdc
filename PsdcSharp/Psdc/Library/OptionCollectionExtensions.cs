@@ -47,19 +47,6 @@ static class OptionCollectionExtensions
         return Option.None<T>();
     }
 
-    public static Option<T> FirstOrNone<T>(this IEnumerable<Option<T>> source, Func<Option<T>, bool> predicate)
-     => source.FirstOrDefault(predicate, Option.None<T>());
-
-    public static Option<T> FirstOrNone<T>(this IEnumerable<T> source, Func<T, bool> predicate)
-    {
-        foreach (var element in source) {
-            if (predicate(element)) {
-                return element.Some();
-            }
-        }
-        return Option.None<T>();
-    }
-
     public static Option<T> FirstOrNone<T>(this IEnumerable<T> source)
     {
         if (source is IReadOnlyList<T> list) {
@@ -70,16 +57,6 @@ static class OptionCollectionExtensions
             using var enumerator = source.GetEnumerator();
             if (enumerator.MoveNext()) {
                 return enumerator.Current.Some();
-            }
-        }
-        return Option.None<T>();
-    }
-
-    public static Option<T> FirstSome<T>(this IEnumerable<Option<T>> source)
-    {
-        foreach (var item in source) {
-            if (item.HasValue) {
-                return item;
             }
         }
         return Option.None<T>();

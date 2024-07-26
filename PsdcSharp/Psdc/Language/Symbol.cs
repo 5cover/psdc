@@ -2,36 +2,42 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Language;
 
-interface CallableSymbol : Symbol
-{
-    public bool HasBeenDefined { get; }
-    public IReadOnlyCollection<Parameter> Parameters { get; }
-
-    public void MarkAsDefined();
-}
-
 interface Symbol : EquatableSemantics<Symbol>
 {
     public Identifier Name { get; }
     public SourceTokens SourceTokens { get; }
 
-    internal record Variable(Identifier Name, SourceTokens SourceTokens,
-        EvaluatedType Type)
-    : Symbol
+    internal interface NameTypeBinding : Symbol
     {
-        public virtual bool SemanticsEqual(Symbol other) => other is Variable o
+        EvaluatedType Type { get; }
+    }
+
+    interface Callable : Symbol
+    {
+        public bool HasBeenDefined { get; }
+        public IReadOnlyCollection<Parameter> Parameters { get; }
+
+        public void MarkAsDefined();
+    }
+
+    internal sealed record Variable(Identifier Name, SourceTokens SourceTokens,
+        EvaluatedType Type, Option<Value> Initializer)
+    : NameTypeBinding
+    {
+        public bool SemanticsEqual(Symbol other) => other is Variable o
          && o.Name.SemanticsEqual(Name)
-         && o.Type.SemanticsEqual(Type);
+         && o.Type.SemanticsEqual(Type)
+         && o.Initializer.OptionSemanticsEqual(Initializer);
     }
 
     internal sealed record Constant(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type, Value Value)
-    : Variable(Name, SourceTokens, Type)
+    : NameTypeBinding
     {
-        public override bool SemanticsEqual(Symbol other) => other is Constant o
+        public bool SemanticsEqual(Symbol other) => other is Constant o
+         && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type)
-         && o.Value.SemanticsEqual(Value)
-         && base.SemanticsEqual(other);
+         && o.Value.SemanticsEqual(Value);
     }
 
     internal sealed record TypeAlias(Identifier Name, SourceTokens SourceTokens,
@@ -45,7 +51,7 @@ interface Symbol : EquatableSemantics<Symbol>
 
     internal sealed record Procedure(Identifier Name, SourceTokens SourceTokens,
         IReadOnlyCollection<Parameter> Parameters)
-    : CallableSymbol
+    : Callable
     {
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
@@ -57,7 +63,7 @@ interface Symbol : EquatableSemantics<Symbol>
     internal sealed record Function(Identifier Name, SourceTokens SourceTokens,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType)
-    : CallableSymbol
+    : Callable
     {
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
@@ -70,16 +76,18 @@ interface Symbol : EquatableSemantics<Symbol>
     internal sealed record Parameter(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type,
         ParameterMode Mode)
-    : Variable(Name, SourceTokens, Type)
+    : NameTypeBinding
     {
-        public override bool SemanticsEqual(Symbol other) => other is Parameter o
+        public bool SemanticsEqual(Symbol other) => other is Parameter o
+         && o.Name.SemanticsEqual(Name)
+         && o.Type.SemanticsEqual(Type)
          && o.Mode == Mode;
     }
 }
 
 static class SymbolExtensions
 {
-    static readonly Dictionary<System.Type, string> symbolKinds = new() {
+    static readonly Dictionary<Type, string> symbolKinds = new() {
         [typeof(Symbol.Constant)] = "constant",
         [typeof(Symbol.Function)] = "function",
         [typeof(Symbol.Parameter)] = "parameter",

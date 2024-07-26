@@ -11,5 +11,9 @@ début
     notes[19] := 19.99;
     notes[20] := 0;
 
+    notes2 : tNotes := {
+        2,
+    };
+
     écrireEcran(notes[20]);
 fin

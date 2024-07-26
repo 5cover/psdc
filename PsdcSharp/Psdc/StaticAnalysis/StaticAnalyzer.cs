@@ -1,7 +1,6 @@
 using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
-
 using static Scover.Psdc.Parsing.Node;
 using Type = Scover.Psdc.Parsing.Node.Type;
 
@@ -11,12 +10,12 @@ public sealed partial class StaticAnalyzer
 {
     readonly Dictionary<Expression, EvaluatedType> _inferredTypes = [];
     readonly Dictionary<NodeScoped, Scope> _scopes = [];
-    readonly Messenger _messenger;
+    readonly Messenger _msger;
 
     bool _seenMainProgram;
     ValueOption<Symbol.Function> _currentFunction;
 
-    StaticAnalyzer(Messenger messenger) => _messenger = messenger;
+    StaticAnalyzer(Messenger messenger) => _msger = messenger;
 
     public static SemanticAst Analyze(Messenger messenger, Algorithm root)
     {
@@ -38,12 +37,12 @@ public sealed partial class StaticAnalyzer
     {
         foreach (var param in parameters) {
             if (!scope.TryAdd(param, out var existingSymbol)) {
-                _messenger.Report(Message.ErrorRedefinedSymbol(param, existingSymbol));
+                _msger.Report(Message.ErrorRedefinedSymbol(param, existingSymbol));
             }
         }
     }
 
-    void AnalyzeCallableDefinition<T>(Scope scope, BlockNode node, T sub) where T : CallableSymbol, IEquatable<T?>
+    void AnalyzeCallableDefinition<T>(Scope scope, BlockNode node, T sub) where T : Symbol.Callable, IEquatable<T?>
     {
         HandleCallableDefinition(scope, sub);
         AddParameters(_scopes[node], sub.Parameters);
@@ -57,7 +56,7 @@ public sealed partial class StaticAnalyzer
 
         switch (decl) {
         case Declaration.TypeAlias alias:
-            scope.AddSymbolOrError(_messenger, new Symbol.TypeAlias(alias.Name, alias.SourceTokens,
+            scope.AddSymbolOrError(_msger, new Symbol.TypeAlias(alias.Name, alias.SourceTokens,
                 EvaluateType(scope, alias.Type)));
             break;
 
@@ -65,20 +64,20 @@ public sealed partial class StaticAnalyzer
             var value = AnalyzeExpression(scope, constant.Value);
             var declaredType = EvaluateType(scope, constant.Type);
 
-            if (!value.IsKnown) {
-                _messenger.Report(Message.ErrorConstantExpressionExpected(constant.Value.SourceTokens));
+            if (value.Value is not ValueStatus.Comptime) {
+                _msger.Report(Message.ErrorConstantExpressionExpected(constant.Value.SourceTokens));
             }
 
             if (!value.Type.IsConvertibleTo(declaredType)) {
-                _messenger.Report(Message.ErrorExpressionHasWrongType(
+                _msger.Report(Message.ErrorExpressionHasWrongType(
                     constant.Value.SourceTokens, declaredType, value.Type));
 
                 // if the provided value wasn't of the right type, use a non-const value of the declared type.
                 // the constant is still added to the scope.
-                value = declaredType.UnknownValue;
+                value = declaredType.UninitializedValue;
             }
 
-            scope.AddSymbolOrError(_messenger,
+            scope.AddSymbolOrError(_msger,
                 new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, value));
 
             break;
@@ -104,7 +103,7 @@ public sealed partial class StaticAnalyzer
         }
         case Declaration.MainProgram mainProgram:
             if (_seenMainProgram) {
-                _messenger.Report(Message.ErrorRedefinedMainProgram(mainProgram));
+                _msger.Report(Message.ErrorRedefinedMainProgram(mainProgram));
             }
             _seenMainProgram = true;
             AnalyzeScopedBlock(mainProgram);
@@ -129,24 +128,71 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, TypeEquivalencePredicate typesPredicate, Option<EvaluatedType> expectedType)
+    delegate bool TypeComparer(EvaluatedType actual, EvaluatedType expected);
+
+    Value AnalyzeInitializer<TType>(ReadOnlyScope scope, Initializer initializer, TypeComparer typeComparer, TType targetType) where TType : EvaluatedType
     {
-        var value = AnalyzeExpression(scope, expr);
-        expectedType.MatchSome(expectedType => {
-            if (!typesPredicate(value.Type, expectedType)) {
-                _messenger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, expectedType, value.Type));
+        switch (initializer) {
+        case Expression expr:
+            return AnalyzeExpression(scope, expr, typeComparer, targetType);
+        case Initializer.Braced<Designator.Array> array: {
+            // check if target type is array, same elements, same length
+            if (targetType is not ArrayType targetArrayType) {
+                _msger.Report(Message.ErrorUnsupportedInitializer(initializer.SourceTokens, targetType));
+                return targetType.UninitializedValue;
             }
-        });
-        return value;
+
+            var dimensions = targetArrayType.Dimensions.Select(d => d.Value).ToArray();
+
+            Value[] arrayItems = Enumerable.Repeat(
+                targetArrayType.ItemType.DefaultValue,
+                dimensions.Product()).ToArray();
+
+            int currentIndex = 0;
+
+            foreach (var value in array.Values) {
+                (int flatIndex, Option<int[]> index) = value.Designator.Match(
+                    d => {
+                        if (d.Index.Count != dimensions.Length) {
+                            _msger.Report(Message.ErrorIndexWrongRank(d.SourceTokens, d.Index.Count, dimensions.Length));
+                            return (currentIndex, Option.None<int[]>());
+                        }
+                        return d.Index
+                        .Select(i => GetConstantExpression<IntegerType, int>(IntegerType.Instance, scope, i))
+                        .Accumulate()
+                        .MatchError(Function.Foreach<Message>(_msger.Report))
+                        .Match(index => {
+                            var actualIndex = index.Select(i => i.Value - 1).ToArray();
+                            return (actualIndex.FlattenedIndex(dimensions.Select(d => d - 1)), actualIndex.Some());
+                        },
+                        () => (currentIndex, Option.None<int[]>())); // stay in the same place if designator invalid
+                    },
+                    () => (currentIndex++, Option.None<int[]>()));
+
+                if (flatIndex >= 0 && flatIndex < arrayItems.Length) {
+                    arrayItems[flatIndex] = AnalyzeInitializer(scope, value.Initializer, typeComparer, targetArrayType.ItemType);
+                } else {
+                    _msger.Report(index.Match(
+                        index => Message.ErrorIndexOutOfBounds(value.SourceTokens, index.Select(i => i + 1).ToArray(), dimensions),
+                        () => Message.ErrorExcessElementInArrayInitializer(value.SourceTokens)));
+                }
+            }
+
+            return targetArrayType.Instantiate(arrayItems);
+        }
+        case Initializer.Braced<Designator.Structure> structure: {
+            throw new NotImplementedException(); // todo: implement
+        }
+        default:
+            throw initializer.ToUnmatchedException();
+        }
     }
 
-    delegate bool TypeEquivalencePredicate(EvaluatedType actual, EvaluatedType expected);
-
-    Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, TypeEquivalencePredicate typesPredicate, EvaluatedType expectedType)
+    Value AnalyzeExpression(ReadOnlyScope scope, Expression expr, TypeComparer typeComparer, EvaluatedType expectedType)
     {
         var value = AnalyzeExpression(scope, expr);
-        if (!typesPredicate(value.Type, expectedType)) {
-            _messenger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, expectedType, value.Type));
+        if (!typeComparer(value.Type, expectedType)) {
+            _msger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, expectedType, value.Type));
         }
         return value;
     }
@@ -169,63 +215,65 @@ public sealed partial class StaticAnalyzer
             var left = AnalyzeExpression(scope, opBin.Left);
             var right = AnalyzeExpression(scope, opBin.Right);
             var res = opBin.Operator.EvaluateOperation(left, right);
-            foreach (var error in res.Errors) {
-                _messenger.Report(error.GetOperationMessage(opBin, left.Type, right.Type));
+            foreach (var error in res.Messages) {
+                _msger.Report(error.GetOperationMessage(opBin, left.Type, right.Type));
             }
             return res.Value;
         }
         case Expression.UnaryOperation opUn: {
             var operand = AnalyzeExpression(scope, opUn.Operand);
             var res = opUn.Operator.EvaluateOperation(operand);
-            foreach (var error in res.Errors) {
-                _messenger.Report(error.GetOperationMessage(opUn, operand.Type));
+            foreach (var error in res.Messages) {
+                _msger.Report(error.GetOperationMessage(opUn, operand.Type));
             }
             return res.Value;
         }
         case Expression.FunctionCall call:
             return HandleCall<Symbol.Function>(scope, call)
-                .Map(f => f.ReturnType).ValueOr(EvaluatedType.Unknown.Inferred)
-                .UnknownValue;
+                .Map(f => f.ReturnType).ValueOr(UnknownType.Inferred)
+                .RuntimeValue;
 
         case Expression.BuiltinFdf fdf:
             AnalyzeExpression(scope, fdf.ArgumentNomLog);
-            return EvaluatedType.Boolean.Instance.CreateValue(Option.None<bool>());
+            return BooleanType.Instance.RuntimeValue;
 
         case Expression.Lvalue.ArraySubscript arrSub: {
-            foreach (var index in arrSub.Indexes) {
-                var indexType = AnalyzeExpression(scope, index).Type;
-                if (!indexType.IsConvertibleTo(EvaluatedType.Integer.Instance)) {
-                    _messenger.Report(Message.ErrorNonIntegerIndex(index.SourceTokens, indexType));
+            foreach (var i in arrSub.Index) {
+                var indexType = AnalyzeExpression(scope, i).Type;
+                if (!indexType.IsConvertibleTo(IntegerType.Instance)) {
+                    _msger.Report(Message.ErrorNonIntegerIndex(i.SourceTokens, indexType));
                 }
             }
 
             var actualType = AnalyzeExpression(scope, arrSub.Array).Type;
 
-            if (actualType is EvaluatedType.Array arrayType) {
-                return arrayType.ElementType.UnknownValue;
+            if (actualType is ArrayType arrayType) {
+                // todo: get comptime value
+                return arrayType.ItemType.RuntimeValue;
             } else {
-                _messenger.Report(Message.ErrorSubscriptOfNonArray(arrSub, actualType));
-                return EvaluatedType.Unknown.Inferred.UnknownValue;
+                _msger.Report(Message.ErrorSubscriptOfNonArray(arrSub, actualType));
+                return UnknownType.Inferred.DefaultValue;
             }
         }
         case Expression.Lvalue.ComponentAccess compAccess: {
             var actualType = AnalyzeExpression(scope, compAccess.Structure).Type;
-            if (actualType is not EvaluatedType.Structure structType) {
-                _messenger.Report(Message.ErrrorComponentAccessOfNonStruct(compAccess, actualType));
+            if (actualType is not StructureType structType) {
+                _msger.Report(Message.ErrrorComponentAccessOfNonStruct(compAccess, actualType));
             } else if (!structType.Components.Map.TryGetValue(compAccess.ComponentName, out var componentType)) {
-                _messenger.Report(Message.ErrorStructureComponentDoesntExist(compAccess, structType.Alias));
+                _msger.Report(Message.ErrorStructureComponentDoesntExist(compAccess, structType.Alias));
             } else {
-                return componentType.UnknownValue;
+                // todo: get comptime value
+                return componentType.RuntimeValue;
             }
-            return EvaluatedType.Unknown.Inferred.UnknownValue;
+            return UnknownType.Inferred.DefaultValue;
         }
         case Expression.Lvalue.VariableReference varRef:
-            return scope.GetSymbol<Symbol.Variable>(varRef.Name)
-            .MatchError(_messenger.Report)
+            return scope.GetSymbol<Symbol.NameTypeBinding>(varRef.Name)
+            .MatchError(_msger.Report)
             .Map(variable => variable is Symbol.Constant constant
                 ? constant.Value
-                : variable.Type.UnknownValue)
-            .ValueOr(EvaluatedType.Unknown.Inferred.UnknownValue);
+                : variable.Type.RuntimeValue)
+            .ValueOr(UnknownType.Inferred.DefaultValue);
         default:
             throw expr.ToUnmatchedException();
         }
@@ -247,11 +295,11 @@ public sealed partial class StaticAnalyzer
             break;
 
         case Statement.Alternative alternative:
-            AnalyzeExpression(scope, alternative.If.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
+            AnalyzeExpression(scope, alternative.If.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance);
             SetParentScope(alternative.If, scope);
             AnalyzeScopedBlock(alternative.If);
             foreach (var elseIf in alternative.ElseIfs) {
-                AnalyzeExpression(scope, elseIf.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
+                AnalyzeExpression(scope, elseIf.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance);
                 SetParentScope(elseIf, scope);
                 AnalyzeScopedBlock(elseIf);
             }
@@ -265,14 +313,14 @@ public sealed partial class StaticAnalyzer
             Value target = AnalyzeExpression(scope, assignment.Target);
             if (assignment.Target is Expression.Lvalue.VariableReference varRef) {
                 scope.GetSymbol<Symbol.Constant>(varRef.Name).MatchSome(constant
-                    => _messenger.Report(Message.ErrorConstantAssignment(assignment, constant)));
+                    => _msger.Report(Message.ErrorConstantAssignment(assignment, constant)));
             }
             AnalyzeExpression(scope, assignment.Value, EvaluatedType.IsAssignableTo, target.Type);
             break;
         }
         case Statement.DoWhileLoop doWhileLoop:
             AnalyzeScopedBlock(doWhileLoop);
-            AnalyzeExpression(scope, doWhileLoop.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
+            AnalyzeExpression(scope, doWhileLoop.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance);
             break;
         case Statement.ForLoop forLoop:
             AnalyzeExpression(scope, forLoop.Start);
@@ -328,7 +376,7 @@ public sealed partial class StaticAnalyzer
 
         case Statement.RepeatLoop repeatLoop:
             AnalyzeScopedBlock(repeatLoop);
-            AnalyzeExpression(scope, repeatLoop.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
+            AnalyzeExpression(scope, repeatLoop.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance);
             break;
 
         case Statement.Return ret:
@@ -336,20 +384,22 @@ public sealed partial class StaticAnalyzer
                 func => AnalyzeExpression(scope, ret.Value, EvaluatedType.IsConvertibleTo, func.ReturnType),
                 () => {
                     AnalyzeExpression(scope, ret.Value);
-                    _messenger.Report(Message.ErrorReturnInNonFunction(ret.SourceTokens));
+                    _msger.Report(Message.ErrorReturnInNonFunction(ret.SourceTokens));
                 });
             break;
 
         case Statement.LocalVariable varDecl: {
-            var type = EvaluateType(scope, varDecl.Type);
-            foreach (var name in varDecl.Names) {
-                scope.AddSymbolOrError(_messenger, new Symbol.Variable(name, varDecl.SourceTokens, type));
+            var type = EvaluateType(scope, varDecl.Binding.Type);
+            // here: evaluated the initializer and produce its value (of type varDecl.Binding.Type)
+            var initializer = varDecl.Initializer.Map(i => AnalyzeInitializer(scope, i, EvaluatedType.IsAssignableTo, type));
+            foreach (var name in varDecl.Binding.Names) {
+                scope.AddSymbolOrError(_msger, new Symbol.Variable(name, varDecl.SourceTokens, type, initializer));
             }
             break;
         }
         case Statement.WhileLoop whileLoop: {
             AnalyzeScopedBlock(whileLoop);
-            Value condition = AnalyzeExpression(scope, whileLoop.Condition, EvaluatedType.IsConvertibleTo, EvaluatedType.Boolean.Instance);
+            AnalyzeExpression(scope, whileLoop.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance);
             break;
         }
         case Statement.Switch switchCase: {
@@ -357,9 +407,9 @@ public sealed partial class StaticAnalyzer
             foreach (var @case in switchCase.Cases) {
                 SetParentScope(@case, scope);
 
-                Value val = AnalyzeExpression(scope, @case.When, EvaluatedType.IsConvertibleTo, type);
-                if (!val.IsKnown) {
-                    _messenger.Report(Message.ErrorConstantExpressionExpected(@case.When.SourceTokens));
+                var when = AnalyzeExpression(scope, @case.When, EvaluatedType.IsConvertibleTo, type);
+                if (when.Value is not ValueStatus.Comptime) {
+                    _msger.Report(Message.ErrorConstantExpressionExpected(@case.When.SourceTokens));
                 }
                 AnalyzeScopedBlock(@case);
             }
@@ -380,9 +430,9 @@ public sealed partial class StaticAnalyzer
                 EvaluateType(scope, param.Type), param.Mode))
         .ToList();
 
-    Option<TSymbol> HandleCall<TSymbol>(ReadOnlyScope scope, NodeCall call) where TSymbol : CallableSymbol
+    Option<TSymbol> HandleCall<TSymbol>(ReadOnlyScope scope, NodeCall call) where TSymbol : Symbol.Callable
     {
-        var symbol = scope.GetSymbol<TSymbol>(call.Name).MatchError(_messenger.Report);
+        var symbol = scope.GetSymbol<TSymbol>(call.Name).MatchError(_msger.Report);
         symbol.Match(callable => {
             List<string> problems = [];
 
@@ -404,7 +454,7 @@ public sealed partial class StaticAnalyzer
             }
 
             if (problems.Count > 0) {
-                _messenger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
+                _msger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
             }
         }, none: () => {
             // If the callable symbol wasn't found, still analyze the parameter expressions.
@@ -415,31 +465,31 @@ public sealed partial class StaticAnalyzer
         return symbol;
     }
 
-    void HandleCallableDeclaration<T>(Scope scope, T sub) where T : CallableSymbol
+    void HandleCallableDeclaration<T>(Scope scope, T sub) where T : Symbol.Callable
     {
         if (!scope.TryAdd(sub, out var existingSymbol)) {
             if (existingSymbol is T existingSub) {
                 if (!sub.SemanticsEqual(existingSub)) {
-                    _messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
+                    _msger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
                 }
             } else {
-                _messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
+                _msger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
             }
         }
     }
 
-    void HandleCallableDefinition<T>(Scope scope, T sub) where T : CallableSymbol
+    void HandleCallableDefinition<T>(Scope scope, T sub) where T : Symbol.Callable
     {
         if (scope.TryAdd(sub, out var existingSymbol)) {
             sub.MarkAsDefined();
         } else if (existingSymbol is T existingSub) {
             if (existingSub.HasBeenDefined) {
-                _messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSub));
+                _msger.Report(Message.ErrorRedefinedSymbol(sub, existingSub));
             } else if (!sub.SemanticsEqual(existingSub)) {
-                _messenger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
+                _msger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
             }
         } else {
-            _messenger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
+            _msger.Report(Message.ErrorRedefinedSymbol(sub, existingSymbol));
         }
     }
 
@@ -454,57 +504,57 @@ public sealed partial class StaticAnalyzer
 
     EvaluatedType EvaluateType(ReadOnlyScope scope, Type type) => type switch {
         NodeAliasReference alias
-         => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MatchError(_messenger.Report)
+         => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MatchError(_msger.Report)
                 .Map(aliasType => aliasType.TargetType.ToAliasReference(alias.Name))
-            .ValueOr(EvaluatedType.Unknown.Declared(_messenger.Input, type)),
+            .ValueOr(UnknownType.Declared(_msger.Input, type)),
         Type.Complete.Array array => EvaluateArrayType(scope, array),
-        Type.Complete.Boolean => EvaluatedType.Boolean.Instance,
-        Type.Complete.Character => EvaluatedType.Character.Instance,
-        Type.Complete.File file => EvaluatedType.File.Instance,
-        Type.Complete.Integer p => EvaluatedType.Integer.Instance,
+        Type.Complete.Boolean => BooleanType.Instance,
+        Type.Complete.Character => CharacterType.Instance,
+        Type.Complete.File file => FileType.Instance,
+        Type.Complete.Integer p => IntegerType.Instance,
         Type.Complete.LengthedString str => EvaluateLengthedStringType(scope, str),
-        Type.Complete.Real p => EvaluatedType.Real.Instance,
+        Type.Complete.Real p => RealType.Instance,
         Type.Complete.Structure structure => EvaluateStructureType(scope, structure),
-        Type.String => EvaluatedType.String.Instance,
+        Type.String => StringType.Instance,
         _ => throw type.ToUnmatchedException(),
     };
 
     EvaluatedType EvaluateLengthedStringType(ReadOnlyScope scope, Type.Complete.LengthedString str)
-     => GetConstantExpression<EvaluatedType.Integer, int>(EvaluatedType.Integer.Instance, scope, str.Length)
-        .MatchError(_messenger.Report)
-        .Map(EvaluatedType.LengthedString.Create)
-        .ValueOr(EvaluatedType.Unknown.Declared(_messenger.Input, str));
+     => GetConstantExpression<IntegerType, int>(IntegerType.Instance, scope, str.Length)
+        .MatchError(_msger.Report)
+        .Map(LengthedStringType.Create)
+        .ValueOr<EvaluatedType>(UnknownType.Declared(_msger.Input, str));
 
     EvaluatedType EvaluateArrayType(ReadOnlyScope scope, Type.Complete.Array array)
-     => array.Dimensions.Select(d => GetConstantExpression<EvaluatedType.Integer, int>(EvaluatedType.Integer.Instance, scope, d)).Accumulate()
-        .MatchError(Function.Foreach<Message>(_messenger.Report))
-        .Map(values => EvaluatedType.Array.Create(EvaluateType(scope, array.Type), values.ToList()))
-        .ValueOr(EvaluatedType.Unknown.Declared(_messenger.Input, array));
+     => array.Dimensions.Select(d => GetConstantExpression<IntegerType, int>(IntegerType.Instance, scope, d)).Accumulate()
+        .MatchError(Function.Foreach<Message>(_msger.Report))
+        .Map(values => new ArrayType(EvaluateType(scope, array.Type), values.ToList()))
+        .ValueOr<EvaluatedType>(UnknownType.Declared(_msger.Input, array));
 
     Option<ConstantExpression<TUnderlying>, Message> GetConstantExpression<TType, TUnderlying>(TType type, ReadOnlyScope scope, Expression expr)
     where TType : EvaluatedType
     {
         var value = AnalyzeExpression(scope, expr);
         return value is Value<TType, TUnderlying> tval
-            ? tval.UnderlyingValue.Map(v =>
+            ? tval.Value.Comptime.Map(v =>
                 ConstantExpression.Create(expr, v))
                 .OrWithError(Message.ErrorConstantExpressionExpected(expr.SourceTokens))
             : Message.ErrorExpressionHasWrongType(expr.SourceTokens, type, value.Type).None<ConstantExpression<TUnderlying>, Message>();
     }
 
-    EvaluatedType.Structure EvaluateStructureType(ReadOnlyScope scope, Type.Complete.Structure structure)
+    StructureType EvaluateStructureType(ReadOnlyScope scope, Type.Complete.Structure structure)
     {
         Dictionary<Identifier, EvaluatedType> componentsMap = [];
-        List<(Identifier, EvaluatedType)> componentsList = [];
+        List<KeyValuePair<Identifier, EvaluatedType>> componentsList = [];
         foreach (var comp in structure.Components) {
             foreach (var name in comp.Names) {
                 var type = EvaluateType(scope, comp.Type);
                 if (!componentsMap.TryAdd(name, type)) {
-                    _messenger.Report(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
+                    _msger.Report(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
                 }
-                componentsList.Add((name, type));
+                componentsList.Add(new(name, type));
             }
         }
-        return new EvaluatedType.Structure(new(componentsMap, componentsList));
+        return new StructureType(new(componentsMap, componentsList));
     }
 }

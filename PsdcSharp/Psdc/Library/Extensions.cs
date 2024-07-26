@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Numerics;
 using System.Text;
 
 using Scover.Psdc.Messages;
@@ -15,14 +16,22 @@ readonly record struct Position(int Line, int Column)
 
 static class Extensions
 {
-    public static IReadOnlyList<int> Shape(this Array array)
+    /// <summary>
+    /// Get the flattened index of a multidimensional array.
+    /// </summary>
+    /// <param name="dimensionIndexes">The 0-based index in each dimension.</param>
+    /// <param name="dimensionLengths">The length of each dimension.</param>
+    /// <returns>A flattened index that indexes a 1-dimensional array whose length is the product of <paramref name="dimensionLengths"/>.</returns>
+    /// <remarks><paramref name="dimensionIndexes"/> and <paramref name="dimensionLengths"/> must have the same count.</remarks>
+    public static int FlattenedIndex(this IEnumerable<int> dimensionIndexes, IEnumerable<int> dimensionLengths)
     {
-        List<int> shape = [];
-        for (int i = 0; i < array.Rank; i++) {
-            shape.Add(array.GetLength(i));
-        }
-        return shape;
+        Debug.Assert(dimensionIndexes.Count() == dimensionLengths.Count());
+        return dimensionLengths
+            .Zip(dimensionIndexes)
+            .Aggregate(0, (soFar, next) => soFar * next.First + next.Second);
     }
+    public static T Product<T>(this IEnumerable<T> source) where T : IMultiplyOperators<T, T, T>
+     => source.Aggregate((soFar, next) => soFar *= next);
 
     public static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T>
      => first.AllZipped(second, (f, s) => f.SemanticsEqual(s));

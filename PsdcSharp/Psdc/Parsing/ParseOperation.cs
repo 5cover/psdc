@@ -79,7 +79,7 @@ abstract class ParseOperation
     public abstract ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch);
 
     /// <summary>
-    /// Get an intermidiate result based on the tokens read so far; the parsing operation continues.
+    /// Get an intermediate result based on the tokens read so far; the parsing operation continues.
     /// </summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>
     /// <param name="result">Assigned to the created result.</param>
@@ -106,6 +106,9 @@ abstract class ParseOperation
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse);
+
+    /// <returns>The current <see cref="ParseOperation">.</returns>
+    public abstract ParseOperation ParseOptionalToken(TokenType type);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseToken(TokenType type);
@@ -174,6 +177,7 @@ abstract class ParseOperation
             return this;
         }
 
+        public override ParseOperation ParseOptionalToken(TokenType type) => this;
         public override ParseOperation ParseToken(TokenType type) => this;
 
         public override ParseOperation ParseTokenValue(out string result, TokenType type)
@@ -282,6 +286,7 @@ abstract class ParseOperation
             return this;
         }
 
+
         public override ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse)
         {
             var pr = parse(ParsingTokens);
@@ -289,6 +294,15 @@ abstract class ParseOperation
                 _readCount += pr.SourceTokens.Count;
             }
             result = pr.DiscardError();
+            return this;
+        }
+
+        public override ParseOperation ParseOptionalToken(TokenType type)
+        {
+            Option<Token> token = ParsingTokens.FirstOrNone();
+            if (token.HasValue && token.Value.Type == type) {
+                _readCount++;
+            }
             return this;
         }
 

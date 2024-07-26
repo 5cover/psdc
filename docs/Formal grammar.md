@@ -37,7 +37,7 @@ $$
 \\
 &⟨Block⟩ \to ⟨Statement⟩^*
 
-\\&\textbf{Declarations}\\
+\\\\&\textbf{Declarations}\\
 
 &⟨Declaration⟩ \to \begin{Bmatrix*}[l]
     ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier = ⟨Type⟩ \\
@@ -66,7 +66,7 @@ $$
     ⟨Assignment⟩ \to ⟨Lvalue⟩ = ⟨Expr⟩\text{;}
     \\
     ⟨ForLoop⟩ \to \begin{split}
-    \\
+        \\
     &   \begin{Bmatrix*}[l]
             \text{pour}\ Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \begin{pmatrix}\text{pas} ⟨Expr⟩\end{pmatrix}^?\\
             \text{pour}(Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \begin{pmatrix}\text{pas} ⟨Expr⟩\end{pmatrix}^?)\\
@@ -89,7 +89,7 @@ $$
     &   \text{finselon}\\
     \end{split}
     \\
-    ⟨LocalVariable⟩ \to Identifier^{+\#} : ⟨TypeComplete⟩\text{;}
+    ⟨LocalVariable⟩ \to ⟨NameTypeBinding⟩\text{:=}⟨Initializer⟩\text{;}
     \\
     ⟨Return⟩ \to \text{retourne} ⟨Expr⟩\text{;}
     \\
@@ -123,8 +123,38 @@ $$
 &⟨Switch.Case⟩ \to \text{quand} ⟨Expr⟩ => ⟨Statement⟩^+\
 \\
 &⟨Switch.Default⟩ \to \text{quand\ autre} => ⟨Statement⟩^+\
+\\
+&⟨NameTypeBinding⟩ \to Identifier^{+\#} : ⟨TypeComplete⟩
+\\
+&⟨Initializer⟩ \to \begin{Bmatrix*}[l]
+    ⟨Expr⟩
+    \\
+    ⟨StructureInitializer⟩ \to \text{\{}
+        \begin{pmatrix}
+            \begin{pmatrix}
+                ⟨Component⟩
+                \text{=}
+            \end{pmatrix}^?
+            ⟨Initializer⟩
+        \end{pmatrix}^{*\#}
+    \text{,}^? \text{\}}
+    \\
+    ⟨ArrayInitializer⟩ \to \text{\{}
+        \begin{pmatrix}
+            \begin{pmatrix}
+                ⟨Index⟩
+                \text{=}
+            \end{pmatrix}^?
+            ⟨Initializer⟩
+        \end{pmatrix}^{*\#}
+    \text{,}^? \text{\}}
+\end{Bmatrix*}
+\\
+&⟨Component⟩ \to \text{.}Identifier
+\\
+&⟨Index⟩ \to \text{[}⟨Expr⟩^{+\#}\text{]}
 
-\\&\textbf{Exprs}\\
+\\\\&\textbf{Exprs}\\
 
 &⟨Expr⟩ \to ⟨Expr_{Or}⟩
 \\
@@ -221,17 +251,8 @@ $$
 \end{Bmatrix*}
 \\
 &⟨Call⟩ \to Identifier(⟨ParameterActual⟩^{*\#})
-\\
-&⟨Designator⟩ \to \begin{Bmatrix*}[l]
-    ⟨Component⟩\\
-    ⟨Index⟩\\
-\end{Bmatrix*}^*\text{=}
-\\
-&⟨Component⟩ \to \text{.}Identifier
-\\
-&⟨Index⟩ \to \text{[}⟨Expr⟩^{+\#}\text{]}
 
-\\&\textbf{Types}\\
+\\\\&\textbf{Types}\\
 
 &⟨Type⟩ \to \begin{Bmatrix*}[l]
     ⟨TypeComplete⟩
@@ -255,12 +276,12 @@ $$
     \\
     ⟨StringLengthed⟩ \to \text{chaîne}(⟨Expr⟩)
     \\
-    ⟨Structure⟩ \to \text{structure\ début} ⟨LocalVariable⟩^+ \text{fin}
+    ⟨Structure⟩ \to \text{structure\ début} \begin{pmatrix}⟨NameTypeBinding⟩\text{;}\end{pmatrix}^+ \text{fin}
     \\
     ⟨TypeArray⟩ \to \text{tableau} {\text{[}⟨Expr⟩\text{]}}^+ \text{de} ⟨TypeComplete⟩
 \end{Bmatrix*}
 
-\\&\textbf{Other}\\
+\\\\&\textbf{Other}\\
 
 &⟨ParameterFormal⟩ \to \begin{Bmatrix*}[l]
     \text{entF}\\

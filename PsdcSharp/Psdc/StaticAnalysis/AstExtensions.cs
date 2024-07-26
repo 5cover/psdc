@@ -4,9 +4,6 @@ using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using static Scover.Psdc.Parsing.Node;
-using static Scover.Psdc.Language.EvaluatedType;
-using Boolean = Scover.Psdc.Language.EvaluatedType.Boolean;
-using String = Scover.Psdc.Language.EvaluatedType.String;
 
 namespace Scover.Psdc.StaticAnalysis;
 
@@ -24,10 +21,10 @@ static partial class AstExtensions
         var opBin = expr.MakeBinaryOperation(@operator, value);
         // Collapse literals
         if (expr is Expression.Literal.Integer intLit) {
-            var operation = @operator.EvaluateOperation(Integer.Instance.CreateValue(intLit.Value.Some()), Integer.Instance.CreateValue(value.Some()));
+            var operation = @operator.EvaluateOperation(IntegerType.Instance.Instantiate(intLit.Value), IntegerType.Instance.Instantiate(value));
             return operation.Value.ToLiteral().Match<Expression.Literal, (Expression, IEnumerable<Message>)>(
-                lit => (lit, operation.Errors.Select(e => e.GetOperationMessage(opBin,
-                    lit.ValueType, Integer.Instance))),
+                lit => (lit, operation.Messages.Select(e => e.GetOperationMessage(opBin,
+                    lit.ValueType, IntegerType.Instance))),
                 () => (opBin, []));
         }
         // This feels like cheating, creatig AST nodes with placeholder source tokens during code generation
@@ -41,12 +38,12 @@ static partial class AstExtensions
             new Expression.Literal.Integer(SourceTokens.Empty, value.ToString(CultureInfo.InvariantCulture)));
 
     public static Option<Expression.Literal> ToLiteral(this Value value) => value switch {
-        Boolean.Value b => b.UnderlyingValue.Map(b => b
+        BooleanValue b => b.Value.Comptime.Map(b => b
          ? (Expression.Literal)new Expression.Literal.True(SourceTokens.Empty)
          : new Expression.Literal.False(SourceTokens.Empty)),
-        Integer.Value i => i.UnderlyingValue.Map(i => new Expression.Literal.Integer(SourceTokens.Empty, i)),
-        Real.Value r => r.UnderlyingValue.Map(r => new Expression.Literal.Real(SourceTokens.Empty, r)),
-        String.Value s => s.UnderlyingValue.Map(s => new Expression.Literal.String(SourceTokens.Empty, s)),
+        IntegerValue i => i.Value.Comptime.Map(i => new Expression.Literal.Integer(SourceTokens.Empty, i)),
+        RealValue r => r.Value.Comptime.Map(r => new Expression.Literal.Real(SourceTokens.Empty, r)),
+        StringValue s => s.Value.Comptime.Map(s => new Expression.Literal.String(SourceTokens.Empty, s)),
         _ => Option.None<Expression.Literal>(),
     };
 

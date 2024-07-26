@@ -5,8 +5,21 @@ namespace Scover.Psdc.Library;
 /// </summary>
 /// <typeparam name="TKey">The map key type</typeparam>
 /// <typeparam name="TValue">The map value type</typeparam>
-sealed record ReadOnlyOrderedMap<TKey, TValue>(
-    IReadOnlyDictionary<TKey, TValue> Map,
-    IReadOnlyList<(TKey Key, TValue Value)> List
-)
-where TKey : notnull;
+sealed class ReadOnlyOrderedMap<TKey, TValue>
+where TKey : notnull
+{
+    public IReadOnlyDictionary<TKey, TValue> Map { get; }
+    public IReadOnlyList<KeyValuePair<TKey, TValue>> List { get; }
+
+    public ReadOnlyOrderedMap(IReadOnlyDictionary<TKey, TValue> map,
+    IReadOnlyList<KeyValuePair<TKey, TValue>> list)
+    {
+        if (!list.All(map.Contains) || !map.All(list.Contains)) {
+            throw new ArgumentException("The provided map and list must contain equal items");
+        }
+        (Map, List) = (map, list);
+    }
+
+    // Map.Count and List.Count would be equivalent
+    public int Count => Map.Count;
+}

@@ -50,6 +50,7 @@ IUT de Lannion Pseudocode compiler (transpiler).
 - [ ] File handling (low priority)
 - [ ] Preprocessor (limitations of the language)
     - [ ] `ecrireEcran` newlines
+- [ ] [GNU](https://www.gnu.org/prep/standards/standards.html#Errors)-compliant message formatting
 - [ ] CLI (use nuget package)
     - [ ] custom header
     - [ ] -d, --documentation : none, all, file

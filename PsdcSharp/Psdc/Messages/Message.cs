@@ -32,15 +32,30 @@ public readonly struct Message
         }
     }
 
+    private static FormattableString Quantity(int quantity, string singular, string plural)
+     => $"{quantity} {(quantity == 1 ? singular : plural)}";
+
     internal static Message ErrorCallParameterMismatch(SourceTokens sourceTokens,
-        CallableSymbol callable, IReadOnlyList<string> problems)
+        Symbol.Callable callable, IReadOnlyList<string> problems)
      => new(sourceTokens, MessageCode.CallParameterMismatch,
         $"call to {callable.GetKind()} `{callable.Name}` does not correspond to signature",
         problems);
 
+    internal static Message ErrorIndexWrongRank(SourceTokens sourceTokens, int faultyRank, int arrayRank)
+     => new(sourceTokens, MessageCode.IndexWrongRank,
+        $"index has {Quantity(faultyRank, "dimension", "dimensions")}, but {Quantity(arrayRank, "was", "were")} expected");
+
+    internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, IReadOnlyList<int> faultyIndex, IReadOnlyList<int> arrayLength)
+     => new(sourceTokens, MessageCode.IndexOutOfBounds,
+        $"index [{string.Join(", ", faultyIndex)}] out of bounds for array [{string.Join(", ", arrayLength)}]");
+
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
         $"reassigning constant `{constant.Name}`");
+
+    internal static Message ErrorUnsupportedInitializer(SourceTokens sourceTokens, EvaluatedType initializerTargetType)
+     => new(sourceTokens, MessageCode.UnsupportedInitializer,
+        $"unsupported initializer for type `{initializerTargetType}`");
 
     internal static Message ErrorConstantExpressionExpected(SourceTokens sourceTokens)
      => new(sourceTokens, MessageCode.ConstantExpressionExpected,
@@ -142,6 +157,10 @@ public readonly struct Message
      => new(compAccess.SourceTokens, MessageCode.ComponentAccessOfNonStruct,
         $"request for component `{compAccess.ComponentName}` in something ('{actualStructType}') not a structure");
 
+    internal static Message ErrorExcessElementInArrayInitializer(SourceTokens sourceTokens)
+     => new(sourceTokens, MessageCode.ExcessElementInArrayInitializer,
+        $"excess element in array initializer");
+
     internal static string ProblemWrongArgumentMode(Identifier name, string expected, string actual)
      => $"wrong mode for `{name}`: expected '{expected}', got '{actual}'";
 
@@ -149,7 +168,7 @@ public readonly struct Message
      => $"wrong type for `{name}`: expected '{expected}', got '{actual}'";
 
     internal static string ProblemWrongNumberOfArguments(int expected, int actual)
-     => $"wrong number of arguments: expected {expected}, got {actual}";
+     => $"expected {Quantity(expected, "argument", "arguments")}, got {actual}";
 
     internal static Message WarningDivisionByZero(SourceTokens sourceTokens)
      => new(sourceTokens, MessageCode.DivisionByZero,

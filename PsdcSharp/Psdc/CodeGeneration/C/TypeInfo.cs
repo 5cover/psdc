@@ -62,16 +62,16 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
     static TypeInfo Create(EvaluatedType type, Messenger msger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable, Indentation indent)
     {
         TypeInfo typeInfo = type switch {
-            EvaluatedType.Unknown u => new(keywordTable.Validate(u.SourceTokens, u.Representation, msger)),
-            EvaluatedType.File => new("FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield()),
-            EvaluatedType.Boolean => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
-            EvaluatedType.Character => new("char", "%c"),
-            EvaluatedType.Real real => new("float", "%g"),
-            EvaluatedType.Integer integer => new("int", "%d"),
-            EvaluatedType.String => new("char", "%s", starCount: 1),
-            EvaluatedType.Array array => CreateArrayType(array),
-            EvaluatedType.LengthedString strlen => CreateLengthedString(strlen),
-            EvaluatedType.Structure structure => CreateStructure(structure),
+            UnknownType u => new(keywordTable.Validate(u.SourceTokens, u.Representation, msger)),
+            FileType => new("FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield()),
+            BooleanType => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
+            CharacterType => new("char", "%c"),
+            RealType real => new("float", "%g"),
+            IntegerType integer => new("int", "%d"),
+            StringType => new("char", "%s", starCount: 1),
+            ArrayType array => CreateArrayType(array),
+            LengthedStringType strlen => CreateLengthedString(strlen),
+            StructureType structure => CreateStructure(structure),
             _ => throw type.ToUnmatchedException(),
         };
 
@@ -79,9 +79,9 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             ? new TypeInfo(keywordTable.Validate(alias, msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders)
             : typeInfo;
 
-        TypeInfo CreateArrayType(EvaluatedType.Array array)
+        TypeInfo CreateArrayType(ArrayType array)
         {
-            var arrayType = Create(array.ElementType, msger, generateExpression, keywordTable, indent);
+            var arrayType = Create(array.ItemType, msger, generateExpression, keywordTable, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
             foreach (var dimension in array.Dimensions.Select(dim => generateExpression(dim.Expression))) {
                 postModifier.Append($"[{dimension}]");
@@ -92,7 +92,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
                 postModifier: postModifier.ToString());
         }
 
-        TypeInfo CreateLengthedString(EvaluatedType.LengthedString strlen)
+        TypeInfo CreateLengthedString(LengthedStringType strlen)
         {
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression
@@ -105,7 +105,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             return new("char", "%s", postModifier: $"[{lengthPlus1}]");
         }
 
-        TypeInfo CreateStructure(EvaluatedType.Structure structure)
+        TypeInfo CreateStructure(StructureType structure)
         {
             StringBuilder sb = new("struct {");
             sb.AppendLine();

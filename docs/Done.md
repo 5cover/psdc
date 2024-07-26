@@ -1266,3 +1266,91 @@ Values are not wrapped and expressed directly as their underlying type. This is 
 Still, i coud simply have a `Value` class with a `Type` and `UnderlyingValue` as `object` &mdash; in `ConstantFolding`, switch on `Type` and downcast `UnderlyingValue`.
 
 But if we know the `Type`, we should let it perform the cast; it's the one responsible for choosing the underlying type after all. So maybe we call `TUnderlying InstantiableType.GetUnderlyingValue(Value value) => (TUnderlying)value.UnderlyingType` (static abstract)
+
+## Structure and array ~~literals~~ initializers
+
+First things first let's standardize the syntax and add it to the grammar.
+
+Array and structure ~~literals~~ initializers follow the same syntax as brace initialization in C. ~~They work as standalone expressions too, however, unlike in C where they can only be used as an initializer.~~
+
+~~The main difficulty is that array and structure literal have no intrinsic type and no intrinsic value - their actual value depends on the recieving type (the type of the variable they initialize or of the parameter they are passed to)~~
+
+~~Is that so? Shouldn't we give them an intrinsic type that is implicitly convertible to the recieving type? That wouldn't work for string literals with anonymous values though.~~
+
+~~C restricts their usage as initializers to keep compilation fast &mdash; except we're not in th 70s anymore.~~
+
+~~Soo.. maybe i should just give them placeholder type like `<struct-literal>`, and for arrays, i can give the actual type.~~
+
+### Array
+
+~~What is the value of an array literal? Does it have a value of its own?~~
+
+~~We can take the mode of the types of its elements and fail for any element whose type is not implicitly convertible to it.~~
+
+~~So `{1, 2, 3.4}` has a type of `tableau[3] de entier` and the `3.4` raises an error.~~
+
+~~But this is confusing. What if we have `{1, 2.5}`? Then `réel` and `entier` are both valid element types. This is invalid code, so there will be an error in either case~~
+
+How do multidimensional array initializers work? Nested initializers should work, right?
+
+```psc
+a : tableau[2,3] de entier = {
+    {0,1,2},
+    {2,3,4},
+}
+```
+
+What this means for our FG is that an initializer value is an initializer.
+
+What this means for our static analyzer is that an initializers must be analyzed recursively.
+
+What about designators?
+
+```psc
+a : tableau[2,3] de entier = {
+    [2] = {2,3,4},
+    [1] = {0, [3] = 2, [2] = 1},
+}
+```
+
+```psc
+a : tableau[2,3] de entier = {
+    [2, 1] = 2,
+    3, // [2,2]
+    [2, 3] = 4,
+}
+```
+
+Implememtation: compute the path for each value (a list of lists of integers).
+
+The logic is imperative as initializer values are evaluated in top-down order: if two initializer values overlap each other, the latter one determines the final value.
+
+### Value inner discriminiated union
+
+Instead of instantiating each `EvaluatedType`'s own `RuntimeValue` and `UndefinedValue`, we should make the `Option` in `Value` a discriminated union that can be one of the following:
+
+- Comptime-known: An underlying value
+- Runtime-known: void
+- Uninitialized: void
+
+`Value`: a type and a `ValueStatus`
+
+`Value<TUnderlying>`: a type and a `ValueStatus<TUnderlying>`
+
+`Runtime` and `Uninitialized`
+
+### Multidimensional array flat indexes
+
+Given a multidimensional array of $N$ dimensions, the length of each dimension given by $l_n$ for $n \in [0;N[$, compute the flatten index from the index in each dimension denoted by $i_n$ for $n \in [0;N[$:
+
+For a 3-dimensional array:
+
+$$
+\text{index} = i_0l_1l_2 + i_1l_2 + i_2
+$$
+
+For an $N$-dimensional array:
+
+$$
+\text{index} = \sum_{x=0}^{N-1}\begin{pmatrix}i_x\prod_{y=x+1}^{N-1}l_y\end{pmatrix}
+$$

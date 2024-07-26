@@ -131,7 +131,7 @@ public interface Node : EquatableSemantics<Node>
             public FunctionSignature Signature => signature;
 
             public override bool SemanticsEqual(Node other) => other is Function o
- && o.Signature.SemanticsEqual(Signature);
+             && o.Signature.SemanticsEqual(Signature);
         }
 
         internal sealed class FunctionDefinition(SourceTokens sourceTokens,
@@ -142,8 +142,8 @@ public interface Node : EquatableSemantics<Node>
             public FunctionSignature Signature => signature;
 
             public override bool SemanticsEqual(Node other) => other is FunctionDefinition o
- && o.Signature.SemanticsEqual(Signature)
- && o.Block.AllSemanticsEqual(Block);
+             && o.Signature.SemanticsEqual(Signature)
+             && o.Block.AllSemanticsEqual(Block);
         }
     }
 
@@ -423,16 +423,16 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed class LocalVariable(SourceTokens sourceTokens,
-            IReadOnlyCollection<Identifier> names,
-            Type.Complete type)
+            NameTypeBinding binding,
+            Option<Initializer> initializer)
         : NodeImpl(sourceTokens), Statement
         {
-            public IReadOnlyCollection<Identifier> Names => names;
-            public Type Type => type;
+            public NameTypeBinding Binding => binding;
+            public Option<Initializer> Initializer => initializer;
 
             public override bool SemanticsEqual(Node other) => other is LocalVariable o
-             && o.Names.AllSemanticsEqual(Names)
-             && o.Type.SemanticsEqual(Type);
+             && o.Binding.SemanticsEqual(Binding)
+             && o.Initializer.OptionSemanticsEqual(Initializer);
         }
 
         internal sealed class WhileLoop(SourceTokens sourceTokens,
@@ -448,7 +448,34 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    internal interface Expression : Node
+    internal interface Initializer : Node
+    {
+        internal sealed class Braced<TDesignator>(SourceTokens sourceTokens,
+            IReadOnlyList<Braced<TDesignator>.Value> values)
+        : NodeImpl(sourceTokens), Initializer
+        where TDesignator : class, Designator
+        {
+            public IReadOnlyList<Value> Values => values;
+
+            public override bool SemanticsEqual(Node other) => other is Braced<TDesignator> o
+             && o.Values.AllSemanticsEqual(Values);
+
+            public sealed class Value(SourceTokens sourceTokens,
+                Option<TDesignator> designator,
+                Initializer initializer)
+            : NodeImpl(sourceTokens)
+            {
+                public Option<TDesignator> Designator => designator;
+                public Initializer Initializer => initializer;
+
+                public override bool SemanticsEqual(Node other) => other is Value o
+                 && o.Designator.OptionSemanticsEqual(Designator)
+                 && o.Initializer.SemanticsEqual(Initializer);
+            }
+        }
+    }
+
+    internal interface Expression : Initializer
     {
         internal interface Lvalue : Expression
         {
@@ -481,15 +508,15 @@ public interface Node : EquatableSemantics<Node>
 
             internal sealed class ArraySubscript(SourceTokens sourceTokens,
                 Expression array,
-                IReadOnlyCollection<Expression> indexes)
+                IReadOnlyList<Expression> indexes)
             : NodeImpl(sourceTokens), Lvalue
             {
                 public Expression Array => array;
-                public IReadOnlyCollection<Expression> Indexes => indexes;
+                public IReadOnlyList<Expression> Index => indexes;
 
                 public override bool SemanticsEqual(Node other) => other is ArraySubscript o
                  && o.Array.SemanticsEqual(Array)
-                 && o.Indexes.AllSemanticsEqual(Indexes);
+                 && o.Index.AllSemanticsEqual(Index);
             }
 
             internal sealed class VariableReference(SourceTokens sourceTokens,
@@ -577,29 +604,10 @@ public interface Node : EquatableSemantics<Node>
             IConvertible Literal.Value => Value;
             EvaluatedType Literal.ValueType => ValueType;
 
-            public Value CreateValue() => ValueType.CreateValue(Value.Some());
+            public Value CreateValue() => ValueType.Instantiate(Value);
 
             public override bool SemanticsEqual(Node other) => other is Literal<TType, TValue, TUnderlying> o
              && o.Value.Equals(Value);
-        }
-
-        internal sealed class BracedLiteral<TLeadingDesignator>(SourceTokens sourceTokens,
-            IReadOnlyList<(Option<(TLeadingDesignator, IReadOnlyList<Designator>)>, Expression)> values)
-        : NodeImpl(sourceTokens), Expression
-        where TLeadingDesignator : Designator
-        {
-            public IReadOnlyList<(
-                Option<(
-                    TLeadingDesignator First,
-                    IReadOnlyList<Designator> Others)> Designator,
-                Expression Expression)> Values => values;
-
-            public override bool SemanticsEqual(Node other) => other is BracedLiteral<TLeadingDesignator> o
-             && o.Values.AllZipped(Values, (ov, v)
-                => ov.Designator.IsEqualTo(v.Designator, (ovd, vd)
-                    => ovd.First.SemanticsEqual(vd.First)
-                    && ovd.Others.AllSemanticsEqual(vd.Others))
-                && ov.Expression.Equals(v.Expression));
         }
 
         internal interface Literal : Expression
@@ -609,31 +617,31 @@ public interface Node : EquatableSemantics<Node>
             Value CreateValue();
 
             internal sealed class True(SourceTokens sourceTokens)
-            : Literal<EvaluatedType.Boolean, EvaluatedType.Boolean.Value, bool>(sourceTokens, EvaluatedType.Boolean.Instance, true)
+            : Literal<BooleanType, BooleanValue, bool>(sourceTokens, BooleanType.Instance, true)
             {
             }
 
             internal sealed class False(SourceTokens sourceTokens)
-            : Literal<EvaluatedType.Boolean, EvaluatedType.Boolean.Value, bool>(sourceTokens, EvaluatedType.Boolean.Instance, false)
+            : Literal<BooleanType, BooleanValue, bool>(sourceTokens, BooleanType.Instance, false)
             {
             }
 
             internal sealed class Character(SourceTokens sourceTokens, char value)
-            : Literal<EvaluatedType.Character, EvaluatedType.Character.Value, char>(sourceTokens, EvaluatedType.Character.Instance, value)
+            : Literal<CharacterType, CharacterValue, char>(sourceTokens, CharacterType.Instance, value)
             {
                 public Character(SourceTokens sourceTokens, string valueStr)
                 : this(sourceTokens, char.Parse(valueStr)) { }
             }
 
             internal sealed class Integer(SourceTokens sourceTokens, int value)
-            : Literal<EvaluatedType.Integer, EvaluatedType.Integer.Value, int>(sourceTokens, EvaluatedType.Integer.Instance, value)
+            : Literal<IntegerType, IntegerValue, int>(sourceTokens, IntegerType.Instance, value)
             {
                 public Integer(SourceTokens sourceTokens, string valueStr)
                 : this(sourceTokens, int.Parse(valueStr, CultureInfo.InvariantCulture)) { }
             }
 
             internal sealed class Real(SourceTokens sourceTokens, decimal value)
-            : Literal<EvaluatedType.Real, EvaluatedType.Real.Value, decimal>(sourceTokens, EvaluatedType.Real.Instance, value)
+            : Literal<RealType, RealValue, decimal>(sourceTokens, RealType.Instance, value)
             {
                 public Real(SourceTokens sourceTokens, string valueStr)
                 : this(sourceTokens, decimal.Parse(valueStr, CultureInfo.InvariantCulture)) { }
@@ -641,26 +649,7 @@ public interface Node : EquatableSemantics<Node>
 
             internal sealed class String(SourceTokens sourceTokens,
                 string value)
-            : Literal<EvaluatedType.LengthedString, EvaluatedType.LengthedString.Value, string>(sourceTokens, EvaluatedType.LengthedString.Create(value.Length), value);
-        }
-    }
-
-    internal interface Designator : Node
-    {
-        internal sealed class Array(SourceTokens sourceTokens, IReadOnlyList<Expression> indexes) : NodeImpl(sourceTokens), Designator
-        {
-            public IReadOnlyList<Expression> Indexes => indexes;
-
-            public override bool SemanticsEqual(Node other) => other is Array o
-             && o.Indexes.AllSemanticsEqual(Indexes);
-        }
-
-        internal sealed class Structure(SourceTokens sourceTokens, Identifier component) : NodeImpl(sourceTokens), Designator
-        {
-            public Identifier Component => component;
-
-            public override bool SemanticsEqual(Node other) => other is Structure o
-             && o.Component.SemanticsEqual(Component);
+            : Literal<LengthedStringType, LengthedStringValue, string>(sourceTokens, LengthedStringType.Create(value.Length), value);
         }
     }
 
@@ -748,15 +737,47 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed class Structure(SourceTokens sourceTokens,
-                IReadOnlyList<Statement.LocalVariable> components)
+                IReadOnlyList<NameTypeBinding> components)
             : NodeImpl(sourceTokens), Complete
             {
-                public IReadOnlyList<Statement.LocalVariable> Components => components;
+                public IReadOnlyList<NameTypeBinding> Components => components;
 
                 public override bool SemanticsEqual(Node other) => other is Structure o
                  && o.Components.AllSemanticsEqual(Components);
             }
         }
+    }
+
+    internal interface Designator : Node
+    {
+        internal sealed class Array(SourceTokens sourceTokens, IReadOnlyList<Expression> indexes) : NodeImpl(sourceTokens), Designator
+        {
+            public IReadOnlyList<Expression> Index => indexes;
+
+            public override bool SemanticsEqual(Node other) => other is Array o
+             && o.Index.AllSemanticsEqual(Index);
+        }
+
+        internal sealed class Structure(SourceTokens sourceTokens, Identifier component) : NodeImpl(sourceTokens), Designator
+        {
+            public Identifier Component => component;
+
+            public override bool SemanticsEqual(Node other) => other is Structure o
+             && o.Component.SemanticsEqual(Component);
+        }
+    }
+
+    internal sealed class NameTypeBinding(SourceTokens sourceTokens,
+        IReadOnlyCollection<Identifier> names,
+        Type.Complete type)
+    : NodeImpl(sourceTokens)
+    {
+        public IReadOnlyCollection<Identifier> Names => names;
+        public Type Type => type;
+
+        public override bool SemanticsEqual(Node other) => other is NameTypeBinding o
+         && o.Names.AllSemanticsEqual(Names)
+         && o.Type.SemanticsEqual(Type);
     }
 
     internal sealed class ParameterActual(SourceTokens sourceTokens,
@@ -843,8 +864,8 @@ sealed class Identifier : NodeImpl, IEquatable<Identifier?>
             throw new ArgumentException($"`{name}` is not a valid identifier", nameof(name));
         }
         static bool IsValidIdentifier(string name) => name.Length > 0
-            && (name[0] == '_' || char.IsLetter(name[0]))
-            && name.Skip(1).All(c => c == '_' || char.IsLetterOrDigit(c));
+         && (name[0] == '_' || char.IsLetter(name[0]))
+         && name.Skip(1).All(c => c == '_' || char.IsLetterOrDigit(c));
 #endif
     }
 
