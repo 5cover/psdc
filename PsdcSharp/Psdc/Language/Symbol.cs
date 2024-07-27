@@ -94,6 +94,7 @@ static class SymbolExtensions
         [typeof(Symbol.Procedure)] = "procedure",
         [typeof(Symbol.TypeAlias)] = "type alias",
         [typeof(Symbol.Variable)] = "variable",
+        [typeof(Symbol.NameTypeBinding)] = "variable",
     };
 
     public static string GetKind(this Symbol s) => symbolKinds[s.GetType()];

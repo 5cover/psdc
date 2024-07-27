@@ -294,7 +294,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseOptionalToken(TokenType type)
         {
-            Option<Token> token = ParsingTokens.FirstOrNone();
+            var token = ParsingTokens.FirstOrNone();
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
             }
@@ -303,7 +303,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseToken(TokenType type)
         {
-            Option<Token> token = ParsingTokens.FirstOrNone();
+            var token = ParsingTokens.FirstOrNone();
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 return this;
@@ -313,7 +313,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseTokenValue(out string result, TokenType type)
         {
-            Option<Token> token = ParsingTokens.FirstOrNone();
+            var token = ParsingTokens.FirstOrNone();
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 result = token.Value.Value ?? throw new InvalidOperationException("Parsed token doesn't have a value");
