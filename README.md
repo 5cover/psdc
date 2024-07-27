@@ -25,6 +25,8 @@ IUT de Lannion Pseudocode compiler (transpiler).
 
 ### Language features
 
+Notation: bold &rarr; underway
+
 - [x] Alternatives
 - [x] Loops
     - [x] For
@@ -40,7 +42,8 @@ IUT de Lannion Pseudocode compiler (transpiler).
 - [x] Constant folding for type checking and division by zero
 - [x] Optional brackets in control structures
 - [x] Benchmarks
-- [ ] Brace initialization (see TD14 ex 1)
+- [ ] **Formal grammar**
+- [ ] **Brace initialization (see TD14 ex 1)**
 - [ ] More static analysis
 - [ ] `finPour` keyword (equivalent to `fin`)
 - [ ] String literal escape sequences
