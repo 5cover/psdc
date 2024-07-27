@@ -99,7 +99,7 @@ abstract class ParseOperation
     public abstract ParseOperation Parse<T>(out T result, Parser<T> parse);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
-    public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true);
+    public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true, bool allowTrailingSeparator = false);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyList<T> result, Parser<T> parse, params TokenType[] endTokens);
@@ -117,7 +117,7 @@ abstract class ParseOperation
     public abstract ParseOperation ParseTokenValue(out string result, TokenType type);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
-    public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true);
+    public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true, bool allowTrailingSeparator = false);
 
     /// <returns>The current <see cref="ParseOperation">.</returns>
     public abstract ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyList<T> result, Parser<T> parse, params TokenType[] endTokens);
@@ -159,7 +159,7 @@ abstract class ParseOperation
             return this;
         }
 
-        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true)
+        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken, bool allowTrailingSeparator)
         {
             result = Array.Empty<T>();
             return this;
@@ -186,7 +186,7 @@ abstract class ParseOperation
             return this;
         }
 
-        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
+        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken, bool allowTrailingSeparator)
         {
             result = Array.Empty<T>();
             return this;
@@ -243,28 +243,23 @@ abstract class ParseOperation
             }
         }
 
-        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
+        public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken, bool allowTrailingSeparator)
         {
             List<T> items = [];
             result = items;
 
-            var item = parse(ParsingTokens);
-
-            if (!item.HasValue && NextParsingTokenIs(end).ValueOr(true)) {
-                return Fail(MakeOurs(item.Error));
+            if (Peek(end).ValueOr(true)) {
+                // try to parse to get an appropriate error, it should fail since we're on the end token. 
+                return Fail(parse(ParsingTokens).Error.NotNull());
+            } else {
+                do {
+                    var item = parse(ParsingTokens);
+                    _readCount += item.SourceTokens.Count;
+                    AddOrSyntaxError(items, item);
+                } while (Match(ParsingTokens, separator) && (!allowTrailingSeparator || !Peek(end).ValueOr(true)));
             }
 
-            _readCount += Math.Max(1, item.SourceTokens.Count);
-            AddOrSyntaxError(items, item);
-
-            ParseWhile(items, parse, () => CheckAndConsumeToken(ParsingTokens, separator),
-                skimWhile: () => !NextParsingTokenIs(separator, end).ValueOr(true));
-
-            if (readEndToken) {
-                _ = CheckAndConsumeToken(ParsingTokens, end);
-            }
-
-            return this;
+            return readEndToken ? ParseToken(end) : this;
         }
 
         public override ParseOperation ParseOneOrMoreUntilToken<T>(out IReadOnlyList<T> result, Parser<T> parse, params TokenType[] endTokens)
@@ -281,7 +276,7 @@ abstract class ParseOperation
                 return Fail(MakeOurs(item.Error));
             }
 
-            ParseWhile(items, parse, () => !NextParsingTokenIs(endTokens).ValueOr(true));
+            ParseWhile(items, parse, () => !Peek(endTokens).ValueOr(true));
 
             return this;
         }
@@ -329,29 +324,24 @@ abstract class ParseOperation
             return Fail(ParseError.ForTerminal(production, token, type));
         }
 
-        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken)
+        public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<T> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken, bool allowTrailingSeparator)
         {
             List<T> items = [];
             result = items;
 
-            var item = parse(ParsingTokens);
-
-            if (!item.HasValue && NextParsingTokenIs(end).ValueOr(true)) {
-                _readCount++;
-                return this;
+            if (!Peek(end).ValueOr(true)) {
+                do {
+                    var item = parse(ParsingTokens);
+                    _readCount += item.SourceTokens.Count;
+                    AddOrSyntaxError(items, item);
+                } while (Match(ParsingTokens, separator) && (!allowTrailingSeparator || !Peek(end).ValueOr(true)));
             }
 
-            _readCount += Math.Max(1, item.SourceTokens.Count);
-            AddOrSyntaxError(items, item);
-
-            ParseWhile(items, parse, () => CheckAndConsumeToken(ParsingTokens, separator),
-                skimWhile: () => !NextParsingTokenIs(separator, end).ValueOr(true));
-
-            if (readEndToken) {
-                _ = CheckAndConsumeToken(ParsingTokens, end);
+            if (allowTrailingSeparator) {
+                ParseOptionalToken(separator);
             }
 
-            return this;
+            return readEndToken ? ParseToken(end) : this;
         }
 
         public override ParseOperation ParseZeroOrMoreUntilToken<T>(out IReadOnlyList<T> result, Parser<T> parse, params TokenType[] endTokens)
@@ -359,7 +349,7 @@ abstract class ParseOperation
             List<T> items = [];
             result = items;
 
-            ParseWhile(items, parse, () => !NextParsingTokenIs(endTokens).ValueOr(true));
+            ParseWhile(items, parse, () => !Peek(endTokens).ValueOr(true));
 
             return this;
         }
@@ -376,7 +366,7 @@ abstract class ParseOperation
                 none: error => messenger.Report(Message.ErrorSyntax(item.SourceTokens, error))
             );
 
-        bool CheckAndConsumeToken(IEnumerable<Token> tokens, params TokenType[] types)
+        bool Match(IEnumerable<Token> tokens, params TokenType[] types)
         {
             bool nextIsSeparator = tokens.NextIsOfType(types).ValueOr(false);
             if (nextIsSeparator) {
@@ -395,7 +385,7 @@ abstract class ParseOperation
             : ParseError.ForProduction(production,
                 error.ErroneousToken, error.ExpectedTokens, error.FailedProduction);
 
-        Option<bool> NextParsingTokenIs(params TokenType[] types)
+        Option<bool> Peek(params TokenType[] types)
          => ParsingTokens.NextIsOfType(types);
 
         void ParseWhile<T>(ICollection<T> items, Parser<T> parse, Func<bool> keepGoingWhile, Func<bool>? skimWhile = null)

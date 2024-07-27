@@ -247,9 +247,8 @@ internal sealed class LengthedStringType : EvaluatedTypeImpl<LengthedStringValue
     {
         LengthConstantExpression = lengthExpression;
         Length = length;
-        DefaultValue = Instantiate("");
+        DefaultValue = UninitializedValue = new(this, Value.Uninitialized<string>());
         RuntimeValue = new(this, Value.Runtime<string>());
-        UninitializedValue = new(this, Value.Uninitialized<string>());
     }
 
     public int Length { get; }
@@ -332,9 +331,8 @@ internal class StringType : EvaluatedTypeImpl<StringValue>, InstantiableType<Str
 {
     StringType(Identifier? alias) : base(alias)
     {
-        DefaultValue = Instantiate("");
+        DefaultValue = UninitializedValue = new StringValueImpl(this, Value.Uninitialized<string>());
         RuntimeValue = new StringValueImpl(this, Value.Runtime<string>());
-        UninitializedValue = new StringValueImpl(this, Value.Uninitialized<string>());
     }
 
     public override StringValue RuntimeValue { get; }

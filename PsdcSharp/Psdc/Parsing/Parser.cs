@@ -449,7 +449,7 @@ public sealed partial class Parser
                 .ParseOptional(out var designator, ParseArrayDesignator)
                 .Parse(out var value, ParseInitializer)
             .MapResult(t => new Initializer.Braced<Designator.Array>.Value(t, designator, value)),
-            Punctuation.Comma, Punctuation.CloseBrace)
+            Punctuation.Comma, Punctuation.CloseBrace, allowTrailingSeparator: true)
         .MapResult(t => new Initializer.Braced<Designator.Array>(t, values));
 
     ParseResult<Initializer> ParseStructureInitializer(IEnumerable<Token> tokens)
@@ -460,7 +460,7 @@ public sealed partial class Parser
                 .ParseOptional(out var designator, ParseStructureDesignator)
             .Parse(out var value, ParseInitializer)
         .MapResult(t => new Initializer.Braced<Designator.Structure>.Value(t, designator, value)),
-        Punctuation.Comma, Punctuation.CloseBrace)
+        Punctuation.Comma, Punctuation.CloseBrace, allowTrailingSeparator: true)
     .MapResult(t => new Initializer.Braced<Designator.Structure>(t, values));
 
     ParseResult<Designator.Array> ParseArrayDesignator(IEnumerable<Token> tokens)
