@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
@@ -130,16 +131,23 @@ public sealed partial class StaticAnalyzer
 
     delegate bool TypeComparer(EvaluatedType actual, EvaluatedType expected);
 
-    Value AnalyzeInitializer<TType>(ReadOnlyScope scope, Initializer initializer, TypeComparer typeComparer, TType targetType) where TType : EvaluatedType
+    Value AnalyzeInitializer(ReadOnlyScope scope, Initializer initializer, TypeComparer typeComparer, EvaluatedType targetType)
     {
+        Value? CheckDesignators<T>(Initializer.Braced braced) where T : Designator
+        {
+            if (braced.Values.All(v => v.Designator.Value is null or T)) {
+                return null;
+            }
+            _msger.Report(Message.ErrorUnsupportedMixedInitializer(initializer));
+            return targetType.UninitializedValue;
+        }
+
         switch (initializer) {
         case Expression expr:
             return AnalyzeExpression(scope, expr, typeComparer, targetType);
-        case Initializer.Braced<Designator.Array> array: {
-            // check if target type is array, same elements, same length
-            if (targetType is not ArrayType targetArrayType) {
-                _msger.Report(Message.ErrorUnsupportedInitializer(initializer.SourceTokens, targetType));
-                return targetType.UninitializedValue;
+        case Initializer.Braced array when targetType is ArrayType targetArrayType: {
+            if (CheckDesignators<Designator.Array>(array) is { } ret) {
+                return ret;
             }
 
             var dimensions = targetArrayType.Dimensions.Select(d => d.Value).ToArray();
@@ -152,7 +160,8 @@ public sealed partial class StaticAnalyzer
 
             foreach (var value in array.Values) {
                 (int flatIndex, Option<int[]> index) = value.Designator.Match(
-                    d => {
+                    de => {
+                        var d = (Designator.Array)de;
                         if (d.Index.Count != dimensions.Length) {
                             _msger.Report(Message.ErrorIndexWrongRank(d.SourceTokens, d.Index.Count, dimensions.Length));
                             return (currentIndex, Option.None<int[]>());
@@ -180,11 +189,36 @@ public sealed partial class StaticAnalyzer
 
             return targetArrayType.Instantiate(arrayItems);
         }
-        case Initializer.Braced<Designator.Structure> structure: {
-            throw new NotImplementedException(); // todo: implement
+        case Initializer.Braced structure when targetType is StructureType targetStructType: {
+            if (CheckDesignators<Designator.Structure>(structure) is { } ret) {
+                return ret;
+            }
+
+            int currentIndex = 0;
+            Dictionary<Identifier, Value> structValues = [];
+            foreach (var value in structure.Values) {
+                Option<(Identifier Name, EvaluatedType Type), Message> component = value.Designator.Match(
+                    de => {
+                        var d = (Designator.Structure)de;
+                        return targetStructType.Components.Map
+                            .GetValueOrNone(d.Component)
+                            .Map(t => (d.Component, t))
+                            .OrWithError(Message.ErrorStructureComponentDoesntExist(d.Component, targetStructType));
+                    },
+                    () => targetStructType.Components.List
+                        .ElementAtOrNone(currentIndex++)
+                        .Map(d => d.ToTuple())
+                        .OrWithError(Message.ErrorExcessElementInArrayInitializer(value.SourceTokens)));
+
+                component.Match(
+                    comp => structValues[comp.Name] = AnalyzeInitializer(scope, value.Initializer, typeComparer, comp.Type),
+                    _msger.Report);
+            }
+            return targetStructType.Instantiate(structValues);
         }
         default:
-            throw initializer.ToUnmatchedException();
+            _msger.Report(Message.ErrorUnsupportedInitializer(initializer.SourceTokens, targetType));
+            return targetType.UninitializedValue;
         }
     }
 
@@ -204,7 +238,7 @@ public sealed partial class StaticAnalyzer
         return value;
     }
 
-    Value EvaluateValue(ReadOnlyScope scope, Expression expr)
+    internal Value EvaluateValue(ReadOnlyScope scope, Expression expr)
     {
         switch (expr) {
         case Expression.Literal lit:
@@ -260,7 +294,7 @@ public sealed partial class StaticAnalyzer
             if (actualType is not StructureType structType) {
                 _msger.Report(Message.ErrrorComponentAccessOfNonStruct(compAccess, actualType));
             } else if (!structType.Components.Map.TryGetValue(compAccess.ComponentName, out var componentType)) {
-                _msger.Report(Message.ErrorStructureComponentDoesntExist(compAccess, structType.Alias));
+                _msger.Report(Message.ErrorStructureComponentDoesntExist(compAccess.ComponentName, structType));
             } else {
                 // todo: get comptime value
                 return componentType.RuntimeValue;

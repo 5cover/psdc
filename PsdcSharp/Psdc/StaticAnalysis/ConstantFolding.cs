@@ -6,7 +6,7 @@ using static Scover.Psdc.Language.BinaryOperator;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-partial class AstExtensions
+static class ConstantFolding
 {
     static OperationResult<TResultValue> Operate<TResultValue, TOperand, TResult>(
         InstantiableType<TResultValue, TResult> type,
@@ -60,12 +60,16 @@ partial class AstExtensions
         // Comparison
         (GreaterThan, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l, r, (int l, int r) => l > r),
         (GreaterThan, RealValue l, RealValue r) => Operate(BooleanType.Instance, l, r, (l, r) => l > r),
+        (GreaterThan, StringValue l, StringValue r) => Operate(BooleanType.Instance, l, r, (l, r) => string.CompareOrdinal(l, r) > 0),
         (GreaterThanOrEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l, r, (int l, int r) => l >= r),
         (GreaterThanOrEqual, RealValue l, RealValue r) => Operate(BooleanType.Instance, l, r, (l, r) => l >= r),
+        (GreaterThanOrEqual, StringValue l, StringValue r) => Operate(BooleanType.Instance, l, r, (l, r) => string.CompareOrdinal(l, r) >= 0),
         (LessThan, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l, r, (int l, int r) => l < r),
         (LessThan, RealValue l, RealValue r) => Operate(BooleanType.Instance, l, r, (l, r) => l < r),
+        (LessThan, StringValue l, StringValue r) => Operate(BooleanType.Instance, l, r, (l, r) => string.CompareOrdinal(l, r) < 0),
         (LessThanOrEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l, r, (int l, int r) => l <= r),
         (LessThanOrEqual, RealValue l, RealValue r) => Operate(BooleanType.Instance, l, r, (l, r) => l <= r),
+        (LessThanOrEqual, StringValue l, StringValue r) => Operate(BooleanType.Instance, l, r, (l, r) => string.CompareOrdinal(l, r) <= 0),
 
         // Arithmetic
         (Add, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l, r, (int l, int r) => l + r),

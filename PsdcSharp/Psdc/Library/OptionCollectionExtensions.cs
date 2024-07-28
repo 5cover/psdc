@@ -61,4 +61,6 @@ static class OptionCollectionExtensions
         }
         return Option.None<T>();
     }
+
+    public static Option<TValue> GetValueOrNone<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key) => dictionary.TryGetValue(key, out TValue? v) ? v.Some() : Option.None<TValue>();
 }

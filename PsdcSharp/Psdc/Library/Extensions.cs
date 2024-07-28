@@ -16,6 +16,24 @@ readonly record struct Position(int Line, int Column)
 
 static class Extensions
 {
+    public static void CheckKeys<TKey, TValue>(
+        this IDictionary<TKey, TValue> dictionary,
+        IReadOnlyCollection<TKey> keys,
+        Func<TKey, TValue> fallbackValueSelector,
+        Action<TKey> handleExcessKey)
+    {
+        foreach (var key in dictionary.Keys) {
+            if (!keys.Contains(key)) {
+                handleExcessKey(key);
+            }
+        }
+        foreach (var key in keys) {
+            _ = dictionary.TryAdd(key, fallbackValueSelector(key));
+        }
+    }
+    public static (TKey, TValue) ToTuple<TKey, TValue>(this KeyValuePair<TKey, TValue> kvp)
+     => (kvp.Key, kvp.Value);
+
     /// <summary>
     /// Get the flattened index of a multidimensional array.
     /// </summary>

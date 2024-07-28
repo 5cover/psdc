@@ -73,21 +73,14 @@ $$
 &⟨Switch.Default⟩ \to \text{quand\ autre} \text{=>} ⟨Statement⟩^+
 \\
 &⟨Initializer⟩ \to \begin{Bmatrix*}[l]
-    ⟨Expr⟩
-    \\
-    ⟨StructureInitializer⟩ \to \text{\{}
+    ⟨Expr⟩ \\
+    ⟨Braced⟩ \to \text{\{}
         \begin{pmatrix}
             \begin{pmatrix}
-                ⟨Component⟩
-                \text{:=}
-            \end{pmatrix}^?
-            ⟨Initializer⟩
-        \end{pmatrix}^{*\#}
-    \text{\}} \\
-    ⟨ArrayInitializer⟩ \to \text{\{}
-        \begin{pmatrix}
-            \begin{pmatrix}
-                ⟨Index⟩
+                \begin{Bmatrix*}
+                    ⟨Index⟩ \\
+                    ⟨Component⟩ \\
+                \end{Bmatrix*}
                 \text{:=}
             \end{pmatrix}^?
             ⟨Initializer⟩

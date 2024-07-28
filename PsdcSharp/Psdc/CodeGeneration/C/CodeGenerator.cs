@@ -243,7 +243,7 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
     {
         Indent(o).Append("do ");
         AppendBlock(o, repeatLoop).Append(" while ");
-        AppendBracketedExpression(o, repeatLoop.Condition.Invert());
+        AppendBracketedExpression(o, _ast.Invert(repeatLoop.Condition));
         return o.AppendLine(";");
     }
 
@@ -307,27 +307,26 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendInitializer(StringBuilder o, Initializer initializer) => initializer switch {
         Expression expr => AppendExpression(o, expr),
-        Initializer.Braced<Designator.Array> array => AppendArrayInitializer(o, array),
-        Initializer.Braced<Designator.Structure> array => AppendStructureInitializer(o, array),
+        Initializer.Braced array => AppendBracedInitializer(o, array),
         _ => throw initializer.ToUnmatchedException(),
     };
 
-    StringBuilder AppendArrayInitializer(StringBuilder o, Initializer.Braced<Designator.Array> array)
+    StringBuilder AppendBracedInitializer(StringBuilder o, Initializer.Braced initializer)
     {
-        o.Append("{ ");
-        foreach (var value in array.Values) {
-            value.Designator.MatchSome(d => AppendIndex(o, d.Index).Append(" = "));
+        o.AppendLine("{");
+        _indent.Increase();
+        foreach (var value in initializer.Values) {
+            Indent(o);
+            value.Designator.MatchSome(d => (d switch {
+                Designator.Array array => AppendIndex(o, array.Index),
+                Designator.Structure structure => o.Append($".{structure.Component}"),
+                _ => throw d.ToUnmatchedException(),
+            }).Append(" = "));
             AppendInitializer(o, value.Initializer);
-            o.Append(", ");
+            o.AppendLine(",");
         }
-        return o.Append('}');
-    }
-
-    StringBuilder AppendStructureInitializer(StringBuilder o, Initializer.Braced<Designator.Structure> structure)
-    {
-        o.Append("{ ");
-        // todo: implement
-        return o.Append('}');
+        _indent.Decrease();
+        return Indent(o).Append('}');
     }
 
     StringBuilder AppendVariableDeclaration(StringBuilder o, TypeInfo type, IEnumerable<Identifier> names)
@@ -359,7 +358,7 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
     StringBuilder AppendIndex(StringBuilder o, IReadOnlyList<Expression> index)
     {
         foreach (Expression i in index) {
-            var (expression, messages) = i.Alter(BinaryOperator.Subtract, 1);
+            var (expression, messages) = _ast.Alter(i, BinaryOperator.Subtract, 1);
             _msger.ReportAll(messages);
             AppendExpression(o.Append('['), expression).Append(']');
         }
@@ -406,11 +405,11 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
     {
         if (_ast.InferredTypes[opBin.Left].IsConvertibleTo(StringType.Instance)
          && _ast.InferredTypes[opBin.Right].IsConvertibleTo(StringType.Instance)
-         && opBin.Operator is BinaryOperator.Equal or BinaryOperator.NotEqual) {
+         && IsStringComparisonOperator(opBin.Operator)) {
             _includes.Ensure(IncludeSet.String);
             AppendExpression(o.Append("strcmp("), opBin.Left);
             AppendExpression(o.Append(", "), opBin.Right);
-            return o.Append($") {(opBin.Operator is BinaryOperator.Equal ? '=' : '!')}= 0");
+            return o.Append($") {OperatorInfo.Get(opBin.Operator).Code} 0");
         }
 
         var (bracketLeft, bracketRight) = ShouldBracket(opBin);
@@ -418,6 +417,14 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
         o.Append($" {OperatorInfo.Get(opBin.Operator).Code} ");
         return AppendExpression(o, opBin.Right, bracketRight);
     }
+
+    private static bool IsStringComparisonOperator(BinaryOperator b) => b
+        is BinaryOperator.Equal
+        or BinaryOperator.GreaterThan
+        or BinaryOperator.GreaterThanOrEqual
+        or BinaryOperator.LessThan
+        or BinaryOperator.LessThanOrEqual
+        or BinaryOperator.NotEqual;
 
     StringBuilder AppendOperationUnary(StringBuilder o, Expression.UnaryOperation opUn)
     {
@@ -458,7 +465,7 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
         """);
 
     TypeInfo CreateTypeInfo(EvaluatedType evaluatedType)
-     => TypeInfo.Create(evaluatedType, _msger, expr => AppendExpression(new(), expr).ToString(), _kwTable);
+     => TypeInfo.Create(_ast, evaluatedType, _msger, expr => AppendExpression(new(), expr).ToString(), _kwTable);
 
     StringBuilder Indent(StringBuilder o) => _indent.Indent(o);
 

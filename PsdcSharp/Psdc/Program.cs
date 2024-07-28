@@ -66,6 +66,10 @@ static class Program
         readonly DefaultDictionary<MessageSeverity, int> _msgCountsBySeverity = new(0);
         static TextWriter Stderr => Console.Error;
 
+        const string LineNoMargin = "    ";
+        const string Bar = " | ";
+        const int MaxMultilineErrorLines = 10;
+
         public void PrintConclusion()
          => Stderr.WriteLine($"Compilation terminated ({_msgCountsBySeverity[MessageSeverity.Error]} errors, "
                            + $"{_msgCountsBySeverity[MessageSeverity.Warning]} warnings, "
@@ -82,53 +86,91 @@ static class Program
             Position start = input.GetPositionAt(message.InputRange.Start);
             Position end = input.GetPositionAt(message.InputRange.End);
 
-            // If the error spans over multiple line, show only the last line.
-            if (start.Line != end.Line) {
-                start = new(end.Line, 0);
-            }
-
-            const string LineNoMargin = "    ";
-            const string Bar = " | ";
+            var lineNoPadding = end.Line.DigitCount();
 
             Stderr.WriteLine($"{start}: {message.Severity.ToString().ToLower()}: {message.Content.Get(input)}");
 
-            ReadOnlySpan<char> faultyLine = input.GetLine(start.Line);
+            // If the error spans over only 1 line, show it with carets underneath
+            if (start.Line == end.Line) {
+                ReadOnlySpan<char> badLine = input.GetLine(end.Line);
 
-            // Faulty line
-            WriteLineStart(withLineNumber: true);
-            {
-                Stderr.Write(faultyLine[..start.Column]); // keep indentation
+                // Bad line
+                StartLine(lineNoPadding, end.Line);
+                {
+                    Stderr.Write(badLine[..start.Column]); // keep indentation
+                    msgColor.SetColor();
+                    Stderr.Write(badLine[start.Column..end.Column]);
+                    Console.ResetColor();
+                    EndLine(badLine[end.Column..]);
+                }
 
-                msgColor.SetColor();
-                Stderr.Write($"{faultyLine[start.Column..end.Column]}");
-                Console.ResetColor();
+                // Caret line
+                StartLine(lineNoPadding);
+                {
+                    var offset = Math.Max(badLine.GetLeadingWhitespaceCount(), start.Column);
+                    Stderr.WriteNTimes(offset, ' ');
+                    msgColor.DoInColor(() => Stderr.WriteNTimes(end.Column - offset, '^'));
+                    Stderr.WriteLine();
+                }
+            }
+            // Otherwise, show all the bad code
+            else {
+                StartLine(lineNoPadding, start.Line);
+                {
+                    ReadOnlySpan<char> badLine = input.GetLine(start.Line);
+                    Stderr.Write(badLine[..start.Column]);
+                    msgColor.SetColor();
+                    EndLine(badLine[start.Column..]);
+                    Console.ResetColor();
+                }
 
-                Stderr.WriteLine($"{faultyLine[end.Column..].TrimEnd()}");
+                var badLines = Enumerable.Range(start.Line + 1, end.Line - start.Line - 1);
+                foreach (var line in badLines.Take(MaxMultilineErrorLines - 2)) {
+                    ReadOnlySpan<char> badLine = input.GetLine(line);
+                    StartLine(lineNoPadding, line);
+                    msgColor.SetColor();
+                    EndLine(badLine);
+                    Console.ResetColor();
+                };
+
+                badLines.FirstOrNone().MatchSome(l => {
+                    StartLine(lineNoPadding, l);
+                    EndLine($"({end.Line - start.Line + 1 - MaxMultilineErrorLines} more lines...)");
+                });
+
+                StartLine(lineNoPadding, end.Line);
+                {
+                    ReadOnlySpan<char> badLine = input.GetLine(end.Line);
+                    msgColor.SetColor();
+                    Stderr.Write(badLine[..end.Column]);
+                    Console.ResetColor();
+                    EndLine(badLine[end.Column..]);
+                }
             }
 
-            // Caret line
-            WriteLineStart();
-            {
-                var offset = Math.Max(faultyLine.GetLeadingWhitespaceCount(), start.Column);
-                Stderr.WriteNTimes(offset, ' ');
-                msgColor.DoInColor(() => Stderr.WriteNTimes(end.Column - offset, '^'));
-                Stderr.WriteLine();
-            }
-
-            // Advice line
+            // Advice lines
             foreach (var advice in message.AdvicePieces) {
-                WriteLineStart();
+                StartLine(lineNoPadding);
                 Stderr.WriteLine(advice);
             };
 
             Stderr.WriteLine();
+        }
 
-            void WriteLineStart(bool withLineNumber = false)
-            {
-                Stderr.Write(LineNoMargin);
-                Stderr.Write(withLineNumber ? start.Line + 1 : new string(' ', start.Line.DigitCount()));
-                Stderr.Write(Bar);
-            }
+        static void EndLine(ReadOnlySpan<char> content) => Stderr.WriteLine(content.TrimEnd());
+
+        static void StartLine(int padding, int line)
+        {
+            Stderr.Write(LineNoMargin);
+            Stderr.Write((line + 1).ToString().PadLeft(padding));
+            Stderr.Write(Bar);
+        }
+
+        static void StartLine(int padding)
+        {
+            Stderr.Write(LineNoMargin);
+            Stderr.WriteNTimes(padding, ' ');
+            Stderr.Write(Bar);
         }
     }
 }

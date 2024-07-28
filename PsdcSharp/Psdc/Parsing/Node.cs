@@ -450,22 +450,21 @@ public interface Node : EquatableSemantics<Node>
 
     internal interface Initializer : Node
     {
-        internal sealed class Braced<TDesignator>(SourceTokens sourceTokens,
-            IReadOnlyList<Braced<TDesignator>.Value> values)
+        internal sealed class Braced(SourceTokens sourceTokens,
+            IReadOnlyList<Braced.Value> values)
         : NodeImpl(sourceTokens), Initializer
-        where TDesignator : class, Designator
         {
             public IReadOnlyList<Value> Values => values;
 
-            public override bool SemanticsEqual(Node other) => other is Braced<TDesignator> o
+            public override bool SemanticsEqual(Node other) => other is Braced o
              && o.Values.AllSemanticsEqual(Values);
 
             public sealed class Value(SourceTokens sourceTokens,
-                Option<TDesignator> designator,
+                Option<Designator> designator,
                 Initializer initializer)
             : NodeImpl(sourceTokens)
             {
-                public Option<TDesignator> Designator => designator;
+                public Option<Designator> Designator => designator;
                 public Initializer Initializer => initializer;
 
                 public override bool SemanticsEqual(Node other) => other is Value o

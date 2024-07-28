@@ -438,30 +438,19 @@ public sealed partial class Parser
     .MapResult(t => new ParameterFormal(t, mode, name, type));
 
     ParseResult<Initializer> ParseInitializer(IEnumerable<Token> tokens) => ParseOperation.Start(_msger, tokens, "initializer")
-        .Parse(out var initializer, ParserFirst(ParseArrayInitializer, ParseStructureInitializer, ParseExpression))
+        .Parse(out var initializer, ParserFirst(ParseBracedInitializer, ParseExpression))
         .MapResult(t => initializer);
 
-    ParseResult<Initializer> ParseArrayInitializer(IEnumerable<Token> tokens)
-         => ParseOperation.Start(_msger, tokens, "array initializer")
+    ParseResult<Initializer> ParseBracedInitializer(IEnumerable<Token> tokens)
+         => ParseOperation.Start(_msger, tokens, "braced initializer")
             .ParseToken(Punctuation.OpenBrace)
             .ParseZeroOrMoreSeparated(out var values, (tokens)
-                => ParseOperation.Start(_msger, tokens, "array initializer value")
-                .ParseOptional(out var designator, ParseArrayDesignator)
+                => ParseOperation.Start(_msger, tokens, "braced initializer value")
+                .ParseOptional(out var designator, ParserFirst<Designator>(ParseArrayDesignator, ParseStructureDesignator))
                 .Parse(out var value, ParseInitializer)
-            .MapResult(t => new Initializer.Braced<Designator.Array>.Value(t, designator, value)),
+            .MapResult(t => new Initializer.Braced.Value(t, designator, value)),
             Punctuation.Comma, Punctuation.CloseBrace, allowTrailingSeparator: true)
-        .MapResult(t => new Initializer.Braced<Designator.Array>(t, values));
-
-    ParseResult<Initializer> ParseStructureInitializer(IEnumerable<Token> tokens)
-     => ParseOperation.Start(_msger, tokens, "structure initializer")
-        .ParseToken(Punctuation.OpenBrace)
-        .ParseZeroOrMoreSeparated(out var values, (tokens)
-            => ParseOperation.Start(_msger, tokens, "structure initializer value")
-                .ParseOptional(out var designator, ParseStructureDesignator)
-            .Parse(out var value, ParseInitializer)
-        .MapResult(t => new Initializer.Braced<Designator.Structure>.Value(t, designator, value)),
-        Punctuation.Comma, Punctuation.CloseBrace, allowTrailingSeparator: true)
-    .MapResult(t => new Initializer.Braced<Designator.Structure>(t, values));
+        .MapResult(t => new Initializer.Braced(t, values));
 
     ParseResult<Designator.Array> ParseArrayDesignator(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "array designator")

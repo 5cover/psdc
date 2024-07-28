@@ -24,6 +24,7 @@ public enum MessageCode
     IndexWrongRank,
     ExcessElementInArrayInitializer,
     UnsupportedInitializer,
+    UnsupportedMixedInitializer,
     TargetLanguageError,
     ReturnInNonFunction,
     TargetLanguageReservedKeyword,

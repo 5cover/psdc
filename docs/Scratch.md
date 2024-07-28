@@ -385,39 +385,30 @@ self-explanatory.
 - Check the assignability of target and value in assignment
 - Check if return value corresponds to function's return type
 
+## Configuration
+
+Ecrire (`ecrire`, `ecrireEcran`) newline control
+
+Different ways to configure (ordered by predecence, lower value replace higher values):
+
+location|scope|syntax
+-|-|-
+config json file|global|`{ "ecrire-newline": true }`
+CLI options|global|`--config ecrire-newline:true`
+preprocessor directives|current file|`#config ecrire-newline set (expr)`<br>`#config ecrire-newline reset` &rarr; resets to inherited value
+
 ## Trailing commas
 
 Allow trailing commas in parameter lists, local variable lists, array subscripts.
 
-## Structure and array ~~literals~~ initializers
+## Constant locals
 
-### Strucutre
+Why not? It feels like something that has no reason not to be allowed
 
-We definitely need context here because otherwise, undesignated values have no meaning. Whiat is `{'a', 2, "str"}`?
+## Fix pass by reference arguments pointer code generation
 
-Unless we create an implicit struct type and make struct types implicitly convertible when they have the same components types in the same order, regardless of names.
+Add stars where necessary.
 
-Or maybe we only allow this conversion for implicit structs (meaning a new `EvaluatedType` subclass), so crazy things like
+## Fix string assignment code generation
 
-```psc
-point : structure début
-    x, y : réel;
-fin;
-
-rect : structure début
-    l, L : réel:
-fin;
-
-point := {5, 6};
-rect := point; // Dear god...
-```
-
-~~Sooo, we'll have an `EvaluatedType.ImplicitStruct` class, and we'll use the existing implicit conversion facilities to convert them to struct as needed.~~
-
----
-
-I'm starting to think it would be better to keep it as initializers only. It will remove a lot of confusion, result in less fragile code, and avoid crossing the boundaris of what may not be allowed in a DS. Keep the parallel with C since it will be the main target language.
-
-We might add suport for [compound literals](https://en.cppreference.com/w/c/language/compound_literal) in the future
-
-Change the FG so it only supports structure and array initializers.
+Use `strcpy`.

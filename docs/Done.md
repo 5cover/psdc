@@ -1354,3 +1354,36 @@ For an $N$-dimensional array:
 $$
 \text{index} = \sum_{x=0}^{N-1}\begin{pmatrix}i_x\prod_{y=x+1}^{N-1}l_y\end{pmatrix}
 $$
+
+### Strucutre
+
+We definitely need context here because otherwise, undesignated values have no meaning. Whiat is `{'a', 2, "str"}`?
+
+Unless we create an implicit struct type and make struct types implicitly convertible when they have the same components types in the same order, regardless of names.
+
+Or maybe we only allow this conversion for implicit structs (meaning a new `EvaluatedType` subclass), so crazy things like
+
+```psc
+point : structure début
+    x, y : réel;
+fin;
+
+rect : structure début
+    l, L : réel:
+fin;
+
+point := {5, 6};
+rect := point; // Dear god...
+```
+
+~~Sooo, we'll have an `EvaluatedType.ImplicitStruct` class, and we'll use the existing implicit conversion facilities to convert them to struct as needed.~~
+
+---
+
+I'm starting to think it would be better to keep it as initializers only. It will remove a lot of confusion, result in less fragile code, and avoid crossing the boundaries of what may not be allowed in a DS. Keep the parallel with C since it will be the main target language.
+
+We might add suport for [compound literals](https://en.cppreference.com/w/c/language/compound_literal) sometime in the future. For now though, they will only serve as initializers.
+
+## Error formatting
+
+Show the whole code associated with the error (with a max amount of lines) instead of just the last line

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 
@@ -387,11 +388,10 @@ internal sealed class StructureType : EvaluatedTypeImpl<StructureValue>, Instant
 
     public StructureValue Instantiate(IReadOnlyDictionary<Identifier, Value> value)
     {
-        Debug.Assert(Components.Count == value.Count
-                && Components.Map.All(kv
-                    => value.TryGetValue(kv.Key, out var componentValue)
-                    && componentValue.Type.SemanticsEqual(kv.Value)
-                ));
+        Dictionary<Identifier, Value> completedValue = new(value);
+        completedValue.CheckKeys(Components.Map.Keys.ToList(),
+            missingKey => Components.Map[missingKey].UninitializedValue,
+            excessKey => Debug.Fail($"Excess key: `{excessKey}`"));
         return new(this, Value.Comptime(value));
     }
 }

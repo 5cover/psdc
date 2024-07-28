@@ -38,8 +38,8 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
 
     public IEnumerable<string> RequiredHeaders { get; }
 
-    public static TypeInfo Create(EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable)
-     => Create(type, messenger, generateExpression, keywordTable, new());
+    public static TypeInfo Create(SemanticAst ast, EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable)
+     => Create(ast, type, messenger, generateExpression, keywordTable, new());
 
     public string DecorateExpression(string expr)
      => $"{_stars}{expr}";
@@ -59,7 +59,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
 
     static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
 
-    static TypeInfo Create(EvaluatedType type, Messenger msger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable, Indentation indent)
+    static TypeInfo Create(SemanticAst ast, EvaluatedType type, Messenger msger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable, Indentation indent)
     {
         TypeInfo typeInfo = type switch {
             UnknownType u => new(keywordTable.Validate(u.SourceTokens, u.Representation, msger)),
@@ -69,9 +69,9 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             RealType real => new("float", "%g"),
             IntegerType integer => new("int", "%d"),
             StringType => new("char", "%s", starCount: 1),
-            ArrayType array => CreateArrayType(array),
-            LengthedStringType strlen => CreateLengthedString(strlen),
-            StructureType structure => CreateStructure(structure),
+            ArrayType array => CreateArrayType(ast, array),
+            LengthedStringType strlen => CreateLengthedString(ast, strlen),
+            StructureType structure => CreateStructure(ast, structure),
             _ => throw type.ToUnmatchedException(),
         };
 
@@ -79,9 +79,9 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             ? new TypeInfo(keywordTable.Validate(alias, msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders)
             : typeInfo;
 
-        TypeInfo CreateArrayType(ArrayType array)
+        TypeInfo CreateArrayType(SemanticAst ast, ArrayType array)
         {
-            var arrayType = Create(array.ItemType, msger, generateExpression, keywordTable, indent);
+            var arrayType = Create(ast, array.ItemType, msger, generateExpression, keywordTable, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
             foreach (var dimension in array.Dimensions.Select(dim => generateExpression(dim.Expression))) {
                 postModifier.Append($"[{dimension}]");
@@ -92,12 +92,12 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
                 postModifier: postModifier.ToString());
         }
 
-        TypeInfo CreateLengthedString(LengthedStringType strlen)
+        TypeInfo CreateLengthedString(SemanticAst ast, LengthedStringType strlen)
         {
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression
                 .Map(len => {
-                    var (expression, messages) = len.Alter(BinaryOperator.Add, 1);
+                    var (expression, messages) = ast.Alter(len, BinaryOperator.Add, 1);
                     msger.ReportAll(messages);
                     return generateExpression(expression);
                 })
@@ -105,13 +105,13 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             return new("char", "%s", postModifier: $"[{lengthPlus1}]");
         }
 
-        TypeInfo CreateStructure(StructureType structure)
+        TypeInfo CreateStructure(SemanticAst ast, StructureType structure)
         {
             StringBuilder sb = new("struct {");
             sb.AppendLine();
             indent.Increase();
             var components = structure.Components.Map.ToDictionary(kv => kv.Key,
-                kv => Create(kv.Value, msger, generateExpression, keywordTable, indent));
+                kv => Create(ast, kv.Value, msger, generateExpression, keywordTable, indent));
             foreach (var comp in components) {
                 indent.Indent(sb).Append(comp.Value.GenerateDeclaration(keywordTable.Validate(comp.Key, msger).Yield())).AppendLine(";");
             }

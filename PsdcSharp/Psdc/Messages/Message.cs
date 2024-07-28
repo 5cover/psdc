@@ -41,13 +41,13 @@ public readonly struct Message
         $"call to {callable.GetKind()} `{callable.Name}` does not correspond to signature",
         problems);
 
-    internal static Message ErrorIndexWrongRank(SourceTokens sourceTokens, int faultyRank, int arrayRank)
+    internal static Message ErrorIndexWrongRank(SourceTokens sourceTokens, int badRank, int arrayRank)
      => new(sourceTokens, MessageCode.IndexWrongRank,
-        $"index has {Quantity(faultyRank, "dimension", "dimensions")}, but {Quantity(arrayRank, "was", "were")} expected");
+        $"index has {Quantity(badRank, "dimension", "dimensions")}, but {Quantity(arrayRank, "was", "were")} expected");
 
-    internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, IReadOnlyList<int> faultyIndex, IReadOnlyList<int> arrayLength)
+    internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, IReadOnlyList<int> badIndex, IReadOnlyList<int> arrayLength)
      => new(sourceTokens, MessageCode.IndexOutOfBounds,
-        $"index [{string.Join(", ", faultyIndex)}] out of bounds for array [{string.Join(", ", arrayLength)}]");
+        $"index [{string.Join(", ", badIndex)}] out of bounds for array [{string.Join(", ", arrayLength)}]");
 
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
@@ -90,12 +90,16 @@ public readonly struct Message
      => new(newSig.SourceTokens, MessageCode.SignatureMismatch,
         new(input => $"this signature of {newSig.GetKind()} `{newSig.Name}` differs from previous signature (`{input[expectedSig.SourceTokens.InputRange]}`)"));
 
-    internal static Message ErrorStructureComponentDoesntExist(Expression.Lvalue.ComponentAccess compAccess,
-        Identifier? structureName)
-     => new(compAccess.ComponentName.SourceTokens, MessageCode.StructureComponentDoesntExist,
-            structureName is null
-                ? $"no component named `{compAccess.ComponentName}` in structure"
-                : $"`{structureName}` has no component named `{compAccess.ComponentName}`");
+    internal static Message ErrorStructureComponentDoesntExist(Identifier component,
+        StructureType structType)
+     => new(component.SourceTokens, MessageCode.StructureComponentDoesntExist,
+        structType.Alias is null // avoid the long struct representation
+            ? $"no component named `{component}` in structure"
+            : $"`{structType}` has no component named `{component}`");
+
+    internal static Message ErrorUnsupportedMixedInitializer(Initializer initializer)
+     => new(initializer.SourceTokens, MessageCode.UnsupportedMixedInitializer,
+        "mixed initializers (array and structure) are not supported");
 
     internal static Message ErrorStructureDuplicateComponent(SourceTokens sourceTokens, Identifier componentName)
      => new(sourceTokens, MessageCode.StructureDuplicateComponent,
