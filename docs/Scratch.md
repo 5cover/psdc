@@ -409,6 +409,6 @@ Why not? It feels like something that has no reason not to be allowed
 
 Add stars where necessary.
 
-## Fix string assignment code generation
+Implementation:
 
-Use `strcpy`.
+Use Scope and symbol tables, then operator logic in OperatorInfo to add the star as needed when generating a VariableReference, and bracketing as appropriate.

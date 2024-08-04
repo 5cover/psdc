@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text;
+using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 
 using static Scover.Psdc.Parsing.Node;
@@ -8,7 +9,7 @@ namespace Scover.Psdc.CodeGeneration.C;
 
 partial class CodeGenerator
 {
-    (string format, IReadOnlyList<Expression> arguments) BuildFormatString(IEnumerable<Expression> parts)
+    (string format, IReadOnlyList<Expression> arguments) BuildFormatString(ReadOnlyScope scope, IEnumerable<Expression> parts)
     {
         List<Expression> arguments = [];
         StringBuilder format = new();
@@ -19,7 +20,7 @@ partial class CodeGenerator
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
             } else {
-                CreateTypeInfo(_ast.InferredTypes[part]).FormatComponent.Match(fmtComp => {
+                CreateTypeInfo(scope, _ast.InferredTypes[part]).FormatComponent.Match(fmtComp => {
                     format.Append(fmtComp);
                     arguments.Add(part);
                 }, () => _msger.Report(Message.ErrorTargetLanguage(part.SourceTokens, LanguageName.C,

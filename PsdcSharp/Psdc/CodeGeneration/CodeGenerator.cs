@@ -1,61 +1,46 @@
+using System.Text;
+using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
-
-using static Scover.Psdc.Language.Associativity;
 using static Scover.Psdc.Parsing.Node;
 
 namespace Scover.Psdc.CodeGeneration;
 
-public static class CodeGenerator
-{
+public static class CodeGenerator {
     public static string GenerateC(Messenger messenger, SemanticAst ast)
      => new C.CodeGenerator(messenger, ast).Generate();
 }
 
-abstract partial class CodeGenerator<TOpInfo>(Messenger msger, SemanticAst ast, KeywordTable keywordTable)
-    where TOpInfo : OperatorInfo<TOpInfo>
+abstract partial class CodeGenerator<TKwTable, TOpTable>(Messenger msger, SemanticAst ast, TKwTable keywordTable, TOpTable operatorTable)
+where TKwTable : KeywordTable
+where TOpTable : OperatorTable
 {
     protected readonly SemanticAst _ast = ast;
     protected readonly Indentation _indent = new();
     protected readonly Messenger _msger = msger;
-    protected readonly KeywordTable _kwTable = keywordTable;
+    protected readonly TKwTable _kwTable = keywordTable;
+    protected readonly TOpTable _opTable = operatorTable;
 
     protected string ValidateIdentifier(Identifier ident) => _kwTable.Validate(ident, _msger);
 
     public abstract string Generate();
 
-    protected static int GetPrecedence(Expression expr)
-     => expr switch {
-         Expression.FunctionCall or Expression.BuiltinFdf => TOpInfo.FunctionCall.Precedence,
-         Expression.BinaryOperation opBin => TOpInfo.Get(opBin.Operator).Precedence,
-         Expression.UnaryOperation opUn => TOpInfo.Get(opUn.Operator).Precedence,
-         Expression.Lvalue.ArraySubscript => TOpInfo.ArraySubscript.Precedence,
-         Expression.Lvalue.ComponentAccess => TOpInfo.ComponentAccess.Precedence,
-         Expression.Lvalue.VariableReference or Expression.Literal or NodeBracketedExpression => int.MinValue,
-         _ => throw expr.ToUnmatchedException(),
-     };
+    protected StringBuilder AppendUnaryPrefixOperation<TExpr>(StringBuilder o, ReadOnlyScope scope, OperatorInfo op, TExpr operand, Action<StringBuilder, ReadOnlyScope, TExpr> appender) where TExpr : Expression
+    {
+        o.Append(op.Code);
+        return AppendBracketed(o, _opTable.ShouldBracketUnary(scope, operand, op), o => appender(o, scope, operand));
+    }
 
-    protected static (bool bracketLeft, bool bracketRight) ShouldBracket(Expression.BinaryOperation opBin)
-     => ShouldBracket(
-        GetPrecedence(opBin.Left),
-        GetPrecedence(opBin.Right),
-        TOpInfo.Get(opBin.Operator));
-
-    protected static bool ShouldBracket(Expression.UnaryOperation opUn)
-     => ShouldBracket(opUn.Operand, TOpInfo.Get(opUn.Operator));
-
-    protected static bool ShouldBracket(Expression.Lvalue.ComponentAccess compAccess)
-     => ShouldBracket(compAccess.Structure, TOpInfo.ComponentAccess);
-
-    protected static bool ShouldBracket(Expression.Lvalue.ArraySubscript arrSub)
-     => ShouldBracket(arrSub.Array, TOpInfo.ArraySubscript);
-
-    static (bool bracketLeft, bool bracketRight) ShouldBracket(int precedenceLeft, int precedenceRight, TOpInfo me)
-     => (bracketLeft: precedenceLeft > me.Precedence
-                   || precedenceLeft == me.Precedence && me.Associativity == RightToLeft,
-        bracketRight: precedenceRight > me.Precedence
-                   || precedenceRight == me.Precedence && me.Associativity == LeftToRight);
-
-    static bool ShouldBracket(Expression operand, TOpInfo me) => GetPrecedence(operand) > me.Precedence;
+    protected static StringBuilder AppendBracketed(StringBuilder o, bool bracket, Action<StringBuilder> appender)
+    {
+        if (bracket) {
+            o.Append('(');
+        }
+        appender(o);
+        if (bracket) {
+            o.Append(')');
+        }
+        return o;
+    }
 }

@@ -27,7 +27,6 @@ public enum MessageCode
     UnsupportedMixedInitializer,
     TargetLanguageError,
     ReturnInNonFunction,
-    TargetLanguageReservedKeyword,
 
     CustomError = 999,
 
@@ -37,6 +36,7 @@ public enum MessageCode
 
     DivisionByZero = 1000,
     FloatingPointEquality,
+    TargetLanguageReservedKeyword,
 
     CustomWarning = 1999,
 

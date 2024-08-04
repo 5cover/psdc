@@ -10,7 +10,9 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
     public string Validate(SourceTokens sourceTokens, string ident, Messenger msger)
     {
         if (keywords.Contains(ident)) {
-            msger.Report(Message.ErrorTargetLanguageReservedKeyword(sourceTokens, ident, LanguageName.C));
+            var newIdent = ident + "_";
+            msger.Report(Message.WarningTargetLanguageReservedKeyword(
+                sourceTokens, LanguageName.C, ident, newIdent));
         }
         return ident;
     }

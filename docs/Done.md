@@ -1387,3 +1387,7 @@ We might add suport for [compound literals](https://en.cppreference.com/w/c/lang
 ## Error formatting
 
 Show the whole code associated with the error (with a max amount of lines) instead of just the last line
+
+## Fix string assignment code generation
+
+Use `strcpy`.
