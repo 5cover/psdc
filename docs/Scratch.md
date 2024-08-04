@@ -242,6 +242,12 @@ Ideas for error productions :
 - Incomplete type where complete type was expected
 - faire instead of alors / alors instead of faire
 
+## Optimization: avoid dict lookup when inferred type is known
+
+For literals
+
+Encapsulate the dic in a class which supports this.
+
 ## should we consume the failure token
 
 The following syntax error:
@@ -401,20 +407,25 @@ preprocessor directives|current file|`#config ecrire-newline set (expr)`<br>`#co
 
 Allow trailing commas in parameter lists, local variable lists, array subscripts.
 
+## should characters be considered integers?
+
+This would mean allowing scalar comparison on characters and implicit conversion to integer. I see this as a potential issue for portability, as we'd be gluing ourselves to a specific encoding.
+
+C# uses UTF-16, while C defines no specific encoding and uses what ever the system provides as a default (i think)? But then what is the actual value of a character literal? Does it depend on the file encoding? A compiler option?
+
+Although, this would be useful for when we want to check characters (is digit, is alpha...)
+
 ## Constant locals
 
 Why not? It feels like something that has no reason not to be allowed
 
-## Fix pass by reference arguments pointer code generation
+## Identifier target language keyword adjust
 
-Add stars where necessary.
+Currently we just add an underscore but this could break, if there is already an existing identifier of that name.
 
-Implementation:
+What we can do is pass the scope and check if the name already exists, if so then increment the number until we get a free one.
 
-Use Scope and symbol tables, then operator logic in OperatorInfo to add the star as needed when generating a VariableReference, and bracketing as appropriate.
-
-## Optimization: avoid dict lookup when inferred type is known
-
-For literals
-
-Encapsulate the dic in a class which supports this.
+- `ident_`
+- `ident_1`
+- `ident_2`
+- ...

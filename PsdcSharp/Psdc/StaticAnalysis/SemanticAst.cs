@@ -100,15 +100,15 @@ public sealed class SemanticAst
 
     T PrepareNewExpression<T>(EvaluatedType exprType, T expr) where T : Expression
     {
-        _inferredTypes.Add(expr, exprType);
+        if (_inferredTypes.TryGetValue(expr, out var existingType)) {
+            Debug.Assert(existingType.SemanticsEqual(exprType));
+        } else {
+            _inferredTypes.Add(expr, exprType);
+        }
         return expr;
     }
 
-    T PrepareNewLiteral<T>(T lit) where T : Expression.Literal
-    {
-        _inferredTypes.Add(lit, lit.ValueType);
-        return lit;
-    }
+    T PrepareNewLiteral<T>(T lit) where T : Expression.Literal => PrepareNewExpression(lit.ValueType, lit);
 
     Expression.BinaryOperation MakeBinaryOperation(Expression expr, BinaryOperator @operator, int value)
      => new(SourceTokens.Empty, expr, @operator,

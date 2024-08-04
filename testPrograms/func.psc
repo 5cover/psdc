@@ -47,7 +47,7 @@ fin
 début
     sayHello();
 
-    printNTimes(entE "Bonjour", entE pow(entE 2, entE 3));
+    printNTimes(entF "Bonjour", entE pow(entE 2, entE 3));
     x : entier;
     x := 0;
     y : entier;

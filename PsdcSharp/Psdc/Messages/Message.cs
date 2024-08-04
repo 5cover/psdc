@@ -72,7 +72,7 @@ public readonly struct Message
 
     internal static Message WarningTargetLanguageReservedKeyword(SourceTokens sourceTokens, string targetLanguageName, string ident, string adjustedIdent)
      => CreateTargetLanguage(sourceTokens, MessageCode.TargetLanguageReservedKeyword,
-        targetLanguageName, $"`{ident}` is a reserved {targetLanguageName} keyword and thus cannot be used as an identifier. As such, it was renamed to `{adjustedIdent}");
+        targetLanguageName, $"`{ident}` is a reserved {targetLanguageName} keyword and thus cannot be used as an identifier. As such, it was renamed to `{adjustedIdent}`");
 
     internal static Message ErrorReturnInNonFunction(SourceTokens sourceTokens)
      => new(sourceTokens, MessageCode.ReturnInNonFunction,

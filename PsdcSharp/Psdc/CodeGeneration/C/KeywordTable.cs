@@ -13,6 +13,7 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
             var newIdent = ident + "_";
             msger.Report(Message.WarningTargetLanguageReservedKeyword(
                 sourceTokens, LanguageName.C, ident, newIdent));
+            return newIdent;
         }
         return ident;
     }

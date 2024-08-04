@@ -478,7 +478,7 @@ public sealed partial class StaticAnalyzer
             foreach (var (actual, formal) in call.Parameters.Zip(callable.Parameters)) {
                 if (actual.Mode != formal.Mode) {
                     problems.Add(Message.ProblemWrongArgumentMode(formal.Name,
-                        actual.Mode.RepresentationActual, formal.Mode.RepresentationFormal));
+                        formal.Mode.RepresentationActual, actual.Mode.RepresentationActual));
                 }
 
                 var actualType = AnalyzeExpression(scope, actual.Value).Type;

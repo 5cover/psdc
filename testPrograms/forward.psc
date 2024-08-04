@@ -30,7 +30,7 @@ fonction estPair(entF n : entier) délivre booléen c'est début
 fin
 
 fonction estImpair(entF n : entier) délivre booléen c'est début
-    si (n == 0) faire
+    si (n == 0) alors
         retourne faux;
     finsi
     retourne estPair(entE n - 1);

@@ -1391,3 +1391,11 @@ Show the whole code associated with the error (with a max amount of lines) inste
 ## Fix string assignment code generation
 
 Use `strcpy`.
+
+## Fix pass by reference arguments pointer code generation
+
+Add stars where necessary.
+
+Implementation:
+
+Use Scope and symbol tables, then operator logic in OperatorInfo to add the star as needed when generating a VariableReference, and bracketing as appropriate.

@@ -1,9 +1,10 @@
 programme Expressions c'est
 // arbitrary complex expressions that make use of associativity and precedence rules.
+// also demonstrates the handling of invalid operations (e.g. comparison on characters)
 début
     b : booléen;
     b := 3 + 4.5 * (7 - 2) / 2.0 >= 3 == (vrai OU faux);
-    écrireEcran(-5 + 3 * 6.2 - 1.5 / 2 >= (10.0 + 2.5) * (4.0 - 1.5));
+    écrireEcran(-5 + 3 * 6.2 - 1.5 / 2 + (10.0 + 2.5) * (4.0 - 1.5));
     écrireEcran('c' > 'a' ET 'b' < 'd' OU 5 != 3 + 2 * (7 - 4));
     b := NON (5 > 3) OU (2 + 4 == 6 ET 7 < 9);
     b := (10.0 + 2.5) * (4.0 - 1.5) / 2.0 - (3 + 4.5 * 7 - 2) / 2.0 >= 5.0;
