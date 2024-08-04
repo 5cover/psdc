@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 
 using Scover.Psdc.Language;
@@ -38,8 +39,8 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
 
     public IEnumerable<string> RequiredHeaders { get; }
 
-    public static TypeInfo Create(SemanticAst ast, EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable)
-     => Create(ast, type, messenger, generateExpression, keywordTable, new());
+    public static TypeInfo Create(SemanticAst ast, ReadOnlyScope scope, EvaluatedType type, Messenger messenger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable)
+     => Create(ast, scope, type, messenger, generateExpression, keywordTable, new());
 
     public string DecorateExpression(string expr)
      => $"{_stars}{expr}";
@@ -59,29 +60,29 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
 
     static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
 
-    static TypeInfo Create(SemanticAst ast, EvaluatedType type, Messenger msger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable, Indentation indent)
+    static TypeInfo Create(SemanticAst ast, ReadOnlyScope scope, EvaluatedType type, Messenger msger, Func<Expression, string> generateExpression, CodeGeneration.KeywordTable keywordTable, Indentation indent)
     {
         TypeInfo typeInfo = type switch {
-            UnknownType u => new(keywordTable.Validate(u.SourceTokens, u.Representation, msger)),
+            UnknownType u => new(keywordTable.Validate(scope, u.SourceTokens, u.Representation, msger)),
             FileType => new("FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield()),
             BooleanType => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
             CharacterType => new("char", "%c"),
             RealType real => new("float", "%g"),
             IntegerType integer => new("int", "%d"),
             StringType => new("char", "%s", starCount: 1),
-            ArrayType array => CreateArrayType(ast, array),
+            ArrayType array => CreateArrayType(ast, scope, array),
             LengthedStringType strlen => CreateLengthedString(ast, strlen),
-            StructureType structure => CreateStructure(ast, structure),
+            StructureType structure => CreateStructure(ast, scope, structure),
             _ => throw type.ToUnmatchedException(),
         };
 
         return type.Alias is { } alias
-            ? new TypeInfo(keywordTable.Validate(alias, msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders)
+            ? new TypeInfo(keywordTable.Validate(scope, alias, msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders)
             : typeInfo;
 
-        TypeInfo CreateArrayType(SemanticAst ast, ArrayType array)
+        TypeInfo CreateArrayType(SemanticAst ast, ReadOnlyScope scope, ArrayType array)
         {
-            var arrayType = Create(ast, array.ItemType, msger, generateExpression, keywordTable, indent);
+            var arrayType = Create(ast, scope, array.ItemType, msger, generateExpression, keywordTable, indent);
             StringBuilder postModifier = new(arrayType._postModifier);
             foreach (var dimension in array.Dimensions.Select(dim => generateExpression(dim.Expression))) {
                 postModifier.Append($"[{dimension}]");
@@ -105,15 +106,15 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             return new("char", "%s", postModifier: $"[{lengthPlus1}]");
         }
 
-        TypeInfo CreateStructure(SemanticAst ast, StructureType structure)
+        TypeInfo CreateStructure(SemanticAst ast, ReadOnlyScope scope, StructureType structure)
         {
             StringBuilder sb = new("struct {");
             sb.AppendLine();
             indent.Increase();
             var components = structure.Components.Map.ToDictionary(kv => kv.Key,
-                kv => Create(ast, kv.Value, msger, generateExpression, keywordTable, indent));
+                kv => Create(ast, scope, kv.Value, msger, generateExpression, keywordTable, indent));
             foreach (var comp in components) {
-                indent.Indent(sb).Append(comp.Value.GenerateDeclaration(keywordTable.Validate(comp.Key, msger).Yield())).AppendLine(";");
+                indent.Indent(sb).Append(comp.Value.GenerateDeclaration(keywordTable.Validate(scope, comp.Key, msger).Yield())).AppendLine(";");
             }
             indent.Decrease();
             sb.Append('}');

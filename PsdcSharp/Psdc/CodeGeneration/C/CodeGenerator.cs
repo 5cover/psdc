@@ -34,13 +34,13 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
      => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).Map(alias => {
          SetGroup(o, Group.Types);
          var type = CreateTypeInfo(scope, alias.TargetType);
-         return Indent(o).AppendLine($"typedef {type.GenerateDeclaration(ValidateIdentifier(alias.Name).Yield())};");
+         return Indent(o).AppendLine($"typedef {type.GenerateDeclaration(ValidateIdentifier(scope, alias.Name).Yield())};");
      }).ValueOr(o);
 
     StringBuilder AppendConstant(StringBuilder o, ReadOnlyScope scope, Declaration.Constant constant)
     {
         SetGroup(o, Group.Macros);
-        Indent(o).Append($"#define {ValidateIdentifier(constant.Name)} ");
+        Indent(o).Append($"#define {ValidateIdentifier(scope, constant.Name)} ");
         return AppendExpression(o, scope, constant.Value, _opTable.ShouldBracketUnary(scope, constant.Value, _opTable.None)).AppendLine();
     }
 
@@ -92,7 +92,7 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendSignature(StringBuilder o, ReadOnlyScope scope, string cReturnType, Identifier name, IEnumerable<Symbol.Parameter> parameters)
     {
-        o.Append($"{cReturnType} {ValidateIdentifier(name)}(");
+        o.Append($"{cReturnType} {ValidateIdentifier(scope, name)}(");
         if (parameters.Any()) {
             o.AppendJoin(", ", parameters.Select(p => GenerateParameter(scope, p)));
         } else {
@@ -111,7 +111,7 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
             type = type.ToPointer(1);
         }
 
-        AppendVariableDeclaration(o, type, param.Name.Yield());
+        AppendVariableDeclaration(o, scope, type, param.Name.Yield());
 
         return o.ToString();
     }
@@ -309,7 +309,7 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
     StringBuilder AppendVariableDeclaration(StringBuilder o, ReadOnlyScope scope, Statement.LocalVariable varDecl)
      => scope.GetSymbol<Symbol.Variable>(varDecl.Binding.Names.First()).Map(variable => {
          Indent(o);
-         AppendVariableDeclaration(o, CreateTypeInfo(scope, variable.Type), varDecl.Binding.Names);
+         AppendVariableDeclaration(o, scope, CreateTypeInfo(scope, variable.Type), varDecl.Binding.Names);
          varDecl.Initializer.MatchSome(init => AppendInitializer(o.Append(" = "), scope, init));
          return o.AppendLine(";");
      }).ValueOr(o);
@@ -338,12 +338,12 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
         return Indent(o).Append('}');
     }
 
-    StringBuilder AppendVariableDeclaration(StringBuilder o, TypeInfo type, IEnumerable<Identifier> names)
+    StringBuilder AppendVariableDeclaration(StringBuilder o, ReadOnlyScope scope, TypeInfo type, IEnumerable<Identifier> names)
     {
         foreach (string header in type.RequiredHeaders) {
             _includes.Ensure(header);
         }
-        return o.Append(type.GenerateDeclaration(names.Select(ValidateIdentifier)));
+        return o.Append(type.GenerateDeclaration(names.Select(i => ValidateIdentifier(scope, i))));
     }
 
     StringBuilder AppendWhileLoop(StringBuilder o, ReadOnlyScope scope, Statement.WhileLoop whileLoop)
@@ -404,8 +404,9 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
 
     StringBuilder AppendVariableReference(StringBuilder o, ReadOnlyScope scope, Expression.Lvalue.VariableReference variable)
      => scope.IsPointer(variable)
-        ? AppendUnaryPrefixOperation(o, scope, _opTable.Dereference, variable, (o, _, v) => o.Append(v.Name))
-        : o.Append(variable.Name);
+        ? AppendUnaryPrefixOperation(o, scope, _opTable.Dereference, variable,
+                                    (o, _, v) => o.Append(ValidateIdentifier(scope, v.Name)))
+        : o.Append(ValidateIdentifier(scope, variable.Name));
 
     StringBuilder AppendOperationBinary(StringBuilder o, ReadOnlyScope scope, Expression.BinaryOperation opBin)
     {
@@ -446,7 +447,7 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
     {
         const string ParameterSeparator = ", ";
 
-        o.Append($"{ValidateIdentifier(call.Name)}(");
+        o.Append($"{ValidateIdentifier(scope, call.Name)}(");
         foreach (var param in call.Parameters) {
             if (param.Mode.RequiresPointer() && !scope.IsPointer(param.Value)) {
                 AppendUnaryPrefixOperation(o, scope, _opTable.AddressOf, param.Value,
@@ -472,7 +473,7 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
         """);
 
     TypeInfo CreateTypeInfo(ReadOnlyScope scope, EvaluatedType evaluatedType)
-     => TypeInfo.Create(_ast, evaluatedType, _msger, expr => AppendExpression(new(), scope, expr).ToString(), _kwTable);
+     => TypeInfo.Create(_ast, scope, evaluatedType, _msger, expr => AppendExpression(new(), scope, expr).ToString(), _kwTable);
 
     StringBuilder Indent(StringBuilder o) => _indent.Indent(o);
 

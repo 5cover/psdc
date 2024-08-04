@@ -418,14 +418,3 @@ Although, this would be useful for when we want to check characters (is digit, i
 ## Constant locals
 
 Why not? It feels like something that has no reason not to be allowed
-
-## Identifier target language keyword adjust
-
-Currently we just add an underscore but this could break, if there is already an existing identifier of that name.
-
-What we can do is pass the scope and check if the name already exists, if so then increment the number until we get a free one.
-
-- `ident_`
-- `ident_1`
-- `ident_2`
-- ...

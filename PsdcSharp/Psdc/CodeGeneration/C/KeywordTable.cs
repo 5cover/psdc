@@ -1,3 +1,4 @@
+using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 
 namespace Scover.Psdc.CodeGeneration.C;
@@ -7,10 +8,14 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
     private KeywordTable() { }
     public static KeywordTable Instance { get; } = new();
 
-    public string Validate(SourceTokens sourceTokens, string ident, Messenger msger)
+    public string Validate(ReadOnlyScope scope, SourceTokens sourceTokens, string ident, Messenger msger)
     {
         if (keywords.Contains(ident)) {
             var newIdent = ident + "_";
+            int identNo = 1;
+            while (scope.HasSymbol(newIdent)) {
+                newIdent = $"{ident}_{identNo++}";
+            }
             msger.Report(Message.WarningTargetLanguageReservedKeyword(
                 sourceTokens, LanguageName.C, ident, newIdent));
             return newIdent;
