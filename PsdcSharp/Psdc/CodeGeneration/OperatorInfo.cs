@@ -25,7 +25,7 @@ abstract class OperatorTable
          Expression.UnaryOperation opUn => Get(opUn.Operator).Precedence,
          Expression.Lvalue.ArraySubscript => ArraySubscript.Precedence,
          Expression.Lvalue.ComponentAccess => ComponentAccess.Precedence,
-         Expression.Lvalue.VariableReference or Expression.Literal or NodeBracketedExpression => int.MinValue,
+         Expression.Lvalue.VariableReference or Expression.Literal or BracketedExpressionNode => int.MinValue,
          _ => throw expr.ToUnmatchedException(),
      };
 

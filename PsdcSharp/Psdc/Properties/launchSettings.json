@@ -2,7 +2,7 @@
     "profiles": {
         "C#: Psdc Debug": {
             "commandName": "Project",
-            "commandLineArgs": "../../testPrograms/TD14/ex1.psc"
+            "commandLineArgs": "../../testPrograms/brackets.psc"
         }
     }
 }

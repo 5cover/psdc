@@ -375,11 +375,11 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
     }
 
     StringBuilder AppendBracketedExpression(StringBuilder o, ReadOnlyScope scope, Expression expr)
-     => AppendExpression(o, scope, expr, expr is not NodeBracketedExpression);
+     => AppendExpression(o, scope, expr, expr is not BracketedExpressionNode);
 
     StringBuilder AppendExpression(StringBuilder o, ReadOnlyScope scope, Expression expr, bool bracket = false) => AppendBracketed(o, bracket, o => {
         _ = expr switch {
-            NodeBracketedExpression b => AppendExpression(o, scope, b.ContainedExpression, !bracket),
+            BracketedExpressionNode b => AppendExpression(o, scope, b.ContainedExpression, !bracket),
             Expression.FunctionCall call => AppendCall(o, scope, call),
             Expression.Literal.Character litChar => o.Append($"'{litChar.Value.ToString(CultureInfo.InvariantCulture)}'"),
             Expression.Literal.False l => AppendLiteralBoolean(l.Value),
@@ -442,7 +442,7 @@ sealed partial class CodeGenerator(Messenger messenger, SemanticAst ast)
 
     #region Helpers
 
-    StringBuilder AppendCall(StringBuilder o, ReadOnlyScope scope, NodeCall call)
+    StringBuilder AppendCall(StringBuilder o, ReadOnlyScope scope, CallNode call)
     {
         const string ParameterSeparator = ", ";
 

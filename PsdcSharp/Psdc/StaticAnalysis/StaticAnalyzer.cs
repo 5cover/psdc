@@ -10,7 +10,7 @@ namespace Scover.Psdc.StaticAnalysis;
 public sealed partial class StaticAnalyzer
 {
     readonly Dictionary<Expression, EvaluatedType> _inferredTypes = [];
-    readonly Dictionary<NodeScoped, Scope> _scopes = [];
+    readonly Dictionary<ScopedNode, Scope> _scopes = [];
     readonly Messenger _msger;
 
     bool _seenMainProgram;
@@ -243,7 +243,7 @@ public sealed partial class StaticAnalyzer
         switch (expr) {
         case Expression.Literal lit:
             return lit.CreateValue();
-        case NodeBracketedExpression b:
+        case BracketedExpressionNode b:
             return AnalyzeExpression(scope, b.ContainedExpression);
         case Expression.BinaryOperation opBin: {
             var left = AnalyzeExpression(scope, opBin.Left);
@@ -464,7 +464,7 @@ public sealed partial class StaticAnalyzer
                 EvaluateType(scope, param.Type), param.Mode))
         .ToList();
 
-    Option<TSymbol> HandleCall<TSymbol>(ReadOnlyScope scope, NodeCall call) where TSymbol : Symbol.Callable
+    Option<TSymbol> HandleCall<TSymbol>(ReadOnlyScope scope, CallNode call) where TSymbol : Symbol.Callable
     {
         var symbol = scope.GetSymbol<TSymbol>(call.Name).MatchError(_msger.Report);
         symbol.Match(callable => {
@@ -527,17 +527,17 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    void SetParentScope(NodeScoped scopedNode, Scope? parentScope) => _scopes.Add(scopedNode, new(parentScope));
+    void SetParentScope(ScopedNode scopedNode, Scope? parentScope) => _scopes.Add(scopedNode, new(parentScope));
 
     void SetParentScopeIfNecessary(Node node, Scope? parentScope)
     {
-        if (node is NodeScoped sn) {
+        if (node is ScopedNode sn) {
             SetParentScope(sn, parentScope);
         }
     }
 
     EvaluatedType EvaluateType(ReadOnlyScope scope, Type type) => type switch {
-        NodeAliasReference alias
+        AliasReferenceNone alias
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).MatchError(_msger.Report)
                 .Map(aliasType => aliasType.TargetType.ToAliasReference(alias.Name))
             .ValueOr(UnknownType.Declared(_msger.Input, type)),

@@ -3,27 +3,25 @@ using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Parsing;
 
-interface NodeCall : Node
+interface CallNode : Node
 {
     public Identifier Name { get; }
     public IReadOnlyCollection<ParameterActual> Parameters { get; }
 }
 
-interface NodeScoped : Node;
+interface ScopedNode : Node;
 
-interface NodeAliasReference : Node
+interface AliasReferenceNone : Node
 {
     public Identifier Name { get; }
 }
 
-abstract class BlockNode(SourceTokens sourceTokens,
-    IReadOnlyCollection<Node.Statement> block)
-: NodeImpl(sourceTokens), NodeScoped
+interface BlockNode : ScopedNode
 {
-    public IReadOnlyCollection<Node.Statement> Block => block;
+    IReadOnlyCollection<Statement> Block { get; }
 }
 
-interface NodeBracketedExpression : Node.Expression
+interface BracketedExpressionNode : Node.Expression
 {
     public Expression ContainedExpression { get; }
 }
@@ -32,116 +30,87 @@ public interface Node : EquatableSemantics<Node>
 {
     SourceTokens SourceTokens { get; }
 
-    public sealed class Algorithm : NodeImpl, NodeScoped
+    public sealed record Algorithm(SourceTokens SourceTokens, Identifier Name, IReadOnlyCollection<Declaration> Declarations) : ScopedNode
     {
-        internal Algorithm(SourceTokens sourceTokens,
-            Identifier name,
-            IReadOnlyCollection<Declaration> declarations) : base(sourceTokens)
-        {
-            Name = name;
-            Declarations = declarations;
-        }
-
-        internal Identifier Name { get; }
-        internal IReadOnlyCollection<Declaration> Declarations { get; }
-
-        public override bool SemanticsEqual(Node other) => other is Algorithm o
+        public bool SemanticsEqual(Node other) => other is Algorithm o
          && o.Name.SemanticsEqual(Name)
          && o.Declarations.AllSemanticsEqual(Declarations);
     }
 
-    internal interface Declaration : Node
+    public interface Declaration : Node
     {
-        internal sealed class MainProgram(SourceTokens sourceTokens,
-            IReadOnlyCollection<Statement> block)
-        : BlockNode(sourceTokens, block), Declaration
+        internal sealed record MainProgram(SourceTokens SourceTokens,
+            IReadOnlyCollection<Statement> Block)
+        : Declaration, BlockNode
         {
-            public override bool SemanticsEqual(Node other) => other is MainProgram o
+            public bool SemanticsEqual(Node other) => other is MainProgram o
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class TypeAlias(SourceTokens sourceTokens,
-            Identifier name,
-            Type type)
-        : NodeImpl(sourceTokens), Declaration
+        internal sealed record TypeAlias(SourceTokens SourceTokens,
+            Identifier Name,
+            Type Type)
+        : Declaration
         {
-            public Identifier Name => name;
-            public Type Type => type;
-
-            public override bool SemanticsEqual(Node other) => other is TypeAlias o
+            public bool SemanticsEqual(Node other) => other is TypeAlias o
              && o.Name.SemanticsEqual(Name)
              && o.Type.SemanticsEqual(Type);
         }
 
-        internal sealed class CompleteTypeAlias(SourceTokens sourceTokens,
-            Identifier name,
-            Type.Complete type)
-        : NodeImpl(sourceTokens), Declaration
+        internal sealed record CompleteTypeAlias(SourceTokens SourceTokens,
+            Identifier Name,
+            Type.Complete Type)
+        : Declaration
         {
-            public Identifier Name => name;
-            public Type.Complete Type => type;
-
-            public override bool SemanticsEqual(Node other) => other is CompleteTypeAlias o
+            public bool SemanticsEqual(Node other) => other is CompleteTypeAlias o
              && o.Name.SemanticsEqual(Name)
              && o.Type.SemanticsEqual(Type);
         }
 
-        internal sealed class Constant(SourceTokens sourceTokens,
-            Type type,
-            Identifier name,
-            Expression value)
-        : NodeImpl(sourceTokens), Declaration
+        internal sealed record Constant(SourceTokens SourceTokens,
+            Type Type,
+            Identifier Name,
+            Expression Value)
+        : Declaration
         {
-            public Type Type => type;
-            public Identifier Name => name;
-            public Expression Value => value;
-
-            public override bool SemanticsEqual(Node other) => other is Constant o
+            public bool SemanticsEqual(Node other) => other is Constant o
              && o.Name.SemanticsEqual(Name)
              && o.Type.SemanticsEqual(Type)
              && o.Value.SemanticsEqual(Value);
         }
 
-        internal sealed class Procedure(SourceTokens sourceTokens,
-            ProcedureSignature signature)
-        : NodeImpl(sourceTokens), Declaration
+        internal sealed record Procedure(SourceTokens SourceTokens,
+            ProcedureSignature Signature)
+        : Declaration
         {
-            public ProcedureSignature Signature => signature;
-
-            public override bool SemanticsEqual(Node other) => other is Procedure o
+            public bool SemanticsEqual(Node other) => other is Procedure o
              && o.Signature.SemanticsEqual(Signature);
         }
 
-        internal sealed class ProcedureDefinition(SourceTokens sourceTokens,
-            ProcedureSignature signature,
-            IReadOnlyCollection<Statement> block)
-        : BlockNode(sourceTokens, block), Declaration
+        internal sealed record ProcedureDefinition(SourceTokens SourceTokens,
+            ProcedureSignature Signature,
+            IReadOnlyCollection<Statement> Block)
+        :  Declaration, BlockNode
         {
-            public ProcedureSignature Signature => signature;
-
-            public override bool SemanticsEqual(Node other) => other is ProcedureDefinition o
+            public bool SemanticsEqual(Node other) => other is ProcedureDefinition o
              && o.Signature.SemanticsEqual(Signature)
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class Function(SourceTokens sourceTokens,
-            FunctionSignature signature)
-        : NodeImpl(sourceTokens), Declaration
+        internal sealed record Function(SourceTokens SourceTokens,
+            FunctionSignature Signature)
+        : Declaration
         {
-            public FunctionSignature Signature => signature;
-
-            public override bool SemanticsEqual(Node other) => other is Function o
+            public bool SemanticsEqual(Node other) => other is Function o
              && o.Signature.SemanticsEqual(Signature);
         }
 
-        internal sealed class FunctionDefinition(SourceTokens sourceTokens,
-            FunctionSignature signature,
-            IReadOnlyCollection<Statement> block)
-        : BlockNode(sourceTokens, block), Declaration
+        internal sealed record FunctionDefinition(SourceTokens SourceTokens,
+            FunctionSignature Signature,
+            IReadOnlyCollection<Statement> Block)
+        : Declaration, BlockNode
         {
-            public FunctionSignature Signature => signature;
-
-            public override bool SemanticsEqual(Node other) => other is FunctionDefinition o
+            public bool SemanticsEqual(Node other) => other is FunctionDefinition o
              && o.Signature.SemanticsEqual(Signature)
              && o.Block.AllSemanticsEqual(Block);
         }
@@ -149,237 +118,193 @@ public interface Node : EquatableSemantics<Node>
 
     internal interface Statement : Node
     {
-        internal sealed class Nop(SourceTokens sourceTokens)
-        : NodeImpl(sourceTokens), Statement
+        internal sealed record Nop(SourceTokens SourceTokens)
+        : Statement
         {
-            public override bool SemanticsEqual(Node other) => other is Nop;
+            public bool SemanticsEqual(Node other) => other is Nop;
         }
 
-        internal sealed class Alternative(SourceTokens sourceTokens,
-            Alternative.IfClause @if,
-            IReadOnlyCollection<Alternative.ElseIfClause> elseIf,
-            Option<Alternative.ElseClause> @else)
-        : NodeImpl(sourceTokens), Statement
+        internal sealed record Alternative(SourceTokens SourceTokens,
+            Alternative.IfClause If,
+            IReadOnlyCollection<Alternative.ElseIfClause> ElseIfs,
+            Option<Alternative.ElseClause> Else)
+        : Statement
         {
-            public IfClause If => @if;
-            public IReadOnlyCollection<ElseIfClause> ElseIfs => @elseIf;
-            public Option<ElseClause> Else => @else;
 
-            public override bool SemanticsEqual(Node other) => other is Alternative o
+            public bool SemanticsEqual(Node other) => other is Alternative o
              && o.If.SemanticsEqual(If)
              && o.ElseIfs.AllSemanticsEqual(ElseIfs)
              && o.Else.OptionSemanticsEqual(Else);
 
-            internal sealed class IfClause(SourceTokens sourceTokens,
-                Expression condition,
-                IReadOnlyCollection<Statement> block)
-            : BlockNode(sourceTokens, block)
+            internal sealed record IfClause(SourceTokens SourceTokens,
+                Expression Condition,
+                IReadOnlyCollection<Statement> Block)
+            : BlockNode
             {
-                public Expression Condition => condition;
-
-                public override bool SemanticsEqual(Node other) => other is IfClause o
+                public bool SemanticsEqual(Node other) => other is IfClause o
                  && o.Condition.SemanticsEqual(Condition)
                  && o.Block.AllSemanticsEqual(Block);
             }
 
-            internal sealed class ElseIfClause(SourceTokens sourceTokens,
-                Expression condition,
-                IReadOnlyCollection<Statement> block)
-            : BlockNode(sourceTokens, block)
+            internal sealed record ElseIfClause(SourceTokens SourceTokens,
+                Expression Condition,
+                IReadOnlyCollection<Statement> Block)
+            : BlockNode
             {
-                public Expression Condition => condition;
-
-                public override bool SemanticsEqual(Node other) => other is ElseIfClause o
+                public bool SemanticsEqual(Node other) => other is ElseIfClause o
                  && o.Condition.SemanticsEqual(Condition)
                  && o.Block.AllSemanticsEqual(Block);
             }
 
-            internal sealed class ElseClause(SourceTokens sourceTokens,
-                IReadOnlyCollection<Statement> block)
-            : BlockNode(sourceTokens, block)
+            internal sealed record ElseClause(SourceTokens SourceTokens,
+                IReadOnlyCollection<Statement> Block)
+            : BlockNode
             {
-                public override bool SemanticsEqual(Node other) => other is ElseClause o
+                public bool SemanticsEqual(Node other) => other is ElseClause o
                  && o.Block.AllSemanticsEqual(Block);
             }
         }
 
-        internal sealed class Switch(SourceTokens sourceTokens,
-            Expression expression,
-            IReadOnlyCollection<Switch.Case> cases,
-            Option<Switch.DefaultCase> @default)
-        : NodeImpl(sourceTokens), Statement
+        internal sealed record Switch(SourceTokens SourceTokens,
+            Expression Expression,
+            IReadOnlyCollection<Switch.Case> Cases,
+            Option<Switch.DefaultCase> Default)
+        : Statement
         {
-            public Expression Expression => expression;
-            public IReadOnlyCollection<Case> Cases => cases;
-            public Option<DefaultCase> Default => @default;
-
-            public override bool SemanticsEqual(Node other) => other is Switch o
+            public bool SemanticsEqual(Node other) => other is Switch o
                  && o.Expression.SemanticsEqual(Expression)
                  && o.Cases.AllSemanticsEqual(Cases)
                  && o.Default.OptionSemanticsEqual(Default);
 
-            internal sealed class Case(SourceTokens sourceTokens,
-                Expression when,
-                IReadOnlyCollection<Statement> block)
-            : BlockNode(sourceTokens, block)
+            internal sealed record Case(SourceTokens SourceTokens,
+                Expression When,
+                IReadOnlyCollection<Statement> Block)
+            : BlockNode
             {
-                public Expression When => when;
-
-                public override bool SemanticsEqual(Node other) => other is Case o
+                public bool SemanticsEqual(Node other) => other is Case o
                  && o.When.SemanticsEqual(When)
                  && o.Block.AllSemanticsEqual(Block);
             }
 
-            internal sealed class DefaultCase(SourceTokens sourceTokens,
-                IReadOnlyCollection<Statement> block)
-            : BlockNode(sourceTokens, block)
+            internal sealed record DefaultCase(SourceTokens SourceTokens,
+                IReadOnlyCollection<Statement> Block)
+            : BlockNode
             {
-                public override bool SemanticsEqual(Node other) => other is DefaultCase o
+                public bool SemanticsEqual(Node other) => other is DefaultCase o
                  && o.Block.AllSemanticsEqual(Block);
             }
         }
 
-        internal sealed class Assignment(SourceTokens sourceTokens,
-            Expression.Lvalue target,
-            Expression value)
-        : NodeImpl(sourceTokens), Statement
+        internal sealed record Assignment(SourceTokens SourceTokens,
+            Expression.Lvalue Target,
+            Expression Value)
+        : Statement
         {
-            public Expression.Lvalue Target => target;
-            public Expression Value => value;
-
-            public override bool SemanticsEqual(Node other) => other is Assignment o
+            public bool SemanticsEqual(Node other) => other is Assignment o
              && o.Target.SemanticsEqual(Target)
              && o.Value.SemanticsEqual(Value);
         }
 
-        internal sealed class DoWhileLoop(SourceTokens sourceTokens,
-            Expression condition,
-            IReadOnlyCollection<Statement> block)
-        : BlockNode(sourceTokens, block), Statement
+        internal sealed record DoWhileLoop(SourceTokens SourceTokens,
+            Expression Condition,
+            IReadOnlyCollection<Statement> Block)
+        : BlockNode, Statement
         {
-            public Expression Condition => condition;
-
-            public override bool SemanticsEqual(Node other) => other is DoWhileLoop o
+            public bool SemanticsEqual(Node other) => other is DoWhileLoop o
              && o.Condition.SemanticsEqual(Condition)
                 && o.Block.AllSemanticsEqual(Block);
         }
 
         internal interface Builtin : Statement
         {
-            internal sealed class Ecrire(SourceTokens sourceTokens,
-                Expression argumentNomLog,
-                Expression argumentExpression)
-            : NodeImpl(sourceTokens), Builtin
+            internal sealed record Ecrire(SourceTokens SourceTokens,
+                Expression ArgumentNomLog,
+                Expression ArgumentExpression)
+            : Builtin
             {
-                public Expression ArgumentNomLog => argumentNomLog;
-                public Expression ArgumentExpression => argumentExpression;
-
-                public override bool SemanticsEqual(Node other) => other is Ecrire o
+                public bool SemanticsEqual(Node other) => other is Ecrire o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
                  && o.ArgumentExpression.SemanticsEqual(ArgumentExpression);
             }
 
-            internal sealed class Fermer(SourceTokens sourceTokens,
-                Expression argumentNomLog)
-            : NodeImpl(sourceTokens), Builtin
+            internal sealed record Fermer(SourceTokens SourceTokens,
+                Expression ArgumentNomLog)
+            : Builtin
             {
-                public Expression ArgumentNomLog => argumentNomLog;
-
-                public override bool SemanticsEqual(Node other) => other is Fermer o
+                public bool SemanticsEqual(Node other) => other is Fermer o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
 
-            internal sealed class Lire(SourceTokens sourceTokens,
-                Expression argumentNomLog,
-                Expression.Lvalue argumentVariable)
-            : NodeImpl(sourceTokens), Builtin
+            internal sealed record Lire(SourceTokens SourceTokens,
+                Expression ArgumentNomLog,
+                Expression.Lvalue ArgumentVariable)
+            : Builtin
             {
-                public Expression ArgumentNomLog => argumentNomLog;
-                public Expression ArgumentVariable => argumentVariable;
-
-                public override bool SemanticsEqual(Node other) => other is Lire o
+                public bool SemanticsEqual(Node other) => other is Lire o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
                  && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
             }
 
-            internal sealed class OuvrirAjout(SourceTokens sourceTokens,
-                Expression argumentNomLog)
-            : NodeImpl(sourceTokens), Builtin
+            internal sealed record OuvrirAjout(SourceTokens SourceTokens,
+                Expression ArgumentNomLog)
+            : Builtin
             {
-                public Expression ArgumentNomLog => argumentNomLog;
-
-                public override bool SemanticsEqual(Node other) => other is OuvrirAjout o
+                public bool SemanticsEqual(Node other) => other is OuvrirAjout o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
 
-            internal sealed class OuvrirEcriture(SourceTokens sourceTokens,
-                Expression argumentNomLog)
-            : NodeImpl(sourceTokens), Builtin
+            internal sealed record OuvrirEcriture(SourceTokens SourceTokens,
+                Expression ArgumentNomLog)
+            : Builtin
             {
-                public Expression ArgumentNomLog => argumentNomLog;
-
-                public override bool SemanticsEqual(Node other) => other is OuvrirEcriture o
+                public bool SemanticsEqual(Node other) => other is OuvrirEcriture o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
 
-            internal sealed class OuvrirLecture(SourceTokens sourceTokens,
-                Expression argumentNomLog)
-            : NodeImpl(sourceTokens), Builtin
+            internal sealed record OuvrirLecture(SourceTokens SourceTokens,
+                Expression ArgumentNomLog)
+            : Builtin
             {
-                public Expression ArgumentNomLog => argumentNomLog;
-
-                public override bool SemanticsEqual(Node other) => other is OuvrirLecture o
+                public bool SemanticsEqual(Node other) => other is OuvrirLecture o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
 
-            internal sealed class Assigner(SourceTokens sourceTokens,
-                Expression.Lvalue argumentNomLog,
-                Expression argumentNomExt)
-            : NodeImpl(sourceTokens), Builtin
+            internal sealed record Assigner(SourceTokens SourceTokens,
+                Expression.Lvalue ArgumentNomLog,
+                Expression ArgumentNomExt)
+            : Builtin
             {
-                public Expression.Lvalue ArgumentNomLog => argumentNomLog;
-                public Expression ArgumentNomExt => argumentNomExt;
-
-                public override bool SemanticsEqual(Node other) => other is Assigner o
+                public bool SemanticsEqual(Node other) => other is Assigner o
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog)
                  && o.ArgumentNomExt.SemanticsEqual(ArgumentNomExt);
             }
 
-            internal sealed class EcrireEcran(SourceTokens sourceTokens,
-                IReadOnlyCollection<Expression> arguments)
-            : NodeImpl(sourceTokens), Builtin
+            internal sealed record EcrireEcran(SourceTokens SourceTokens,
+                IReadOnlyCollection<Expression> Arguments)
+            : Builtin
             {
-                public IReadOnlyCollection<Expression> Arguments => arguments;
-
-                public override bool SemanticsEqual(Node other) => other is EcrireEcran o
+                public bool SemanticsEqual(Node other) => other is EcrireEcran o
                  && o.Arguments.AllSemanticsEqual(Arguments);
             }
 
-            internal sealed class LireClavier(SourceTokens sourceTokens,
-                Expression.Lvalue argumentVariable)
-            : NodeImpl(sourceTokens), Builtin
+            internal sealed record LireClavier(SourceTokens SourceTokens,
+                Expression.Lvalue ArgumentVariable)
+            : Builtin
             {
-                public Expression ArgumentVariable => argumentVariable;
-
-                public override bool SemanticsEqual(Node other) => other is LireClavier o
+                public bool SemanticsEqual(Node other) => other is LireClavier o
                  && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
             }
         }
 
-        internal sealed class ForLoop(SourceTokens sourceTokens,
-            Expression.Lvalue variant,
-            Expression start,
-            Expression end,
-            Option<Expression> step,
-            IReadOnlyCollection<Statement> block)
-        : BlockNode(sourceTokens, block), Statement
+        internal sealed record ForLoop(SourceTokens SourceTokens,
+            Expression.Lvalue Variant,
+            Expression Start,
+            Expression End,
+            Option<Expression> Step,
+            IReadOnlyCollection<Statement> Block)
+        : Statement, BlockNode
         {
-            public Expression.Lvalue Variant => variant;
-            public Expression Start => start;
-            public Expression End => end;
-            public Option<Expression> Step => step;
-
-            public override bool SemanticsEqual(Node other) => other is ForLoop o
+            public bool SemanticsEqual(Node other) => other is ForLoop o
              && o.Variant.SemanticsEqual(Variant)
              && o.Start.SemanticsEqual(Start)
              && o.End.SemanticsEqual(End)
@@ -387,62 +312,50 @@ public interface Node : EquatableSemantics<Node>
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class ProcedureCall(SourceTokens sourceTokens,
-            Identifier name,
-            IReadOnlyCollection<ParameterActual> parameters)
-        : NodeImpl(sourceTokens), Statement, NodeCall
+        internal sealed record ProcedureCall(SourceTokens SourceTokens,
+            Identifier Name,
+            IReadOnlyCollection<ParameterActual> Parameters)
+        : Statement, CallNode
         {
-            public Identifier Name => name;
-            public IReadOnlyCollection<ParameterActual> Parameters => parameters;
-
-            public override bool SemanticsEqual(Node other) => other is ProcedureCall o
+            public bool SemanticsEqual(Node other) => other is ProcedureCall o
              && o.Name.SemanticsEqual(Name)
              && o.Parameters.AllSemanticsEqual(Parameters);
         }
 
-        internal sealed class RepeatLoop(SourceTokens sourceTokens,
-            Expression condition,
-            IReadOnlyCollection<Statement> block)
-        : BlockNode(sourceTokens, block), Statement
+        internal sealed record RepeatLoop(SourceTokens SourceTokens,
+            Expression Condition,
+            IReadOnlyCollection<Statement> Block)
+        : BlockNode, Statement
         {
-            public Expression Condition => condition;
-
-            public override bool SemanticsEqual(Node other) => other is RepeatLoop o
+            public bool SemanticsEqual(Node other) => other is RepeatLoop o
              && o.Condition.SemanticsEqual(Condition)
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed class Return(SourceTokens sourceTokens,
-            Expression value)
-        : NodeImpl(sourceTokens), Statement
+        internal sealed record Return(SourceTokens SourceTokens,
+            Expression Value)
+        : Statement
         {
-            public Expression Value => value;
-
-            public override bool SemanticsEqual(Node other) => other is Return o
+            public bool SemanticsEqual(Node other) => other is Return o
              && o.Value.SemanticsEqual(Value);
         }
 
-        internal sealed class LocalVariable(SourceTokens sourceTokens,
-            NameTypeBinding binding,
-            Option<Initializer> initializer)
-        : NodeImpl(sourceTokens), Statement
+        internal sealed record LocalVariable(SourceTokens SourceTokens,
+            NameTypeBinding Binding,
+            Option<Initializer> Initializer)
+        : Statement
         {
-            public NameTypeBinding Binding => binding;
-            public Option<Initializer> Initializer => initializer;
-
-            public override bool SemanticsEqual(Node other) => other is LocalVariable o
+            public bool SemanticsEqual(Node other) => other is LocalVariable o
              && o.Binding.SemanticsEqual(Binding)
              && o.Initializer.OptionSemanticsEqual(Initializer);
         }
 
-        internal sealed class WhileLoop(SourceTokens sourceTokens,
-            Expression condition,
-            IReadOnlyCollection<Statement> block)
-        : BlockNode(sourceTokens, block), Statement
+        internal sealed record WhileLoop(SourceTokens SourceTokens,
+            Expression Condition,
+            IReadOnlyCollection<Statement> Block)
+        : BlockNode, Statement
         {
-            public Expression Condition => condition;
-
-            public override bool SemanticsEqual(Node other) => other is WhileLoop o
+            public bool SemanticsEqual(Node other) => other is WhileLoop o
              && o.Condition.SemanticsEqual(Condition)
              && o.Block.AllSemanticsEqual(Block);
         }
@@ -450,24 +363,19 @@ public interface Node : EquatableSemantics<Node>
 
     internal interface Initializer : Node
     {
-        internal sealed class Braced(SourceTokens sourceTokens,
-            IReadOnlyList<Braced.Value> values)
-        : NodeImpl(sourceTokens), Initializer
+        internal sealed record Braced(SourceTokens SourceTokens,
+            IReadOnlyList<Braced.Value> Values)
+        : Initializer
         {
-            public IReadOnlyList<Value> Values => values;
-
-            public override bool SemanticsEqual(Node other) => other is Braced o
+            public bool SemanticsEqual(Node other) => other is Braced o
              && o.Values.AllSemanticsEqual(Values);
 
-            public sealed class Value(SourceTokens sourceTokens,
-                Option<Designator> designator,
-                Initializer initializer)
-            : NodeImpl(sourceTokens)
+            public sealed record Value(SourceTokens SourceTokens,
+                Option<Designator> Designator,
+                Initializer Initializer)
+            : Node
             {
-                public Option<Designator> Designator => designator;
-                public Initializer Initializer => initializer;
-
-                public override bool SemanticsEqual(Node other) => other is Value o
+                public bool SemanticsEqual(Node other) => other is Value o
                  && o.Designator.OptionSemanticsEqual(Designator)
                  && o.Initializer.SemanticsEqual(Initializer);
             }
@@ -478,134 +386,118 @@ public interface Node : EquatableSemantics<Node>
     {
         internal interface Lvalue : Expression
         {
-            internal sealed class ComponentAccess(SourceTokens sourceTokens,
-                Expression structure,
-                Identifier componentName)
-            : NodeImpl(sourceTokens), Lvalue
+            internal sealed record ComponentAccess(SourceTokens SourceTokens,
+                Expression Structure,
+                Identifier ComponentName)
+            : Lvalue
             {
-                public Expression Structure => structure;
-                public Identifier ComponentName => componentName;
-
-                public override bool SemanticsEqual(Node other) => other is ComponentAccess o
+                public bool SemanticsEqual(Node other) => other is ComponentAccess o
                  && o.Structure.SemanticsEqual(Structure)
                  && o.ComponentName.SemanticsEqual(ComponentName);
             }
 
-            internal sealed new class Bracketed(SourceTokens sourceTokens,
-                Lvalue lvalue)
-            : NodeImpl(sourceTokens), Lvalue, NodeBracketedExpression
+            internal sealed new record Bracketed
+            : Lvalue, BracketedExpressionNode
             {
-                public Lvalue ContainedLvalue { get; } = lvalue is NodeBracketedExpression b
-                                              && b.ContainedExpression is Lvalue l
-                                              ? l : lvalue;
+                public Bracketed(SourceTokens sourceTokens,
+                Lvalue lvalue) => (SourceTokens, ContainedLvalue) = (sourceTokens,
+                    lvalue is BracketedExpressionNode b
+                    && b.ContainedExpression is Lvalue l
+                    ? l : lvalue);
+                public SourceTokens SourceTokens { get; }
+                public Lvalue ContainedLvalue { get; }
+                Expression BracketedExpressionNode.ContainedExpression => ContainedLvalue;
 
-                Expression NodeBracketedExpression.ContainedExpression => ContainedLvalue;
-
-                public override bool SemanticsEqual(Node other) => other is Bracketed o
+                public bool SemanticsEqual(Node other) => other is Bracketed o
                  && o.ContainedLvalue.SemanticsEqual(ContainedLvalue);
             }
 
-            internal sealed class ArraySubscript(SourceTokens sourceTokens,
-                Expression array,
-                IReadOnlyList<Expression> indexes)
-            : NodeImpl(sourceTokens), Lvalue
+            internal sealed record ArraySubscript(SourceTokens SourceTokens,
+                Expression Array,
+                IReadOnlyList<Expression> Index)
+            : Lvalue
             {
-                public Expression Array => array;
-                public IReadOnlyList<Expression> Index => indexes;
-
-                public override bool SemanticsEqual(Node other) => other is ArraySubscript o
+                public bool SemanticsEqual(Node other) => other is ArraySubscript o
                  && o.Array.SemanticsEqual(Array)
                  && o.Index.AllSemanticsEqual(Index);
             }
 
-            internal sealed class VariableReference(SourceTokens sourceTokens,
-                Identifier name)
-            : NodeImpl(sourceTokens), Lvalue
+            internal sealed record VariableReference(SourceTokens SourceTokens,
+                Identifier Name)
+            : Lvalue
             {
-                public Identifier Name => name;
-
-                public override bool SemanticsEqual(Node other) => other is VariableReference o
+                public bool SemanticsEqual(Node other) => other is VariableReference o
                  && o.Name.SemanticsEqual(Name);
             }
         }
 
-        internal sealed class UnaryOperation(SourceTokens sourceTokens,
-            UnaryOperator @operator,
-            Expression operand)
-        : NodeImpl(sourceTokens), Expression
+        internal sealed record UnaryOperation(SourceTokens SourceTokens,
+            UnaryOperator Operator,
+            Expression Operand)
+        : Expression
         {
-            public UnaryOperator Operator => @operator;
-            public Expression Operand => operand;
-
-            public override bool SemanticsEqual(Node other) => other is UnaryOperation o
+            public bool SemanticsEqual(Node other) => other is UnaryOperation o
              && o.Operator == Operator
              && o.Operand.SemanticsEqual(Operand);
         }
 
-        internal sealed class BinaryOperation(SourceTokens sourceTokens,
-            Expression left,
-            BinaryOperator @operator,
-            Expression right)
-        : NodeImpl(sourceTokens), Expression
+        internal sealed record BinaryOperation(SourceTokens SourceTokens,
+            Expression Left,
+            BinaryOperator Operator,
+            Expression Right)
+        : Expression
         {
-            public Expression Left => left;
-            public BinaryOperator Operator => @operator;
-            public Expression Right => right;
-
-            public override bool SemanticsEqual(Node other) => other is BinaryOperation o
+            public bool SemanticsEqual(Node other) => other is BinaryOperation o
              && o.Left.SemanticsEqual(Left)
              && o.Operator == Operator
              && o.Right.SemanticsEqual(Right);
         }
 
-        internal sealed class BuiltinFdf(SourceTokens sourceTokens,
-            Expression argumentNomLog)
-        : NodeImpl(sourceTokens), Expression
+        internal sealed record BuiltinFdf(SourceTokens SourceTokens,
+            Expression ArgumentNomLog)
+        : Expression
         {
-            public Expression ArgumentNomLog => argumentNomLog;
-
-            public override bool SemanticsEqual(Node other) => other is BuiltinFdf o
+            public bool SemanticsEqual(Node other) => other is BuiltinFdf o
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
         }
 
-        internal sealed class FunctionCall(SourceTokens sourceTokens,
-            Identifier name,
-            IReadOnlyCollection<ParameterActual> parameters)
-        : NodeImpl(sourceTokens), Expression, NodeCall
+        internal sealed record FunctionCall(SourceTokens SourceTokens,
+            Identifier Name,
+            IReadOnlyCollection<ParameterActual> Parameters)
+        : Expression, CallNode
         {
-            public Identifier Name => name;
-            public IReadOnlyCollection<ParameterActual> Parameters => parameters;
-
-            public override bool SemanticsEqual(Node other) => other is FunctionCall o
+            public bool SemanticsEqual(Node other) => other is FunctionCall o
              && o.Name.SemanticsEqual(Name)
              && o.Parameters.AllSemanticsEqual(Parameters);
         }
 
-        internal sealed class Bracketed(SourceTokens sourceTokens,
-            Expression expression)
-        : NodeImpl(sourceTokens), NodeBracketedExpression
+        internal sealed record Bracketed
+        : BracketedExpressionNode
         {
-            public Expression ContainedExpression { get; } = expression is NodeBracketedExpression b
-                                                           ? b.ContainedExpression : expression;
+            public Bracketed(SourceTokens sourceTokens,
+            Expression expr) => (SourceTokens, ContainedExpression) = (sourceTokens,
+                expr is BracketedExpressionNode b ? b.ContainedExpression : expr);
+            public SourceTokens SourceTokens { get; }
+            public Expression ContainedExpression { get; }
 
-            public override bool SemanticsEqual(Node other) => other is Bracketed o
+            public bool SemanticsEqual(Node other) => other is Bracketed o
              && o.ContainedExpression.SemanticsEqual(ContainedExpression);
         }
 
-        internal abstract class Literal<TType, TValue, TUnderlying>(SourceTokens sourceTokens, TType type, TUnderlying value)
-            : NodeImpl(sourceTokens), Literal
+        internal abstract record Literal<TType, TValue, TUnderlying>(SourceTokens SourceTokens,
+            TType ValueType,
+            TUnderlying Value)
+        : Literal
             where TUnderlying : IConvertible
             where TValue : Value
             where TType : EvaluatedType, InstantiableType<TValue, TUnderlying>
         {
-            public TUnderlying Value { get; } = value;
-            public TType ValueType { get; } = type;
             IConvertible Literal.Value => Value;
             EvaluatedType Literal.ValueType => ValueType;
 
             public Value CreateValue() => ValueType.Instantiate(Value);
 
-            public override bool SemanticsEqual(Node other) => other is Literal<TType, TValue, TUnderlying> o
+            public bool SemanticsEqual(Node other) => other is Literal<TType, TValue, TUnderlying> o
              && o.Value.Equals(Value);
         }
 
@@ -615,133 +507,127 @@ public interface Node : EquatableSemantics<Node>
             EvaluatedType ValueType { get; }
             Value CreateValue();
 
-            internal sealed class True(SourceTokens sourceTokens)
-            : Literal<BooleanType, BooleanValue, bool>(sourceTokens, BooleanType.Instance, true)
+            internal sealed record True(SourceTokens SourceTokens)
+            : Literal<BooleanType, BooleanValue, bool>(SourceTokens, BooleanType.Instance, true)
             {
             }
 
-            internal sealed class False(SourceTokens sourceTokens)
-            : Literal<BooleanType, BooleanValue, bool>(sourceTokens, BooleanType.Instance, false)
+            internal sealed record False(SourceTokens SourceTokens)
+            : Literal<BooleanType, BooleanValue, bool>(SourceTokens, BooleanType.Instance, false)
             {
             }
 
-            internal sealed class Character(SourceTokens sourceTokens, char value)
-            : Literal<CharacterType, CharacterValue, char>(sourceTokens, CharacterType.Instance, value)
+            internal sealed record Character(SourceTokens SourceTokens, char Value)
+            : Literal<CharacterType, CharacterValue, char>(SourceTokens, CharacterType.Instance, Value)
             {
-                public Character(SourceTokens sourceTokens, string valueStr)
-                : this(sourceTokens, char.Parse(valueStr)) { }
+                public Character(SourceTokens SourceTokens, string valueStr)
+                : this(SourceTokens, char.Parse(valueStr)) { }
             }
 
-            internal sealed class Integer(SourceTokens sourceTokens, int value)
-            : Literal<IntegerType, IntegerValue, int>(sourceTokens, IntegerType.Instance, value)
+            internal sealed record Integer(SourceTokens SourceTokens, int Value)
+            : Literal<IntegerType, IntegerValue, int>(SourceTokens, IntegerType.Instance, Value)
             {
                 public Integer(SourceTokens sourceTokens, string valueStr)
                 : this(sourceTokens, int.Parse(valueStr, CultureInfo.InvariantCulture)) { }
             }
 
-            internal sealed class Real(SourceTokens sourceTokens, decimal value)
-            : Literal<RealType, RealValue, decimal>(sourceTokens, RealType.Instance, value)
+            internal sealed record Real(SourceTokens SourceTokens, decimal Value)
+            : Literal<RealType, RealValue, decimal>(SourceTokens, RealType.Instance, Value)
             {
                 public Real(SourceTokens sourceTokens, string valueStr)
                 : this(sourceTokens, decimal.Parse(valueStr, CultureInfo.InvariantCulture)) { }
             };
 
-            internal sealed class String(SourceTokens sourceTokens,
-                string value)
-            : Literal<LengthedStringType, LengthedStringValue, string>(sourceTokens, LengthedStringType.Create(value.Length), value);
+            internal sealed record String(SourceTokens SourceTokens, string Value)
+            : Literal<LengthedStringType, LengthedStringValue, string>(SourceTokens, LengthedStringType.Create(Value.Length), Value);
         }
     }
 
     internal interface Type : Node
     {
-        internal sealed class AliasReference(SourceTokens sourceTokens,
-            Identifier name)
-        : NodeImpl(sourceTokens), Type, NodeAliasReference
+        internal sealed record AliasReference(SourceTokens SourceTokens,
+            Identifier Name)
+        : Type, AliasReferenceNone
         {
-            public Identifier Name => name;
-
-            public override bool SemanticsEqual(Node other) => other is AliasReference o
+            public bool SemanticsEqual(Node other) => other is AliasReference o
              && o.Name.SemanticsEqual(Name);
         }
 
-        internal sealed class String(SourceTokens sourceTokens)
-        : NodeImpl(sourceTokens), Type
+        internal sealed record String(SourceTokens SourceTokens)
+        : Type
         {
-            public override bool SemanticsEqual(Node other) => other is String;
+            public bool SemanticsEqual(Node other) => other is String;
         }
 
         internal interface Complete : Type
         {
-            internal sealed class Array(SourceTokens sourceTokens,
-                Type type,
-                IReadOnlyCollection<Expression> dimensions)
-            : NodeImpl(sourceTokens), Complete
+            internal sealed record Array(SourceTokens SourceTokens,
+                Type Type,
+                IReadOnlyCollection<Expression> Dimensions)
+            : Complete
             {
-                public Type Type => type;
-                public IReadOnlyCollection<Expression> Dimensions => dimensions;
-
-                public override bool SemanticsEqual(Node other) => other is Array o
+                public bool SemanticsEqual(Node other) => other is Array o
                  && o.Type.SemanticsEqual(Type)
                  && o.Dimensions.AllSemanticsEqual(Dimensions);
             }
 
-            internal sealed class File(SourceTokens sourceTokens)
-            : NodeImpl(sourceTokens), Complete
+            internal sealed record File(SourceTokens SourceTokens)
+            : Complete
             {
-                public override bool SemanticsEqual(Node other) => other is File;
+                public bool SemanticsEqual(Node other) => other is File;
             }
 
-            internal sealed class Character(SourceTokens sourceTokens)
-             : NodeImpl(sourceTokens), Complete
+            internal sealed record Character(SourceTokens SourceTokens)
+             : Complete
             {
-                public override bool SemanticsEqual(Node other) => other is Character;
+                public bool SemanticsEqual(Node other) => other is Character;
             }
 
-            internal sealed class Boolean(SourceTokens sourceTokens)
-             : NodeImpl(sourceTokens), Complete
+            internal sealed record Boolean(SourceTokens SourceTokens)
+             : Complete
             {
-                public override bool SemanticsEqual(Node other) => other is Boolean;
+                public bool SemanticsEqual(Node other) => other is Boolean;
             }
 
-            internal sealed class Integer(SourceTokens sourceTokens)
-             : NodeImpl(sourceTokens), Complete
+            internal sealed record Integer(SourceTokens SourceTokens)
+             : Complete
             {
-                public override bool SemanticsEqual(Node other) => other is Integer;
+                public bool SemanticsEqual(Node other) => other is Integer;
             }
 
-            internal sealed class Real(SourceTokens sourceTokens)
-             : NodeImpl(sourceTokens), Complete
+            internal sealed record Real(SourceTokens SourceTokens)
+             : Complete
             {
-                public override bool SemanticsEqual(Node other) => other is Real;
+                public bool SemanticsEqual(Node other) => other is Real;
             }
 
-            internal sealed new class AliasReference(SourceTokens sourceTokens,
+            internal sealed new record AliasReference(SourceTokens SourceTokens,
                 Identifier name)
-            : NodeImpl(sourceTokens), Complete, NodeAliasReference
+            : Complete, AliasReferenceNone
             {
                 public Identifier Name => name;
 
-                public override bool SemanticsEqual(Node other) => other is AliasReference o
+                public bool SemanticsEqual(Node other) => other is AliasReference o
                  && o.Name.SemanticsEqual(Name);
             }
 
-            internal sealed class LengthedString(SourceTokens sourceTokens,
+            internal sealed record LengthedString(SourceTokens SourceTokens,
                 Expression length)
-            : NodeImpl(sourceTokens), Complete
+            : Complete
             {
                 public Expression Length => length;
 
-                public override bool SemanticsEqual(Node other) => other is LengthedString o
+                public bool SemanticsEqual(Node other) => other is LengthedString o
                  && o.Length.SemanticsEqual(Length);
             }
 
-            internal sealed class Structure(SourceTokens sourceTokens,
+            internal sealed record Structure(SourceTokens SourceTokens,
                 IReadOnlyList<NameTypeBinding> components)
-            : NodeImpl(sourceTokens), Complete
+            : Complete
             {
                 public IReadOnlyList<NameTypeBinding> Components => components;
 
-                public override bool SemanticsEqual(Node other) => other is Structure o
+                public bool SemanticsEqual(Node other) => other is Structure o
                  && o.Components.AllSemanticsEqual(Components);
             }
         }
@@ -749,89 +635,72 @@ public interface Node : EquatableSemantics<Node>
 
     internal interface Designator : Node
     {
-        internal sealed class Array(SourceTokens sourceTokens, IReadOnlyList<Expression> indexes) : NodeImpl(sourceTokens), Designator
+        internal sealed record Array(SourceTokens SourceTokens,
+            IReadOnlyList<Expression> Index)
+        : Designator
         {
-            public IReadOnlyList<Expression> Index => indexes;
-
-            public override bool SemanticsEqual(Node other) => other is Array o
+            public bool SemanticsEqual(Node other) => other is Array o
              && o.Index.AllSemanticsEqual(Index);
         }
 
-        internal sealed class Structure(SourceTokens sourceTokens, Identifier component) : NodeImpl(sourceTokens), Designator
+        internal sealed record Structure(SourceTokens SourceTokens,
+            Identifier Component)
+        : Designator
         {
-            public Identifier Component => component;
-
-            public override bool SemanticsEqual(Node other) => other is Structure o
+            public bool SemanticsEqual(Node other) => other is Structure o
              && o.Component.SemanticsEqual(Component);
         }
     }
 
-    internal sealed class NameTypeBinding(SourceTokens sourceTokens,
-        IReadOnlyCollection<Identifier> names,
-        Type.Complete type)
-    : NodeImpl(sourceTokens)
+    internal sealed record NameTypeBinding(SourceTokens SourceTokens,
+        IReadOnlyCollection<Identifier> Names,
+        Type.Complete Type)
+    : Node
     {
-        public IReadOnlyCollection<Identifier> Names => names;
-        public Type Type => type;
-
-        public override bool SemanticsEqual(Node other) => other is NameTypeBinding o
+        public bool SemanticsEqual(Node other) => other is NameTypeBinding o
          && o.Names.AllSemanticsEqual(Names)
          && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed class ParameterActual(SourceTokens sourceTokens,
-        ParameterMode mode,
-        Expression value)
-    : NodeImpl(sourceTokens)
+    internal sealed record ParameterActual(SourceTokens SourceTokens,
+        ParameterMode Mode,
+        Expression Value)
+    : Node
     {
-        public ParameterMode Mode => mode;
-        public Expression Value => value;
-
-        public override bool SemanticsEqual(Node other) => other is ParameterActual o
+        public bool SemanticsEqual(Node other) => other is ParameterActual o
          && o.Mode == Mode
          && o.Value.SemanticsEqual(Value);
     }
 
-    internal sealed class ParameterFormal(SourceTokens sourceTokens,
-        ParameterMode mode,
-        Identifier name,
-        Type type)
-    : NodeImpl(sourceTokens)
+    internal sealed record ParameterFormal(SourceTokens SourceTokens,
+        ParameterMode Mode,
+        Identifier Name,
+        Type Type)
+    : Node
     {
-        public ParameterMode Mode => mode;
-        public Identifier Name => name;
-        public Type Type => type;
-
-        public override bool SemanticsEqual(Node other) => other is ParameterFormal o
+        public bool SemanticsEqual(Node other) => other is ParameterFormal o
          && o.Mode == Mode
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed class ProcedureSignature(SourceTokens sourceTokens,
-        Identifier name,
-        IReadOnlyCollection<ParameterFormal> parameters)
-    : NodeImpl(sourceTokens)
+    internal sealed record ProcedureSignature(SourceTokens SourceTokens,
+        Identifier Name,
+        IReadOnlyCollection<ParameterFormal> Parameters)
+    : Node
     {
-        public Identifier Name => name;
-        public IReadOnlyCollection<ParameterFormal> Parameters => parameters;
-
-        public override bool SemanticsEqual(Node other) => other is ProcedureSignature o
+        public bool SemanticsEqual(Node other) => other is ProcedureSignature o
          && o.Name.SemanticsEqual(Name)
          && o.Parameters.AllSemanticsEqual(Parameters);
     }
 
-    internal sealed class FunctionSignature(SourceTokens sourceTokens,
-        Identifier name,
-        IReadOnlyCollection<ParameterFormal> parameters,
-        Type returnType)
-    : NodeImpl(sourceTokens)
+    internal sealed record FunctionSignature(SourceTokens SourceTokens,
+        Identifier Name,
+        IReadOnlyCollection<ParameterFormal> Parameters,
+        Type ReturnType)
+    : Node
     {
-        public Identifier Name => name;
-        public IReadOnlyCollection<ParameterFormal> Parameters => parameters;
-        public Type ReturnType => returnType;
-
-        public override bool SemanticsEqual(Node other) => other is FunctionSignature o
+        public bool SemanticsEqual(Node other) => other is FunctionSignature o
          && o.Name.SemanticsEqual(Name)
          && o.Parameters.AllSemanticsEqual(Parameters)
          && o.ReturnType.SemanticsEqual(ReturnType);
@@ -840,7 +709,7 @@ public interface Node : EquatableSemantics<Node>
 
 #region Terminals
 
-sealed class ParameterMode
+sealed record ParameterMode
 {
     ParameterMode(string formal, string actual)
      => (RepresentationFormal, RepresentationActual) = (formal, actual);
@@ -853,11 +722,11 @@ sealed class ParameterMode
     public static ParameterMode InOut { get; } = new("entF/sortF", "entE/sortE");
 }
 
-sealed class Identifier : NodeImpl, IEquatable<Identifier?>
+public sealed class Identifier : Node, IEquatable<Identifier?>
 {
-    public Identifier(SourceTokens sourceTokens, string name) : base(sourceTokens)
+    public Identifier(SourceTokens sourceTokens, string name)
     {
-        Name = name;
+        (SourceTokens, Name) = (sourceTokens, name);
 #if DEBUG
         if (!IsValidIdentifier(name)) {
             throw new ArgumentException($"`{name}` is not a valid identifier", nameof(name));
@@ -868,9 +737,10 @@ sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 #endif
     }
 
+    public SourceTokens SourceTokens { get; }
     public string Name { get; }
 
-    public override bool SemanticsEqual(Node other) => other is Identifier o
+    public bool SemanticsEqual(Node other) => other is Identifier o
      && o.Name == Name;
 
     // Equals and GetHashCode implementation for usage in dictionaries.
@@ -884,10 +754,3 @@ sealed class Identifier : NodeImpl, IEquatable<Identifier?>
 }
 
 #endregion Terminals
-
-public abstract class NodeImpl(SourceTokens sourceTokens) : Node
-{
-    public SourceTokens SourceTokens => sourceTokens;
-
-    public abstract bool SemanticsEqual(Node other);
-}

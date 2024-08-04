@@ -12,7 +12,7 @@ public sealed class SemanticAst
 {
     internal SemanticAst(
         Algorithm root,
-        IReadOnlyDictionary<NodeScoped, Scope> scopes,
+        IReadOnlyDictionary<ScopedNode, Scope> scopes,
         IDictionary<Expression, EvaluatedType> inferredTypes)
     {
         Root = root;
@@ -23,35 +23,40 @@ public sealed class SemanticAst
     readonly IDictionary<Expression, EvaluatedType> _inferredTypes;
     internal IReadOnlyDictionary<Expression, EvaluatedType> InferredTypes => _inferredTypes.AsReadOnly();
     internal Algorithm Root { get; }
-    internal IReadOnlyDictionary<NodeScoped, Scope> Scopes { get; }
+    internal IReadOnlyDictionary<ScopedNode, Scope> Scopes { get; }
 
     /// <summary>
     /// Invert an expression, assuming it is boolean.
     /// </summary>
     /// <param name="expr">The expression.</param>
     /// <returns>The inverse of <paramref name="expr"/> assuming it is a boolean expression.</returns>
-    internal Expression Invert(Expression expr) => PrepareNewExpression(BooleanType.Instance, expr switch {
-        Expression.Literal.True e => new Expression.Literal.False(e.SourceTokens),
-        Expression.Literal.False e => new Expression.Literal.True(e.SourceTokens),
-        NodeBracketedExpression e => Invert(e.ContainedExpression),
-        Expression.UnaryOperation uo when uo.Operator is UnaryOperator.Not => uo.Operand,
-        Expression.BinaryOperation bo => bo.Operator switch {
-            BinaryOperator.Equal => new(bo.SourceTokens, bo.Left, BinaryOperator.NotEqual, bo.Right),
-            BinaryOperator.NotEqual => new(bo.SourceTokens, bo.Left, BinaryOperator.Equal, bo.Right),
-            BinaryOperator.GreaterThan => new(bo.SourceTokens, bo.Left, BinaryOperator.LessThanOrEqual, bo.Right),
-            BinaryOperator.GreaterThanOrEqual => new(bo.SourceTokens, bo.Left, BinaryOperator.LessThan, bo.Right),
-            BinaryOperator.LessThan => new(bo.SourceTokens, bo.Left, BinaryOperator.GreaterThanOrEqual, bo.Right),
-            BinaryOperator.LessThanOrEqual => new(bo.SourceTokens, bo.Left, BinaryOperator.GreaterThan, bo.Right),
-            // NOT (A AND B) <=> NOT A OR NOT B
-            BinaryOperator.And => new(bo.SourceTokens, Invert(bo.Left), BinaryOperator.Or, Invert(bo.Right)),
-            // NOT (A OR B) <=> NOT A AND NOT B
-            BinaryOperator.Or => new(bo.SourceTokens, Invert(bo.Left), BinaryOperator.And, Invert(bo.Right)),
-            // NOT (A XOR B) <=> A = B
-            BinaryOperator.Xor => new(bo.SourceTokens, bo.Left, BinaryOperator.Equal, bo.Right),
-            _ => bo
-        },
-        _ => new Expression.UnaryOperation(SourceTokens.Empty, UnaryOperator.Not, expr),
-    });
+    internal Expression Invert(Expression expr)
+    {
+        return expr switch {
+            Expression.Literal.True e => Prep(new Expression.Literal.False(e.SourceTokens)),
+            Expression.Literal.False e => Prep(new Expression.Literal.True(e.SourceTokens)),
+            BracketedExpressionNode e => Invert(e.ContainedExpression),
+            Expression.UnaryOperation uo when uo.Operator is UnaryOperator.Not => uo.Operand,
+            Expression.BinaryOperation bo => bo.Operator switch {
+                BinaryOperator.Equal => Prep(new Expression.BinaryOperation(bo.SourceTokens, bo.Left, BinaryOperator.NotEqual, bo.Right)),
+                BinaryOperator.NotEqual => Prep(new Expression.BinaryOperation(bo.SourceTokens, bo.Left, BinaryOperator.Equal, bo.Right)),
+                BinaryOperator.GreaterThan => Prep(new Expression.BinaryOperation(bo.SourceTokens, bo.Left, BinaryOperator.LessThanOrEqual, bo.Right)),
+                BinaryOperator.GreaterThanOrEqual => Prep(new Expression.BinaryOperation(bo.SourceTokens, bo.Left, BinaryOperator.LessThan, bo.Right)),
+                BinaryOperator.LessThan => Prep(new Expression.BinaryOperation(bo.SourceTokens, bo.Left, BinaryOperator.GreaterThanOrEqual, bo.Right)),
+                BinaryOperator.LessThanOrEqual => Prep(new Expression.BinaryOperation(bo.SourceTokens, bo.Left, BinaryOperator.GreaterThan, bo.Right)),
+                // NOT (A AND B) <=> NOT A OR NOT B
+                BinaryOperator.And => Prep(new Expression.BinaryOperation(bo.SourceTokens, Invert(bo.Left), BinaryOperator.Or, Invert(bo.Right))),
+                // NOT (A OR B) <=> NOT A AND NOT B
+                BinaryOperator.Or => Prep(new Expression.BinaryOperation(bo.SourceTokens, Invert(bo.Left), BinaryOperator.And, Invert(bo.Right))),
+                // NOT (A XOR B) <=> A = B
+                BinaryOperator.Xor => Prep(new Expression.BinaryOperation(bo.SourceTokens, bo.Left, BinaryOperator.Equal, bo.Right)),
+                _ => bo
+            },
+            _ => Prep(new Expression.UnaryOperation(SourceTokens.Empty, UnaryOperator.Not, expr)),
+        };
+
+        Expression Prep(Expression @new) => PrepareNewExpression(BooleanType.Instance, @new);
+    }
 
     internal Option<Expression.Literal> MakeLiteral(Value value)
      => (value switch {

@@ -412,3 +412,9 @@ Add stars where necessary.
 Implementation:
 
 Use Scope and symbol tables, then operator logic in OperatorInfo to add the star as needed when generating a VariableReference, and bracketing as appropriate.
+
+## Optimization: avoid dict lookup when inferred type is known
+
+For literals
+
+Encapsulate the dic in a class which supports this.
