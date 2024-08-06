@@ -1410,3 +1410,39 @@ What we can do is pass the scope and check if the name already exists, if so the
 - `ident_1`
 - `ident_2`
 - ...
+
+## should characters be considered integers?
+
+No, because we don't know what encoding the target language uses. So we can't predict the value produce by a char &rarr; int conversion.
+
+But we'll have an explicit conversion, so we can do this:
+
+```psc
+// This function assumes an ASCII-based environment.
+fonction isDigit(entF c : caractère) délivre booléen c'est début
+    retourne (entier)'0' <= (entier)c ET (entier)c >= (entier)'9'; // C way
+fin
+```
+
+```psc
+procédure printCharset(entF limit : entier) c'est début
+    i : entier;
+    pour i de 0 à limit faire
+#config écrire-nl := faux
+        écrireÉcran((caractère)i);
+#config écrire-nl reset
+    finfaire
+fin
+```
+
+My issue with the above code is that we don't know what characters it's going to print before we transpile and run it. And the results *may differ* depending on the target language.
+
+Is this a problem though? The semantics are clear. Print the character corresponding to each integer *i* from 0 to *limit*.
+
+One could think of the character cast as a platform library call. What you get depends on the platform. Such code is non-deterministic.
+
+The solution would be to enforce UTF-16 as the encoding, which we cannot do &mdash; unless we're willing to bring an Unicode library to the C transpiled output.
+
+I don't want to *forbid* such programs because they are non-deterministic. But, I don't want to make it *transparent* either. Like Zig, we'll add some friction by requring the conversion to be explicit, with a cast syntax.
+
+The only issue is that we can't specify the value that we'll get. When constant folding, we'll have to return a runtime value for casts involving characters. We can't rely on UTF-16 since the target language may use another encoding.

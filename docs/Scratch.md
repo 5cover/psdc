@@ -399,22 +399,20 @@ Different ways to configure (ordered by predecence, lower value replace higher v
 
 location|scope|syntax
 -|-|-
-config json file|global|`{ "ecrire-newline": true }`
-CLI options|global|`--config ecrire-newline:true`
-preprocessor directives|current file|`#config ecrire-newline set (expr)`<br>`#config ecrire-newline reset` &rarr; resets to inherited value
+config json file|global|`{ "ecrire-nl": vrai }`
+CLI options|global|`--config ecrire-nl:vrai`
+preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config ecrire-nl reset` &rarr; resets to inherited value
+
+config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
 
 ## Trailing commas
 
 Allow trailing commas in parameter lists, local variable lists, array subscripts.
 
-## should characters be considered integers?
+## GNU-compliant message formatting
 
-This would mean allowing scalar comparison on characters and implicit conversion to integer. I see this as a potential issue for portability, as we'd be gluing ourselves to a specific encoding.
+We should adhere to what's standard.
 
-C# uses UTF-16, while C defines no specific encoding and uses what ever the system provides as a default (i think)? But then what is the actual value of a character literal? Does it depend on the file encoding? A compiler option?
+## Type casting
 
-Although, this would be useful for when we want to check characters (is digit, is alpha...)
-
-## Constant locals
-
-Why not? It feels like something that has no reason not to be allowed
+I think we should allow a C-like syntax for type-casting. Let's make [a graph of allowed conversions](Conversions.md).
