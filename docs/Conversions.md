@@ -14,7 +14,7 @@ caractère -.impl-defined.-> entier
 entier -.impl-defined.-> caractère
 chaîneN["chaîne(<var>N</var>)"] --> chaîne
 entier --> réel
-réel -.truncation.->entier
+réel -.rounded towards zero.->entier
 nomFichierLog
 arrays["<em>any array</em>"]
 structures["<em>any structure</em>"]

@@ -5,7 +5,7 @@ namespace Scover.Psdc.Language;
 interface Value : EquatableSemantics<Value>
 {
     EvaluatedType Type { get; }
-    ValueStatus Value { get; }
+    ValueStatus Status { get; }
 
     /// <summary>
     /// A value that is known at compile-time.
@@ -20,14 +20,14 @@ interface Value : EquatableSemantics<Value>
     public static ValueStatus<TUnderlying> Runtime<TUnderlying>() => new ValueStatus<TUnderlying>.RuntimeValue();
 
     /// <summary>
-    /// A value that is uninitialized, i.e. neither known at compile-time or runtime.
+    /// A garbage value, i.e. neither known at compile-time or runtime. May represent an unitialized variable, unallocated memory, etc.
     /// </summary>
-    public static ValueStatus<TUnderlying> Uninitialized<TUnderlying>() => new ValueStatus<TUnderlying>.UninitializedValue();
+    public static ValueStatus<TUnderlying> Garbage<TUnderlying>() => new ValueStatus<TUnderlying>.GarbageValue();
 }
 
 interface Value<TUnderlying> : Value
 {
-    new ValueStatus<TUnderlying> Value { get; }
+    new ValueStatus<TUnderlying> Status { get; }
 
 }
 
@@ -37,34 +37,56 @@ interface Value<out TType, TUnderlying> : Value<TUnderlying> where TType : Evalu
 }
 
 sealed class IntegerValue(IntegerType type, ValueStatus<int> value)
-: ValueImpl<IntegerType, int>(type, value), RealValue
+: ValueImpl<IntegerValue, IntegerType, int>(type, value), RealValue
 {
     RealType Value<RealType, decimal>.Type => RealType.Instance;
-    ValueStatus<decimal> Value<decimal>.Value => Value.Map(v => (decimal)v);
+    ValueStatus<decimal> Value<decimal>.Status => Status.Map(v => (decimal)v);
+
+    protected override IntegerValue Clone(ValueStatus<int> value) => new(Type, value);
 }
 
 interface RealValue : Value<RealType, decimal>;
 
-sealed class RealValueImpl(RealType type, ValueStatus<decimal> value) : ValueImpl<RealType, decimal>(type, value), RealValue;
+sealed class RealValueImpl(RealType type, ValueStatus<decimal> value) : ValueImpl<RealValueImpl, RealType, decimal>(type, value), RealValue
+{
+    protected override RealValueImpl Clone(ValueStatus<decimal> value) => new(Type, value);
+}
 
 interface StringValue : Value<StringType, string>;
 
-sealed class StringValueImpl(StringType type, ValueStatus<string> value) : ValueImpl<StringType, string>(type, value), StringValue;
+sealed class StringValueImpl(StringType type, ValueStatus<string> value) : ValueImpl<StringValueImpl, StringType, string>(type, value), StringValue
+{
+    protected override StringValueImpl Clone(ValueStatus<string> value) => new(Type, value);
+}
 
-sealed class StructureValue(StructureType type, ValueStatus<IReadOnlyDictionary<Identifier, Value>> value) : ValueImpl<StructureType, IReadOnlyDictionary<Identifier, Value>>(type, value);
+sealed class StructureValue(StructureType type, ValueStatus<IReadOnlyDictionary<Identifier, Value>> value) : ValueImpl<StructureValue, StructureType, IReadOnlyDictionary<Identifier, Value>>(type, value)
+{
+    protected override StructureValue Clone(ValueStatus<IReadOnlyDictionary<Identifier, Value>> value) => new(Type, value);
+}
 
 sealed class UnknownValue(UnknownType type, ValueStatus value) : ValueImpl<UnknownType>(type, value);
 
-sealed class ArrayValue(ArrayType type, ValueStatus<Value[]> value) : ValueImpl<ArrayType, Value[]>(type, value);
+sealed class ArrayValue(ArrayType type, ValueStatus<Value[]> value) : ValueImpl<ArrayValue, ArrayType, Value[]>(type, value)
+{
+    protected override ArrayValue Clone(ValueStatus<Value[]> value) => new(Type, value);
+}
 
-sealed class BooleanValue(BooleanType type, ValueStatus<bool> value) : ValueImpl<BooleanType, bool>(type, value);
+sealed class BooleanValue(BooleanType type, ValueStatus<bool> value) : ValueImpl<BooleanValue, BooleanType, bool>(type, value)
+{
+    protected override BooleanValue Clone(ValueStatus<bool> value) => new(Type, value);
+}
 
-sealed class CharacterValue(CharacterType type, ValueStatus<char> value) : ValueImpl<CharacterType, char>(type, value);
+sealed class CharacterValue(CharacterType type, ValueStatus<char> value) : ValueImpl<CharacterValue, CharacterType, char>(type, value)
+{
+    protected override CharacterValue Clone(ValueStatus<char> value) => new(Type, value);
+}
 
 sealed class FileValue(FileType type, ValueStatus value) : ValueImpl<FileType>(type, value);
 
 sealed class LengthedStringValue(LengthedStringType type, ValueStatus<string> value)
-        : ValueImpl<LengthedStringType, string>(type, value), StringValue
+        : ValueImpl<LengthedStringValue, LengthedStringType, string>(type, value), StringValue
 {
     StringType Value<StringType, string>.Type => StringType.Instance;
+
+    protected override LengthedStringValue Clone(ValueStatus<string> value) => new(Type, value);
 }

@@ -288,7 +288,7 @@ abstract class ParseOperation
             if (pr.HasValue) {
                 _readCount += pr.SourceTokens.Count;
             }
-            result = pr.DiscardError();
+            result = pr.DropError();
             return this;
         }
 
@@ -361,7 +361,7 @@ abstract class ParseOperation
         }
 
         void AddOrSyntaxError<T>(ICollection<T> items, ParseResult<T> item)
-         => item.Match(
+         => item.Tap(
                 some: items.Add,
                 none: error => messenger.Report(Message.ErrorSyntax(item.SourceTokens, error))
             );

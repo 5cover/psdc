@@ -18,5 +18,5 @@ public class StaticAnalysisBenchmark
     }
 
     [Benchmark]
-    public SemanticAst Run() => StaticAnalyzer.Analyze(IgnoreMessenger.Instance, _ast);
+    public SemanticNode.Algorithm Run() => StaticAnalyzer.Analyze(IgnoreMessenger.Instance, _ast);
 }

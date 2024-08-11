@@ -2,28 +2,31 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Language;
 
-interface Symbol : EquatableSemantics<Symbol>
+public interface Symbol : EquatableSemantics<Symbol>
 {
     public Identifier Name { get; }
     public SourceTokens SourceTokens { get; }
+    public static virtual string TypeKind => "symbol";
+    public string Kind { get; }
 
-    internal interface NameTypeBinding : Symbol
+    internal interface ValueProvider : Symbol
     {
         EvaluatedType Type { get; }
     }
 
-    interface Callable : Symbol
+    internal interface Callable : Symbol
     {
         public bool HasBeenDefined { get; }
         public IReadOnlyCollection<Parameter> Parameters { get; }
-
         public void MarkAsDefined();
     }
 
     internal sealed record Variable(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type, Option<Value> Initializer)
-    : NameTypeBinding
+    : ValueProvider
     {
+        public static string TypeKind => "variable";
+        public string Kind => TypeKind;
         public bool SemanticsEqual(Symbol other) => other is Variable o
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type)
@@ -32,8 +35,10 @@ interface Symbol : EquatableSemantics<Symbol>
 
     internal sealed record Constant(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type, Value Value)
-    : NameTypeBinding
+    : ValueProvider
     {
+        public static string TypeKind => "constant";
+        public string Kind => TypeKind;
         public bool SemanticsEqual(Symbol other) => other is Constant o
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type)
@@ -41,18 +46,22 @@ interface Symbol : EquatableSemantics<Symbol>
     }
 
     internal sealed record TypeAlias(Identifier Name, SourceTokens SourceTokens,
-        EvaluatedType TargetType)
+        EvaluatedType Type)
     : Symbol
     {
+        public static string TypeKind => "type alias";
+        public string Kind => TypeKind;
         public bool SemanticsEqual(Symbol other) => other is TypeAlias o
          && o.Name.SemanticsEqual(Name)
-         && o.TargetType.SemanticsEqual(TargetType);
+         && o.Type.SemanticsEqual(Type);
     }
 
     internal sealed record Procedure(Identifier Name, SourceTokens SourceTokens,
         IReadOnlyCollection<Parameter> Parameters)
     : Callable
     {
+        public static string TypeKind => "procedure";
+        public string Kind => TypeKind;
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
         public bool SemanticsEqual(Symbol other) => other is Procedure o
@@ -65,6 +74,8 @@ interface Symbol : EquatableSemantics<Symbol>
         EvaluatedType ReturnType)
     : Callable
     {
+        public static string TypeKind => "function";
+        public string Kind => TypeKind;
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
         public bool SemanticsEqual(Symbol other) => other is Function o
@@ -76,28 +87,13 @@ interface Symbol : EquatableSemantics<Symbol>
     internal sealed record Parameter(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type,
         ParameterMode Mode)
-    : NameTypeBinding
+    : ValueProvider
     {
+        public static string TypeKind => TypeKind;
+        public string Kind => "parameter";
         public bool SemanticsEqual(Symbol other) => other is Parameter o
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type)
          && o.Mode == Mode;
     }
-}
-
-static class SymbolExtensions
-{
-    static readonly Dictionary<Type, string> symbolKinds = new() {
-        [typeof(Symbol.Constant)] = "constant",
-        [typeof(Symbol.Function)] = "function",
-        [typeof(Symbol.Parameter)] = "parameter",
-        [typeof(Symbol.Procedure)] = "procedure",
-        [typeof(Symbol.TypeAlias)] = "type alias",
-        [typeof(Symbol.Variable)] = "variable",
-        [typeof(Symbol.NameTypeBinding)] = "variable",
-    };
-
-    public static string GetKind(this Symbol s) => symbolKinds[s.GetType()];
-
-    public static string GetKind<T>() where T : Symbol => symbolKinds[typeof(T)];
 }

@@ -31,6 +31,7 @@
 - Reading unassigned variable
 - Array index out of range
 - Array dimensions mismatch (between array subscript and declaration)
+- for loop variant type doesn't support addition
 
 ## Warnings
 

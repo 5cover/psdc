@@ -1,25 +1,27 @@
 using Scover.Psdc.Messages;
 
 using static Scover.Psdc.Tokenization.TokenType;
-using static Scover.Psdc.Tokenization.TokenType.Special;
 using static Scover.Psdc.Tokenization.TokenType.Valued;
 
 namespace Scover.Psdc.Tokenization;
 
 public sealed class Tokenizer
 {
+    static IEnumerable<T> GetRules<T>(IEnumerable<Ruled<T>> ruled) where T : TokenRule => ruled.SelectMany(r => r.Rules);
+    static IEnumerable<TokenRule> GetRules(IEnumerable<Ruled> ruled) => ruled.SelectMany(r => r.Rules);
+
     static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
 
-    static readonly IReadOnlyList<Ruled> rules =
+    static readonly IReadOnlyList<TokenRule> rules =
         // Variable length
-        new List<Ruled> { CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter, }
-    // Maximal munch
-    .Concat(Keyword.Instances.OrderByDescending(type => type.Rule.Expected.Length))
-    .Concat(Enumerable.Concat<Ruled<StringTokenRule>>(Punctuation.Instances, Operator.Instances)
-            .OrderByDescending(type => type.Rule.Expected.Length))
-    // Identifiers last
-    .Append(Identifier)
-    .ToList();
+        GetRules(new Ruled[]{CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter})
+        // Maximum munch
+        .Concat(GetRules(Keyword.Instances).OrderByDescending(r => r.Expected.Length))
+        .Concat(Enumerable.Concat(GetRules(Punctuation.Instances), GetRules(Operator.Instances))
+                .OrderByDescending(r => r.Expected.Length))
+        // Identifiers last
+        .Concat(Identifier.Rules)
+        .ToArray();
 
     Tokenizer(Messenger msger, string code) => (_msger, _code) = (msger, code);
 
@@ -30,7 +32,7 @@ public sealed class Tokenizer
 
     public static IEnumerable<Token> Tokenize(Messenger messenger, string code)
     {
-        Tokenizer t = new(messenger, code.DiacriticsRemoved());
+        Tokenizer t = new(messenger, code);
 
         int index = 0;
         int invalidStart = NA;
@@ -74,7 +76,7 @@ public sealed class Tokenizer
     Option<Token> ReadToken(ref int offset)
     {
         foreach (var rule in rules) {
-            var token = rule.TryExtract(_code, offset);
+            var token = rule.Extract(_code, offset);
             if (token.HasValue) {
                 offset += token.Value.Length;
                 return token;

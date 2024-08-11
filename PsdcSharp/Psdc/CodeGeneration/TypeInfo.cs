@@ -4,7 +4,8 @@ interface TypeInfo
 {
     public string DecorateExpression(string expr);
 
-    public string Generate();
+    public string ToString();
 
     public string GenerateDeclaration(IEnumerable<string> names);
+    public string GenerateDeclaration(string name);
 }

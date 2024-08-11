@@ -38,16 +38,20 @@ public readonly struct Message
     internal static Message ErrorCallParameterMismatch(SourceTokens sourceTokens,
         Symbol.Callable callable, IReadOnlyList<string> problems)
      => new(sourceTokens, MessageCode.CallParameterMismatch,
-        $"call to {callable.GetKind()} `{callable.Name}` does not correspond to signature",
+        $"call to {callable.Kind} `{callable.Name}` does not correspond to signature",
         problems);
 
     internal static Message ErrorIndexWrongRank(SourceTokens sourceTokens, int badRank, int arrayRank)
      => new(sourceTokens, MessageCode.IndexWrongRank,
         $"index has {Quantity(badRank, "dimension", "dimensions")}, but {Quantity(arrayRank, "was", "were")} expected");
 
-    internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, IReadOnlyList<int> badIndex, IReadOnlyList<int> arrayLength)
+    internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, IReadOnlyList<string> problems)
      => new(sourceTokens, MessageCode.IndexOutOfBounds,
-        $"index [{string.Join(", ", badIndex)}] out of bounds for array [{string.Join(", ", arrayLength)}]");
+        $"index out of bounds for array",
+        problems);
+
+    internal static string ProblemOutOfBoundsDimension(int dimNumber, int dimIndex, int dimLength)
+     => $"dimension {dimNumber} out of bounds (indexed at {dimIndex}, length is {dimLength})";
 
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
@@ -70,9 +74,14 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.MissingMainProgram,
         "main program missing");
 
+    internal static Message ErrorCallableNotDefined(Symbol.Callable callable)
+     => new(callable.SourceTokens, MessageCode.CallableNotDefined,
+        $"{callable.Kind} `{callable.Name}` declared but not defined",
+        [$"provide a definition for `{callable.Name}`"]);
+
     internal static Message WarningTargetLanguageReservedKeyword(SourceTokens sourceTokens, string targetLanguageName, string ident, string adjustedIdent)
      => CreateTargetLanguage(sourceTokens, MessageCode.TargetLanguageReservedKeyword,
-        targetLanguageName, $"`{ident}` is a reserved {targetLanguageName} keyword and thus cannot be used as an identifier. As such, it was renamed to `{adjustedIdent}`");
+        targetLanguageName, $"identifier `{ident}` is a reserved {targetLanguageName} keyword, renamed to `{adjustedIdent}`");
 
     internal static Message ErrorReturnInNonFunction(SourceTokens sourceTokens)
      => new(sourceTokens, MessageCode.ReturnInNonFunction,
@@ -84,11 +93,15 @@ public readonly struct Message
 
     internal static Message ErrorRedefinedSymbol(Symbol newSymbol, Symbol existingSymbol)
      => new(newSymbol.Name.SourceTokens, MessageCode.RedefinedSymbol,
-        $"{newSymbol.GetKind()} `{existingSymbol.Name}` redefines a {existingSymbol.GetKind()} of the same name");
+        $"{newSymbol.Kind} `{existingSymbol.Name}` redefines a {existingSymbol.Kind} of the same name");
+
+    internal static Message ErrorCannotSwitchOnString(Statement.Switch @switch)
+     => new(@switch.SourceTokens, MessageCode.CannotSwitchOnString,
+        $"cannot switch on string");
 
     internal static Message ErrorSignatureMismatch<TSymbol>(TSymbol newSig, TSymbol expectedSig) where TSymbol : Symbol
      => new(newSig.SourceTokens, MessageCode.SignatureMismatch,
-        new(input => $"this signature of {newSig.GetKind()} `{newSig.Name}` differs from previous signature (`{input[expectedSig.SourceTokens.InputRange]}`)"));
+        new(input => $"this signature of {newSig.Kind} `{newSig.Name}` differs from previous signature (`{input[expectedSig.SourceTokens.InputRange]}`)"));
 
     internal static Message ErrorStructureComponentDoesntExist(Identifier component,
         StructureType structType)
@@ -97,13 +110,13 @@ public readonly struct Message
             ? $"no component named `{component}` in structure"
             : $"`{structType}` has no component named `{component}`");
 
-    internal static Message ErrorUnsupportedMixedInitializer(Initializer initializer)
-     => new(initializer.SourceTokens, MessageCode.UnsupportedMixedInitializer,
-        "mixed initializers (array and structure) are not supported");
+    internal static Message ErrorUnsupportedDesignator(SourceTokens sourceTokens, EvaluatedType targetType)
+     => new(sourceTokens, MessageCode.UnsupportedDesignator,
+        $"unsupported designator in '{targetType}' initializer");
 
     internal static Message ErrorStructureDuplicateComponent(SourceTokens sourceTokens, Identifier componentName)
      => new(sourceTokens, MessageCode.StructureDuplicateComponent,
-        $"duplicate component `{componentName}` in structure");
+        $"duplicate component `{componentName}` in structure is ignored");
 
     internal static Message ErrorNonIntegerIndex(SourceTokens sourceTokens, EvaluatedType actualIndexType)
      => new(sourceTokens, MessageCode.NonIntegerIndex,
@@ -126,7 +139,7 @@ public readonly struct Message
             msgContent.Append($"expected {error.FailedProduction}");
         }
 
-        error.ErroneousToken.MatchSome(token => msgContent.Append($", got {token}"));
+        error.ErroneousToken.Tap(t => msgContent.Append($", got {t}"));
 
         return new(error.ErroneousToken
             .Map(t => t.InputRange)
@@ -139,11 +152,11 @@ public readonly struct Message
 
     internal static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier) where TSymbol : Symbol
      => new(identifier.SourceTokens, MessageCode.UndefinedSymbol,
-        $"undefined {SymbolExtensions.GetKind<TSymbol>()} `{identifier}`");
+        $"undefined {TSymbol.TypeKind} `{identifier}`");
 
     internal static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier, Symbol existingSymbol) where TSymbol : Symbol
      => new(identifier.SourceTokens, MessageCode.UndefinedSymbol,
-        $"`{identifier}` is a {existingSymbol.GetKind()}, {SymbolExtensions.GetKind<TSymbol>()} expected");
+        $"`{identifier}` is a {existingSymbol.Kind}, {TSymbol.TypeKind} expected");
 
     internal static Message ErrorUnknownToken(Range inputRange)
      => new(inputRange, MessageCode.UnknownToken,
@@ -151,19 +164,23 @@ public readonly struct Message
 
     internal static Message ErrorUnsupportedOperation(Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType)
      => new(opBin.SourceTokens, MessageCode.UnsupportedOperation,
-        $"unsupported operand types for {opBin.Operator.GetRepresentation()}: '{leftType}' and '{rightType}'");
-
+        $"unsupported operand types for {opBin.Operator.Representation}: '{leftType}' and '{rightType}'");
+    internal static Message ErrorInvalidCast(SourceTokens sourceTokens, EvaluatedType sourceType, EvaluatedType targetType)
+     => new(sourceTokens, MessageCode.InvalidCast,
+        $"Invalid cast: there is no explicit conversion from '{sourceType}' to '{targetType}'.");
     internal static Message ErrorUnsupportedOperation(Expression.UnaryOperation opUn, EvaluatedType operandType)
      => new(opUn.SourceTokens, MessageCode.UnsupportedOperation,
-        $"unsupported operand type for {opUn.Operator.GetRepresentation()}: '{operandType}'");
-
+        $"unsupported operand type for {opUn.Operator.Representation}: '{operandType}'");
+    internal static Message SuggestionRedundantCast(SourceTokens sourceTokens, EvaluatedType sourceType, EvaluatedType targetType)
+     => new(sourceTokens, MessageCode.RedundantCast,
+        $"Rendundant cast from '{sourceType}' to '{targetType}': an implicit conversion exists");
     internal static Message ErrrorComponentAccessOfNonStruct(Expression.Lvalue.ComponentAccess compAccess, EvaluatedType actualStructType)
      => new(compAccess.SourceTokens, MessageCode.ComponentAccessOfNonStruct,
         $"request for component `{compAccess.ComponentName}` in something ('{actualStructType}') not a structure");
 
-    internal static Message ErrorExcessElementInArrayInitializer(SourceTokens sourceTokens)
-     => new(sourceTokens, MessageCode.ExcessElementInArrayInitializer,
-        $"excess element in array initializer");
+    internal static Message ErrorExcessElementInInitializer(SourceTokens sourceTokens)
+     => new(sourceTokens, MessageCode.ExcessElementInInitializer,
+        $"excess element in initializer");
 
     internal static string ProblemWrongArgumentMode(Identifier name, string expected, string actual)
      => $"wrong mode for `{name}`: expected '{expected}', got '{actual}'";

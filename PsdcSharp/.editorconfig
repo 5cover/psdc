@@ -3,7 +3,7 @@ root = true
 [*.cs]
 #### Styles de nommage ####
 
-# R�gles de nommage
+# Règles de nommage
 
 dotnet_naming_rule.constant_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.constant_should_be_pascalcase.symbols = constant
@@ -29,7 +29,7 @@ dotnet_naming_rule.private_field_should_be__camelcase.severity = suggestion
 dotnet_naming_rule.private_field_should_be__camelcase.symbols = private_field
 dotnet_naming_rule.private_field_should_be__camelcase.style = _camelcase
 
-# Sp�cifications de symboles
+# Spécifications de symboles
 
 dotnet_naming_symbols.constant.applicable_kinds = field, local
 dotnet_naming_symbols.constant.applicable_accessibilities = *

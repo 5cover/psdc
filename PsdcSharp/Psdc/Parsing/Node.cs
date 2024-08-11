@@ -1,3 +1,5 @@
+global using Block = System.Collections.Generic.IReadOnlyList<Scover.Psdc.Parsing.Node.Statement>;
+
 using System.Globalization;
 using Scover.Psdc.Language;
 
@@ -6,19 +8,12 @@ namespace Scover.Psdc.Parsing;
 interface CallNode : Node
 {
     public Identifier Name { get; }
-    public IReadOnlyCollection<ParameterActual> Parameters { get; }
+    public IReadOnlyList<ParameterActual> Parameters { get; }
 }
 
-interface ScopedNode : Node;
-
-interface AliasReferenceNone : Node
+interface AliasReferenceNode : Node
 {
     public Identifier Name { get; }
-}
-
-interface BlockNode : ScopedNode
-{
-    IReadOnlyCollection<Statement> Block { get; }
 }
 
 interface BracketedExpressionNode : Node.Expression
@@ -30,7 +25,7 @@ public interface Node : EquatableSemantics<Node>
 {
     SourceTokens SourceTokens { get; }
 
-    public sealed record Algorithm(SourceTokens SourceTokens, Identifier Name, IReadOnlyCollection<Declaration> Declarations) : ScopedNode
+    public sealed record Algorithm(SourceTokens SourceTokens, Identifier Name, IReadOnlyList<Declaration> Declarations) : Node
     {
         public bool SemanticsEqual(Node other) => other is Algorithm o
          && o.Name.SemanticsEqual(Name)
@@ -40,8 +35,8 @@ public interface Node : EquatableSemantics<Node>
     public interface Declaration : Node
     {
         internal sealed record MainProgram(SourceTokens SourceTokens,
-            IReadOnlyCollection<Statement> Block)
-        : Declaration, BlockNode
+            Block Block)
+        : Declaration
         {
             public bool SemanticsEqual(Node other) => other is MainProgram o
              && o.Block.AllSemanticsEqual(Block);
@@ -89,8 +84,8 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record ProcedureDefinition(SourceTokens SourceTokens,
             ProcedureSignature Signature,
-            IReadOnlyCollection<Statement> Block)
-        :  Declaration, BlockNode
+            Block Block)
+        : Declaration
         {
             public bool SemanticsEqual(Node other) => other is ProcedureDefinition o
              && o.Signature.SemanticsEqual(Signature)
@@ -107,8 +102,8 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record FunctionDefinition(SourceTokens SourceTokens,
             FunctionSignature Signature,
-            IReadOnlyCollection<Statement> Block)
-        : Declaration, BlockNode
+            Block Block)
+        : Declaration
         {
             public bool SemanticsEqual(Node other) => other is FunctionDefinition o
              && o.Signature.SemanticsEqual(Signature)
@@ -126,7 +121,7 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record Alternative(SourceTokens SourceTokens,
             Alternative.IfClause If,
-            IReadOnlyCollection<Alternative.ElseIfClause> ElseIfs,
+            IReadOnlyList<Alternative.ElseIfClause> ElseIfs,
             Option<Alternative.ElseClause> Else)
         : Statement
         {
@@ -138,8 +133,8 @@ public interface Node : EquatableSemantics<Node>
 
             internal sealed record IfClause(SourceTokens SourceTokens,
                 Expression Condition,
-                IReadOnlyCollection<Statement> Block)
-            : BlockNode
+                Block Block)
+            : Node
             {
                 public bool SemanticsEqual(Node other) => other is IfClause o
                  && o.Condition.SemanticsEqual(Condition)
@@ -148,8 +143,8 @@ public interface Node : EquatableSemantics<Node>
 
             internal sealed record ElseIfClause(SourceTokens SourceTokens,
                 Expression Condition,
-                IReadOnlyCollection<Statement> Block)
-            : BlockNode
+                Block Block)
+            : Node
             {
                 public bool SemanticsEqual(Node other) => other is ElseIfClause o
                  && o.Condition.SemanticsEqual(Condition)
@@ -157,8 +152,8 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record ElseClause(SourceTokens SourceTokens,
-                IReadOnlyCollection<Statement> Block)
-            : BlockNode
+                Block Block)
+            : Node
             {
                 public bool SemanticsEqual(Node other) => other is ElseClause o
                  && o.Block.AllSemanticsEqual(Block);
@@ -167,7 +162,7 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record Switch(SourceTokens SourceTokens,
             Expression Expression,
-            IReadOnlyCollection<Switch.Case> Cases,
+            IReadOnlyList<Switch.Case> Cases,
             Option<Switch.DefaultCase> Default)
         : Statement
         {
@@ -177,18 +172,18 @@ public interface Node : EquatableSemantics<Node>
                  && o.Default.OptionSemanticsEqual(Default);
 
             internal sealed record Case(SourceTokens SourceTokens,
-                Expression When,
-                IReadOnlyCollection<Statement> Block)
-            : BlockNode
+                Expression Value,
+                Block Block)
+            : Node
             {
                 public bool SemanticsEqual(Node other) => other is Case o
-                 && o.When.SemanticsEqual(When)
+                 && o.Value.SemanticsEqual(Value)
                  && o.Block.AllSemanticsEqual(Block);
             }
 
             internal sealed record DefaultCase(SourceTokens SourceTokens,
-                IReadOnlyCollection<Statement> Block)
-            : BlockNode
+                Block Block)
+            : Node
             {
                 public bool SemanticsEqual(Node other) => other is DefaultCase o
                  && o.Block.AllSemanticsEqual(Block);
@@ -207,8 +202,8 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record DoWhileLoop(SourceTokens SourceTokens,
             Expression Condition,
-            IReadOnlyCollection<Statement> Block)
-        : BlockNode, Statement
+            Block Block)
+        : Node, Statement
         {
             public bool SemanticsEqual(Node other) => other is DoWhileLoop o
              && o.Condition.SemanticsEqual(Condition)
@@ -280,7 +275,7 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record EcrireEcran(SourceTokens SourceTokens,
-                IReadOnlyCollection<Expression> Arguments)
+                IReadOnlyList<Expression> Arguments)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is EcrireEcran o
@@ -301,8 +296,8 @@ public interface Node : EquatableSemantics<Node>
             Expression Start,
             Expression End,
             Option<Expression> Step,
-            IReadOnlyCollection<Statement> Block)
-        : Statement, BlockNode
+            Block Block)
+        : Statement
         {
             public bool SemanticsEqual(Node other) => other is ForLoop o
              && o.Variant.SemanticsEqual(Variant)
@@ -314,7 +309,7 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record ProcedureCall(SourceTokens SourceTokens,
             Identifier Name,
-            IReadOnlyCollection<ParameterActual> Parameters)
+            IReadOnlyList<ParameterActual> Parameters)
         : Statement, CallNode
         {
             public bool SemanticsEqual(Node other) => other is ProcedureCall o
@@ -324,8 +319,8 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record RepeatLoop(SourceTokens SourceTokens,
             Expression Condition,
-            IReadOnlyCollection<Statement> Block)
-        : BlockNode, Statement
+            Block Block)
+        : Node, Statement
         {
             public bool SemanticsEqual(Node other) => other is RepeatLoop o
              && o.Condition.SemanticsEqual(Condition)
@@ -341,19 +336,19 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record LocalVariable(SourceTokens SourceTokens,
-            NameTypeBinding Binding,
+            VariableDeclaration Declaration,
             Option<Initializer> Initializer)
         : Statement
         {
             public bool SemanticsEqual(Node other) => other is LocalVariable o
-             && o.Binding.SemanticsEqual(Binding)
+             && o.Declaration.SemanticsEqual(Declaration)
              && o.Initializer.OptionSemanticsEqual(Initializer);
         }
 
         internal sealed record WhileLoop(SourceTokens SourceTokens,
             Expression Condition,
-            IReadOnlyCollection<Statement> Block)
-        : BlockNode, Statement
+            Block Block)
+        : Node, Statement
         {
             public bool SemanticsEqual(Node other) => other is WhileLoop o
              && o.Condition.SemanticsEqual(Condition)
@@ -364,18 +359,18 @@ public interface Node : EquatableSemantics<Node>
     internal interface Initializer : Node
     {
         internal sealed record Braced(SourceTokens SourceTokens,
-            IReadOnlyList<Braced.Value> Values)
+            IReadOnlyList<Braced.Item> Items)
         : Initializer
         {
             public bool SemanticsEqual(Node other) => other is Braced o
-             && o.Values.AllSemanticsEqual(Values);
+             && o.Items.AllSemanticsEqual(Items);
 
-            public sealed record Value(SourceTokens SourceTokens,
+            public sealed record Item(SourceTokens SourceTokens,
                 Option<Designator> Designator,
                 Initializer Initializer)
             : Node
             {
-                public bool SemanticsEqual(Node other) => other is Value o
+                public bool SemanticsEqual(Node other) => other is Item o
                  && o.Designator.OptionSemanticsEqual(Designator)
                  && o.Initializer.SemanticsEqual(Initializer);
             }
@@ -437,7 +432,7 @@ public interface Node : EquatableSemantics<Node>
         : Expression
         {
             public bool SemanticsEqual(Node other) => other is UnaryOperation o
-             && o.Operator == Operator
+             && o.Operator.Equals(Operator)
              && o.Operand.SemanticsEqual(Operand);
         }
 
@@ -449,7 +444,7 @@ public interface Node : EquatableSemantics<Node>
         {
             public bool SemanticsEqual(Node other) => other is BinaryOperation o
              && o.Left.SemanticsEqual(Left)
-             && o.Operator == Operator
+             && o.Operator.Equals(Operator)
              && o.Right.SemanticsEqual(Right);
         }
 
@@ -463,7 +458,7 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record FunctionCall(SourceTokens SourceTokens,
             Identifier Name,
-            IReadOnlyCollection<ParameterActual> Parameters)
+            IReadOnlyList<ParameterActual> Parameters)
         : Expression, CallNode
         {
             public bool SemanticsEqual(Node other) => other is FunctionCall o
@@ -508,14 +503,10 @@ public interface Node : EquatableSemantics<Node>
             Value CreateValue();
 
             internal sealed record True(SourceTokens SourceTokens)
-            : Literal<BooleanType, BooleanValue, bool>(SourceTokens, BooleanType.Instance, true)
-            {
-            }
+            : Literal<BooleanType, BooleanValue, bool>(SourceTokens, BooleanType.Instance, true);
 
             internal sealed record False(SourceTokens SourceTokens)
-            : Literal<BooleanType, BooleanValue, bool>(SourceTokens, BooleanType.Instance, false)
-            {
-            }
+            : Literal<BooleanType, BooleanValue, bool>(SourceTokens, BooleanType.Instance, false);
 
             internal sealed record Character(SourceTokens SourceTokens, char Value)
             : Literal<CharacterType, CharacterValue, char>(SourceTokens, CharacterType.Instance, Value)
@@ -547,7 +538,7 @@ public interface Node : EquatableSemantics<Node>
     {
         internal sealed record AliasReference(SourceTokens SourceTokens,
             Identifier Name)
-        : Type, AliasReferenceNone
+        : Type, AliasReferenceNode
         {
             public bool SemanticsEqual(Node other) => other is AliasReference o
              && o.Name.SemanticsEqual(Name);
@@ -563,7 +554,7 @@ public interface Node : EquatableSemantics<Node>
         {
             internal sealed record Array(SourceTokens SourceTokens,
                 Type Type,
-                IReadOnlyCollection<Expression> Dimensions)
+                IReadOnlyList<Expression> Dimensions)
             : Complete
             {
                 public bool SemanticsEqual(Node other) => other is Array o
@@ -603,7 +594,7 @@ public interface Node : EquatableSemantics<Node>
 
             internal sealed new record AliasReference(SourceTokens SourceTokens,
                 Identifier name)
-            : Complete, AliasReferenceNone
+            : Complete, AliasReferenceNode
             {
                 public Identifier Name => name;
 
@@ -612,21 +603,17 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record LengthedString(SourceTokens SourceTokens,
-                Expression length)
+                Expression Length)
             : Complete
             {
-                public Expression Length => length;
-
                 public bool SemanticsEqual(Node other) => other is LengthedString o
                  && o.Length.SemanticsEqual(Length);
             }
 
             internal sealed record Structure(SourceTokens SourceTokens,
-                IReadOnlyList<NameTypeBinding> components)
+                IReadOnlyList<VariableDeclaration> Components)
             : Complete
             {
-                public IReadOnlyList<NameTypeBinding> Components => components;
-
                 public bool SemanticsEqual(Node other) => other is Structure o
                  && o.Components.AllSemanticsEqual(Components);
             }
@@ -652,16 +639,6 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    internal sealed record NameTypeBinding(SourceTokens SourceTokens,
-        IReadOnlyCollection<Identifier> Names,
-        Type.Complete Type)
-    : Node
-    {
-        public bool SemanticsEqual(Node other) => other is NameTypeBinding o
-         && o.Names.AllSemanticsEqual(Names)
-         && o.Type.SemanticsEqual(Type);
-    }
-
     internal sealed record ParameterActual(SourceTokens SourceTokens,
         ParameterMode Mode,
         Expression Value)
@@ -684,9 +661,19 @@ public interface Node : EquatableSemantics<Node>
          && o.Type.SemanticsEqual(Type);
     }
 
+    internal sealed record VariableDeclaration(SourceTokens SourceTokens,
+        IReadOnlyList<Identifier> Names,
+        Type.Complete Type)
+    : Node
+    {
+        public bool SemanticsEqual(Node other) => other is VariableDeclaration o
+         && o.Names.AllSemanticsEqual(Names)
+         && o.Type.SemanticsEqual(Type);
+    }
+
     internal sealed record ProcedureSignature(SourceTokens SourceTokens,
         Identifier Name,
-        IReadOnlyCollection<ParameterFormal> Parameters)
+        IReadOnlyList<ParameterFormal> Parameters)
     : Node
     {
         public bool SemanticsEqual(Node other) => other is ProcedureSignature o
@@ -696,7 +683,7 @@ public interface Node : EquatableSemantics<Node>
 
     internal sealed record FunctionSignature(SourceTokens SourceTokens,
         Identifier Name,
-        IReadOnlyCollection<ParameterFormal> Parameters,
+        IReadOnlyList<ParameterFormal> Parameters,
         Type ReturnType)
     : Node
     {
@@ -705,52 +692,36 @@ public interface Node : EquatableSemantics<Node>
          && o.Parameters.AllSemanticsEqual(Parameters)
          && o.ReturnType.SemanticsEqual(ReturnType);
     }
-}
 
-#region Terminals
-
-sealed record ParameterMode
-{
-    ParameterMode(string formal, string actual)
-     => (RepresentationFormal, RepresentationActual) = (formal, actual);
-
-    public string RepresentationFormal { get; }
-    public string RepresentationActual { get; }
-
-    public static ParameterMode In { get; } = new("entF", "entE");
-    public static ParameterMode Out { get; } = new("sortF", "sortE");
-    public static ParameterMode InOut { get; } = new("entF/sortF", "entE/sortE");
-}
-
-public sealed class Identifier : Node, IEquatable<Identifier?>
-{
-    public Identifier(SourceTokens sourceTokens, string name)
+    internal abstract record UnaryOperator(SourceTokens SourceTokens, string Representation) : Node
     {
-        (SourceTokens, Name) = (sourceTokens, name);
-#if DEBUG
-        if (!IsValidIdentifier(name)) {
-            throw new ArgumentException($"`{name}` is not a valid identifier", nameof(name));
-        }
-        static bool IsValidIdentifier(string name) => name.Length > 0
-         && (name[0] == '_' || char.IsLetter(name[0]))
-         && name.Skip(1).All(c => c == '_' || char.IsLetterOrDigit(c));
-#endif
+        public bool SemanticsEqual(Node other) => other is UnaryOperator o
+         && o.Representation.Equals(Representation);
+
+        public sealed record Cast(SourceTokens SourceTokens, Type Target) : UnaryOperator(SourceTokens, "(cast)");
+        public sealed record Minus(SourceTokens SourceTokens) : UnaryOperator(SourceTokens, "-");
+        public sealed record Not(SourceTokens SourceTokens) : UnaryOperator(SourceTokens, "NON");
+        public sealed record Plus(SourceTokens SourceTokens) : UnaryOperator(SourceTokens, "+");
     }
 
-    public SourceTokens SourceTokens { get; }
-    public string Name { get; }
+    internal abstract record BinaryOperator(SourceTokens SourceTokens, string Representation) : Node
+    {
+        public bool SemanticsEqual(Node other) => other is UnaryOperator o
+         && o.Representation.Equals(Representation);
 
-    public bool SemanticsEqual(Node other) => other is Identifier o
-     && o.Name == Name;
-
-    // Equals and GetHashCode implementation for usage in dictionaries.
-    public override bool Equals(object? obj) => Equals(obj as Identifier);
-
-    public bool Equals(Identifier? other) => other is not null && other.Name == Name;
-
-    public override int GetHashCode() => Name.GetHashCode();
-
-    public override string ToString() => Name;
+        public sealed record Add(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "ET");
+        public sealed record And(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "/");
+        public sealed record Divide(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "==");
+        public sealed record Equal(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, ">");
+        public sealed record GreaterThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, ">=");
+        public sealed record GreaterThanOrEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "<");
+        public sealed record LessThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "<=");
+        public sealed record LessThanOrEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "-");
+        public sealed record Mod(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "%");
+        public sealed record Multiply(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "*");
+        public sealed record NotEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "!=");
+        public sealed record Or(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "OU");
+        public sealed record Subtract(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "+");
+        public sealed record Xor(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "XOR");
+    }
 }
-
-#endregion Terminals

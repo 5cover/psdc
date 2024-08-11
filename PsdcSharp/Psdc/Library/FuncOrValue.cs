@@ -1,4 +1,4 @@
-namespace Scover.Psdc.Messages;
+namespace Scover.Psdc.Library;
 
 public readonly struct FuncOrValue<TArg, TResult>
 {

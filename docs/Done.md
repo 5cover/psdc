@@ -50,10 +50,12 @@ This distinction also exists in C:
 ```c
 char str[10]; // complete : ok
 char str[]; // incomplete : error
+// char *str // a pointer : ok
 
-void func(
+void f(
     char str[10], // complete : ok
     char str[] // incomplete : ok
+    // char *str // same as above
 )
 {
     // ...
@@ -1446,3 +1448,115 @@ The solution would be to enforce UTF-16 as the encoding, which we cannot do &mda
 I don't want to *forbid* such programs because they are non-deterministic. But, I don't want to make it *transparent* either. Like Zig, we'll add some friction by requring the conversion to be explicit, with a cast syntax.
 
 The only issue is that we can't specify the value that we'll get. When constant folding, we'll have to return a runtime value for casts involving characters. We can't rely on UTF-16 since the target language may use another encoding.
+
+## Build-An-Operator
+
+Make operators proper nodes, with SourceTokens. This will mean less `WithSourceTokens` wizardry, as they will have their own source tokens, and an overall more uniform approach. Also the ability to have parameterized operators like `Cast`, instead of having to define a special node for the whole expression.
+
+## Rename tokens
+
+Rename each token type so its correspond to the official unicode character name as appropriate.
+
+## On-demand static analysis and a more solid approach to code generation
+
+So... lookup tables in SemanticAst are a source of bugs. It's easy to forget adding something or add it twice.
+
+Why not pass the static analyzer into the code generator and call it from there, as necessary?
+
+I buess the problem is with scopes. What we currently do is
+
+- we walk the whole AST in the static analyzer
+- we create scopes for each scoped node, add them to the SemanticAst map and pass them down
+- we create symbols and add them to the appropriate scope.
+
+Back then, we didn't need to remember scopes - we just pushed an popped as we walked nodes in the code generator.
+
+But then, as features piled on - came the need for static (initially called semantic) analysis. Why? To create symbols and evaluated types. To perform static analysis and produce semantic errors. The point was to separate concerns, to avoid duplicating the logic across generators for each target language.
+
+The static analyzer walk the AST, evaluates expression and saves their inferred type, creates scopes and adds symbols to it. That's basically it.
+
+The code generator takes its output (a combination of the AST with lookup tables for inferred types and scopes), and generates the final output. It uses scopes to find meaning in identifiers, and inferred types to build format strings, notably.
+
+Now what is the problem with all this?
+
+The problem is that the original AST returned by our parser has been left untouched. We use additional lookup tables for everything. Why? Mostly out of laziness of rewriting the AST structure with more fields.
+
+This is a problem, because we don't have lookup tables for everything. This issue peaks with the `UnaryOperator.Cast` node - it contains a `Node.Type` that represents the type to cast to. In order to generate it, this type must be turned into an `EvaluatedType`, which can be done by the static analyzer, then a `TypeInfo`, which can be done anywhere, but currently is done in the code generator, because we need a messenger, a keyword table, a way to append an expression.
+
+Now, maybe we could encapsulate those things into a singleton with properties accessible to all other classes for the C code generation process. Something like `LanguageInfo`. It would contain the keyword table, operator table, other stuff...
+
+But this wouldn't sove the more fundamental issue at hand; that we don't have all the **information** we need, hence the need for an extravagant amount of parameters.
+
+I see 2 solutions that may overlap each other
+
+- Replace the current AST structure by a DOM with extensible properties given by Static analyzer. Maybe use a state to keep track of which step the AST is in (Parsed, Analyzed)
+    - Scope property in every node
+- Make a new AST structure with properties specific to static analysis (replace types by EvaluatedTypes, Scope property)
+
+Basically, stop using lookup table and make the AST more self-contained.
+
+At the end of the day, on-demand static analysis isn't really feasible, is it? Because we need to create symbols. Or is it? Because we can just provide methods for creating symbols.
+
+Let's take the scenario of a type alias declaration. Currently
+
+- In the StaticAnalyzer, the type is evaluated and a symbol is added to the current scope (which is the root scoped, passed as a parameter to AnalyzeDeclaration).
+- In the CodeGenerator, in AppendAliasDeclaration, we retrieve the symbol based on the alias name given by the node. From the EvaluatedType, we create a TypeInfo which we then turn into C code.
+
+We don't need to store this semantic ast data and symbol tables. Just
+
+- Provide a method (DefineTypeAlias) in StaticAnalyzer to define a Symbol.TypeAlias from Declaration.TypeAlias. (this methods creates the Symbol, adds it to the Scope of the node and returns it)
+- Make the StaticAnalyzer available from the CodeGenerator
+- In the CodeGenerator, in AppendAliasDeclaration, call DefineTypeAlias and generate the C code
+
+Also a new approach to scopes
+
+- Create an empty scope in each scoped node
+- Every node has a scoped, each scoped node passes its scope to its descendants
+
+That way we don't have to pass a Scope parameter everywhere.
+
+What do we need equatable semantics for again?
+
+### Building a scopeful AST
+
+Each scopednode produces a new scope to use for children nodes.
+
+This means we must instanciate parents before children nodes, in order to use their Scope property, i.e. build the ast from the top down
+
+This is the opposite of what we're currently doing, we instantiate the leafs first, then we go up. This makes sense since we need the children to instanciate the parent. But the children need the parent to be instancieted? How do we solve this?
+
+The core issue is that we're building a tree where each node has a reference to its parent.
+
+## Type casting
+
+I think we should allow a C-like syntax for type-casting. Let's make [a graph of allowed conversions](Conversions.md).
+
+## Make static analysis more solid
+
+On-demand static analysis is **not enough**.
+
+The diagnostic that checks every function has been defined: CallableNotDefined
+
+CallableNotDefined must be run after the analysis of every declaration.
+
+It needs scopes
+
+However since our recent changes scopes are kept as locals in the CG.
+
+So there's no way to do this.
+
+What we need instead is a cleaner approach to the data returned by the SA.
+
+Because we need SA to be a first-class compilation step.
+
+So we'll restore the benchmark for it and everything.
+
+All of this because of UnaryOperator.Cast. I had a Node.Type in the CG and couldn't evaluate it. The obvious solution would have had been to add another lookup tables from Cast to EvaluatedType.
+
+But all these lookup tables make the code fragile, I don't like it. I've had bugs with them before. I want more comptime guarantees.
+
+Maybe my previous idea of rewriting the AST wasn't that bad, even if it means duplicating every node name.
+
+## Don't normalize anymore
+
+There's no need to. We want to allow identifiers only differing by accentuation. Use multiple expected strings (synonyms) for accent flexibilty on keywords.

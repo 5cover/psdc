@@ -1,4 +1,4 @@
-using static Scover.Psdc.Parsing.Node;
+using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
 namespace Scover.Psdc.Language;
 

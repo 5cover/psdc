@@ -3,9 +3,9 @@ namespace Scover.Psdc;
 public interface EquatableSemantics<in T>
 {
     /// <summary>
-    /// Determines whether this object and another carry equal semantics.
+    /// Are this object and another semantically equal?
     /// </summary>
-    /// <param name="other">The object to compare this one to</param>
-    /// <returns>Whether this type and <paramref name="other"/> are considered semantically equal.</returns>
+    /// <param name="other">The object to compare this one to.</param>
+    /// <returns>This object and <paramref name="other"/> are semantically equal.</returns>
     public bool SemanticsEqual(T other);
 }

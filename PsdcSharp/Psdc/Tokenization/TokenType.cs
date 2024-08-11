@@ -1,8 +1,9 @@
+using System.Data;
 using System.Text.RegularExpressions;
 
 namespace Scover.Psdc.Tokenization;
 
-public abstract class TokenType
+public class TokenType
 {
     readonly string _repr;
 
@@ -11,9 +12,7 @@ public abstract class TokenType
 
     internal interface Ruled
     {
-        public TokenRule Rule { get; }
-
-        public Option<Token> TryExtract(string code, int startIndex);
+        public IEnumerable<TokenRule> Rules { get; }
     }
 
     public override string ToString() => _repr;
@@ -22,13 +21,14 @@ public abstract class TokenType
     {
         static readonly List<Keyword> instances = [];
 
-        Keyword(string word)
-                : base(word, true, new WordTokenRule(word, StringComparison.Ordinal))
+        Keyword(string mainWord, params string[] words) : base(mainWord, true,
+            words.Prepend(mainWord).Select(w => (Func<TokenType, WordTokenRule>)(t => new WordTokenRule(t, w, StringComparison.Ordinal))))
          => instances.Add(this);
 
-        public static Keyword Begin { get; } = new("début");
-        public static Keyword End { get; } = new("fin");
         public static IReadOnlyCollection<Keyword> Instances => instances;
+        public static Keyword Begin { get; } = new("début",
+                                                   "debut");
+        public static Keyword End { get; } = new("fin");
         public static Keyword Is { get; } = new("c'est");
         public static Keyword Program { get; } = new("programme");
         public static Keyword Structure { get; } = new("structure");
@@ -46,19 +46,25 @@ public abstract class TokenType
 
         #region Types
 
-        public static Keyword Boolean { get; } = new("booléen");
-        public static Keyword Character { get; } = new("caractère");
+        public static Keyword Boolean { get; } = new("booléen",
+                                                     "booleen");
+        public static Keyword Character { get; } = new("caractère",
+                                                       "caractere");
         public static Keyword File { get; } = new("nomFichierLog");
         public static Keyword Integer { get; } = new("entier");
-        public static Keyword Real { get; } = new("réel");
-        public static Keyword String { get; } = new("chaîne");
+        public static Keyword Real { get; } = new("réel",
+                                                  "reel");
+        public static Keyword String { get; } = new("chaîne",
+                                                    "chaine");
         #endregion Types
 
         #region Callables
 
-        public static Keyword Delivers { get; } = new("délivre");
+        public static Keyword Delivers { get; } = new("délivre",
+                                                      "delivre");
         public static Keyword Function { get; } = new("fonction");
-        public static Keyword Procedure { get; } = new("procédure");
+        public static Keyword Procedure { get; } = new("procédure",
+                                                       "procedure");
         public static Keyword Return { get; } = new("retourne");
 
         #endregion Callables
@@ -66,15 +72,21 @@ public abstract class TokenType
         #region Builtins
 
         public static Keyword Assigner { get; } = new("assigner");
-        public static Keyword Ecrire { get; } = new("écrire");
-        public static Keyword EcrireEcran { get; } = new("écrireEcran");
+        public static Keyword Ecrire { get; } = new("écrire",
+                                                    "ecrire");
+        public static Keyword EcrireEcran { get; } = new("écrireEcran",
+                                                         "écrireÉcran",
+                                                         "ecrireÉcran",
+                                                         "ecrireEcran");
         public static Keyword Fdf { get; } = new("FdF");
         public static Keyword Fermer { get; } = new("fermer");
         public static Keyword Lire { get; } = new("lire");
         public static Keyword LireClavier { get; } = new("lireClavier");
         public static Keyword OuvrirAjout { get; } = new("ouvrirAjout");
-        public static Keyword OuvrirEcriture { get; } = new("ouvrirEcriture");
+        public static Keyword OuvrirEcriture { get; } = new("ouvrirEcriture",
+                                                            "ouvrirÉcriture");
         public static Keyword OuvrirLecture { get; } = new("ouvrirLecture");
+
         #endregion Builtins
 
         #region Control structures
@@ -87,12 +99,17 @@ public abstract class TokenType
         public static Keyword EndSwitch { get; } = new("finselon");
         public static Keyword For { get; } = new("pour");
         public static Keyword If { get; } = new("si");
-        public static Keyword Repeat { get; } = new("répéter");
+        public static Keyword Repeat { get; } = new("répéter",
+                                                    "répeter",
+                                                    "repéter",
+                                                    "repeter");
         public static Keyword Step { get; } = new("pas");
         public static Keyword Switch { get; } = new("selon");
         public static Keyword Then { get; } = new("alors");
-        public static Keyword To { get; } = new("à");
-        public static Keyword Until { get; } = new("jusqu'à");
+        public static Keyword To { get; } = new("à",
+                                                "a");
+        public static Keyword Until { get; } = new("jusqu'à",
+                                                   "jusqu'a");
         public static Keyword When { get; } = new("quand");
         public static Keyword WhenOther { get; } = new("quand autre");
         public static Keyword While { get; } = new("tant que");
@@ -115,36 +132,37 @@ public abstract class TokenType
     {
         static readonly List<Operator> instances = [];
 
-        Operator(string code)
-                : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
+        Operator(string code, StringComparison comparison = StringComparison.Ordinal)
+            : base(code, true, t => new StringTokenRule(t, code, comparison))
          => instances.Add(this);
 
-        public static Operator Assignment { get; } = new(":=");
-        public static Operator Dot { get; } = new(".");
         public static IReadOnlyCollection<Operator> Instances => instances;
-        public static Operator TypeAssignment { get; } = new("=");
+        public static Operator ColonEqual { get; } = new(":=");
+        public static Operator Dot { get; } = new(".");
+        public static Operator Equal { get; } = new("=");
 
         #region Arithmetic
 
-        public static Operator Add { get; } = new("+");
+        public static Operator Plus { get; } = new("+");
         public static Operator Divide { get; } = new("/");
         public static Operator Mod { get; } = new("%");
-        public static Operator Multiply { get; } = new("*");
-        public static Operator Subtract { get; } = new("-");
+        public static Operator Times { get; } = new("*");
+        public static Operator Minus { get; } = new("-");
+
         #endregion Arithmetic
 
         #region Logical
 
-        public static Operator And { get; } = new("ET");
-        public static Operator Not { get; } = new("NON");
-        public static Operator Or { get; } = new("OU");
-        public static Operator Xor { get; } = new("XOR");
+        public static Operator And { get; } = new("ET", StringComparison.OrdinalIgnoreCase);
+        public static Operator Not { get; } = new("NON", StringComparison.OrdinalIgnoreCase);
+        public static Operator Or { get; } = new("OU", StringComparison.OrdinalIgnoreCase);
+        public static Operator Xor { get; } = new("XOR", StringComparison.OrdinalIgnoreCase);
 
         #endregion Logical
 
         #region Comparison
 
-        public static Operator Equal { get; } = new("==");
+        public static Operator DoubleEqual { get; } = new("==");
         public static Operator GreaterThan { get; } = new(">");
         public static Operator GreaterThanOrEqual { get; } = new(">=");
         public static Operator LessThan { get; } = new("<");
@@ -158,54 +176,48 @@ public abstract class TokenType
     {
         static readonly List<Punctuation> instances = [];
 
-        Punctuation(string code)
-                : base(code, true, new StringTokenRule(code, StringComparison.Ordinal))
+        Punctuation(string code) : base(code, true, t => new StringTokenRule(t, code, StringComparison.Ordinal))
          => instances.Add(this);
 
+        public static IReadOnlyCollection<Punctuation> Instances => instances;
         public static Punctuation Arrow { get; } = new("=>");
-        public static Punctuation CloseBrace { get; } = new("}");
-        public static Punctuation CloseBracket { get; } = new(")");
-        public static Punctuation CloseSquareBracket { get; } = new("]");
         public static Punctuation Colon { get; } = new(":");
         public static Punctuation Comma { get; } = new(",");
-        public static IReadOnlyCollection<Punctuation> Instances => instances;
-        public static Punctuation OpenBrace { get; } = new("{");
-        public static Punctuation OpenBracket { get; } = new("(");
-        public static Punctuation OpenSquareBracket { get; } = new("[");
+        public static Punctuation LBrace { get; } = new("{");
+        public static Punctuation LBracket { get; } = new("[");
+        public static Punctuation LParen { get; } = new("(");
+        public static Punctuation RBrace { get; } = new("}");
+        public static Punctuation RBracket { get; } = new("]");
+        public static Punctuation RParen { get; } = new(")");
         public static Punctuation Semicolon { get; } = new(";");
     }
 
-    internal abstract class Ruled<T>(string repr, bool isStatic, T rule)
-                : TokenType(repr, isStatic), Ruled where T : TokenRule
+    internal abstract class Ruled<T> : TokenType, Ruled where T : TokenRule
     {
-        public T Rule => rule;
+        protected Ruled(string repr, bool isStatic, params Func<TokenType, T>[] rules)
+         : this(repr, isStatic, (IEnumerable<Func<TokenType, T>>)rules) { }
 
-        TokenRule Ruled.Rule => rule;
+        protected Ruled(string repr, bool isStatic, IEnumerable<Func<TokenType, T>> rules) : base(repr, isStatic)
+         => Rules = rules.Select(r => r(this));
 
-        public Option<Token> TryExtract(string code, int startIndex) => rule.TryExtract(this, code, startIndex);
+        public IEnumerable<T> Rules { get; }
+
+        IEnumerable<TokenRule> Ruled.Rules => (IEnumerable<TokenRule>)Rules;
     }
 
-    internal sealed class Special : TokenType
-    {
-        Special(string repr) : base(repr, false)
-        {
-        }
-
-        /// <summary>Special token that indicates the end of the token sequence.</summary>
-        public static Special Eof { get; } = new("end of file");
-    }
+    public static TokenType Eof { get; } = new("end of file", false);
 
     internal sealed class Valued : Ruled<RegexTokenRule>
     {
         static readonly List<Valued> instances = [];
 
         Valued(string name, string pattern, RegexOptions options = RegexOptions.None)
-                : base(name, false, new(pattern, options)) => instances.Add(this);
+            : base(name, false, t => new RegexTokenRule(t, pattern, options)) => instances.Add(this);
 
+        public static IReadOnlyCollection<Valued> Instances => instances;
         public static Valued CommentMultiline { get; } = new("multiline comment", @"/\*(.*?)\*/", RegexOptions.Singleline);
         public static Valued CommentSingleline { get; } = new("singleline comment", "//(.*)$", RegexOptions.Multiline);
         public static Valued Identifier { get; } = new("identifier", @"([\p{L}_][\p{L}_0-9]*)");
-        public static IReadOnlyCollection<Valued> Instances => instances;
         public static Valued LiteralCharacter { get; } = new("character literal", "'(.)'");
         public static Valued LiteralInteger { get; } = new("integer literal", @"(\d+)");
         public static Valued LiteralReal { get; } = new("real literal", @"(\d*\.\d+)");

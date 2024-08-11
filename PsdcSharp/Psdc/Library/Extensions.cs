@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Numerics;
-using System.Text;
 
 using Scover.Psdc.Messages;
 using Scover.Psdc.Tokenization;
@@ -20,11 +18,11 @@ static class Extensions
         this IDictionary<TKey, TValue> dictionary,
         IReadOnlyCollection<TKey> keys,
         Func<TKey, TValue> fallbackValueSelector,
-        Action<TKey> handleExcessKey)
+        Action<TKey> onExcessKey)
     {
         foreach (var key in dictionary.Keys) {
             if (!keys.Contains(key)) {
-                handleExcessKey(key);
+                onExcessKey(key);
             }
         }
         foreach (var key in keys) {
@@ -41,7 +39,7 @@ static class Extensions
     /// <param name="dimensionLengths">The length of each dimension.</param>
     /// <returns>A flattened index that indexes a 1-dimensional array whose length is the product of <paramref name="dimensionLengths"/>.</returns>
     /// <remarks><paramref name="dimensionIndexes"/> and <paramref name="dimensionLengths"/> must have the same count.</remarks>
-    public static int FlattenedIndex(this IEnumerable<int> dimensionIndexes, IEnumerable<int> dimensionLengths)
+    public static int FlatIndex(this IEnumerable<int> dimensionIndexes, IEnumerable<int> dimensionLengths)
     {
         Debug.Assert(dimensionIndexes.Count() == dimensionLengths.Count());
         return dimensionLengths
@@ -67,6 +65,16 @@ static class Extensions
     }
 
     public static int DigitCount(this int n, int @base = 10) => n == 0 ? 1 : 1 + (int)Math.Log(n, @base);
+
+    public static ValueOption<int> IndexOf<T>(this IReadOnlyList<T> list, T item)
+    {
+        for (int i = 0; i < list.Count; ++i) {
+            if (EqualityComparer<T>.Default.Equals(list[i], item)) {
+                return i;
+            }
+        }
+        return default;
+    }
 
     public static void DoInColor(this (ConsoleColor? foreground, ConsoleColor? background) color, Action action)
     {
@@ -163,11 +171,6 @@ static class Extensions
      => first.HasValue && second.HasValue
         ? first.Value.SemanticsEqual(second.Value)
         : first.HasValue == second.HasValue;
-
-    public static string DiacriticsRemoved(this string text)
-     => new string(text.Normalize(NormalizationForm.FormD)
-        .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
-        .ToArray()).Normalize(NormalizationForm.FormC);
 
     public static void SetColor(this (ConsoleColor? foreground, ConsoleColor? background) color)
     {

@@ -42,11 +42,11 @@ static class Program
             return SysExits.DataErr;
         }
 
-        var semanticAst = "Analyzing".LogOperation(Debug,
+        var sast = "Analyzing".LogOperation(Debug,
             () => StaticAnalyzer.Analyze(messenger, ast.Value));
 
         string cCode = "Generating code".LogOperation(Debug,
-            () => CodeGenerator.GenerateC(messenger, semanticAst));
+            () => CodeGenerator.GenerateC(messenger, sast));
 
         messenger.PrintConclusion();
 
@@ -133,7 +133,7 @@ static class Program
                     Console.ResetColor();
                 };
 
-                badLines.FirstOrNone().MatchSome(l => {
+                badLines.FirstOrNone().Tap(l => {
                     StartLine(lineNoPadding, l);
                     EndLine($"({end.Line - start.Line + 1 - MaxMultilineErrorLines} more lines...)");
                 });

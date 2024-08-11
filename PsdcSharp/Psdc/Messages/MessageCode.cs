@@ -3,11 +3,12 @@ namespace Scover.Psdc.Messages;
 public enum MessageCode
 {
     #region Errors
-    UnknownToken = 0,
+    UnknownToken,
     SyntaxError,
     UndefinedSymbol,
     RedefinedSymbol,
     RedefinedMainProgram,
+    CallableNotDefined,
     MissingMainProgram,
     SignatureMismatch,
     ConstantAssignment,
@@ -19,14 +20,16 @@ public enum MessageCode
     SubscriptOfNonArray,
     UnsupportedOperation,
     ExpressionHasWrongType,
+    CannotSwitchOnString,
     NonIntegerIndex,
     IndexOutOfBounds,
     IndexWrongRank,
-    ExcessElementInArrayInitializer,
+    ExcessElementInInitializer,
     UnsupportedInitializer,
-    UnsupportedMixedInitializer,
+    UnsupportedDesignator,
     TargetLanguageError,
     ReturnInNonFunction,
+    InvalidCast,
 
     CustomError = 999,
 
@@ -34,7 +37,7 @@ public enum MessageCode
 
     #region Warnings
 
-    DivisionByZero = 1000,
+    DivisionByZero,
     FloatingPointEquality,
     TargetLanguageReservedKeyword,
 
@@ -43,6 +46,8 @@ public enum MessageCode
     #endregion Warnings
 
     #region Suggestions
+
+    RedundantCast,
 
     CustomSuggestion = 2999,
 

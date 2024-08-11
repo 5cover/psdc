@@ -5,13 +5,13 @@ namespace Scover.Psdc.Library;
 /// </summary>
 /// <typeparam name="TKey">The map key type</typeparam>
 /// <typeparam name="TValue">The map value type</typeparam>
-sealed class ReadOnlyOrderedMap<TKey, TValue>
+sealed class OrderedMap<TKey, TValue>
 where TKey : notnull
 {
     public IReadOnlyDictionary<TKey, TValue> Map { get; }
     public IReadOnlyList<KeyValuePair<TKey, TValue>> List { get; }
 
-    public ReadOnlyOrderedMap(IReadOnlyDictionary<TKey, TValue> map,
+    public OrderedMap(IReadOnlyDictionary<TKey, TValue> map,
     IReadOnlyList<KeyValuePair<TKey, TValue>> list)
     {
         if (!list.All(map.Contains) || !map.All(list.Contains)) {

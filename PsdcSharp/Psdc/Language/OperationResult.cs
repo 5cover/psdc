@@ -1,24 +1,27 @@
+using Scover.Psdc.Messages;
+using static Scover.Psdc.Parsing.Node;
+
 namespace Scover.Psdc.Language;
 
 static class OperationResult
 {
-    public static OperationResult<TValue> Ok<TValue>(TValue value) where TValue : Value
-     => new(value, []);
+    public static OperationResult<BinaryOperationMessage> OkBinary(Value value, params BinaryOperationMessage[] messages) => new(value, messages);
+    public static OperationResult<UnaryOperationMessage> OkUnary(Value value, params UnaryOperationMessage[] messages) => new(value, messages);
 }
 
-readonly struct OperationResult<TValue> where TValue : Value
+delegate Message UnaryOperationMessage(Expression.UnaryOperation opUn, EvaluatedType operandType);
+delegate Message BinaryOperationMessage(Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType);
+
+readonly struct OperationResult<TMessage>
 {
-    public OperationResult(TValue value, IEnumerable<OperationMessage> messages) : this((Value)value, messages) { }
-    OperationResult(Value value, IEnumerable<OperationMessage> messages)
+    public OperationResult(Value value, IEnumerable<TMessage> messages)
      => (Value, Messages) = (value, messages);
 
     public Value Value { get; }
-    public IEnumerable<OperationMessage> Messages { get; }
+    public IEnumerable<TMessage> Messages { get; }
 
-    public OperationResult<TValue> WithMessages(params OperationMessage[] messages)
+    public OperationResult<TMessage> WithMessages(params TMessage[] messages)
      => new(Value, messages);
 
-    public static implicit operator OperationResult<TValue>(TValue val) => new(val, []);
-    public static implicit operator OperationResult<TValue>(OperationMessage error) => new(UnknownType.Inferred.DefaultValue, error.Yield());
-    public static implicit operator OperationResult<Value>(OperationResult<TValue> other) => new(other.Value, other.Messages);
+    public static implicit operator OperationResult<TMessage>(TMessage error) => new(UnknownType.Inferred.DefaultValue, error.Yield());
 }

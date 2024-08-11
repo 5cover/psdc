@@ -6,6 +6,6 @@ namespace Scover.Psdc.CodeGeneration;
 
 interface KeywordTable
 {
-    string Validate(ReadOnlyScope scope, Identifier ident, Messenger msger) => Validate(scope, ident.SourceTokens, ident.Name, msger);
-    string Validate(ReadOnlyScope scope, SourceTokens sourceTokens, string ident, Messenger msger);
+    string Validate(Scope scope, Identifier ident, Messenger msger) => Validate(scope, ident.SourceTokens, ident.Name, msger);
+    string Validate(Scope scope, SourceTokens sourceTokens, string ident, Messenger msger);
 }

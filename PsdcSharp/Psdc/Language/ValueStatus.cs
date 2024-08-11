@@ -4,7 +4,7 @@ enum ValueStatus
 {
     Comptime,
     Runtime,
-    Uninitialized,
+    Garbage,
 }
 
 interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>>
@@ -37,13 +37,13 @@ interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>
         public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) => Language.Value.Runtime<TResult>();
     }
 
-    class UninitializedValue : ValueStatus<TUnderlying>
+    class GarbageValue : ValueStatus<TUnderlying>
     {
-        ValueStatus ValueStatus<TUnderlying>.Value => ValueStatus.Uninitialized;
+        ValueStatus ValueStatus<TUnderlying>.Value => ValueStatus.Garbage;
 
         public Option<TUnderlying> Comptime => Option.None<TUnderlying>();
 
-        public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is UninitializedValue;
-        public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) => Language.Value.Uninitialized<TResult>();
+        public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is GarbageValue;
+        public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) => Language.Value.Garbage<TResult>();
     }
 }

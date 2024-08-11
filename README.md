@@ -56,13 +56,13 @@ Notation: bold &rarr; underway
 - [x] Constant folding for type checking and division by zero
 - [x] Optional brackets in control structures
 - [x] Benchmarks
-- [ ] **Formal grammar**
-- [ ] **Brace initialization (see TD14 ex 1)**
+- [x] **Formal grammar**
+- [x] **Brace initialization (see TD14 ex 1)**
 - [ ] More static analysis
-- [ ] `finPour` keyword (equivalent to `fin`)
+- [ ] `finPour` keyword (equivalent to `fin` but only for loops)
 - [ ] Escape sequences in string and character literals
-- [ ] Lowercase boolean operators
-- [ ] Modules
+- [x] Case-insensitive boolean operators
+- [ ] Modules, #include?
 - [ ] Numeroted control stuctures (`si1`, `si2`, `si3`)
 - [ ] File handling (low priority)
 - [ ] Preprocessor (limitations of the language)

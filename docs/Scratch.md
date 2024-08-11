@@ -373,6 +373,12 @@ And what happens if we return a file or pass it to a function/procedure. We shou
 
 Also what happens of closing the file occurs in a if statement? How do we know for sure it's been closed? Can we analyze the truthfulness of the condition? You can push static analysis further and further to support scenarios that are unlikely to happen in real code anyway. It's difficult to implement. I won't do that.
 
+## code formatting
+
+Explicit non-default access modifiers everywhere, remove them if default.
+
+Sort members.
+
 ## call a function as a statement
 
 self-explanatory.
@@ -409,10 +415,80 @@ config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
 
 Allow trailing commas in parameter lists, local variable lists, array subscripts.
 
+## Parsing: put LBracket in SourceTokens of ArraySubscript
+
+To get prettier error messages.
+
 ## GNU-compliant message formatting
 
 We should adhere to what's standard.
 
-## Type casting
+## Test compile-time values
 
-I think we should allow a C-like syntax for type-casting. Let's make [a graph of allowed conversions](Conversions.md).
+Test by trying to create arrays and see it it gives a constant expression errors
+
+So we'll need all kinds of expressions that yield comptime-known integers.
+
+Tests (increasing complexity):
+
+- Literal
+- Computation (combine multiple operations that yield a constant result)
+    - Addition
+    - Substraction
+    - Division
+    - Mod
+    - Cast from real
+    - Cast from bool
+        - vrai
+        - faux
+        - Not
+        - Or
+        - And
+        - Xor
+- Scalar constant
+- Array constant
+    - no designators
+    - with designators
+    - only designators
+- Structure constant
+    - no designators
+    - with designators
+    - only designators
+- Structure > Array constant
+- Array > Structure constant
+
+Generate it with Mistral.
+
+## Use ValueOption when returning an option
+
+This makes the syntax more concise. No need to call .Some() or .None(), especially the later which requires a generic argument, so the payload type is restated.
+
+## redesign values
+
+so constant vales are supported in the type system so we don't have to unwrap the optional for literals
+
+implement generic math interfaces and use them in constant folding so we can check if a type supports addition (for for loop variant type check)
+
+or maybe have a type comparer like EvaluatedType.SupportsOperator({BinaryOperator, UnaryOperator})
+
+or maybe use constantexpression for literals
+
+ALSO IT WOULD BE NICE NOT TO HAVE TO PASS THE UNDERLYING TYPE ARGUMENT EVERYWHERE. Why not simply have the actual value be a property of the concrete class and require downcasting to access it. We already downcast with pattern matching.
+
+## add a new kind of evaluated type abstract value
+
+EvaluatedType.InvalidValue - to use instead of GarbageValue when the expression or initializer is semantically invalid and won't work in the target langage.
+
+## \[in]complete types are unnecessary
+
+there's no need; a `char const*` can represent an unlengthed string without problems.
+
+get rid of type.complete and aliasreferencenode
+
+## composite Message
+
+so we don't have to .Yield() everywhere
+
+## remove `Value<TUnderlying>`
+
+it makes no sense to use it; we could have a two types of value coincidentally using the same underlying time.

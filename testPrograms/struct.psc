@@ -9,14 +9,14 @@ début
 fin;
 
 début
-    //p : t_personne;
-    //p.c_prenom := "Scover";
-    //p.c_nom := "NoLastName";
-    //p.c_estUnHomme := vrai;
-    //p.c_age := 300;
+    p : t_personne;
+    p.c_prenom := "Scover";
+    p.c_nom := "NoLastName";
+    p.c_estUnHomme := vrai;
+    p.c_age := 300;
 
     // Structure initializer
-    p : t_personne := {
+    p2 : t_personne := {
         "Scover",
         "NoLastName"
     };

@@ -12,10 +12,10 @@ partial class Parser
             : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.ForProduction(production, firstToken, map.Keys));
     }
 
-    static Parser<T> ParserAlwaysOk<T>(int tokenCount, Func<SourceTokens, T> makeNode) where T : Node
+    static Parser<T> ParserReturn<T>(int tokenCount, Func<SourceTokens, T> makeNode) where T : Node
          => tokens => ParseResult.Ok(makeNode(new(tokens, tokenCount)));
 
-    static Parser<T> ParserAlwaysOk<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
+    static Parser<T> ParserReturn<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
          => tokens => ParseResult.Ok(makeNodeWithValue(new(tokens, 1), tokens.First().Value.NotNull()));
 
     static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, Parser<T>? fallback = null)

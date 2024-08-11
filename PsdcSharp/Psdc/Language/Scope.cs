@@ -5,16 +5,18 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Language;
 
-sealed class Scope(Scope? scope) : ReadOnlyScope
+public abstract class Scope(Scope? parent)
 {
-    readonly Scope? _parentScope = scope;
-    readonly Dictionary<string, Symbol> _symbolTable = [];
+    protected readonly Dictionary<string, Symbol> _symbolTable = [];
+    protected readonly Scope? _parentScope = parent;
 
-    public void AddSymbolOrError(Messenger messenger, Symbol symbol)
+    public IEnumerable<T> GetSymbols<T>() where T : Symbol
     {
-        if (!TryAdd(symbol, out var existingSymbol)) {
-            messenger.Report(Message.ErrorRedefinedSymbol(symbol, existingSymbol));
-        }
+        for (var scope = this; scope is not null; scope = scope._parentScope) {
+            foreach (T t in scope._symbolTable.Values.OfType<T>()) {
+                yield return t;
+            }
+        }   
     }
 
     public Option<T, Message> GetSymbol<T>(Identifier name) where T : Symbol
@@ -23,14 +25,6 @@ sealed class Scope(Scope? scope) : ReadOnlyScope
         : symbol is not T t
         ? Message.ErrorUndefinedSymbol<T>(name, symbol).None<T, Message>()
         : t.Some<T, Message>();
-    public bool TryAdd(Symbol symbol) => _symbolTable.TryAdd(symbol.Name.Name, symbol);
-
-    public bool TryAdd(Symbol symbol, [NotNullWhen(false)] out Symbol? existingSymbol)
-    {
-        var added = _symbolTable.TryAdd(symbol.Name.Name, symbol);
-        existingSymbol = added ? null : _symbolTable[symbol.Name.Name];
-        return added;
-    }
 
     public bool TryGetSymbol<T>(string name, [NotNullWhen(true)] out T? symbol) where T : Symbol
     {
@@ -44,7 +38,7 @@ sealed class Scope(Scope? scope) : ReadOnlyScope
 
     public bool TryGetSymbol(string name, [NotNullWhen(true)] out Symbol? symbol)
     {
-        for (Scope? scope = this; scope is not null; scope = scope._parentScope) {
+        for (var scope = this; scope is not null; scope = scope._parentScope) {
             if (scope._symbolTable.TryGetValue(name, out symbol)) {
                 return true;
             }

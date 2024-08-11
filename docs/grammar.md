@@ -48,7 +48,7 @@ $$
     &   ⟨Switch.Default⟩^? \\
     &   \text{finselon} \\
     \end{split} \\
-    ⟨LocalVariable⟩ \to ⟨NameTypeBinding⟩\text{:=}⟨Initializer⟩\text{;} \\
+    ⟨LocalVariable⟩ \to ⟨VariableDeclaration⟩\begin{pmatrix}\text{:=}⟨Initializer⟩\end{pmatrix}^?\text{;} \\
     ⟨Return⟩ \to \text{retourne} ⟨Expr⟩\text{;} \\
     ⟨BuiltinAssigner⟩ \to \text{assigner}\text{(}⟨Lvalue⟩\text{,}⟨Expr⟩\text{)}\text{;} \\
     ⟨BuiltinEcrire⟩ \to \text{écrire}\text{(}⟨Expr⟩\text{,}⟨Expr⟩\text{)}\text{;} \\
@@ -206,25 +206,25 @@ $$
     \end{Bmatrix*} \\
     ⟨File⟩ \to \text{nomFichierLog} \\
     ⟨StringLengthed⟩ \to \text{chaîne}\text{(}⟨Expr⟩\text{)} \\
-    ⟨Structure⟩ \to \text{structure\ début} \begin{pmatrix}⟨NameTypeBinding⟩\text{;}\end{pmatrix}^+ \text{fin} \\
+    ⟨Structure⟩ \to \text{structure\ début} \begin{pmatrix}⟨VariableDeclaration⟩\text{;}\end{pmatrix}^+ \text{fin} \\
     ⟨TypeArray⟩ \to \text{tableau} \begin{pmatrix}\text{[}⟨Expr⟩\text{]}\end{pmatrix}^+ \text{de} ⟨TypeComplete⟩ \\
 \end{Bmatrix*}
 
 \\\\&\textbf{Other} \\
 
-&⟨NameTypeBinding⟩ \to Identifier^{+\#} \text{:} ⟨TypeComplete⟩
-\\
 &⟨ParameterFormal⟩ \to \begin{Bmatrix*}[l]
     \text{entF} \\
     \text{sortF} \\
     \text{entF/sortF} \\
-\end{Bmatrix*} Identifier\text{:}⟨Type⟩
+\end{Bmatrix*}Identifier\text{:}⟨CompleteType⟩
 \\
 &⟨ParameterActual⟩ \to \begin{Bmatrix*}[l]
     \text{entE} \\
     \text{sortE} \\
     \text{entE/sortE} \\
-\end{Bmatrix*} ⟨Expr⟩
+\end{Bmatrix*}⟨Expr⟩
+\\
+&⟨VariableDeclaration⟩ \to Identifier^{+\#}\text{:}⟨CompleteType⟩
 \\
 &⟨FunctionSignature⟩ \to \text{fonction}\ Identifier\text{(}⟨ParameterFormal⟩^{*\#}\text{)} \text{délivre} ⟨Type⟩
 \\

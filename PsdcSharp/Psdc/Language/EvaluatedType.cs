@@ -1,10 +1,8 @@
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 
 using Scover.Psdc.Parsing;
-
-using static Scover.Psdc.Parsing.Node;
+using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
 namespace Scover.Psdc.Language;
 
@@ -30,25 +28,26 @@ interface EvaluatedType : EquatableSemantics<EvaluatedType>
     /// <summary>
     /// Get the Pseudocode representation of this type.
     /// </summary>
-    /// <value>The Pseudocode code that would result in an equal <see cref="EvaluatedType"/> object if parsed.</value>
+    /// <value>The Pseudocode code that would result in an equivalent <see cref="EvaluatedType"/> object if parsed.</value>
     public string Representation { get; }
 
     // Static methods used for method groups
     public static bool IsConvertibleTo(EvaluatedType self, EvaluatedType other) => self.IsConvertibleTo(other);
     public static bool IsAssignableTo(EvaluatedType self, EvaluatedType other) => self.IsAssignableTo(other);
+
     /// <summary>
-    /// Determine whether this type implicitly converts to type <paramref name="other"/>.
+    /// Is this type implicitly convertible to another type?
     /// </summary>
-    /// <param name="other">The type to compare with the current type.</param>
-    /// <returns>Whether this type is implicitly convertible to <paramref name="other"/>.</returns>
+    /// <param name="other">Another type to compare with the current type.</param>
+    /// <returns>This type is implicitly convertible to <paramref name="other"/></returns>
     /// <remarks>Overrides will usually want to call base method in <see cref="EvaluatedType"/> in an logical disjunction.</remarks>
     public bool IsConvertibleTo(EvaluatedType other);
 
     /// <summary>
-    /// Determine whether a value of this type can be assigned to a variable of the specified type.
+    /// Can a value of this type be assigned to a variable of another type?
     /// </summary>
     /// <param name="other">The type of the variable a value of this type would be assigned to.</param>
-    /// <returns>Whether this type is assignable to <paramref name="other"/></returns>
+    /// <returns>This type is assignable to <paramref name="other"/></returns>
     /// <remarks>Overrides will usually want to call base in <see cref="EvaluatedTypeImpl"/> in an logical disjunction.</remarks>
     public bool IsAssignableTo(EvaluatedType other);
     public string ToString();
@@ -56,28 +55,36 @@ interface EvaluatedType : EquatableSemantics<EvaluatedType>
     /// <summary>
     /// Get the value for this type that is not known at compile-time.
     /// </summary>
+    /// <value>A value of this type, whose status is always <see cref="ValueStatus.Runtime"/>.</value>
     public Value RuntimeValue { get; }
 
     /// <summary>
     /// Get the value for this type that is not known, either at run-time or compile-time.
     /// </summary>
-    public Value UninitializedValue { get; }
+    /// <value>A value of this type, whose  is always <see cref="ValueStatus.Garbage"/>.</value>
+    public Value GarbageValue { get; }
 
     /// <summary>
     /// Get the default value for this type.
     /// </summary>
+    /// <value>A value of the this type, whose status is always <see cref="ValueStatus.Garbage"/> or <see cref="ValueStatus.Runtime"/>.</value>
     public Value DefaultValue { get; }
 
+    /// <summary>
+    /// Clone this type, but with an alias
+    /// </summary>
+    /// <param name="alias">A type alias name.</param>
+    /// <returns>A clone of this type, but with the <see cref="Alias"/> property set to <paramref name="alias"/>.</returns>
     public EvaluatedType ToAliasReference(Identifier alias);
 }
 
 interface EvaluatedType<out TValue> : EvaluatedType where TValue : Value
 {
-
+    /// <inheritdoc cref="EvaluatedType.RuntimeValue"/>
     public new TValue RuntimeValue { get; }
-
-    public new TValue UninitializedValue { get; }
-
+    /// <inheritdoc cref="EvaluatedType.GarbageValue"/>
+    public new TValue GarbageValue { get; }
+    /// <inheritdoc cref="EvaluatedType.DefaultValue"/>
     public new TValue DefaultValue { get; }
 }
 
@@ -97,14 +104,14 @@ abstract class EvaluatedTypeImpl<TValue>(Identifier? alias) : EvaluatedType<TVal
     public virtual bool IsAssignableTo(EvaluatedType other) => IsConvertibleTo(other) || other is EvaluatedTypeImpl<TValue> o && o.IsConvertibleFrom(this);
 
     /// <summary>
-    /// Determine whether <paramref name="other"/> implicitly converts to this type.
+    /// Is another type implicitly convertible to this type?
     /// </summary>
-    /// <param name="other">The type to compare with the current type.</param>
-    /// <returns>Whether <paramref name="other"/> is implicitly convertible to this type.</returns>
+    /// <param name="other">Another type to compare with the current type.</param>
+    /// <returns><paramref name="other"/> is implicitly convertible to this type.</returns>
     protected virtual bool IsConvertibleFrom(EvaluatedTypeImpl<TValue> other) => false;
 
     public abstract TValue RuntimeValue { get; }
-    public abstract TValue UninitializedValue { get; }
+    public abstract TValue GarbageValue { get; }
 
     public abstract bool SemanticsEqual(EvaluatedType other);
 
@@ -117,7 +124,7 @@ abstract class EvaluatedTypeImpl<TValue>(Identifier? alias) : EvaluatedType<TVal
     /// </summary>
     public abstract TValue DefaultValue { get; }
     Value EvaluatedType.RuntimeValue => RuntimeValue;
-    Value EvaluatedType.UninitializedValue => UninitializedValue;
+    Value EvaluatedType.GarbageValue => GarbageValue;
     Value EvaluatedType.DefaultValue => DefaultValue;
 }
 
@@ -130,7 +137,7 @@ internal sealed class ArrayType : EvaluatedTypeImpl<ArrayValue>, InstantiableTyp
 
         DefaultValue = Instantiate(CreateArray(elementType.DefaultValue, dimensions.Select(d => d.Value)));
         RuntimeValue = new(this, Value.Runtime<Value[]>());
-        UninitializedValue = new(this, Value.Uninitialized<Value[]>());
+        GarbageValue = new(this, Value.Garbage<Value[]>());
     }
 
     private static Value[] CreateArray(Value value, IEnumerable<int> dimensions)
@@ -141,7 +148,8 @@ internal sealed class ArrayType : EvaluatedTypeImpl<ArrayValue>, InstantiableTyp
     }
 
     public override ArrayValue RuntimeValue { get; }
-    public override ArrayValue UninitializedValue { get; }
+    public override ArrayValue GarbageValue { get; }
+    public override ArrayValue DefaultValue { get; }
 
     public IReadOnlyList<ConstantExpression<int>> Dimensions { get; }
 
@@ -150,7 +158,6 @@ internal sealed class ArrayType : EvaluatedTypeImpl<ArrayValue>, InstantiableTyp
     protected override string ActualRepresentation
      => $"tableau [{string.Join(", ", Dimensions)}] de {ItemType.Representation}";
 
-    public override ArrayValue DefaultValue { get; }
 
     public ArrayType(EvaluatedType itemType,
         IReadOnlyList<ConstantExpression<int>> dimensions)
@@ -181,14 +188,14 @@ internal sealed class BooleanType : EvaluatedTypeImpl<BooleanValue>, Instantiabl
     {
         DefaultValue = Instantiate(false);
         RuntimeValue = new(this, Value.Runtime<bool>());
-        UninitializedValue = new(this, Value.Uninitialized<bool>());
+        GarbageValue = new(this, Value.Garbage<bool>());
     }
 
     public static BooleanType Instance { get; } = new(null);
 
     protected override string ActualRepresentation => "booléen";
     public override BooleanValue RuntimeValue { get; }
-    public override BooleanValue UninitializedValue { get; }
+    public override BooleanValue GarbageValue { get; }
     public override BooleanValue DefaultValue { get; }
 
     public override BooleanType ToAliasReference(Identifier alias) => new(alias);
@@ -204,11 +211,11 @@ internal sealed class CharacterType : EvaluatedTypeImpl<CharacterValue>, Instant
     {
         DefaultValue = Instantiate('\0');
         RuntimeValue = new(this, Value.Runtime<char>());
-        UninitializedValue = new(this, Value.Uninitialized<char>());
+        GarbageValue = new(this, Value.Garbage<char>());
     }
 
     public override CharacterValue RuntimeValue { get; }
-    public override CharacterValue UninitializedValue { get; }
+    public override CharacterValue GarbageValue { get; }
     public static CharacterType Instance { get; } = new(null);
 
     protected override string ActualRepresentation => "caractère";
@@ -226,12 +233,12 @@ internal sealed class FileType : EvaluatedTypeImpl<FileValue>
 {
     FileType(Identifier? alias) : base(alias)
     {
-        DefaultValue = UninitializedValue = new(this, ValueStatus.Uninitialized);
+        DefaultValue = GarbageValue = new(this, ValueStatus.Garbage);
         RuntimeValue = new(this, ValueStatus.Runtime);
     }
 
     public override FileValue RuntimeValue { get; }
-    public override FileValue UninitializedValue { get; }
+    public override FileValue GarbageValue { get; }
     public static FileType Instance { get; } = new(null);
     protected override string ActualRepresentation => "nomFichierLog";
 
@@ -248,14 +255,14 @@ internal sealed class LengthedStringType : EvaluatedTypeImpl<LengthedStringValue
     {
         LengthConstantExpression = lengthExpression;
         Length = length;
-        DefaultValue = UninitializedValue = new(this, Value.Uninitialized<string>());
+        DefaultValue = GarbageValue = new(this, Value.Garbage<string>());
         RuntimeValue = new(this, Value.Runtime<string>());
     }
 
     public int Length { get; }
 
     public override LengthedStringValue RuntimeValue { get; }
-    public override LengthedStringValue UninitializedValue { get; }
+    public override LengthedStringValue GarbageValue { get; }
     public Option<Expression> LengthConstantExpression { get; }
 
     protected override string ActualRepresentation => $"chaîne({Length})";
@@ -269,7 +276,7 @@ internal sealed class LengthedStringType : EvaluatedTypeImpl<LengthedStringValue
      => new(Option.None<Expression>(), length, null);
 
     public override bool IsConvertibleTo(EvaluatedType other) => base.IsConvertibleTo(other) || other is StringType;
-    public override bool IsAssignableTo(EvaluatedType other) => base.IsAssignableTo(other) || other is LengthedStringType o && o.Length > Length;
+    public override bool IsAssignableTo(EvaluatedType other) => base.IsAssignableTo(other) || other is LengthedStringType o && o.Length >= Length;
     public override bool SemanticsEqual(EvaluatedType other) => other is LengthedStringType o && o.Length == Length;
 
     public override LengthedStringType ToAliasReference(Identifier alias) => new(LengthConstantExpression, Length, alias);
@@ -284,12 +291,12 @@ internal sealed class LengthedStringType : EvaluatedTypeImpl<LengthedStringValue
 internal sealed class IntegerType : EvaluatedTypeImpl<IntegerValue>, InstantiableType<IntegerValue, int>
 {
     public override IntegerValue RuntimeValue { get; }
-    public override IntegerValue UninitializedValue { get; }
+    public override IntegerValue GarbageValue { get; }
     IntegerType(Identifier? alias) : base(alias)
     {
         DefaultValue = Instantiate(0);
         RuntimeValue = new(this, Value.Runtime<int>());
-        UninitializedValue = new(this, Value.Uninitialized<int>());
+        GarbageValue = new(this, Value.Garbage<int>());
     }
 
     public static IntegerType Instance { get; } = new(null);
@@ -312,10 +319,10 @@ internal sealed class RealType : EvaluatedTypeImpl<RealValue>, InstantiableType<
     {
         DefaultValue = Instantiate(0m);
         RuntimeValue = new RealValueImpl(this, Value.Runtime<decimal>());
-        UninitializedValue = new RealValueImpl(this, Value.Uninitialized<decimal>());
+        GarbageValue = new RealValueImpl(this, Value.Garbage<decimal>());
     }
     public override RealValue RuntimeValue { get; }
-    public override RealValue UninitializedValue { get; }
+    public override RealValue GarbageValue { get; }
     public static RealType Instance { get; } = new(null);
     protected override string ActualRepresentation => "réel";
 
@@ -332,12 +339,12 @@ internal class StringType : EvaluatedTypeImpl<StringValue>, InstantiableType<Str
 {
     StringType(Identifier? alias) : base(alias)
     {
-        DefaultValue = UninitializedValue = new StringValueImpl(this, Value.Uninitialized<string>());
+        DefaultValue = GarbageValue = new StringValueImpl(this, Value.Garbage<string>());
         RuntimeValue = new StringValueImpl(this, Value.Runtime<string>());
     }
 
     public override StringValue RuntimeValue { get; }
-    public override StringValue UninitializedValue { get; }
+    public override StringValue GarbageValue { get; }
     public static StringType Instance { get; } = new(null);
 
     protected override string ActualRepresentation => "chaîne";
@@ -353,7 +360,7 @@ internal class StringType : EvaluatedTypeImpl<StringValue>, InstantiableType<Str
 
 internal sealed class StructureType : EvaluatedTypeImpl<StructureValue>, InstantiableType<StructureValue, IReadOnlyDictionary<Identifier, Value>>
 {
-    public StructureType(ReadOnlyOrderedMap<Identifier, EvaluatedType> components, Identifier? alias = null) : base(alias)
+    public StructureType(OrderedMap<Identifier, EvaluatedType> components, Identifier? alias = null) : base(alias)
     {
         Components = components;
         _representation = alias is null
@@ -369,15 +376,15 @@ internal sealed class StructureType : EvaluatedTypeImpl<StructureValue>, Instant
                     : new(alias.Name); // To avoid long type representations, use the alias name if available.
         DefaultValue = Instantiate(components.Map.ToDictionary(kv => kv.Key, kv => kv.Value.DefaultValue));
         RuntimeValue = new(this, Value.Runtime<IReadOnlyDictionary<Identifier, Value>>());
-        UninitializedValue = new(this, Value.Uninitialized<IReadOnlyDictionary<Identifier, Value>>());
+        GarbageValue = new(this, Value.Garbage<IReadOnlyDictionary<Identifier, Value>>());
     }
 
     readonly Lazy<string> _representation;
 
-    public ReadOnlyOrderedMap<Identifier, EvaluatedType> Components { get; }
+    public OrderedMap<Identifier, EvaluatedType> Components { get; }
     protected override string ActualRepresentation => _representation.Value;
     public override StructureValue RuntimeValue { get; }
-    public override StructureValue UninitializedValue { get; }
+    public override StructureValue GarbageValue { get; }
     public override StructureValue DefaultValue { get; }
 
     public override StructureType ToAliasReference(Identifier alias) => new(Components, alias);
@@ -390,7 +397,7 @@ internal sealed class StructureType : EvaluatedTypeImpl<StructureValue>, Instant
     {
         Dictionary<Identifier, Value> completedValue = new(value);
         completedValue.CheckKeys(Components.Map.Keys.ToList(),
-            missingKey => Components.Map[missingKey].UninitializedValue,
+            missingKey => Components.Map[missingKey].GarbageValue,
             excessKey => Debug.Fail($"Excess key: `{excessKey}`"));
         return new(this, Value.Comptime(value));
     }
@@ -402,12 +409,12 @@ internal sealed class UnknownType : EvaluatedTypeImpl<UnknownValue>
     {
         SourceTokens = sourceTokens;
         ActualRepresentation = repr;
-        DefaultValue = UninitializedValue = new(this, ValueStatus.Uninitialized);
+        DefaultValue = GarbageValue = new(this, ValueStatus.Garbage);
         RuntimeValue = new(this, ValueStatus.Runtime);
     }
 
     public override UnknownValue RuntimeValue { get; }
-    public override UnknownValue UninitializedValue { get; }
+    public override UnknownValue GarbageValue { get; }
     protected override string ActualRepresentation { get; }
     public SourceTokens SourceTokens { get; }
 

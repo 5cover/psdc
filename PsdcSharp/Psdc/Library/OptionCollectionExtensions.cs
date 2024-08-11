@@ -3,64 +3,87 @@ namespace Scover.Psdc.Library;
 static class OptionCollectionExtensions
 {
     /// <summary>
-    /// Accumulates either all the values, or all the errors from a collection of <see cref="Option{T, TError}"/> instances.
+    /// Transform a list of optionals into an optional containing a list of values.
     /// </summary>
-    /// <typeparam name="T">The type of the value.</typeparam>
-    /// <typeparam name="TError">The type of the error.</typeparam>
-    /// <param name="options">The collection of <see cref="Option{T, TError}"/> instances.</param>
-    /// <returns>An <see cref="Option{T, TError}"/> instance containing either the accumulated values or errors.</returns>
-    public static Option<IEnumerable<T>, IEnumerable<TError>> Accumulate<T, TError>(this IEnumerable<Option<T, TError>> options)
+    /// <typeparam name="T">The value type.</typeparam>
+    /// <typeparam name="TError">The error type.</typeparam>
+    /// <param name="options">The list of optionals.</param>
+    /// <returns>If all the optionals contain values, the result is an optional containing a list of those values. If any of the optionals are erroneous, the result is an erroneous optional containing all the errors.</returns>
+    public static ValueOption<IReadOnlyList<T>, IReadOnlyList<TError>> Sequence<T, TError>(this IEnumerable<Option<T, TError>> options)
     {
         List<T> values = [];
         List<TError> errors = [];
 
         // Make sure to only iterate the input sequence once.
-        foreach (var option in options) {
-            if (option.HasValue) {
-                values.Add(option.Value);
+        foreach (var o in options) {
+            if (o.HasValue) {
+                values.Add(o.Value);
             } else {
-                errors.Add(option.Error);
+                errors.Add(o.Error);
             }
         }
 
-        return errors.Count > 0
-            ? errors.None<IEnumerable<T>, IEnumerable<TError>>()
-            : values.Some<IEnumerable<T>, IEnumerable<TError>>();
+        return errors.Count > 0 ? errors : values;
     }
 
-    public static Option<T> ElementAtOrNone<T>(this IEnumerable<T> source, int index)
+    /// <summary>
+    /// Transform a list of optionals into an optional containing a list of values.
+    /// </summary>
+    /// <typeparam name="T">The value type.</typeparam>
+    /// <param name="options">The list of optionals.</param>
+    /// <returns>If all the optionals contain values, the result is an optional containing a list of those values. If any of the optionals are empty, the result is an empty optional.</returns>
+    public static ValueOption<IReadOnlyList<T>> Sequence<T>(this IEnumerable<Option<T>> options)
+    {
+        List<T> values = [];
+
+        foreach (var o in options) {
+            if (o.HasValue) {
+                values.Add(o.Value);
+            } else {
+                return default;
+            }
+        }
+
+        return values;
+    }
+
+    public static ValueOption<T> ElementAtOrNone<T>(this IEnumerable<T> source, int index)
     {
         if (index >= 0) {
             if (source is IReadOnlyList<T> list) {
                 if (index < list.Count) {
-                    return list[index].Some();
+                    return list[index];
                 }
             } else {
                 using var enumerator = source.GetEnumerator();
                 while (enumerator.MoveNext()) {
                     if (index-- == 0) {
-                        return enumerator.Current.Some();
+                        return enumerator.Current;
                     }
                 }
             }
         }
-        return Option.None<T>();
+        return default;
     }
 
-    public static Option<T> FirstOrNone<T>(this IEnumerable<T> source)
+    public static ValueOption<T> FirstOrNone<T>(this IEnumerable<T> source)
     {
         if (source is IReadOnlyList<T> list) {
             if (list.Count > 0) {
-                return list[0].Some();
+                return list[0];
             }
         } else {
             using var enumerator = source.GetEnumerator();
             if (enumerator.MoveNext()) {
-                return enumerator.Current.Some();
+                return enumerator.Current;
             }
         }
-        return Option.None<T>();
+        return default;
     }
 
-    public static Option<TValue> GetValueOrNone<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key) => dictionary.TryGetValue(key, out TValue? v) ? v.Some() : Option.None<TValue>();
+    public static ValueOption<TValue> GetValueOrNone<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key)
+     => dictionary.TryGetValue(key, out TValue? v) ? v.Some() : default;
+    
+    public static ValueOption<KeyValuePair<TKey, TValue>> GetEntryOrNone<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key)
+     => dictionary.TryGetValue(key, out TValue? v) ? KeyValuePair.Create(key, v) : default;
 }

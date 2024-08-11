@@ -1,6 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-
-using Scover.Psdc.Language;
 using Scover.Psdc.Tokenization;
 
 using static Scover.Psdc.Parsing.Node;
@@ -10,45 +8,54 @@ namespace Scover.Psdc.Parsing;
 
 partial class Parser
 {
-    static readonly Dictionary<TokenType, BinaryOperator>
+    static readonly Dictionary<TokenType, Func<SourceTokens, BinaryOperator>>
         operatorsOr = new() {
-            [Operator.Or] = BinaryOperator.Or,
+            [Operator.Or] = t => new BinaryOperator.Or(t),
         },
         operatorsAnd = new() {
-            [Operator.And] = BinaryOperator.And,
+            [Operator.And] = t => new BinaryOperator.And(t),
         },
         operatorsXor = new() {
-            [Operator.Xor] = BinaryOperator.Xor,
+            [Operator.Xor] = t => new BinaryOperator.Xor(t),
         },
         operatorsEquality = new() {
-            [Operator.Equal] = BinaryOperator.Equal,
-            [Operator.NotEqual] = BinaryOperator.NotEqual,
+            [Operator.DoubleEqual] = t => new BinaryOperator.Equal(t),
+            [Operator.NotEqual] = t => new BinaryOperator.NotEqual(t),
         },
         operatorsComparison = new() {
-            [Operator.LessThan] = BinaryOperator.LessThan,
-            [Operator.LessThanOrEqual] = BinaryOperator.LessThanOrEqual,
-            [Operator.GreaterThan] = BinaryOperator.GreaterThan,
-            [Operator.GreaterThanOrEqual] = BinaryOperator.GreaterThanOrEqual,
+            [Operator.LessThan] = t => new BinaryOperator.LessThan(t),
+            [Operator.LessThanOrEqual] = t => new BinaryOperator.LessThanOrEqual(t),
+            [Operator.GreaterThan] = t => new BinaryOperator.GreaterThan(t),
+            [Operator.GreaterThanOrEqual] = t => new BinaryOperator.GreaterThanOrEqual(t),
         },
         operatorsAddSub = new() {
-            [Operator.Add] = BinaryOperator.Add,
-            [Operator.Subtract] = BinaryOperator.Subtract,
+            [Operator.Plus] = t => new BinaryOperator.Add(t),
+            [Operator.Minus] = t => new BinaryOperator.Subtract(t),
         },
         operatorsMulDivMod = new() {
-            [Operator.Multiply] = BinaryOperator.Multiply,
-            [Operator.Divide] = BinaryOperator.Divide,
-            [Operator.Mod] = BinaryOperator.Mod,
-        };
-
-    static readonly Dictionary<TokenType, UnaryOperator>
-        operatorsUnary = new() {
-            [Operator.Subtract] = UnaryOperator.Minus,
-            [Operator.Not] = UnaryOperator.Not,
-            [Operator.Add] = UnaryOperator.Plus,
+            [Operator.Times] = t => new BinaryOperator.Multiply(t),
+            [Operator.Divide] = t => new BinaryOperator.Divide(t),
+            [Operator.Mod] = t => new BinaryOperator.Mod(t),
         };
 
     readonly IReadOnlyDictionary<TokenType, Parser<Expression>> _literalParsers;
     delegate ParseResult<TRight> RightParser<in TLeft, out TRight>(TLeft left, IEnumerable<Token> rightTokens);
+
+    private Parser<Expression>? _expressionParser;
+    ParseResult<Expression> ParseExpression(IEnumerable<Token> tokens)
+     => (_expressionParser ??=
+        ParserBinaryOperation(operatorsOr,
+        ParserBinaryOperation(operatorsAnd,
+        ParserBinaryOperation(operatorsXor,
+        ParserBinaryOperation(operatorsEquality,
+        ParserBinaryOperation(operatorsComparison,
+        ParserBinaryOperation(operatorsAddSub,
+        ParserBinaryOperation(operatorsMulDivMod,
+        ParserUnaryOperation(
+        ParserBinary(ParseTerminalRvalue, new() {
+            [Punctuation.LBracket] = RightParseArraySubscript,
+            [Operator.Dot] = RightParseComponentAccess,
+        }))))))))))(tokens);
 
     static Parser<T> ParserBinary<T>(
         Parser<T> leftParser,
@@ -99,39 +106,24 @@ partial class Parser
      };
 
     static Parser<Expression> ParserBinaryOperation(
-        IReadOnlyDictionary<TokenType, BinaryOperator> operators,
+        IReadOnlyDictionary<TokenType, Func<SourceTokens, BinaryOperator>> operators,
         Parser<Expression> descentParser)
      => tokens => {
-         var result = descentParser(tokens);
-         int count = result.SourceTokens.Count;
+         var prLeft = descentParser(tokens);
+         int count = prLeft.SourceTokens.Count;
 
-         while (result.HasValue
+         while (prLeft.HasValue
              && GetByTokenType(tokens.Skip(count), "operator", operators)
-                is { HasValue: true } op) {
-             count += op.SourceTokens.Count;
-             var right = descentParser(tokens.Skip(count));
-             count += right.SourceTokens.Count;
+                is { HasValue: true } prOp) {
+             count += prOp.SourceTokens.Count;
+             var prRright = descentParser(tokens.Skip(count));
+             count += prRright.SourceTokens.Count;
 
-             result = right.WithSourceTokens(new(tokens, count)).Map((srcTokens, operand2)
-              => new Expression.BinaryOperation(srcTokens, result.Value, op.Value, operand2));
+             prLeft = prRright.WithSourceTokens(new(tokens, count)).Map((srcTokens, right)
+              => new Expression.BinaryOperation(srcTokens, prLeft.Value, prOp.Value(prOp.SourceTokens), right));
          }
 
-         return result;
-     };
-
-    static Parser<Expression> ParserUnaryOperation(
-        IReadOnlyDictionary<TokenType, UnaryOperator> operators,
-        Parser<Expression> descentParser)
-     => tokens => {
-         var prOperator = ParseTokenOfType(tokens, "operator", operators.Keys);
-
-         return prOperator.Match(
-             some: op => {
-                 var prExpr = descentParser(tokens.Skip(1)).Map((tokens, expr)
-                      => new Expression.UnaryOperation(tokens, operators[op.Type], expr));
-                 return prExpr.WithSourceTokens(new(tokens, prExpr.SourceTokens.Count + 1));
-             },
-             none: _ => descentParser(tokens));
+         return prLeft;
      };
 
     static bool TryGetRightParser<TLeft, TRight>(
@@ -149,52 +141,60 @@ partial class Parser
 
     ParseResult<Expression> ParseBracketed(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "bracketed expression")
-        .ParseToken(Punctuation.OpenBracket)
+        .ParseToken(Punctuation.LParen)
         .Parse(out var expression, ParseExpression)
-        .ParseToken(Punctuation.CloseBracket)
+        .ParseToken(Punctuation.RParen)
     .MapResult(t => new Expression.Bracketed(t, expression));
 
     ParseResult<Expression.Lvalue> ParseBracketedLvalue(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "bracketed lvalue")
-        .ParseToken(Punctuation.OpenBracket)
+        .ParseToken(Punctuation.LParen)
         .Parse(out var expression, ParseLvalue)
-        .ParseToken(Punctuation.CloseBracket)
+        .ParseToken(Punctuation.RParen)
     .MapResult(t => new Expression.Lvalue.Bracketed(t, expression));
 
     ParseResult<Expression.BuiltinFdf> ParseBuiltinFdf(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "FdF call")
         .ParseToken(Keyword.Fdf)
-        .ParseToken(Punctuation.OpenBracket)
+        .ParseToken(Punctuation.LParen)
         .Parse(out var argNomLog, ParseExpression)
-        .ParseToken(Punctuation.CloseBracket)
+        .ParseToken(Punctuation.RParen)
     .MapResult(t => new Expression.BuiltinFdf(t, argNomLog));
 
-    private Parser<Expression>? _expressionParser;
-    ParseResult<Expression> ParseExpression(IEnumerable<Token> tokens)
-     => (_expressionParser ??=
-        ParserBinaryOperation(operatorsOr,
-        ParserBinaryOperation(operatorsAnd,
-        ParserBinaryOperation(operatorsXor,
-        ParserBinaryOperation(operatorsEquality,
-        ParserBinaryOperation(operatorsComparison,
-        ParserBinaryOperation(operatorsAddSub,
-        ParserBinaryOperation(operatorsMulDivMod,
-        ParserUnaryOperation(operatorsUnary,
-        ParserBinary(ParseTerminalRvalue, new() {
-            [Punctuation.OpenSquareBracket] = RightParseArraySubscript,
-            [Operator.Dot] = RightParseComponentAccess,
-        }))))))))))(tokens);
+    Parser<Expression> ParserUnaryOperation(
+        Parser<Expression> descentParser)
+     => tokens => {
+        var prOp = ParseUnaryOperator(tokens);
+        return prOp.Match(
+            op => {
+                var prOperand = ParserUnaryOperation(descentParser)(tokens.Skip(prOp.SourceTokens.Count));
+                return prOperand.WithSourceTokens(new(tokens, prOp.SourceTokens.Count + prOperand.SourceTokens.Count))
+                    .Map((t, expr) => new Expression.UnaryOperation(t, op, expr));
+            },
+            _ => descentParser(tokens));
+     };
+
+    private Parser<UnaryOperator>? _parseUnaryOperator;
+    Parser<UnaryOperator> ParseUnaryOperator => _parseUnaryOperator ??= ParserFirst<UnaryOperator>(
+        t => ParseToken(t, Operator.Minus, t => new UnaryOperator.Minus(t)),
+        t => ParseToken(t, Operator.Not, t => new UnaryOperator.Not(t)),
+        t => ParseToken(t, Operator.Plus, t => new UnaryOperator.Plus(t)),
+        t => ParseOperation.Start(_msger, t, "cast operator")
+            .ParseToken(Punctuation.LParen)
+            .Parse(out var target, ParseType)
+            .ParseToken(Punctuation.RParen)
+        .MapResult(t => new UnaryOperator.Cast(t, target)));
 
     ParseResult<Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "function call")
         .Parse(out var name, ParseIdentifier)
-        .ParseToken(Punctuation.OpenBracket)
-        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma, Punctuation.CloseBracket)
+        .ParseToken(Punctuation.LParen)
+        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma, Punctuation.RParen)
     .MapResult(t => new Expression.FunctionCall(t, name, parameters));
 
     ParseResult<Expression.Lvalue> ParseLvalue(IEnumerable<Token> tokens)
      => ParserFirst(ParserBinaryAtLeast1<Expression, Expression.Lvalue>("lvalue", ParseTerminalRvalue, new() {
-         [Punctuation.OpenSquareBracket] = RightParseArraySubscript,
+         [Punctuation.LBracket] = RightParseArraySubscript,
          [Operator.Dot] = RightParseComponentAccess,
      }), ParseTerminalLvalue)(tokens);
 
@@ -217,8 +217,8 @@ partial class Parser
         IEnumerable<Token> rightTokens)
      => ParseOperation.Start(_msger, rightTokens, "array subscript")
         .ParseOneOrMoreSeparated(out var indexes, ParseExpression,
-            Punctuation.Comma, Punctuation.CloseSquareBracket)
-    .MapResult(t => new Expression.Lvalue.ArraySubscript(t, expr, indexes));
+            Punctuation.Comma, Punctuation.RBracket)
+        .MapResult(t => new Expression.Lvalue.ArraySubscript(t, expr, indexes));
 
     ParseResult<Expression.Lvalue> RightParseComponentAccess(
         Expression expr,

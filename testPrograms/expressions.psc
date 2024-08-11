@@ -3,14 +3,15 @@ programme Expressions c'est
 // also demonstrates the handling of invalid operations (e.g. comparison on characters)
 début
     b : booléen;
-    b := 3 + 4.5 * (7 - 2) / 2.0 >= 3 == (vrai OU faux);
-    écrireEcran(-5 + 3 * 6.2 - 1.5 / 2 + (10.0 + 2.5) * (4.0 - 1.5));
-    écrireEcran('c' > 'a' ET 'b' < 'd' OU 5 != 3 + 2 * (7 - 4));
-    b := NON (5 > 3) OU (2 + 4 == 6 ET 7 < 9);
-    b := (10.0 + 2.5) * (4.0 - 1.5) / 2.0 - (3 + 4.5 * 7 - 2) / 2.0 >= 5.0;
+    b := NON NON vrai;
+    //b := 3 + 4.5 * (7 - 2) / 2.0 >= 3 == (vrai OU faux);
+    //écrireEcran(-5 + 3 * 6.2 - 1.5 / 2 + (10.0 + 2.5) * (4.0 - 1.5));
+    //écrireEcran('c' > 'a' ET 'b' < 'd' OU 5 != 3 + 2 * (7 - 4));
+    //b := NON (5 > 3) OU (2 + 4 == 6 ET 7 < 9);
+    //b := (10.0 + 2.5) * (4.0 - 1.5) / 2.0 - (3 + 4.5 * 7 - 2) / 2.0 >= 5.0;
     //écrireEcran('z' XOR 'a' > 'm' ET (3 + 4.5 * (7 - 2) / 2.0 >= 'a' + "hello"));
-    b := (NON vrai) ET (faux OU vrai) == (5 > 3 ET 2 + 4 == 6);
-    b := (5 + 3 * 6.2 - 1.5 / 2) >= (10.0 + 2.5) * (4.0 - 1.5) / 2.0;
+    //b := (NON vrai) ET (faux OU vrai) == (5 > 3 ET 2 + 4 == 6);
+    //b := (5 + 3 * 6.2 - 1.5 / 2) >= (10.0 + 2.5) * (4.0 - 1.5) / 2.0;
     //écrireEcran('a' + "hello" == (vrai OU faux) ET 3 + 4.5 * (7 - 2) / 2.0 >= 5.0);
     //écrireEcran((3 + 4.5 * 7 - 2) / 2.0 >= 'a' + "hello" == (vrai OU faux) OU 5 != 3 + 2 * (7 - 4));
     //écrireEcran(arrayExpr[2, 3] + structExpr.member1 * (func(entE 3.0, entE vrai) - 7) / 2.0);
