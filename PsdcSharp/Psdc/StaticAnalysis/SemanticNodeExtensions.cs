@@ -51,13 +51,13 @@ public static class SemanticNodeExtensions
                 bo.Left,
                 new BinaryOperator.Equal(Meta(e)),
                 bo.Right,
-                v).Some()y, // gives the target type of the switch expression
+                v).Some(), // gives the target type of the switch expression
             _ => default
         };
     }
 
     internal static ValueOption<Expression.Literal> ToLiteral<TUnderlying>(this Value<TUnderlying> value, Scope scope) where TUnderlying : IConvertible
      => value.Status is ValueStatus.Comptime
-         ? new Expression.Literal(new(scope, SourceTokens.Empty), value.Comptime.Unwrap(), value).Some()
+         ? new Expression.Literal(new(scope, SourceTokens.Empty), value.Status.Comptime.Unwrap(), value).Some()
          : default;
 }
