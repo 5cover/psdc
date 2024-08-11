@@ -56,7 +56,9 @@ public static class SemanticNodeExtensions
         };
     }
 
-    internal static ValueOption<Expression.Literal> ToLiteral<TUnderlying>(this Value<TUnderlying> value, Scope scope) where TUnderlying : IConvertible
+    internal static ValueOption<Expression.Literal> ToLiteral<TType, TUnderlying>(this Value<TType, TUnderlying> value, Scope scope)
+    where TType : EvaluatedType
+    where TUnderlying : IConvertible
      => value.Status is ValueStatus.Comptime
          ? new Expression.Literal(new(scope, SourceTokens.Empty), value.Status.Comptime.Unwrap(), value).Some()
          : default;

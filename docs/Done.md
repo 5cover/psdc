@@ -1560,3 +1560,7 @@ Maybe my previous idea of rewriting the AST wasn't that bad, even if it means du
 ## Don't normalize anymore
 
 There's no need to. We want to allow identifiers only differing by accentuation. Use multiple expected strings (synonyms) for accent flexibilty on keywords.
+
+## remove `Value<TUnderlying>`
+
+it makes no sense to use it; we could have a two types of value coincidentally using the same underlying time.

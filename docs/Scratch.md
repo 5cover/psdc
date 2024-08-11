@@ -488,7 +488,3 @@ get rid of type.complete and aliasreferencenode
 ## composite Message
 
 so we don't have to .Yield() everywhere
-
-## remove `Value<TUnderlying>`
-
-it makes no sense to use it; we could have a two types of value coincidentally using the same underlying time.

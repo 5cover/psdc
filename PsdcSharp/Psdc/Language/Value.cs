@@ -25,14 +25,9 @@ interface Value : EquatableSemantics<Value>
     public static ValueStatus<TUnderlying> Garbage<TUnderlying>() => new ValueStatus<TUnderlying>.GarbageValue();
 }
 
-interface Value<TUnderlying> : Value
+interface Value<out TType, TUnderlying> : Value where TType : EvaluatedType
 {
     new ValueStatus<TUnderlying> Status { get; }
-
-}
-
-interface Value<out TType, TUnderlying> : Value<TUnderlying> where TType : EvaluatedType
-{
     new TType Type { get; }
 }
 
@@ -40,7 +35,7 @@ sealed class IntegerValue(IntegerType type, ValueStatus<int> value)
 : ValueImpl<IntegerValue, IntegerType, int>(type, value), RealValue
 {
     RealType Value<RealType, decimal>.Type => RealType.Instance;
-    ValueStatus<decimal> Value<decimal>.Status => Status.Map(v => (decimal)v);
+    ValueStatus<decimal> Value<RealType, decimal>.Status => Status.Map(v => (decimal)v);
 
     protected override IntegerValue Clone(ValueStatus<int> value) => new(Type, value);
 }
