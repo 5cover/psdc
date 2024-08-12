@@ -9,21 +9,21 @@ using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
 namespace Scover.Psdc.CodeGeneration.C;
 
-sealed partial class CodeGenerator(Messenger messenger, Algorithm astRoot)
-    : CodeGenerator<KeywordTable, OperatorTable>(messenger, astRoot, KeywordTable.Instance, OperatorTable.Instance)
+sealed partial class CodeGenerator(Messenger messenger)
+    : CodeGenerator<KeywordTable, OperatorTable>(messenger, KeywordTable.Instance, OperatorTable.Instance)
 {
     readonly IncludeSet _includes = new();
     Group _currentGroup = Group.None;
 
-    public override string Generate()
+    public override string Generate(Algorithm algorithm)
     {
         StringBuilder o = new();
 
-        foreach (Declaration decl in _astRoot.Declarations) {
+        foreach (var decl in algorithm.Declarations) {
             AppendDeclaration(o, decl);
         }
 
-        return _includes.AppendIncludeSection(AppendFileHeader(new()))
+        return _includes.AppendIncludeSection(AppendFileHeader(new(), algorithm))
             .Append(o).ToString();
     }
 
@@ -79,7 +79,7 @@ sealed partial class CodeGenerator(Messenger messenger, Algorithm astRoot)
     {
         o.Append($"{cReturnType} {ValidateIdentifier(scope, name)}(");
         if (parameters.Any()) {
-            o.AppendJoin(", ", parameters.Select(p => GenerateParameter(scope, p)));
+            o.AppendJoin(", ", parameters.Select(p => GenerateParameter(p)));
         } else {
             o.Append("void");
         }
@@ -88,15 +88,15 @@ sealed partial class CodeGenerator(Messenger messenger, Algorithm astRoot)
         return o;
     }
 
-    string GenerateParameter(Scope scope, ParameterFormal param)
+    string GenerateParameter(ParameterFormal param)
     {
         StringBuilder o = new();
-        var type = CreateTypeInfo(scope, param.Type);
+        var type = CreateTypeInfo(param.Meta.Scope, param.Type);
         if (C.RequiresPointer(param.Mode)) {
             type = type.ToPointer(1);
         }
 
-        o.Append(type.GenerateDeclaration(param.Name.Name));
+        o.Append(type.GenerateDeclaration(ValidateIdentifier(param.Meta.Scope, param.Name)));
 
         return o.ToString();
     }
@@ -259,7 +259,7 @@ sealed partial class CodeGenerator(Messenger messenger, Algorithm astRoot)
     protected override StringBuilder AppendLocalVariable(StringBuilder o, Statement.LocalVariable local)
     {
         Indent(o).Append(CreateTypeInfo(local.Meta.Scope, local.Declaration.Type)
-            .GenerateDeclaration(local.Declaration.Names.Select(n => n.Name)));
+            .GenerateDeclaration(local.Declaration.Names.Select(n => ValidateIdentifier(local.Meta.Scope, n))));
         local.Initializer.Tap(i => AppendInitializer(o.Append(" = "), i));
         return o.AppendLine(";");
     }
@@ -407,9 +407,9 @@ sealed partial class CodeGenerator(Messenger messenger, Algorithm astRoot)
         return o.Append(')');
     }
 
-    StringBuilder AppendFileHeader(StringBuilder o) => o.AppendLine($"""
+    StringBuilder AppendFileHeader(StringBuilder o, Algorithm algorithm) => o.AppendLine($"""
         /** @file
-         * @brief {_astRoot.Name}
+         * @brief {algorithm.Name}
          * @author {Environment.UserName}
          * @date {DateOnly.FromDateTime(DateTime.Now)}
          */

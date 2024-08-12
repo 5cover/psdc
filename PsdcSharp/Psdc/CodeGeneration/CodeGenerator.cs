@@ -8,21 +8,20 @@ namespace Scover.Psdc.CodeGeneration;
 
 public static class CodeGenerator
 {
-    public static string GenerateC(Messenger messenger, Algorithm astRoot)
-     => new C.CodeGenerator(messenger, astRoot).Generate();
+    public static string GenerateC(Messenger messenger, Algorithm algorithm)
+     => new C.CodeGenerator(messenger).Generate(algorithm);
 }
 
 delegate StringBuilder Appender<T>(StringBuilder o, T node);
 delegate string Generator<T>(T node);
 
-abstract partial class CodeGenerator<TKwTable, TOpTable>(Messenger msger, Algorithm astRoot, TKwTable keywordTable, TOpTable operatorTable)
+abstract partial class CodeGenerator<TKwTable, TOpTable>(Messenger msger, TKwTable keywordTable, TOpTable operatorTable)
 where TKwTable : KeywordTable
 where TOpTable : OperatorTable
 {
     protected static Generator<T> ToGenerator<T>(Appender<T> appender)
      => node => appender(new(), node).ToString();
 
-    protected readonly Algorithm _astRoot = astRoot;
     protected readonly Indentation _indent = new();
     protected readonly Messenger _msger = msger;
     protected readonly TKwTable _kwTable = keywordTable;
@@ -30,7 +29,7 @@ where TOpTable : OperatorTable
 
     protected string ValidateIdentifier(Scope scope, Identifier ident) => _kwTable.Validate(scope, ident, _msger);
 
-    public abstract string Generate();
+    public abstract string Generate(Algorithm algorithm);
 
     protected abstract TypeGenerator GenerateType(Scope scope);
 
