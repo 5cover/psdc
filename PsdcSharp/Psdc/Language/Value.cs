@@ -10,7 +10,7 @@ interface Value : EquatableSemantics<Value>
     /// <summary>
     /// A value that is known at compile-time.
     /// </summary>
-    /// <typeparam name="TUnderlying"/>The type of the underlying value.</typeparam>
+    /// <typeparam name="TUnderlying">The type of the underlying value.</typeparam>
     /// <param name="value">The actual value.</param>
     public static ValueStatus<TUnderlying> Comptime<TUnderlying>(TUnderlying value) => new ValueStatus<TUnderlying>.ComptimeValue(value);
 
