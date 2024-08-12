@@ -2,26 +2,25 @@ global using SemanticBlock = System.Collections.Generic.IReadOnlyList<Scover.Psd
 
 using Scover.Psdc.Language;
 using Scover.Psdc.Parsing;
-using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
 namespace Scover.Psdc.StaticAnalysis;
 
 public readonly record struct SemanticMetadata(Scope Scope, SourceTokens SourceTokens);
 
-interface SemanticCallNode : SemanticNode
-{
-    public Identifier Name { get; }
-    public IReadOnlyList<ParameterActual> Parameters { get; }
-}
-
-interface SemanticBracketedExpressionNode : Expression
-{
-    public Expression ContainedExpression { get; }
-}
-
 public interface SemanticNode
 {
     SemanticMetadata Meta { get; }
+
+    internal interface Call : SemanticNode
+    {
+        public Identifier Name { get; }
+        public IReadOnlyList<ParameterActual> Parameters { get; }
+    }
+
+    internal interface BracketedExpression : Expression
+    {
+        public Expression ContainedExpression { get; }
+    }
 
     public sealed record Algorithm(SemanticMetadata Meta,
         Identifier Name,
@@ -169,7 +168,7 @@ public interface SemanticNode
         internal sealed record ProcedureCall(SemanticMetadata Meta,
             Identifier Name,
             IReadOnlyList<ParameterActual> Parameters)
-        : Statement, SemanticCallNode;
+        : Statement, Call;
 
         internal sealed record RepeatLoop(SemanticMetadata Meta,
             Expression Condition,
@@ -218,9 +217,9 @@ public interface SemanticNode
             internal new sealed record Bracketed(SemanticMetadata Meta,
                 Lvalue ContainedLValue,
                 Value Value)
-            : Lvalue, SemanticBracketedExpressionNode
+            : Lvalue, BracketedExpression
             {
-                Expression SemanticBracketedExpressionNode.ContainedExpression => ContainedLValue;
+                Expression BracketedExpression.ContainedExpression => ContainedLValue;
             }
 
             internal sealed record ArraySubscript(SemanticMetadata Meta,
@@ -257,12 +256,12 @@ public interface SemanticNode
             Identifier Name,
             IReadOnlyList<ParameterActual> Parameters,
             Value Value)
-        : Expression, SemanticCallNode;
+        : Expression, Call;
 
         internal sealed record Bracketed(SemanticMetadata Meta,
             Expression ContainedExpression,
             Value Value)
-        : Expression, SemanticBracketedExpressionNode;
+        : Expression, BracketedExpression;
 
         internal sealed record Literal(SemanticMetadata Meta,
             IConvertible UnderlyingValue,

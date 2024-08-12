@@ -318,13 +318,13 @@ sealed partial class CodeGenerator(Messenger messenger, Algorithm astRoot)
     }
 
     StringBuilder AppendBracketedExpression(StringBuilder o, Expression left)
-     => AppendExpression(o, left, left is not BracketedExpressionNode);
+     => AppendExpression(o, left, left is not BracketedExpression);
 
     StringBuilder AppendExpression(StringBuilder o, Expression left) => AppendExpression(o, left, false);
     
     StringBuilder AppendExpression(StringBuilder o, Expression left, bool bracket) => AppendBracketed(o, bracket, o => {
         _ = left switch {
-            SemanticBracketedExpressionNode b => AppendExpression(o, b.ContainedExpression, !bracket),
+            BracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracket),
             Expression.FunctionCall call => AppendCall(o, call),
             Expression.Literal { Value: CharacterValue v } => o.Append($"'{v.Status.Comptime.Unwrap().ToString(CultureInfo.InvariantCulture)}'"),
             Expression.Literal { Value: BooleanValue v } => AppendLiteralBoolean(v.Status.Comptime.Unwrap()),
@@ -387,7 +387,7 @@ sealed partial class CodeGenerator(Messenger messenger, Algorithm astRoot)
 
     #region Helpers
 
-    StringBuilder AppendCall(StringBuilder o, SemanticCallNode call)
+    StringBuilder AppendCall(StringBuilder o, Call call)
     {
         const string ParameterSeparator = ", ";
 

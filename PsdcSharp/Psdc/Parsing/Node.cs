@@ -5,25 +5,25 @@ using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Parsing;
 
-interface CallNode : Node
-{
-    public Identifier Name { get; }
-    public IReadOnlyList<ParameterActual> Parameters { get; }
-}
-
-interface AliasReferenceNode : Node
-{
-    public Identifier Name { get; }
-}
-
-interface BracketedExpressionNode : Node.Expression
-{
-    public Expression ContainedExpression { get; }
-}
-
 public interface Node : EquatableSemantics<Node>
 {
     SourceTokens SourceTokens { get; }
+
+    internal interface Call : Node
+    {
+        public Identifier Name { get; }
+        public IReadOnlyList<ParameterActual> Parameters { get; }
+    }
+
+    internal interface AliasReferenceType : Node
+    {
+        public Identifier Name { get; }
+    }
+
+    internal interface BracketedExpression : Expression
+    {
+        public Expression ContainedExpression { get; }
+    }
 
     public sealed record Algorithm(SourceTokens SourceTokens, Identifier Name, IReadOnlyList<Declaration> Declarations) : Node
     {
@@ -310,7 +310,7 @@ public interface Node : EquatableSemantics<Node>
         internal sealed record ProcedureCall(SourceTokens SourceTokens,
             Identifier Name,
             IReadOnlyList<ParameterActual> Parameters)
-        : Statement, CallNode
+        : Statement, Call
         {
             public bool SemanticsEqual(Node other) => other is ProcedureCall o
              && o.Name.SemanticsEqual(Name)
@@ -392,16 +392,16 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed new record Bracketed
-            : Lvalue, BracketedExpressionNode
+            : Lvalue, BracketedExpression
             {
                 public Bracketed(SourceTokens sourceTokens,
                 Lvalue lvalue) => (SourceTokens, ContainedLvalue) = (sourceTokens,
-                    lvalue is BracketedExpressionNode b
+                    lvalue is BracketedExpression b
                     && b.ContainedExpression is Lvalue l
                     ? l : lvalue);
                 public SourceTokens SourceTokens { get; }
                 public Lvalue ContainedLvalue { get; }
-                Expression BracketedExpressionNode.ContainedExpression => ContainedLvalue;
+                Expression BracketedExpression.ContainedExpression => ContainedLvalue;
 
                 public bool SemanticsEqual(Node other) => other is Bracketed o
                  && o.ContainedLvalue.SemanticsEqual(ContainedLvalue);
@@ -459,7 +459,7 @@ public interface Node : EquatableSemantics<Node>
         internal sealed record FunctionCall(SourceTokens SourceTokens,
             Identifier Name,
             IReadOnlyList<ParameterActual> Parameters)
-        : Expression, CallNode
+        : Expression, Call
         {
             public bool SemanticsEqual(Node other) => other is FunctionCall o
              && o.Name.SemanticsEqual(Name)
@@ -467,11 +467,11 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record Bracketed
-        : BracketedExpressionNode
+        : BracketedExpression
         {
             public Bracketed(SourceTokens sourceTokens,
             Expression expr) => (SourceTokens, ContainedExpression) = (sourceTokens,
-                expr is BracketedExpressionNode b ? b.ContainedExpression : expr);
+                expr is BracketedExpression b ? b.ContainedExpression : expr);
             public SourceTokens SourceTokens { get; }
             public Expression ContainedExpression { get; }
 
@@ -538,7 +538,7 @@ public interface Node : EquatableSemantics<Node>
     {
         internal sealed record AliasReference(SourceTokens SourceTokens,
             Identifier Name)
-        : Type, AliasReferenceNode
+        : Type, Node.AliasReferenceType
         {
             public bool SemanticsEqual(Node other) => other is AliasReference o
              && o.Name.SemanticsEqual(Name);
@@ -594,7 +594,7 @@ public interface Node : EquatableSemantics<Node>
 
             internal sealed new record AliasReference(SourceTokens SourceTokens,
                 Identifier name)
-            : Complete, AliasReferenceNode
+            : Complete, Node.AliasReferenceType
             {
                 public Identifier Name => name;
 

@@ -306,7 +306,7 @@ public sealed class StaticAnalyzer
         }
     }
 
-    Option<TSymbol> DiagnoseCall<TSymbol>(Scope scope, CallNode call) where TSymbol : Symbol.Callable
+    Option<TSymbol> DiagnoseCall<TSymbol>(Scope scope, Node.Call call) where TSymbol : Symbol.Callable
     {
         var callable = scope.GetSymbol<TSymbol>(call.Name).DropError(_msger.Report);
         callable.Tap(callable => {
@@ -657,7 +657,7 @@ public sealed class StaticAnalyzer
     }
 
     internal EvaluatedType EvaluateType(Scope scope, Node.Type type) => type switch {
-        AliasReferenceNode alias
+        Node.AliasReferenceType alias
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).DropError(_msger.Report)
                 .Map(aliasType => aliasType.Type.ToAliasReference(alias.Name))
             .ValueOr(UnknownType.Declared(_msger.Input, type)),

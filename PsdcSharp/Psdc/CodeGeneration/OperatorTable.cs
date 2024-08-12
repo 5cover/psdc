@@ -1,5 +1,4 @@
 using Scover.Psdc.Language;
-using Scover.Psdc.Parsing;
 
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 using static Scover.Psdc.Language.Associativity;
@@ -19,7 +18,7 @@ abstract class OperatorTable
          Expression.UnaryOperation opUn => Get(opUn.Operator).Precedence,
          Expression.Lvalue.ArraySubscript => ArraySubscript.Precedence,
          Expression.Lvalue.ComponentAccess => ComponentAccess.Precedence,
-         Expression.Lvalue.VariableReference or Expression.Literal or BracketedExpressionNode => int.MinValue,
+         Expression.Lvalue.VariableReference or Expression.Literal or BracketedExpression => int.MinValue,
          _ => throw expr.ToUnmatchedException(),
      };
 

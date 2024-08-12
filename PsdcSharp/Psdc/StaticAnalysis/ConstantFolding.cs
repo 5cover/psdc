@@ -100,7 +100,7 @@ static class ConstantFolding
         (Divide, IntegerValue l, IntegerValue r) => Operate(l.Status, r.Status,
             (Option<int> l, Option<int> r) => l.Zip(r).Map((l, r) => r == 0
                 ? OperationResult.OkBinary(IntegerType.Instance.RuntimeValue)
-                    .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.SourceTokens))
+                    .WithMessages((opBin, _, _) => Message.WarningDivisionByZero(opBin.SourceTokens))
                 : OperationResult.OkBinary(IntegerType.Instance.Instantiate(l / r)))
             .ValueOr(OperationResult.OkBinary(IntegerType.Instance.RuntimeValue))),
         (Divide, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l / r),
