@@ -15,7 +15,7 @@ partial class Parser
     static Parser<T> ParserReturn<T>(int tokenCount, Func<SourceTokens, T> makeNode) where T : Node
          => tokens => ParseResult.Ok(makeNode(new(tokens, tokenCount)));
 
-    static Parser<T> ParserReturn<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
+    static Parser<T> ParserReturn1<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
          => tokens => ParseResult.Ok(makeNodeWithValue(new(tokens, 1), tokens.First().Value.NotNull()));
 
     static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, Parser<T>? fallback = null)
@@ -32,7 +32,7 @@ partial class Parser
     /// <summary>
     /// Returns the result of the first successful parser, or the combined error of all parsers.
     /// </summary>
-    /// <typeparam name="T">The type of node to parse.</typeparam>
+    /// <typeparam name="T"/>The type of node to parse.</typeparam>
     /// <param name="firstParser">The first parser.</param>
     /// <param name="parsers">The other parsers.</param>
     /// <returns>The result of the first successful parsers or the error of all parsers combined.</returns>

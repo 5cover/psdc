@@ -3,8 +3,8 @@ namespace Scover.Psdc.Library;
 /// <summary>
 /// Aggregates a read-only map and an equivalent list usable for sequential access
 /// </summary>
-/// <typeparam name="TKey">The map key type</typeparam>
-/// <typeparam name="TValue">The map value type</typeparam>
+/// <typeparam name="TKey"/>The map key type</typeparam>
+/// <typeparam name="TValue"/>The map value type</typeparam>
 sealed class OrderedMap<TKey, TValue>
 where TKey : notnull
 {

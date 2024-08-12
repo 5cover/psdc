@@ -11,8 +11,7 @@ $$
 
 &⟨Declaration⟩ \to \begin{Bmatrix*}[l]
     ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \\
-    ⟨DeclarationCompleteTypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨TypeComplete⟩ \\
-    ⟨DeclarationConstant⟩ \to \text{constante} ⟨TypeComplete⟩ Identifier \text{:=} ⟨Expr⟩\text{;} \\
+    ⟨DeclarationConstant⟩ \to \text{constante} ⟨Type⟩ Identifier \text{:=} ⟨Expr⟩\text{;} \\
     ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin} \\
     ⟨FunctionDeclaration⟩ \to ⟨FunctionSignature⟩ \text{;} \\
     ⟨FunctionDefinition⟩ \to ⟨FunctionSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
@@ -191,23 +190,16 @@ $$
 \\\\&\textbf{Types} \\
 
 &⟨Type⟩ \to \begin{Bmatrix*}[l]
-    ⟨TypeComplete⟩ \\
-    ⟨TypeAliasReference⟩ \to Identifier \\
-    ⟨String⟩ \to \text{chaîne} \\
-\end{Bmatrix*}
-\\
-&⟨TypeComplete⟩ \to \begin{Bmatrix*}[l]
-    ⟨TypeCompleteAliasReference⟩ \to Identifier \\
-    ⟨TypeNumeric⟩ \to \begin{Bmatrix*}[l]
-        \text{booléen} \\
-        \text{caractère} \\
-        \text{entier} \\
-        \text{réel} \\
-    \end{Bmatrix*} \\
+    ⟨AliasReference⟩ \to Identifier \\
+    ⟨Array⟩ \to \text{tableau} \begin{pmatrix}\text{[}⟨Expr⟩\text{]}\end{pmatrix}^+ \text{de} ⟨Type⟩ \\
+    ⟨Boolean⟩ \to \text{booléen} \\
+    ⟨Character⟩ \to \text{caractère} \\
     ⟨File⟩ \to \text{nomFichierLog} \\
+    ⟨Integer⟩ \to \text{entier} \\
+    ⟨Real⟩ \to \text{réel} \\
+    ⟨String⟩ \to \text{chaîne} \\
     ⟨StringLengthed⟩ \to \text{chaîne}\text{(}⟨Expr⟩\text{)} \\
     ⟨Structure⟩ \to \text{structure\ début} \begin{pmatrix}⟨VariableDeclaration⟩\text{;}\end{pmatrix}^+ \text{fin} \\
-    ⟨TypeArray⟩ \to \text{tableau} \begin{pmatrix}\text{[}⟨Expr⟩\text{]}\end{pmatrix}^+ \text{de} ⟨TypeComplete⟩ \\
 \end{Bmatrix*}
 
 \\\\&\textbf{Other} \\
@@ -216,7 +208,7 @@ $$
     \text{entF} \\
     \text{sortF} \\
     \text{entF/sortF} \\
-\end{Bmatrix*}Identifier\text{:}⟨CompleteType⟩
+\end{Bmatrix*}Identifier\text{:}⟨Type⟩
 \\
 &⟨ParameterActual⟩ \to \begin{Bmatrix*}[l]
     \text{entE} \\
@@ -224,7 +216,7 @@ $$
     \text{entE/sortE} \\
 \end{Bmatrix*}⟨Expr⟩
 \\
-&⟨VariableDeclaration⟩ \to Identifier^{+\#}\text{:}⟨CompleteType⟩
+&⟨VariableDeclaration⟩ \to Identifier^{+\#}\text{:}⟨Type⟩
 \\
 &⟨FunctionSignature⟩ \to \text{fonction}\ Identifier\text{(}⟨ParameterFormal⟩^{*\#}\text{)} \text{délivre} ⟨Type⟩
 \\

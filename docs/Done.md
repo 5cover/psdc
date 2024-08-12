@@ -1564,3 +1564,9 @@ There's no need to. We want to allow identifiers only differing by accentuation.
 ## remove `Value<TUnderlying>`
 
 it makes no sense to use it; we could have a two types of value coincidentally using the same underlying time.
+
+## \[in]complete types are unnecessary
+
+there's no need; a `char const*` can represent an unlengthed string without problems.
+
+get rid of type.complete and aliasreferencenode

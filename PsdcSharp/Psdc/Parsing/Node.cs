@@ -15,11 +15,6 @@ public interface Node : EquatableSemantics<Node>
         public IReadOnlyList<ParameterActual> Parameters { get; }
     }
 
-    internal interface AliasReferenceType : Node
-    {
-        public Identifier Name { get; }
-    }
-
     internal interface BracketedExpression : Expression
     {
         public Expression ContainedExpression { get; }
@@ -48,16 +43,6 @@ public interface Node : EquatableSemantics<Node>
         : Declaration
         {
             public bool SemanticsEqual(Node other) => other is TypeAlias o
-             && o.Name.SemanticsEqual(Name)
-             && o.Type.SemanticsEqual(Type);
-        }
-
-        internal sealed record CompleteTypeAlias(SourceTokens SourceTokens,
-            Identifier Name,
-            Type.Complete Type)
-        : Declaration
-        {
-            public bool SemanticsEqual(Node other) => other is CompleteTypeAlias o
              && o.Name.SemanticsEqual(Name)
              && o.Type.SemanticsEqual(Type);
         }
@@ -538,7 +523,7 @@ public interface Node : EquatableSemantics<Node>
     {
         internal sealed record AliasReference(SourceTokens SourceTokens,
             Identifier Name)
-        : Type, Node.AliasReferenceType
+        : Type
         {
             public bool SemanticsEqual(Node other) => other is AliasReference o
              && o.Name.SemanticsEqual(Name);
@@ -550,73 +535,60 @@ public interface Node : EquatableSemantics<Node>
             public bool SemanticsEqual(Node other) => other is String;
         }
 
-        internal interface Complete : Type
+        internal sealed record Array(SourceTokens SourceTokens,
+            Type Type,
+            IReadOnlyList<Expression> Dimensions)
+        : Type
         {
-            internal sealed record Array(SourceTokens SourceTokens,
-                Type Type,
-                IReadOnlyList<Expression> Dimensions)
-            : Complete
-            {
-                public bool SemanticsEqual(Node other) => other is Array o
-                 && o.Type.SemanticsEqual(Type)
-                 && o.Dimensions.AllSemanticsEqual(Dimensions);
-            }
+            public bool SemanticsEqual(Node other) => other is Array o
+             && o.Type.SemanticsEqual(Type)
+             && o.Dimensions.AllSemanticsEqual(Dimensions);
+        }
 
-            internal sealed record File(SourceTokens SourceTokens)
-            : Complete
-            {
-                public bool SemanticsEqual(Node other) => other is File;
-            }
+        internal sealed record File(SourceTokens SourceTokens)
+        : Type
+        {
+            public bool SemanticsEqual(Node other) => other is File;
+        }
 
-            internal sealed record Character(SourceTokens SourceTokens)
-             : Complete
-            {
-                public bool SemanticsEqual(Node other) => other is Character;
-            }
+        internal sealed record Character(SourceTokens SourceTokens)
+        : Type
+        {
+            public bool SemanticsEqual(Node other) => other is Character;
+        }
 
-            internal sealed record Boolean(SourceTokens SourceTokens)
-             : Complete
-            {
-                public bool SemanticsEqual(Node other) => other is Boolean;
-            }
+        internal sealed record Boolean(SourceTokens SourceTokens)
+        : Type
+        {
+            public bool SemanticsEqual(Node other) => other is Boolean;
+        }
 
-            internal sealed record Integer(SourceTokens SourceTokens)
-             : Complete
-            {
-                public bool SemanticsEqual(Node other) => other is Integer;
-            }
+        internal sealed record Integer(SourceTokens SourceTokens)
+        : Type
+        {
+            public bool SemanticsEqual(Node other) => other is Integer;
+        }
 
-            internal sealed record Real(SourceTokens SourceTokens)
-             : Complete
-            {
-                public bool SemanticsEqual(Node other) => other is Real;
-            }
+        internal sealed record Real(SourceTokens SourceTokens)
+        : Type
+        {
+            public bool SemanticsEqual(Node other) => other is Real;
+        }
 
-            internal sealed new record AliasReference(SourceTokens SourceTokens,
-                Identifier name)
-            : Complete, Node.AliasReferenceType
-            {
-                public Identifier Name => name;
+        internal sealed record LengthedString(SourceTokens SourceTokens,
+            Expression Length)
+        : Type
+        {
+            public bool SemanticsEqual(Node other) => other is LengthedString o
+             && o.Length.SemanticsEqual(Length);
+        }
 
-                public bool SemanticsEqual(Node other) => other is AliasReference o
-                 && o.Name.SemanticsEqual(Name);
-            }
-
-            internal sealed record LengthedString(SourceTokens SourceTokens,
-                Expression Length)
-            : Complete
-            {
-                public bool SemanticsEqual(Node other) => other is LengthedString o
-                 && o.Length.SemanticsEqual(Length);
-            }
-
-            internal sealed record Structure(SourceTokens SourceTokens,
-                IReadOnlyList<VariableDeclaration> Components)
-            : Complete
-            {
-                public bool SemanticsEqual(Node other) => other is Structure o
-                 && o.Components.AllSemanticsEqual(Components);
-            }
+        internal sealed record Structure(SourceTokens SourceTokens,
+            IReadOnlyList<VariableDeclaration> Components)
+        : Type
+        {
+            public bool SemanticsEqual(Node other) => other is Structure o
+             && o.Components.AllSemanticsEqual(Components);
         }
     }
 
@@ -663,7 +635,7 @@ public interface Node : EquatableSemantics<Node>
 
     internal sealed record VariableDeclaration(SourceTokens SourceTokens,
         IReadOnlyList<Identifier> Names,
-        Type.Complete Type)
+        Type Type)
     : Node
     {
         public bool SemanticsEqual(Node other) => other is VariableDeclaration o
@@ -712,8 +684,8 @@ public interface Node : EquatableSemantics<Node>
         public sealed record Add(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "ET");
         public sealed record And(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "/");
         public sealed record Divide(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "==");
-        public sealed record Equal(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, ">");
-        public sealed record GreaterThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, ">=");
+        public sealed record Equal(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "/>");
+        public sealed record GreaterThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "/>=");
         public sealed record GreaterThanOrEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "<");
         public sealed record LessThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "<=");
         public sealed record LessThanOrEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "-");

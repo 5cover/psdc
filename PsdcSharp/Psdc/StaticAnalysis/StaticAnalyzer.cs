@@ -657,29 +657,29 @@ public sealed class StaticAnalyzer
     }
 
     internal EvaluatedType EvaluateType(Scope scope, Node.Type type) => type switch {
-        Node.AliasReferenceType alias
+        Node.Type.AliasReference alias
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).DropError(_msger.Report)
                 .Map(aliasType => aliasType.Type.ToAliasReference(alias.Name))
             .ValueOr(UnknownType.Declared(_msger.Input, type)),
-        Node.Type.Complete.Array array => EvaluateArrayType(scope, array),
-        Node.Type.Complete.Boolean => BooleanType.Instance,
-        Node.Type.Complete.Character => CharacterType.Instance,
-        Node.Type.Complete.File file => FileType.Instance,
-        Node.Type.Complete.Integer p => IntegerType.Instance,
-        Node.Type.Complete.LengthedString str => EvaluateLengthedStringType(scope, str),
-        Node.Type.Complete.Real p => RealType.Instance,
-        Node.Type.Complete.Structure structure => EvaluateStructureType(scope, structure),
+        Node.Type.Array array => EvaluateArrayType(scope, array),
+        Node.Type.Boolean => BooleanType.Instance,
+        Node.Type.Character => CharacterType.Instance,
+        Node.Type.File file => FileType.Instance,
+        Node.Type.Integer p => IntegerType.Instance,
+        Node.Type.LengthedString str => EvaluateLengthedStringType(scope, str),
+        Node.Type.Real p => RealType.Instance,
+        Node.Type.Structure structure => EvaluateStructureType(scope, structure),
         Node.Type.String => StringType.Instance,
         _ => throw type.ToUnmatchedException(),
     };
 
-    EvaluatedType EvaluateLengthedStringType(Scope scope, Node.Type.Complete.LengthedString str)
+    EvaluatedType EvaluateLengthedStringType(Scope scope, Node.Type.LengthedString str)
      => GetConstantExpression<IntegerType, int>(IntegerType.Instance, scope, str.Length)
         .DropError(_msger.Report)
         .Map(LengthedStringType.Create)
         .ValueOr<EvaluatedType>(UnknownType.Declared(_msger.Input, str));
 
-    EvaluatedType EvaluateArrayType(Scope scope, Node.Type.Complete.Array array)
+    EvaluatedType EvaluateArrayType(Scope scope, Node.Type.Array array)
      => array.Dimensions.Select(d => GetConstantExpression<IntegerType, int>(IntegerType.Instance, scope, d)).Sequence()
         .DropError(Function.Foreach<Message>(_msger.Report))
         .Map(values => new ArrayType(EvaluateType(scope, array.Type), values))
@@ -702,7 +702,7 @@ public sealed class StaticAnalyzer
             : Message.ErrorExpressionHasWrongType(expr.SourceTokens, type, sexpr.Value.Type).None<ConstantExpression<TUnderlying>, Message>();
     }
 
-    StructureType EvaluateStructureType(Scope scope, Node.Type.Complete.Structure structure)
+    StructureType EvaluateStructureType(Scope scope, Node.Type.Structure structure)
     {
         Dictionary<Identifier, EvaluatedType> componentsMap = [];
         List<KeyValuePair<Identifier, EvaluatedType>> componentsList = [];

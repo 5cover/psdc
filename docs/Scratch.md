@@ -489,13 +489,3 @@ ALSO IT WOULD BE NICE NOT TO HAVE TO PASS THE UNDERLYING TYPE ARGUMENT EVERYWHER
 ## add a new kind of evaluated type abstract value
 
 EvaluatedType.InvalidValue - to use instead of GarbageValue when the expression or initializer is semantically invalid and won't work in the target langage.
-
-## \[in]complete types are unnecessary
-
-there's no need; a `char const*` can represent an unlengthed string without problems.
-
-get rid of type.complete and aliasreferencenode
-
-## composite Message
-
-so we don't have to .Yield() everywhere

@@ -10,7 +10,7 @@ namespace Scover.Psdc.Parsing;
 
 public sealed partial class Parser
 {
-    readonly IReadOnlyDictionary<TokenType, Parser<Type.Complete>> _completeTypeParsers;
+    readonly IReadOnlyDictionary<TokenType, Parser<Type>> _typeParsers;
     readonly IReadOnlyDictionary<TokenType, Parser<Declaration>> _declarationParsers;
     readonly IReadOnlyDictionary<TokenType, Parser<Statement>> _statementParsers;
 
@@ -40,15 +40,15 @@ public sealed partial class Parser
             [Punctuation.Semicolon] = ParseNop,
         };
 
-        _completeTypeParsers = new Dictionary<TokenType, Parser<Type.Complete>> {
-            [Keyword.Integer] = ParserReturn(1, t => new Type.Complete.Integer(t)),
-            [Keyword.Real] = ParserReturn(1, t => new Type.Complete.Real(t)),
-            [Keyword.Character] = ParserReturn(1, t => new Type.Complete.Character(t)),
-            [Keyword.Boolean] = ParserReturn(1, t => new Type.Complete.Boolean(t)),
-            [Keyword.File] = ParserReturn(1, t => new Type.Complete.File(t)),
-            [Keyword.String] = ParseTypeLengthedString,
+        _typeParsers = new Dictionary<TokenType, Parser<Type>> {
+            [Keyword.Integer] = ParserReturn(1, t => new Type.Integer(t)),
+            [Keyword.Real] = ParserReturn(1, t => new Type.Real(t)),
+            [Keyword.Character] = ParserReturn(1, t => new Type.Character(t)),
+            [Keyword.Boolean] = ParserReturn(1, t => new Type.Boolean(t)),
+            [Keyword.File] = ParserReturn(1, t => new Type.File(t)),
+            [Keyword.String] = ParseTypeString,
             [Keyword.Array] = ParseTypeArray,
-            [Valued.Identifier] = ParserReturn((t, val) => new Type.Complete.AliasReference(t, new(t, val))),
+            [Valued.Identifier] = ParserReturn1((t, val) => new Type.AliasReference(t, new(t, val))),
             [Keyword.Structure] = ParseTypeStructure,
         };
 
@@ -92,9 +92,6 @@ public sealed partial class Parser
         [Eof])
         .MapResult(t => new Algorithm(t, name, declarations));
 
-    ParseResult<Type> ParseType(IEnumerable<Token> tokens)
-     => ParserFirst<Type>(ParseTypeComplete, ParseTypeAliasReference, ParseTypeString)(tokens);
-
     #region Declarations
 
     ParseResult<Declaration.TypeAlias> ParseAliasDeclaration(IEnumerable<Token> tokens)
@@ -125,7 +122,7 @@ public sealed partial class Parser
         .ParseToken(Keyword.Delivers)
         .Parse(out var returnType, ParseType)
         .Get(out var signature, t => new FunctionSignature(t, name, parameters, returnType))
-        .ChooseBranch<Declaration>(out var branch, new() {
+        .Switch<Declaration>(out var branch, new() {
             [Punctuation.Semicolon] = o => (o, t => new Declaration.Function(t, signature)),
             [Keyword.Is] = o
              => (o.ParseToken(Keyword.Begin)
@@ -150,7 +147,7 @@ public sealed partial class Parser
         .ParseToken(Punctuation.LParen)
         .ParseZeroOrMoreSeparated(out var parameters, ParseParameterFormal, Punctuation.Comma, Punctuation.RParen)
         .Get(out var signature, t => new ProcedureSignature(t, name, parameters))
-        .ChooseBranch<Declaration>(out var branch, new() {
+        .Switch<Declaration>(out var branch, new() {
             [Punctuation.Semicolon] = o => (o, t => new Declaration.Procedure(t, signature)),
             [Keyword.Is] = o
              => (o.ParseToken(Keyword.Begin)
@@ -204,7 +201,7 @@ public sealed partial class Parser
 
     ParseResult<Statement> ParseBuiltin(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "builtin procedure call")
-        .ChooseBranch<Statement.Builtin>(out var branch, new() {
+        .Switch<Statement.Builtin>(out var branch, new() {
             [Keyword.EcrireEcran] = o
              => (o.ParseZeroOrMoreSeparated(out var arguments, ParseExpression,
                     Punctuation.Comma, Punctuation.RParen, readEndToken: false),
@@ -366,37 +363,36 @@ public sealed partial class Parser
 
     #region Types
 
-    ParseResult<Type.AliasReference> ParseTypeAliasReference(IEnumerable<Token> tokens)
+    ParseResult<Type> ParseTypeAliasReference(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "type alias reference")
         .Parse(out var name, ParseIdentifier)
         .MapResult(t => new Type.AliasReference(t, name));
 
-    ParseResult<Type.Complete.Array> ParseTypeArray(IEnumerable<Token> tokens)
+    ParseResult<Type> ParseTypeArray(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "array type")
         .ParseToken(Keyword.Array)
         .ParseToken(Punctuation.LBracket)
         .ParseOneOrMoreSeparated(out var dimensions, ParseExpression, Punctuation.Comma, Punctuation.RBracket)
         .ParseToken(Keyword.From)
-        .Parse(out var type, ParseTypeComplete)
-        .MapResult(t => new Type.Complete.Array(t, type, dimensions));
+        .Parse(out var type, ParseType)
+        .MapResult(t => new Type.Array(t, type, dimensions));
 
-    ParseResult<Type.Complete> ParseTypeComplete(IEnumerable<Token> tokens)
-     => ParseByTokenType(tokens, "complete type", _completeTypeParsers);
+    ParseResult<Type> ParseType(IEnumerable<Token> tokens)
+     => ParseByTokenType(tokens, "type", _typeParsers);
 
-    ParseResult<Type.Complete.LengthedString> ParseTypeLengthedString(IEnumerable<Token> tokens)
+    ParseResult<Type> ParseTypeString(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "string type")
         .ParseToken(Keyword.String)
-        .ParseToken(Punctuation.LParen)
-        .Parse(out var length, ParseExpression)
-        .ParseToken(Punctuation.RParen)
-        .MapResult(t => new Type.Complete.LengthedString(t, length));
+        .Switch<Type>(out var branch, new() {
+            [Punctuation.LParen] = o => (o
+                .Parse(out var length, ParseExpression)
+                .ParseToken(Punctuation.RParen),
+                t => new Type.LengthedString(t, length))
+        }, o => (o, t => new Type.String(t)))
+        .Fork(out var result, branch)
+        .MapResult(result);
 
-    ParseResult<Type.String> ParseTypeString(IEnumerable<Token> tokens)
-     => ParseOperation.Start(_msger, tokens, "string type")
-        .ParseToken(Keyword.String)
-        .MapResult(t => new Type.String(t));
-
-    ParseResult<Type.Complete.Structure> ParseTypeStructure(IEnumerable<Token> tokens)
+    ParseResult<Type> ParseTypeStructure(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "structure type")
         .ParseToken(Keyword.Structure)
         .ParseToken(Keyword.Begin)
@@ -405,7 +401,7 @@ public sealed partial class Parser
             .ParseToken(Punctuation.Semicolon)
             .GetResult(_ => varDecl), [Keyword.End])
         .ParseToken(Keyword.End)
-        .MapResult(t => new Type.Complete.Structure(t, varDecls));
+        .MapResult(t => new Type.Structure(t, varDecls));
 
     #endregion Types
 
@@ -459,7 +455,7 @@ public sealed partial class Parser
     ParseResult<VariableDeclaration> ParseVariableDeclaration(IEnumerable<Token> tokens, string production)
      => ParseOperation.Start(_msger, tokens, production)
         .ParseOneOrMoreSeparated(out var names, ParseIdentifier, Punctuation.Comma, Punctuation.Colon)
-        .Parse(out var type, ParseTypeComplete)
+        .Parse(out var type, ParseType)
         .MapResult(t => new VariableDeclaration(t, names, type));
 
     #endregion Other

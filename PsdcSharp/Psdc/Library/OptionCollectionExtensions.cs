@@ -5,8 +5,8 @@ static class OptionCollectionExtensions
     /// <summary>
     /// Transform a list of optionals into an optional containing a list of values.
     /// </summary>
-    /// <typeparam name="T">The value type.</typeparam>
-    /// <typeparam name="TError">The error type.</typeparam>
+    /// <typeparam name="T"/>The value type.</typeparam>
+    /// <typeparam name="TError"/>The error type.</typeparam>
     /// <param name="options">The list of optionals.</param>
     /// <returns>If all the optionals contain values, the result is an optional containing a list of those values. If any of the optionals are erroneous, the result is an erroneous optional containing all the errors.</returns>
     public static ValueOption<IReadOnlyList<T>, IReadOnlyList<TError>> Sequence<T, TError>(this IEnumerable<Option<T, TError>> options)
@@ -29,7 +29,7 @@ static class OptionCollectionExtensions
     /// <summary>
     /// Transform a list of optionals into an optional containing a list of values.
     /// </summary>
-    /// <typeparam name="T">The value type.</typeparam>
+    /// <typeparam name="T"/>The value type.</typeparam>
     /// <param name="options">The list of optionals.</param>
     /// <returns>If all the optionals contain values, the result is an optional containing a list of those values. If any of the optionals are empty, the result is an empty optional.</returns>
     public static ValueOption<IReadOnlyList<T>> Sequence<T>(this IEnumerable<Option<T>> options)
