@@ -155,8 +155,11 @@ static class Extensions
         return t;
     }
 
-    public static Option<bool> NextIsOfType(this IEnumerable<Token> tokens, params TokenType[] types)
-         => tokens.FirstOrNone().Map(token => types.Contains(token.Type));
+    public static ValueOption<bool> NextIsOfType(this IEnumerable<Token> tokens, IReadOnlySet<TokenType> types)
+     => tokens.FirstOrNone().Map(token => types.Contains(token.Type));
+
+    public static ValueOption<bool> NextIsOfType(this IEnumerable<Token> tokens, TokenType type)
+     => tokens.FirstOrNone().Map(token => type.Equals(token.Type));
 
     /// <summary>Asserts that <paramref name="t" /> isn't <see langword="null" />.</summary>
     /// <remarks>This is a safer replacement for the null-forgiving operator (<c>!</c>).</remarks>

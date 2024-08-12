@@ -373,6 +373,17 @@ And what happens if we return a file or pass it to a function/procedure. We shou
 
 Also what happens of closing the file occurs in a if statement? How do we know for sure it's been closed? Can we analyze the truthfulness of the condition? You can push static analysis further and further to support scenarios that are unlikely to happen in real code anyway. It's difficult to implement. I won't do that.
 
+## thoughts on parser blocks
+
+Interesting idea, avoids having to create meaningless `ParseOperation`s. Needs overloads.
+
+Parser blocks are useful when 2 conditions are met:
+
+- We don't use the produced `SourceTokens` (discard it in the result)
+- The production name is the same
+
+In any case, it's only really useful for optimization and DRY. So low priority.
+
 ## code formatting
 
 Explicit non-default access modifiers everywhere, remove them if default.
