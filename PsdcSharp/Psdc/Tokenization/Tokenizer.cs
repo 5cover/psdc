@@ -44,7 +44,7 @@ public sealed class Tokenizer
                 continue;
             }
 
-            Option<Token> token = t.ReadToken(ref index);
+            var token = t.ReadToken(ref index);
 
             if (token.HasValue) {
                 t.ReportAnyUnknownToken(ref invalidStart, index);
@@ -73,7 +73,7 @@ public sealed class Tokenizer
         }
     }
 
-    Option<Token> ReadToken(ref int offset)
+    ValueOption<Token> ReadToken(ref int offset)
     {
         foreach (var rule in rules) {
             var token = rule.Extract(_code, offset);
@@ -82,6 +82,6 @@ public sealed class Tokenizer
                 return token;
             }
         }
-        return Option.None<Token>();
+        return default;
     }
 }

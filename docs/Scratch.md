@@ -469,21 +469,3 @@ Tests (increasing complexity):
 - Array > Structure constant
 
 Generate it with Mistral.
-
-## Use ValueOption when returning an option
-
-This makes the syntax more concise. No need to call .Some() or .None(), especially the later which requires a generic argument, so the payload type is restated.
-
-## redesign values
-
-so constant vales are supported in the type system so we don't have to unwrap the optional for literals
-
-implement generic math interfaces and use them in constant folding so we can check if a type supports addition (for for loop variant type check)
-
-or maybe have a type comparer like EvaluatedType.SupportsOperator({BinaryOperator, UnaryOperator})
-
-or maybe use constantexpression for literals
-
-redesign, constantexpression is not needed since we have semantic nodes now.
-
-Make `ConstantValue<TType, TUnderlying>` : implements `Value<TType, TUnderlying>` but status is a `ValueStatus.Comptime<TUnderlying>`.

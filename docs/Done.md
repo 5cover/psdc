@@ -1580,3 +1580,7 @@ EvaluatedType.InvalidValue - to use instead of GarbageValue when the expression 
 Currently, we parse it to an unary minus operation on an integer literal. This works, except when collapsing the value in alter.
 
 Add syntax for a negative integer literal.
+
+## Use ValueOption when returning an option
+
+This makes the syntax more concise. No need to call .Some() or .None(), especially the later which requires a generic argument, so the payload type is restated.

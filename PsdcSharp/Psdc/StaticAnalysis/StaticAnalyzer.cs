@@ -370,7 +370,7 @@ public sealed class StaticAnalyzer
                                 .Must(d => d.Index.Count == dimensions.Length,
                                     d => Message.ErrorIndexWrongRank(d.Meta.SourceTokens, d.Index.Count, dimensions.Length).Yield())
                                 .Bind(d => d.Index
-                                    .Select(i => GetConstantValue<IntegerType, int>(IntegerType.Instance, i).O)
+                                    .Select(i => GetConstantValue<IntegerType, int>(IntegerType.Instance, i))
                                     .Sequence())
                                 .Map(i => {
                                     var flatIndex = i.Select(i => i - 1)
@@ -389,7 +389,7 @@ public sealed class StaticAnalyzer
                                     _msger.Report(Message.ErrorIndexOutOfBounds(sitem.Meta.SourceTokens,
                                         GetOutOfBoundsDimIndexProblems(
                                             index.ValueOr(() => flatIndex.NDimIndex(dimensions))
-                                                 .Select(i => (i + 1).Some().O).Zip(dimensions))));
+                                                 .Select(i => (i + 1).Some()).Zip(dimensions))));
 
                                 }
                             });
@@ -546,7 +546,7 @@ public sealed class StaticAnalyzer
                         return intVal.Status.Comptime;
                     } else {
                         _msger.Report(Message.ErrorNonIntegerIndex(i.Meta.SourceTokens, i.Value.Type));
-                        return Option.None<int>();
+                        return default;
                     }
                 }).ToArray();
 
@@ -613,7 +613,7 @@ public sealed class StaticAnalyzer
         }
     }
 
-    static string[] GetOutOfBoundsDimIndexProblems(IEnumerable<(Option<int> Index, int Length)> dimIndexes)
+    static string[] GetOutOfBoundsDimIndexProblems(IEnumerable<(ValueOption<int> Index, int Length)> dimIndexes)
      => dimIndexes.Where((d) => d.Index.Map(i => i < 1 || i > d.Length).ValueOr(false))
                   .Select((d, i) => Message.ProblemOutOfBoundsDimension(
                         i, d.Index.Value, d.Length)).ToArray();

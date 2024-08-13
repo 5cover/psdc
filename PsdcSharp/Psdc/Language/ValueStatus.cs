@@ -28,13 +28,13 @@ interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>
 
     ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform);
 
-    Option<TUnderlying> Comptime { get; }
+    ValueOption<TUnderlying> Comptime { get; }
 
     readonly record struct ComptimeValue(TUnderlying Value) : ValueStatus<TUnderlying>
     {
         public ValueStatus Status => ValueStatus.Comptime;
 
-        public Option<TUnderlying> Comptime => Value.Some();
+        public ValueOption<TUnderlying> Comptime => Value;
 
         public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is ComptimeValue o
          && EqualityComparer<TUnderlying>.Default.Equals(o.Value, Value);
@@ -47,7 +47,7 @@ interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>
         public static RuntimeValue Instance { get; } = new();
         public ValueStatus Status => ValueStatus.Runtime;
 
-        public Option<TUnderlying> Comptime => Option.None<TUnderlying>();
+        public ValueOption<TUnderlying> Comptime => default;
 
         public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is RuntimeValue;
         public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) => Value.Runtime<TResult>();
@@ -59,7 +59,7 @@ interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>
         public static GarbageValue Instance { get; } = new();
         public ValueStatus Status => ValueStatus.Garbage;
 
-        public Option<TUnderlying> Comptime => Option.None<TUnderlying>();
+        public ValueOption<TUnderlying> Comptime => default;
 
         public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is GarbageValue;
         public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) => Value.Garbage<TResult>();
@@ -71,7 +71,7 @@ interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>
         public static InvalidValue Instance { get; } = new();
         public ValueStatus Status => ValueStatus.Invalid;
 
-        public Option<TUnderlying> Comptime => Option.None<TUnderlying>();
+        public ValueOption<TUnderlying> Comptime => default;
 
         public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is InvalidValue;
         

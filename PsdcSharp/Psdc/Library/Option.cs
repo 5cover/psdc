@@ -30,11 +30,6 @@ public readonly struct ValueOption<T>(bool hasValue, T? value) : Option<T>
     public T? Value => value;
 
     public static implicit operator ValueOption<T>(T value) => new(true, value);
-
-    /// <summary>
-    /// Explicit interface type necessary to circumvent C# type inference limitations
-    /// </summary>
-    public Option<T> O => this;
 }
 
 public readonly struct ValueOption<T, TError>(bool hasValue, T? value, TError? error) : Option<T, TError>
@@ -47,11 +42,6 @@ public readonly struct ValueOption<T, TError>(bool hasValue, T? value, TError? e
 
     public static implicit operator ValueOption<T, TError>(T value) => new(true, value, default);
     public static implicit operator ValueOption<T, TError>(TError error) => new(false, default, error);
-
-    /// <summary>
-    /// Explicit interface type necessary to circumvent C# type inference limitations
-    /// </summary>
-    public Option<T, TError> O => this;
 }
 
 public static class Option

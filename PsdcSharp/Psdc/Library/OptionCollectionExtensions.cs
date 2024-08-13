@@ -26,6 +26,10 @@ static class OptionCollectionExtensions
         return errors.Count > 0 ? errors : values;
     }
 
+    /// <inheritdoc cref="Sequence{T, TError}(IEnumerable{Option{T, TError}})"/>
+    public static ValueOption<IReadOnlyList<T>, IReadOnlyList<TError>> Sequence<T, TError>(this IEnumerable<ValueOption<T, TError>> options)
+     => Sequence((IEnumerable<Option<T, TError>>)options);
+
     /// <summary>
     /// Transform a list of optionals into an optional containing a list of values.
     /// </summary>
@@ -46,6 +50,10 @@ static class OptionCollectionExtensions
 
         return values;
     }
+
+    /// <inheritdoc cref="Sequence{T}(IEnumerable{Option{T}})"/>
+    public static ValueOption<IReadOnlyList<T>> Sequence<T>(this IEnumerable<ValueOption<T>> options)
+     => Sequence((IEnumerable<Option<T>>)options);
 
     public static ValueOption<T> ElementAtOrNone<T>(this IEnumerable<T> source, int index)
     {
