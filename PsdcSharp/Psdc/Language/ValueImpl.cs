@@ -20,7 +20,7 @@ where TSelf : ValueImpl<TSelf, TType, TUnderlying>
     public ValueStatus<TUnderlying> Status { get; } = value;
     EvaluatedType Value.Type => Type;
 
-    ValueStatus Value.Status => Status.Value;
+    ValueStatus Value.Status => Status.Status;
 
     public bool SemanticsEqual(Value other) => other is ValueImpl<TSelf, TType, TUnderlying> o
      && o.Type.SemanticsEqual(Type)

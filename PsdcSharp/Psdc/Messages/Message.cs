@@ -51,7 +51,7 @@ public readonly struct Message
         problems);
 
     internal static string ProblemOutOfBoundsDimension(int dimNumber, int dimIndex, int dimLength)
-     => $"dimension {dimNumber} out of bounds (indexed at {dimIndex}, length is {dimLength})";
+     => $"dimension {dimNumber + 1} out of bounds (indexed at {dimIndex}, length is {dimLength})";
 
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
@@ -114,9 +114,9 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.UnsupportedDesignator,
         $"unsupported designator in '{targetType}' initializer");
 
-    internal static Message ErrorStructureDuplicateComponent(SourceTokens sourceTokens, Identifier componentName)
+    internal static Message ErrorStructureDuplicateComponent(SourceTokens sourceTokens, Identifier component)
      => new(sourceTokens, MessageCode.StructureDuplicateComponent,
-        $"duplicate component `{componentName}` in structure is ignored");
+        $"duplicate component `{component}` in structure is ignored");
 
     internal static Message ErrorNonIntegerIndex(SourceTokens sourceTokens, EvaluatedType actualIndexType)
      => new(sourceTokens, MessageCode.NonIntegerIndex,

@@ -484,8 +484,12 @@ or maybe have a type comparer like EvaluatedType.SupportsOperator({BinaryOperato
 
 or maybe use constantexpression for literals
 
-ALSO IT WOULD BE NICE NOT TO HAVE TO PASS THE UNDERLYING TYPE ARGUMENT EVERYWHERE. Why not simply have the actual value be a property of the concrete class and require downcasting to access it. We already downcast with pattern matching.
+redesign, constantexpression is not needed since we have semantic nodes now.
 
-## add a new kind of evaluated type abstract value
+Make `ConstantValue<TType, TUnderlying>` : implements `Value<TType, TUnderlying>` but status is a `ValueStatus.Comptime<TUnderlying>`.
 
-EvaluatedType.InvalidValue - to use instead of GarbageValue when the expression or initializer is semantically invalid and won't work in the target langage.
+## Make a negative integer literal
+
+Currently, we parse it to an unary minus operation on an integer literal. This works, except when collapsing the value in alter.
+
+Add syntax for a negative integer literal.

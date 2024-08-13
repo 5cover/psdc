@@ -26,4 +26,6 @@ public sealed class Identifier : Node, IEquatable<Identifier?>
     public bool Equals(Identifier? other) => other is not null && other.Name == Name;
 
     public override int GetHashCode() => Name.GetHashCode();
+
+    public override string ToString() => Name;
 }

@@ -160,6 +160,11 @@ public static class Option
     public static T ValueOr<T, TError>(this Option<T, TError> option, T defaultValue)
      => option.HasValue ? option.Value : defaultValue;
 
+    public static T ValueOr<T>(this Option<T> option, Func<T> defaultValue)
+         => option.HasValue ? option.Value : defaultValue();
+    public static T ValueOr<T, TError>(this Option<T, TError> option, Func<T> defaultValue)
+     => option.HasValue ? option.Value : defaultValue();
+
     public static ValueOption<T, TError> OrWithError<T, TError>(this Option<T> option, TError error)
      => option.HasValue ? option.Value : error;
 

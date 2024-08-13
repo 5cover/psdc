@@ -14,7 +14,7 @@ début
     e : entier;
 
     notes2 : tNotes := {
-        1,
+        [1] := 1,
         [-1] := 2,
         3,
     };

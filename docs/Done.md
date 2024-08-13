@@ -1570,3 +1570,7 @@ it makes no sense to use it; we could have a two types of value coincidentally u
 there's no need; a `char const*` can represent an unlengthed string without problems.
 
 get rid of type.complete and aliasreferencenode
+
+## add a new kind of evaluated type abstract value
+
+EvaluatedType.InvalidValue - to use instead of GarbageValue when the expression or initializer is semantically invalid and won't work in the target langage.

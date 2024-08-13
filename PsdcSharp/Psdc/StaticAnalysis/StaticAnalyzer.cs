@@ -51,9 +51,7 @@ public sealed class StaticAnalyzer
             if (!value.Type.IsAssignableTo(declaredType)) {
                 _msger.Report(Message.ErrorExpressionHasWrongType(
                     constant.Value.SourceTokens, declaredType, value.Type));
-                // if the provided value wasn't of the right type, use a non-const value of the declared type.
-                // the constant is still added to the scope.
-                value = declaredType.GarbageValue;
+                value = declaredType.InvalidValue;
             }
 
             scope.AddOrError(_msger, new Symbol.Constant(constant.Name, constant.SourceTokens, declaredType, value));
@@ -388,11 +386,10 @@ public sealed class StaticAnalyzer
                                 if (flatIndex >= 0 && flatIndex < arrayValue.Length) {
                                     arrayValue[flatIndex] = sitem.Initializer.Value;
                                 } else {
-                                    _msger.Report(index.Match(
-                                        index => Message.ErrorIndexOutOfBounds(sitem.Meta.SourceTokens,
-                                            GetOutOfBoundsDimIndexProblems(
-                                                index.Select(i => (i + 1).Some().O).Zip(dimensions))),
-                                        () => Message.ErrorExcessElementInInitializer(sitem.Meta.SourceTokens)));
+                                    _msger.Report(Message.ErrorIndexOutOfBounds(sitem.Meta.SourceTokens,
+                                        GetOutOfBoundsDimIndexProblems(
+                                            index.ValueOr(() => flatIndex.NDimIndex(dimensions))
+                                                 .Select(i => (i + 1).Some().O).Zip(dimensions))));
 
                                 }
                             });
@@ -434,7 +431,7 @@ public sealed class StaticAnalyzer
                 }
                 default: {
                     _msger.Report(Message.ErrorUnsupportedInitializer(initializer.SourceTokens, targetType));
-                    return (EvaluateItems(init, targetType), targetType.GarbageValue);
+                    return (EvaluateItems(init, targetType), targetType.InvalidValue);
                 }
                 }
             }
@@ -559,17 +556,16 @@ public sealed class StaticAnalyzer
                             arrSub.SourceTokens,
                             dimIndexes.Length,
                             arrVal.Type.Dimensions.Count));
-                        return arrVal.Type.ItemType.GarbageValue;
+                        return arrVal.Type.ItemType.InvalidValue;
                     }
 
-                    var outOfBoundsDims = GetOutOfBoundsDimIndexProblems(dimIndexes
-                        .Zip<Option<int>, ConstantExpression<int>, (Option<int> Index, int Length)>(
+                    var outOfBoundsDims = GetOutOfBoundsDimIndexProblems(dimIndexes.Zip(
                             arrVal.Type.Dimensions,
                             (index, length) => (index, length.Value)));
 
                     if (outOfBoundsDims.Length > 0) {
                         _msger.Report(Message.ErrorIndexOutOfBounds(arrSub.SourceTokens, outOfBoundsDims));
-                        return arrVal.Type.ItemType.GarbageValue;
+                        return arrVal.Type.ItemType.InvalidValue;
                     }
 
                     return arrVal.Status.Comptime.Zip(dimIndexes.Sequence())
@@ -577,7 +573,7 @@ public sealed class StaticAnalyzer
                         .ValueOr(arrVal.Type.ItemType.RuntimeValue);
                 } else {
                     _msger.Report(Message.ErrorSubscriptOfNonArray(arrSub, array.Value.Type));
-                    return UnknownType.Inferred.DefaultValue;
+                    return UnknownType.Inferred.InvalidValue;
                 }
             }
         }
@@ -600,7 +596,7 @@ public sealed class StaticAnalyzer
                         .Map(s => s[compAccess.ComponentName])
                         .ValueOr(componentType.RuntimeValue);
                 }
-                return UnknownType.Inferred.DefaultValue;
+                return UnknownType.Inferred.InvalidValue;
             }
         }
         case Node.Expression.Lvalue.VariableReference varRef: {
@@ -610,7 +606,7 @@ public sealed class StaticAnalyzer
                     .Map(vp => vp is Symbol.Constant constant
                         ? constant.Value
                         : vp.Type.RuntimeValue)
-                    .ValueOr(UnknownType.Inferred.DefaultValue));
+                    .ValueOr(UnknownType.Inferred.InvalidValue));
         }
         default:
             throw lvalue.ToUnmatchedException();

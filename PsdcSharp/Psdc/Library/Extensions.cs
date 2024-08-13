@@ -33,12 +33,11 @@ static class Extensions
      => (kvp.Key, kvp.Value);
 
     /// <summary>
-    /// Get the flattened index of a multidimensional array.
+    /// Get the flattened index of a multi-dimensional array.
     /// </summary>
     /// <param name="dimensionIndexes">The 0-based index in each dimension.</param>
     /// <param name="dimensionLengths">The length of each dimension.</param>
-    /// <returns>A flattened index that indexes a 1-dimensional array whose length is the product of <paramref name="dimensionLengths"/>.</returns>
-    /// <remarks><paramref name="dimensionIndexes"/> and <paramref name="dimensionLengths"/> must have the same count.</remarks>
+    /// <returns>An integer that indexes a 1-dimensional array whose length is the product of <paramref name="dimensionLengths"/>.</returns>
     public static int FlatIndex(this IEnumerable<int> dimensionIndexes, IEnumerable<int> dimensionLengths)
     {
         Debug.Assert(dimensionIndexes.Count() == dimensionLengths.Count());
@@ -46,6 +45,20 @@ static class Extensions
             .Zip(dimensionIndexes)
             .Aggregate(0, (soFar, next) => soFar * next.First + next.Second);
     }
+
+    /// <summary>
+    /// Get the N-dimensional index in a multi-dimensional array from the flattened index.
+    /// </summary>
+    /// <param name="flatIndex">The flattened index.</param>
+    /// <param name="dimensionLengths">The length of each dimension.</param>
+    /// <remarks>This function is the inverse of <see cref="FlatIndex"/>.</remarks>
+    /// <returns>An enumarable containing 0-based index in each dimension. Same count as <paramref name="dimensionLengths"/>.</returns>
+    public static IEnumerable<int> NDimIndex(this int flatIndex, IReadOnlyList<int> dimensionLengths)
+     => dimensionLengths.Reverse().Select(l => {
+            flatIndex = Math.DivRem(flatIndex, l, out var i);
+            return i;
+        }).Reverse();
+
     public static T Product<T>(this IEnumerable<T> source) where T : IMultiplyOperators<T, T, T>
      => source.Aggregate((soFar, next) => soFar *= next);
 

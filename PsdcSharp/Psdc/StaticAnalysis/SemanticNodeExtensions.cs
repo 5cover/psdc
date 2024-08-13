@@ -15,7 +15,7 @@ public static class SemanticNodeExtensions
         Expression.Literal { Value: BooleanValue b } l => new Expression.Literal(Meta(expr), !(bool)l.UnderlyingValue, b.Invert()),
         Expression.Bracketed e => new Expression.Bracketed(Meta(expr), e.ContainedExpression.Invert(), e.Value.Invert()),
         Expression.UnaryOperation uo when uo.Operator is UnaryOperator.Not => uo.Operand,
-        Expression.BinaryOperation bo when bo.Invert() is { Value: { } ibo } => ibo,
+        Expression.BinaryOperation bo when bo.Invert() is { HasValue: true } bov => bov.Value,
         _ => new Expression.UnaryOperation(Meta(expr), new UnaryOperator.Not(Meta(expr)), expr, expr.Value.Invert()),
     };
 
