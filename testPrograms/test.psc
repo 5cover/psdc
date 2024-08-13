@@ -4,7 +4,7 @@ type tNotes = tableau[6] de réel;
 
 début
     notes : tNotes := {
-        1,
+        -.1,
         [-1] := 2,
         3,
     };

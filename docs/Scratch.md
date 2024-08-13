@@ -487,9 +487,3 @@ or maybe use constantexpression for literals
 redesign, constantexpression is not needed since we have semantic nodes now.
 
 Make `ConstantValue<TType, TUnderlying>` : implements `Value<TType, TUnderlying>` but status is a `ValueStatus.Comptime<TUnderlying>`.
-
-## Make a negative integer literal
-
-Currently, we parse it to an unary minus operation on an integer literal. This works, except when collapsing the value in alter.
-
-Add syntax for a negative integer literal.

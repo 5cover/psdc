@@ -1574,3 +1574,9 @@ get rid of type.complete and aliasreferencenode
 ## add a new kind of evaluated type abstract value
 
 EvaluatedType.InvalidValue - to use instead of GarbageValue when the expression or initializer is semantically invalid and won't work in the target langage.
+
+## Make a negative integer literal
+
+Currently, we parse it to an unary minus operation on an integer literal. This works, except when collapsing the value in alter.
+
+Add syntax for a negative integer literal.
