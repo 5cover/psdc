@@ -386,7 +386,7 @@ public sealed class StaticAnalyzer
                                 if (flatIndex >= 0 && flatIndex < arrayValue.Length) {
                                     arrayValue[flatIndex] = sitem.Initializer.Value;
                                 } else {
-                                    _msger.Report(Message.ErrorIndexOutOfBounds(sitem.Meta.SourceTokens,
+                                    _msger.Report(Message.ErrorIndexOutOfBounds(sitem.Designator.ValueOr<SemanticNode>(sitem).Meta.SourceTokens,
                                         GetOutOfBoundsDimIndexProblems(
                                             index.ValueOr(() => flatIndex.NDimIndex(dimensions))
                                                  .Select(i => (i + 1).Some()).Zip(dimensions))));

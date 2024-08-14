@@ -1,20 +1,21 @@
 using Scover.Psdc.Messages;
 
 using static Scover.Psdc.Tokenization.TokenType;
-using static Scover.Psdc.Tokenization.TokenType.Valued;
+using static Scover.Psdc.Tokenization.TokenType.Regular;
+using static Scover.Psdc.Tokenization.TokenType.Regular.Valued;
 
 namespace Scover.Psdc.Tokenization;
 
 public sealed class Tokenizer
 {
     static IEnumerable<T> GetRules<T>(IEnumerable<Ruled<T>> ruled) where T : TokenRule => ruled.SelectMany(r => r.Rules);
-    static IEnumerable<TokenRule> GetRules(IEnumerable<Ruled> ruled) => ruled.SelectMany(r => r.Rules);
+    static IEnumerable<TokenRule> GetRules(IEnumerable<Ruled<TokenRule>> ruled) => ruled.SelectMany(r => r.Rules);
 
     static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
 
     static readonly IReadOnlyList<TokenRule> rules =
         // Variable length
-        GetRules(new Ruled[]{CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter})
+        GetRules(new Ruled<TokenRule>[]{CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter})
         // Maximum munch
         .Concat(GetRules(Keyword.Instances).OrderByDescending(r => r.Expected.Length))
         .Concat(Enumerable.Concat(GetRules(Punctuation.Instances), GetRules(Operator.Instances))

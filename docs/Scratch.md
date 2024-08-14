@@ -282,7 +282,7 @@ We know the ast is build from the bottom up, but it could be interesting to see 
 
 Simply add some graph-building logic in the NodeImpl constructor.
 
-## Contextual keyword
+## Contextual keywords
 
 Keywords like `de`, `à`, `pas` are very short and only used in specific contexts.
 
@@ -297,6 +297,22 @@ We should make them contextal, ie. have them become identifier when outside of a
 Maybe we could tokenize them as identifiers always and expect an identifier of a specific name in ParseOperation? (`ParseContextualKeyword`)
 
 That seems like an easy way to implement this feature.
+
+## Modularity
+
+Add support for modularity.
+
+I think we should have two preprocessor directives for reusing code in other files.
+
+### `#include`
+
+Dumb. Like in C. Expands into the contents of the included file.
+
+### `#use`
+
+Smarter. Useful for libraries. Like includes but only referenced declarations are copied. (and the declarations they themselves reference, trees.)
+
+Basically does tree-shaking from the start.
 
 ## File handling PSC &rarr; C
 
@@ -422,6 +438,26 @@ preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config e
 
 config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
 
+## Preprocessor directives
+
+Add infrastructure to later implement
+
+- `#config`
+- `#include`/`#import`
+- ...
+
+Since a PD can be located anywher in the program, it cannot be parsed as part of the normal syntax, unless we want to make the grammar extremely messy.
+
+### Implementation
+
+#### 1. Run a preprocessor
+
+Works for things like #include but would require rewriting static analyisis for PD like `#compiler log`.
+
+#### 2. Token channels (like in ANTLR)
+
+Basically return a separate list for the PD-related tokens.
+
 ## Trailing commas
 
 Allow trailing commas in parameter lists, local variable lists, array subscripts.
@@ -436,9 +472,7 @@ We should adhere to what's standard.
 
 ## Test compile-time values
 
-Test by trying to create arrays and see it it gives a constant expression errors
-
-So we'll need all kinds of expressions that yield comptime-known integers.
+We'll need all kinds of expressions that yield comptime-known integers.
 
 Tests (increasing complexity):
 
@@ -468,4 +502,35 @@ Tests (increasing complexity):
 - Structure > Array constant
 - Array > Structure constant
 
-Generate it with Mistral.
+## Compiler directives
+
+Compiler directives are compile-time instructions that are evaluated in the static analyzer. They may be translated to the target lanugage (see C's `static_assert`), but they do not affect the machine code output of the target language compilation.
+
+Preprocessor directives don't require static analysis: `#include`, `#config`. Other stuff, like compiler log, static asserts, are semantically similar to statetements and should appear as such. Maybe we should reuse Zig's syntax for builtins: `@compilerLog`, `@assert`... except the `@` symbol indicates that this call is evaluated at compile-time and does not affect the machine code output.
+
+They require the context given by static analysis to run (otherwise we'd use preprocessor directives whih)
+
+### `@log`
+
+Logs the value status of an expression as a message. (including comptime value if present)
+
+Add a new category of message: Debug. Shown in light green.
+
+MessageCode.CompilerLog
+
+### `@assert`
+
+These "compiler directives" can be either declarations or statements, so they can appear at the top level or in a function body.
+
+Do we even need these? Not if we can find a way to:
+
+### Implementation
+
+- Parse them as compiler directives (CDs) using a separate token chanel and a new parser class
+- Somehow able them to be evaluated in the SA, in the context of regular AST nodes. I see solutions for this:
+    - Somehow put CDs in the regular AST: nope
+    - Put them in a list that is passed alongside the AST (no need for a tree since they are sequential). Compare the source tokens of each AST node to progress gradually through the list of CDs, and evaluate them when we move down one: nope
+    - Same as above, but somehow keep a context so we don't have to compare the SourceTokens of every analyzed AST node to locate the CD: ok
+        - Maybe keep a reference, in the CD, to the last non-CD token parsed. Then if the SourceTokens of the node contain this token:
+            - if this token is the last token of the node, then it the CD comes after the node, so evaluate it after the node.
+            - otherwise, it is inside the node, so evaluate it before

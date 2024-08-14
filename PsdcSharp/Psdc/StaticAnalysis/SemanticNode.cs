@@ -200,7 +200,7 @@ public interface SemanticNode
         {
             internal sealed record Item(SemanticMetadata Meta,
                 Option<Designator> Designator,
-                Initializer Initializer);
+                Initializer Initializer) : SemanticNode;
         }
     }
 
