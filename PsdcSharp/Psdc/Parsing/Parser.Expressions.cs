@@ -38,11 +38,11 @@ partial class Parser
             [Operator.Mod] = t => new BinaryOperator.Mod(t),
         };
 
-    readonly IReadOnlyDictionary<TokenType, Parser<Expression>> _literalParsers;
+    readonly Parser<Expression.Literal> _literal;
     delegate ParseResult<TRight> RightParser<in TLeft, out TRight>(TLeft left, IEnumerable<Token> rightTokens);
 
     Parser<Expression>? _expressionParser;
-    ParseResult<Expression> ParseExpression(IEnumerable<Token> tokens)
+    ParseResult<Expression> Expression(IEnumerable<Token> tokens)
      => (_expressionParser ??=
         ParserBinaryOperation(operatorsOr,
         ParserBinaryOperation(operatorsAnd,
@@ -52,9 +52,9 @@ partial class Parser
         ParserBinaryOperation(operatorsAddSub,
         ParserBinaryOperation(operatorsMulDivMod,
         ParserUnaryOperation(
-        ParserBinary(ParseTerminalRvalue, new() {
-            [Punctuation.LBracket] = RightParseArraySubscript,
-            [Operator.Dot] = RightParseComponentAccess,
+        ParserBinary(TerminalRvalue, new() {
+            [Punctuation.LBracket] = ArraySubscriptRight,
+            [Operator.Dot] = ComponentAccessRight,
         }))))))))))(tokens);
 
     static Parser<T> ParserBinary<T>(
@@ -139,25 +139,25 @@ partial class Parser
         return false;
     }
 
-    ParseResult<Expression> ParseBracketed(IEnumerable<Token> tokens)
+    ParseResult<Expression> Bracketed(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "bracketed expression")
         .ParseToken(Punctuation.LParen)
-        .Parse(out var expression, ParseExpression)
+        .Parse(out var expression, Expression)
         .ParseToken(Punctuation.RParen)
     .MapResult(t => new Expression.Bracketed(t, expression));
 
-    ParseResult<Expression.Lvalue> ParseBracketedLvalue(IEnumerable<Token> tokens)
+    ParseResult<Expression.Lvalue> BracketedLvalue(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "bracketed lvalue")
         .ParseToken(Punctuation.LParen)
         .Parse(out var expression, ParseLvalue)
         .ParseToken(Punctuation.RParen)
     .MapResult(t => new Expression.Lvalue.Bracketed(t, expression));
 
-    ParseResult<Expression.BuiltinFdf> ParseBuiltinFdf(IEnumerable<Token> tokens)
+    ParseResult<Expression.BuiltinFdf> BuiltinFdf(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "FdF call")
         .ParseToken(Keyword.Fdf)
         .ParseToken(Punctuation.LParen)
-        .Parse(out var argNomLog, ParseExpression)
+        .Parse(out var argNomLog, Expression)
         .ParseToken(Punctuation.RParen)
     .MapResult(t => new Expression.BuiltinFdf(t, argNomLog));
 
@@ -181,49 +181,49 @@ partial class Parser
         t => ParseToken(t, Operator.Plus, t => new UnaryOperator.Plus(t)),
         t => ParseOperation.Start(t, "cast operator")
             .ParseToken(Punctuation.LParen)
-            .Parse(out var target, _parseType)
+            .Parse(out var target, _type)
             .ParseToken(Punctuation.RParen)
         .MapResult(t => new UnaryOperator.Cast(t, target)));
 
-    ParseResult<Expression.FunctionCall> ParseFunctionCall(IEnumerable<Token> tokens)
+    ParseResult<Expression.FunctionCall> FunctionCall(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "function call")
-        .Parse(out var name, ParseIdentifier)
+        .Parse(out var name, Identifier)
         .ParseToken(Punctuation.LParen)
-        .ParseZeroOrMoreSeparated(out var parameters, ParseParameterActual, Punctuation.Comma, Punctuation.RParen)
+        .ParseZeroOrMoreSeparated(out var parameters, ParameterActual, Punctuation.Comma, Punctuation.RParen)
     .MapResult(t => new Expression.FunctionCall(t, name, ReportErrors(parameters)));
 
     ParseResult<Expression.Lvalue> ParseLvalue(IEnumerable<Token> tokens)
-     => ParserFirst(ParserBinaryAtLeast1<Expression, Expression.Lvalue>("lvalue", ParseTerminalRvalue, new() {
-         [Punctuation.LBracket] = RightParseArraySubscript,
-         [Operator.Dot] = RightParseComponentAccess,
-     }), ParseTerminalLvalue)(tokens);
+     => ParserFirst(ParserBinaryAtLeast1<Expression, Expression.Lvalue>("lvalue", TerminalRvalue, new() {
+         [Punctuation.LBracket] = ArraySubscriptRight,
+         [Operator.Dot] = ComponentAccessRight,
+     }), TerminalLvalue)(tokens);
 
-    ParseResult<Expression.Lvalue> ParseTerminalLvalue(IEnumerable<Token> tokens)
+    ParseResult<Expression.Lvalue> TerminalLvalue(IEnumerable<Token> tokens)
      => ParserFirst(
-            t => ParseIdentifier(tokens)
+            t => Identifier(tokens)
                 .Map((t, name) => new Expression.Lvalue.VariableReference(t, name)),
-            ParseBracketedLvalue)(tokens);
+            BracketedLvalue)(tokens);
 
-    ParseResult<Expression> ParseTerminalRvalue(IEnumerable<Token> tokens)
-     => ParserFirst(
-            t => ParseByTokenType(t, "literal", _literalParsers),
-            ParseFunctionCall,
-            ParseTerminalLvalue,
-            ParseBracketed,
-            ParseBuiltinFdf)(tokens);
+    ParseResult<Expression> TerminalRvalue(IEnumerable<Token> tokens)
+     => ParserFirst<Expression>(
+            _literal,
+            FunctionCall,
+            TerminalLvalue,
+            Bracketed,
+            BuiltinFdf)(tokens);
 
-    ParseResult<Expression.Lvalue> RightParseArraySubscript(
+    ParseResult<Expression.Lvalue> ArraySubscriptRight(
         Expression expr,
         IEnumerable<Token> rightTokens)
      => ParseOperation.Start(rightTokens, "array subscript")
-        .ParseOneOrMoreSeparated(out var indexes, ParseExpression,
+        .ParseOneOrMoreSeparated(out var indexes, Expression,
             Punctuation.Comma, Punctuation.RBracket)
         .MapResult(t => new Expression.Lvalue.ArraySubscript(t, expr, ReportErrors(indexes)));
 
-    ParseResult<Expression.Lvalue> RightParseComponentAccess(
+    ParseResult<Expression.Lvalue> ComponentAccessRight(
         Expression expr,
         IEnumerable<Token> rightTokens)
      => ParseOperation.Start(rightTokens, "component access")
-        .Parse(out var component, ParseIdentifier)
+        .Parse(out var component, Identifier)
         .MapResult(t => new Expression.Lvalue.ComponentAccess(t, expr, component));
 }

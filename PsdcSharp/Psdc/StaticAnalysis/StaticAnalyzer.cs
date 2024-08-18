@@ -743,10 +743,6 @@ public sealed class StaticAnalyzer
         ? v.Status.ComptimeValue.OrWithError(Message.ErrorConstantExpressionExpected(expr.Meta.SourceTokens))
         : Message.ErrorExpressionHasWrongType(expr.Meta.SourceTokens, expectedType, expr.Value.Type);
 
-    static ValueOption<object, Message> GetConstantValue(Expression expr)
-     => expr.Value.Status.ComptimeValue
-        .OrWithError(Message.ErrorConstantExpressionExpected(expr.Meta.SourceTokens));
-
     Option<ConstantExpression<TUnderlying>, Message> GetConstantExpression<TType, TUnderlying>(TType type, Scope scope, Node.Expression expr)
     where TType : EvaluatedType
     {

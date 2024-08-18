@@ -49,23 +49,12 @@ partial class Parser
          return result;
      };
 
-    static ParseResult<Token> ParseTokenOfType(
-        IEnumerable<Token> tokens,
-        string production,
-        IEnumerable<TokenType> allowedTokensTypes)
-    {
-        var firstToken = tokens.FirstOrNone();
-        return firstToken.HasValue && allowedTokensTypes.Contains(firstToken.Value.Type)
-            ? ParseResult.Ok(new(tokens, 1), firstToken.Value)
-            : ParseResult.Fail<Token>(SourceTokens.Empty, ParseError.ForProduction(production, firstToken, allowedTokensTypes));
-    }
-
-    ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator)
+    static ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator)
      => ParseOperation.Start(tokens, expectedType.Representation)
         .ParseToken(expectedType)
     .MapResult(resultCreator);
 
-    ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator)
+    static ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator)
      => ParseOperation.Start(tokens, expectedType.Representation)
                 .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => resultCreator(tokens, value));
