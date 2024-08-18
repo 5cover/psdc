@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Numerics;
 
 namespace Scover.Psdc.Library;
@@ -159,6 +160,12 @@ static class Extensions
         Debug.Assert(t is not null, message);
         return t;
     }
+
+    public static string? ToStringInvariant(this object obj) => obj switch {
+        IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
+        IConvertible c => c.ToString(CultureInfo.InvariantCulture),
+        _ => obj.ToString()
+    };
 
     public static bool OptionSemanticsEqual<T>(this Option<T> first, Option<T> second) where T : EquatableSemantics<T>
      => first.HasValue && second.HasValue

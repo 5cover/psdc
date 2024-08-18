@@ -52,7 +52,7 @@ abstract class OperatorTable
     public bool ShouldBracket(Expression.Lvalue.ArraySubscript arrSub)
      => ShouldBracketOperand(ArraySubscript, arrSub.Array);
 
-    private static (bool bracketLeft, bool bracketRight) ShouldBracketBinary(int precedenceLeft, int precedenceRight, OperatorInfo op)
+    static (bool bracketLeft, bool bracketRight) ShouldBracketBinary(int precedenceLeft, int precedenceRight, OperatorInfo op)
      => (bracketLeft: precedenceLeft > op.Precedence
                    || precedenceLeft == op.Precedence && op.Associativity == RightToLeft,
         bracketRight: precedenceRight > op.Precedence
@@ -108,7 +108,7 @@ abstract class OperatorTable
     public abstract OperatorInfo Or { get; }
     public abstract OperatorInfo Add { get; }
     public abstract OperatorInfo Xor { get; }
-    
+
     public abstract OperatorInfo ArraySubscript { get; }
     public abstract OperatorInfo ComponentAccess { get; }
     public abstract OperatorInfo FunctionCall { get; }

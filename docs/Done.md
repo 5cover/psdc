@@ -1515,8 +1515,6 @@ Also a new approach to scopes
 
 That way we don't have to pass a Scope parameter everywhere.
 
-What do we need equatable semantics for again?
-
 ### Building a scopeful AST
 
 Each scopednode produces a new scope to use for children nodes.
@@ -1584,3 +1582,40 @@ Add syntax for a negative integer literal.
 ## Use ValueOption when returning an option
 
 This makes the syntax more concise. No need to call .Some() or .None(), especially the later which requires a generic argument, so the payload type is restated.
+
+## Compiler directives
+
+Compiler directives are compile-time instructions that are evaluated in the static analyzer. They may be translated to the target lanugage (see C's `static_assert`), but they do not affect the machine code output of the target language compilation.
+
+Preprocessor directives don't require static analysis: `#include`, `#config`. Other stuff, like compiler log, static asserts, are semantically similar to statements and should appear as such. Maybe we should reuse Zig's syntax for builtins: `@compilerLog`, `@assert`... except the `@` symbol indicates that this call is evaluated at compile-time and does not affect the machine code output.
+
+They require the context given by static analysis to run (otherwise we'd use preprocessor directives)
+
+They are allowed in
+
+- Declarations
+- Struct components
+- Initializers values
+- Statements
+
+### `@evaluateExpr(<expr>)`
+
+Logs the value status of an expression as a message. (including comptime value if present)
+
+Add a new category of message: Debug. Shown in light green.
+
+Message.DebugEvaluateExpr(result)
+
+### `@evaluateType(<type>)`
+
+Logs an evaluated type.
+
+Message.DebugEvaluateType(result)
+
+### `@assert(<expr>,<message: expr?>)`
+
+Asserts that a given expression is comptime-known and true. Errors if any of these cases fail.
+
+Message.AssertionFailed(expression, message?)
+
+No need to call it `@staticAssert` since the `@` already indicates it comptime nature.

@@ -8,7 +8,7 @@ namespace Scover.Psdc.Benchmark;
 [MemoryDiagnoser]
 public class ParsingBenchmark
 {
-    private IReadOnlyCollection<Token> _tokens;
+    IReadOnlyCollection<Token> _tokens;
     [GlobalSetup]
     public void Setup() => _tokens = new TokenizationBenchmark().Run();
 

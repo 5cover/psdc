@@ -40,34 +40,35 @@ abstract class EvaluatedTypeImpl<TValue>(Identifier? alias) : EvaluatedType<TVal
 abstract class EvaluatedTypeImplNotInstantiable<TValue>(Identifier? alias, ValueStatus defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias)
 where TValue : class, Value
 {
-    private TValue? _defaultValue;
-    private TValue? _runtimeValue;
-    private TValue? _garbageValue;
-    private TValue? _invalidValue;
+    TValue? _defaultValue;
+    TValue? _runtimeValue;
+    TValue? _garbageValue;
+    TValue? _invalidValue;
     public override TValue DefaultValue => _defaultValue ??= CreateValue(defaultValueStatus);
-    public override TValue RuntimeValue => _runtimeValue ??= CreateValue(ValueStatus.Runtime);
-    public override TValue GarbageValue => _garbageValue ??= CreateValue(ValueStatus.Garbage);
-    public override TValue InvalidValue => _invalidValue ??= CreateValue(ValueStatus.Invalid);
+    public override TValue RuntimeValue => _runtimeValue ??= CreateValue(ValueStatus.Runtime.Instance);
+    public override TValue GarbageValue => _garbageValue ??= CreateValue(ValueStatus.Garbage.Instance);
+    public override TValue InvalidValue => _invalidValue ??= CreateValue(ValueStatus.Invalid.Instance);
 
     protected abstract TValue CreateValue(ValueStatus status);
 }
 
 abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Identifier? alias, ValueStatus<TUnderlying> defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias), InstantiableType<TValue, TUnderlying>
 where TValue : class, Value
+where TUnderlying : notnull
 {
-    protected EvaluatedTypeImplInstantiable(Identifier? alias, TUnderlying defaultValue) : this(alias, Value.Comptime(defaultValue))
+    protected EvaluatedTypeImplInstantiable(Identifier? alias, TUnderlying defaultValue) : this(alias, ValueStatus.Comptime.Of(defaultValue))
     { }
 
-    private TValue? _defaultValue;
-    private TValue? _runtimeValue;
-    private TValue? _garbageValue;
-    private TValue? _invalidValue;
+    TValue? _defaultValue;
+    TValue? _runtimeValue;
+    TValue? _garbageValue;
+    TValue? _invalidValue;
 
     public override TValue DefaultValue => _defaultValue ??= CreateValue(defaultValueStatus);
-    public override TValue RuntimeValue => _runtimeValue ??= CreateValue(Value.Runtime<TUnderlying>());
-    public override TValue GarbageValue => _garbageValue ??= CreateValue(Value.Garbage<TUnderlying>());
-    public override TValue InvalidValue => _invalidValue ??= CreateValue(Value.Invalid<TUnderlying>());
+    public override TValue RuntimeValue => _runtimeValue ??= CreateValue(ValueStatus.Runtime<TUnderlying>.Instance);
+    public override TValue GarbageValue => _garbageValue ??= CreateValue(ValueStatus.Garbage<TUnderlying>.Instance);
+    public override TValue InvalidValue => _invalidValue ??= CreateValue(ValueStatus.Invalid<TUnderlying>.Instance);
 
-    public TValue Instantiate(TUnderlying value) => CreateValue(Value.Comptime(value));
+    public TValue Instantiate(TUnderlying value) => CreateValue(ValueStatus.Comptime.Of(value));
     protected abstract TValue CreateValue(ValueStatus<TUnderlying> status);
 }

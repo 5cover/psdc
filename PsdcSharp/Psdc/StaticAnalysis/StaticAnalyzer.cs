@@ -2,7 +2,6 @@ using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 using Scover.Psdc.Parsing;
-using Scover.Psdc.CodeGeneration.C;
 
 namespace Scover.Psdc.StaticAnalysis;
 
@@ -31,16 +30,15 @@ public sealed class StaticAnalyzer
             break;
         }
         case Node.CompilerDirective.EvaluateExpr cd: {
-            GetConstantValue(EvaluateExpression(scope, cd.Expression))
-            .DropError(_msger.Report)
-            .Tap(expr => {
-
-            });
+            _msger.Report(Message.DebugEvaluateExpression(cd.SourceTokens, EvaluateExpression(scope, cd.Expression).Value));
             break;
         }
         case Node.CompilerDirective.EvaluateType cd: {
+            _msger.Report(Message.DebugEvaluateType(cd.SourceTokens, EvaluateType(scope, cd.Type)));
             break;
         }
+        default:
+            throw compilerDirective.ToUnmatchedException();
         }
     }
 
@@ -51,7 +49,7 @@ public sealed class StaticAnalyzer
         MutableScope scope = new(null);
 
         Algorithm semanticAst = new(new(scope, root.SourceTokens), root.Name,
-            root.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).ToArray());
+            root.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).WhereSome().ToArray());
 
         if (!a._seenMainProgram) {
             messenger.Report(Message.ErrorMissingMainProgram(root.SourceTokens));
@@ -64,8 +62,7 @@ public sealed class StaticAnalyzer
         return semanticAst;
     }
 
-
-    Declaration AnalyzeDeclaration(MutableScope scope, Node.Declaration decl)
+    ValueOption<Declaration> AnalyzeDeclaration(MutableScope scope, Node.Declaration decl)
     {
         SemanticMetadata meta = new(scope, decl.SourceTokens);
 
@@ -125,6 +122,10 @@ public sealed class StaticAnalyzer
             var type = EvaluateType(scope, d.Type);
             scope.AddOrError(_msger, new Symbol.TypeAlias(d.Name, d.SourceTokens, type));
             return new Declaration.TypeAlias(meta, d.Name, type);
+        }
+        case Node.CompilerDirective cd: {
+            EvaluateCompilerDirective(scope, cd);
+            return default;
         }
         default:
             throw decl.ToUnmatchedException();
@@ -193,9 +194,9 @@ public sealed class StaticAnalyzer
     static Symbol.Parameter DeclareParameter(ParameterFormal param)
      => new(param.Name, param.Meta.SourceTokens, param.Type, param.Mode);
 
-    Statement[] AnalyzeStatements(MutableScope scope, IEnumerable<Node.Statement> statements) => statements.Select(s => AnalyzeStatement(scope, s)).ToArray();
+    Statement[] AnalyzeStatements(MutableScope scope, IEnumerable<Node.Statement> statements) => statements.Select(s => AnalyzeStatement(scope, s)).WhereSome().ToArray();
 
-    Statement AnalyzeStatement(MutableScope scope, Node.Statement statement)
+    ValueOption<Statement> AnalyzeStatement(MutableScope scope, Node.Statement statement)
     {
         SemanticMetadata meta = new(scope, statement.SourceTokens);
         switch (statement) {
@@ -328,6 +329,10 @@ public sealed class StaticAnalyzer
             return new Statement.WhileLoop(meta,
                 EvaluateExpression(scope, s.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
                 AnalyzeStatements(new(scope), s.Block));
+        }
+        case Node.Statement.CompilerDirective cd: {
+            EvaluateCompilerDirective(scope, cd);
+            return default;
         }
         default: {
             throw statement.ToUnmatchedException();
@@ -594,7 +599,7 @@ public sealed class StaticAnalyzer
             {
                 var dimIndexes = index.Select(i => {
                     if (i.Value is IntegerValue intVal) {
-                        return intVal.Status.Comptime;
+                        return intVal.Status.ComptimeValue;
                     } else {
                         _msger.Report(Message.ErrorNonIntegerIndex(i.Meta.SourceTokens, i.Value.Type));
                         return default;
@@ -619,7 +624,7 @@ public sealed class StaticAnalyzer
                         return arrVal.Type.ItemType.InvalidValue;
                     }
 
-                    return arrVal.Status.Comptime.Zip(dimIndexes.Sequence())
+                    return arrVal.Status.ComptimeValue.Zip(dimIndexes.Sequence())
                         .Map((arr, index) => arr[index.FlatIndex(arrVal.Type.Dimensions.Select(d => d.Value))])
                         .ValueOr(arrVal.Type.ItemType.RuntimeValue);
                 } else {
@@ -643,7 +648,7 @@ public sealed class StaticAnalyzer
                 } else if (!structVal.Type.Components.Map.TryGetValue(compAccess.ComponentName, out var componentType)) {
                     _msger.Report(Message.ErrorStructureComponentDoesntExist(compAccess.ComponentName, structVal.Type));
                 } else {
-                    return structVal.Status.Comptime
+                    return structVal.Status.ComptimeValue
                         .Map(s => s[compAccess.ComponentName])
                         .ValueOr(componentType.RuntimeValue);
                 }
@@ -735,19 +740,19 @@ public sealed class StaticAnalyzer
     static ValueOption<TUnderlying, Message> GetConstantValue<TType, TUnderlying>(TType expectedType, Expression expr)
     where TType : EvaluatedType
      => expr is { Value: Value<TType, TUnderlying> v }
-        ? v.Status.Comptime.OrWithError(Message.ErrorConstantExpressionExpected(expr.Meta.SourceTokens))
+        ? v.Status.ComptimeValue.OrWithError(Message.ErrorConstantExpressionExpected(expr.Meta.SourceTokens))
         : Message.ErrorExpressionHasWrongType(expr.Meta.SourceTokens, expectedType, expr.Value.Type);
 
     static ValueOption<object, Message> GetConstantValue(Expression expr)
-     => /*expr.Value.Status.Comptime
-        .OrWithError(Message.ErrorConstantExpressionExpected(expr.Meta.SourceTokens));*/default;
+     => expr.Value.Status.ComptimeValue
+        .OrWithError(Message.ErrorConstantExpressionExpected(expr.Meta.SourceTokens));
 
     Option<ConstantExpression<TUnderlying>, Message> GetConstantExpression<TType, TUnderlying>(TType type, Scope scope, Node.Expression expr)
     where TType : EvaluatedType
     {
         var sexpr = EvaluateExpression(scope, expr);
         return sexpr.Value is Value<TType, TUnderlying> tval
-            ? tval.Status.Comptime.Map(v =>
+            ? tval.Status.ComptimeValue.Map(v =>
                 ConstantExpression.Create(sexpr, v))
                 .OrWithError(Message.ErrorConstantExpressionExpected(expr.SourceTokens))
             : Message.ErrorExpressionHasWrongType(expr.SourceTokens, type, sexpr.Value.Type).None<ConstantExpression<TUnderlying>, Message>();

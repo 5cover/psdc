@@ -32,7 +32,7 @@ public readonly struct Message
         }
     }
 
-    private static FormattableString Quantity(int quantity, string singular, string plural)
+    static FormattableString Quantity(int quantity, string singular, string plural)
      => $"{quantity} {(quantity == 1 ? singular : plural)}";
 
     internal static Message ErrorCallParameterMismatch(SourceTokens sourceTokens,
@@ -52,22 +52,29 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.IndexOutOfBounds,
         $"index out of bounds for array",
         problems);
-    
+
     internal static string ProblemOutOfBoundsDimension(int dimNumber, int dimIndex, int dimLength)
      => $"dimension {dimNumber + 1} out of bounds (indexed at {dimIndex}, length is {dimLength})";
 
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
         $"reassigning constant `{constant.Name}`");
-    internal static Message DebugEvaluateExpression(SourceTokens sourceTokens, ValueStatus valueStatus)
+    internal static Message DebugEvaluateExpression(SourceTokens sourceTokens, Value value)
      => new(sourceTokens, MessageCode.EvaluateExpression,
-        $"evaluated value: {valueStatus switch {
-            //ValueStatus.Comptime v => $"comptime: {v.Value}",
+        $"evaluated value: {value.Type}: {value.Status switch {
+            ValueStatus.Comptime v => $"comptime: {value switch {
+                StringValue => $"\"{v.Value.ToStringInvariant()}\"",
+                CharacterValue => $"'{v.Value.ToStringInvariant()}'",
+                _ => v.Value.ToStringInvariant()
+            }}",
             ValueStatus.Garbage => "garbage",
             ValueStatus.Runtime => "runtime",
             ValueStatus.Invalid => "invalid",
-            _ => throw valueStatus.ToUnmatchedException(),
+            _ => throw value.Status.ToUnmatchedException(),
         }}");
+    internal static Message DebugEvaluateType(SourceTokens sourceTokens, EvaluatedType type)
+     => new(sourceTokens, MessageCode.EvaluateType,
+        $"evaluated type: {type}");
     internal static Message ErrorUnsupportedInitializer(SourceTokens sourceTokens, EvaluatedType initializerTargetType)
      => new(sourceTokens, MessageCode.UnsupportedInitializer,
         $"unsupported initializer for type `{initializerTargetType}`");
@@ -142,15 +149,15 @@ public readonly struct Message
         StringBuilder msgContent = new("syntax: ");
 
         if (error.ExpectedProductions.Count > 0) {
-            msgContent.Append($"on {error.FailedProduction}: expected ").AppendJoin(" or ", error.ExpectedProductions);
+            msgContent.Append(Format.Msg, $"on {error.FailedProduction}: expected ").AppendJoin(" or ", error.ExpectedProductions);
         } else if (sourceTokens.Count > 0) {
             // show expected tokens only if failure token isn't the first, or if we successfully read at least 1 token.
-            msgContent.Append($"on {error.FailedProduction}: expected ").AppendJoin(", ", error.ExpectedTokens);
+            msgContent.Append(Format.Msg, $"on {error.FailedProduction}: expected ").AppendJoin(", ", error.ExpectedTokens);
         } else {
-            msgContent.Append($"expected {error.FailedProduction}");
+            msgContent.Append(Format.Msg, $"expected {error.FailedProduction}");
         }
 
-        error.ErroneousToken.Tap(t => msgContent.Append($", got {t}"));
+        error.ErroneousToken.Tap(t => msgContent.Append(Format.Msg, $", got {t}"));
 
         return new(error.ErroneousToken
             .Map(t => t.InputRange)
@@ -211,7 +218,7 @@ public readonly struct Message
         "floating point equality may be inaccurate",
         ["consider comparing absolute difference to an epsilon value instead"]);
 
-    private static Message CreateTargetLanguage(SourceTokens sourceTokens, MessageCode code,
+    static Message CreateTargetLanguage(SourceTokens sourceTokens, MessageCode code,
         string targetLanguageName, string content)
      => new(sourceTokens, code, $"{targetLanguageName}: {content}");
 }

@@ -7,7 +7,7 @@ namespace Scover.Psdc.Benchmark;
 [MemoryDiagnoser]
 public class CodeGenerationBenchmark
 {
-    private SemanticNode.Algorithm _sast;
+    SemanticNode.Algorithm _sast;
 
     [GlobalSetup]
     public void Setup()

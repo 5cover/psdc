@@ -8,7 +8,7 @@ namespace Scover.Psdc.Benchmark;
 [MemoryDiagnoser]
 public class StaticAnalysisBenchmark
 {
-    private Node.Algorithm _ast;
+    Node.Algorithm _ast;
     [GlobalSetup]
     public void Setup()
     {

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 
 using Scover.Psdc.Language;
@@ -32,13 +31,13 @@ sealed partial class CodeGenerator(Messenger messenger)
     protected override StringBuilder AppendAliasDeclaration(StringBuilder o, Declaration.TypeAlias alias)
     {
         SetGroup(o, Group.Types);
-        return Indent(o).AppendLine($"typedef {CreateTypeInfo(alias.Meta.Scope, alias.Type).GenerateDeclaration(ValidateIdentifier(alias.Meta.Scope, alias.Name))};");
+        return Indent(o).AppendLine(Format.Code, $"typedef {CreateTypeInfo(alias.Meta.Scope, alias.Type).GenerateDeclaration(ValidateIdentifier(alias.Meta.Scope, alias.Name))};");
     }
 
     protected override StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant)
     {
         SetGroup(o, Group.Macros);
-        Indent(o).Append($"#define {ValidateIdentifier(constant.Meta.Scope, constant.Name)} ");
+        Indent(o).Append(Format.Code, $"#define {ValidateIdentifier(constant.Meta.Scope, constant.Name)} ");
         return AppendExpression(o, constant.Value, _opTable.ShouldBracketOperand(_opTable.None, constant.Value)).AppendLine();
     }
 
@@ -77,9 +76,9 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     StringBuilder AppendSignature(StringBuilder o, string cReturnType, Identifier name, Scope scope, IEnumerable<ParameterFormal> parameters)
     {
-        o.Append($"{cReturnType} {ValidateIdentifier(scope, name)}(");
+        o.Append(Format.Code, $"{cReturnType} {ValidateIdentifier(scope, name)}(");
         if (parameters.Any()) {
-            o.AppendJoin(", ", parameters.Select(p => GenerateParameter(p)));
+            o.AppendJoin(", ", parameters.Select(GenerateParameter));
         } else {
             o.Append("void");
         }
@@ -125,7 +124,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
         StringBuilder AppendAlternativeClause(StringBuilder o, string keyword, Expression condition, SemanticBlock block)
         {
-            AppendBracketedExpression(o.Append($"{keyword} "), condition);
+            AppendBracketedExpression(o.Append(Format.Code, $"{keyword} "), condition);
             return AppendBlock(o.Append(' '), block);
         }
     }
@@ -174,7 +173,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
         var (format, arguments) = BuildFormatString(ecrireEcran.Arguments);
 
-        Indent(o).Append($@"printf(""{format}\n""");
+        Indent(o).Append(Format.Code, $@"printf(""{format}\n""");
 
         foreach (Expression arg in arguments) {
             AppendExpression(o.Append(", "), arg);
@@ -208,7 +207,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
         var (format, arguments) = BuildFormatString(lireClavier.ArgumentVariable.Yield());
 
-        Indent(o).Append($@"scanf(""{format}""");
+        Indent(o).Append(Format.Code, $@"scanf(""{format}""");
 
         foreach (Expression arg in arguments) {
             AppendExpression(o.Append(", &"), arg);
@@ -278,7 +277,7 @@ sealed partial class CodeGenerator(Messenger messenger)
             Indent(o);
             value.Designator.Tap(d => (d switch {
                 Designator.Array array => AppendIndex(o, array.Index),
-                Designator.Structure structure => o.Append($".{structure.Component}"),
+                Designator.Structure structure => o.Append(Format.Code, $".{structure.Component}"),
                 _ => throw d.ToUnmatchedException(),
             }).Append(" = "));
             AppendInitializer(o, value.Initializer);
@@ -321,15 +320,15 @@ sealed partial class CodeGenerator(Messenger messenger)
      => AppendExpression(o, left, left is not BracketedExpression);
 
     StringBuilder AppendExpression(StringBuilder o, Expression left) => AppendExpression(o, left, false);
-    
+
     StringBuilder AppendExpression(StringBuilder o, Expression left, bool bracket) => AppendBracketed(o, bracket, o => {
         _ = left switch {
             BracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracket),
             Expression.FunctionCall call => AppendCall(o, call),
-            Expression.Literal { Value: CharacterValue v } => o.Append($"'{v.Status.Comptime.Unwrap().ToString(CultureInfo.InvariantCulture)}'"),
-            Expression.Literal { Value: BooleanValue v } => AppendLiteralBoolean(v.Status.Comptime.Unwrap()),
-            Expression.Literal { Value: StringValue v } => o.Append($"\"{v.Status.Comptime.Unwrap().ToString(CultureInfo.InvariantCulture)}\""),
-            Expression.Literal l => o.Append(l.UnderlyingValue.ToString(CultureInfo.InvariantCulture)),
+            Expression.Literal { Value: CharacterValue v } => o.Append(Format.Code, $"'{v.Status.ComptimeValue.Unwrap().ToStringInvariant()}'"),
+            Expression.Literal { Value: BooleanValue v } => AppendLiteralBoolean(v.Status.ComptimeValue.Unwrap()),
+            Expression.Literal { Value: StringValue v } => o.Append(Format.Code, $"\"{v.Status.ComptimeValue.Unwrap().ToStringInvariant()}\""),
+            Expression.Literal l => o.Append(l.UnderlyingValue.ToStringInvariant()),
             Expression.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
             Expression.Lvalue.ComponentAccess compAccess
              => AppendExpression(o, compAccess.Structure, _opTable.ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
@@ -360,16 +359,16 @@ sealed partial class CodeGenerator(Messenger messenger)
             _includes.Ensure(IncludeSet.String);
             AppendExpression(o.Append("strcmp("), opBin.Left);
             AppendExpression(o.Append(", "), opBin.Right);
-            return o.Append($") {_opTable.Get(opBin.Operator).Code.Get(GenerateType(opBin.Meta.Scope))} 0");
+            return o.Append(Format.Code, $") {_opTable.Get(opBin.Operator).Code.Get(GenerateType(opBin.Meta.Scope))} 0");
         }
 
         var (bracketLeft, bracketRight) = _opTable.ShouldBracketBinary(opBin);
         AppendExpression(o, opBin.Left, bracketLeft);
-        o.Append($" {_opTable.Get(opBin.Operator).Code.Get(GenerateType(opBin.Meta.Scope))} ");
+        o.Append(Format.Code, $" {_opTable.Get(opBin.Operator).Code.Get(GenerateType(opBin.Meta.Scope))} ");
         return AppendExpression(o, opBin.Right, bracketRight);
     }
 
-    private static bool IsStringComparisonOperator(BinaryOperator b) => b
+    static bool IsStringComparisonOperator(BinaryOperator b) => b
         is BinaryOperator.Equal
         or BinaryOperator.GreaterThan
         or BinaryOperator.GreaterThanOrEqual
@@ -391,11 +390,11 @@ sealed partial class CodeGenerator(Messenger messenger)
     {
         const string ParameterSeparator = ", ";
 
-        o.Append($"{ValidateIdentifier(call.Meta.Scope, call.Name)}(");
+        o.Append(Format.Code, $"{ValidateIdentifier(call.Meta.Scope, call.Name)}(");
         foreach (var param in call.Parameters) {
             if (C.RequiresPointer(param.Mode) && !C.IsPointer(param.Value)) {
                 AppendUnaryPrefixOperation(o, _opTable.AddressOf, param.Value,
-                                           (o, e) => AppendExpression(o, e));
+                                           AppendExpression);
             } else {
                 AppendExpression(o, param.Value);
             }
@@ -407,7 +406,7 @@ sealed partial class CodeGenerator(Messenger messenger)
         return o.Append(')');
     }
 
-    StringBuilder AppendFileHeader(StringBuilder o, Algorithm algorithm) => o.AppendLine($"""
+    static StringBuilder AppendFileHeader(StringBuilder o, Algorithm algorithm) => o.AppendLine(Format.Code, $"""
         /** @file
          * @brief {algorithm.Name}
          * @author {Environment.UserName}
@@ -431,12 +430,12 @@ sealed partial class CodeGenerator(Messenger messenger)
         Expression left,
         OperatorInfo @operator,
         T right,
-        Func<T, T, T> collapseLiterals) where T : IConvertible
+        Func<T, T, T> collapseLiterals) where T : notnull
         // Collapse literals
          => left is Expression.Literal { UnderlyingValue: T leftVal }
-                ? o.Append(collapseLiterals(leftVal, right).ToString(CultureInfo.InvariantCulture))
+                ? o.Append(collapseLiterals(leftVal, right).ToStringInvariant())
                 : AppendExpression(o, left, _opTable.ShouldBracketOperand(@operator, left))
-                    .Append($" {@operator.Code.Get(GenerateType(left.Meta.Scope))} {right.ToString(CultureInfo.InvariantCulture)}");
+                    .Append(Format.Code, $" {@operator.Code.Get(GenerateType(left.Meta.Scope))} {right.ToStringInvariant()}");
 
     protected override TypeGenerator GenerateType(Scope scope)
      => type => CreateTypeInfo(scope, type);

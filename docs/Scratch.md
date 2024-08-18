@@ -516,69 +516,45 @@ Tests (increasing complexity):
 - Structure > Array constant
 - Array > Structure constant
 
-## Compiler directives
+## What do we need equatable semantics for again?
 
-Compiler directives are compile-time instructions that are evaluated in the static analyzer. They may be translated to the target lanugage (see C's `static_assert`), but they do not affect the machine code output of the target language compilation.
+Anything that is not a node can simply use equality. This makes it compatible with records.
 
-Preprocessor directives don't require static analysis: `#include`, `#config`. Other stuff, like compiler log, static asserts, are semantically similar to statements and should appear as such. Maybe we should reuse Zig's syntax for builtins: `@compilerLog`, `@assert`... except the `@` symbol indicates that this call is evaluated at compile-time and does not affect the machine code output.
+## Review ParseOperation error reporting logic
 
-They require the context given by static analysis to run (otherwise we'd use preprocessor directives)
+We need to rethink ParseZeroOrMore\* and ParseOneOrMore\*. They are complex. I don't think they should report errors.
 
-They are allowed in
-
-- Declarations
-- Struct components
-- Initializers values
-- Statements
-
-### `@evaluateExpr(<expr>)`
-
-Logs the value status of an expression as a message. (including comptime value if present)
-
-Add a new category of message: Debug. Shown in light green.
-
-Message.DebugEvaluateExpr(result)
-
-### `@evaluateType(<type>)`
-
-Logs an evaluated type.
-
-Message.DebugEvaluateType(result)
-
-### `@assert(<expr>,<message: expr?>)`
-
-Asserts that a given expression is comptime-known and true. Errors if any of these cases fail.
-
-Message.AssertionFailed(expression, message?)
-
-No need to call it `@staticAssert` since the `@` already indicates it comptime nature.
-
-## Redesign values
-
-What is a value? Fundamentally, a discriminated union that aggregates an evaluated type, aither:
-
-- Comptime of some TUnderlying
-- Runtime
-- Garbage
-- Invalid
-
-Okay. What do we want to be able to do with it?
-
-- Retrive the strongly typed underlying value
-- Map the underlying value based on the type
-
-We want to avoid having to express the underlying type directly. Instead, handle operations through the evaluated type.
-
-How to say that a Value whose type is an IntegerType has an `int` underlying value?
-
-Instead of carrying the underlying type around, the EvaluatedType should handle operations, no?
+Maybe a good approach would be to start with manual multi-parsing
 
 ```cs
-// in InstantiableType
-public OperationResult<UnaryOperationMessage> OperateUnary(UnaryOperator @operator, TUnderlying operand);
-
-// in EvaluatedType
-public OperationResult<UnaryOperationMessage> OperateUnary(UnaryOperationMessage @operator, Value operand);
+o.Parse(out var stmt1, ParseStatement)
+ .Parse(out var stmt2, ParseStatement)
+ .Parse(out var stmt3, ParseStatement)
+ // ...
 ```
 
-This method would essentially switch over the operator and map the comptime value. But for that it needs to be.
+Now what happens if any of these fail?
+
+It fails the whole operation, and we switch to the error implementation. This means we get a failed result.
+
+That's not what we want. When we're parsing a function body, failing to parse a statement should not incur the failure of the whole function body, but only of the statement itself.
+
+Okay, so what about:
+
+```cs
+o.ParseOptional(out var stmt1, ParseStatement)
+ .ParseOptional(out var stmt2, ParseStatement)
+ .ParseOptional(out var stmt3, ParseStatement)
+ // ...
+ .MapResult(t => new Block([stmt1, stmt2, stmt3].WhereSome()))
+```
+
+This is better. Now, an invalid statement doesn't fail the whole block. But what about errors? We still want an error when a statement has failed to parse.
+
+Currently, what we do is that we report this error in ParseOperation. But the issue is that if there is an alternative parsing method available (i.e. the ParseOperation chain is a `ParserFirst` operand), the error is still reported, which means we get a false positive.
+
+What should we do instead?
+
+We could:
+
+- Return a list of `ParseResult`s. This means we would have to expliciitly drop each error.

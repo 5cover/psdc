@@ -15,7 +15,7 @@ public sealed class Tokenizer
 
     static readonly IReadOnlyList<TokenRule> rules =
         // Variable length
-        GetRules(new Ruled<TokenRule>[]{CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter})
+        GetRules(new Ruled<TokenRule>[] { CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter })
         // Maximum munch
         .Concat(GetRules(Keyword.Instances).OrderByDescending(r => r.Expected.Length))
         .Concat(Enumerable.Concat(GetRules(Punctuation.Instances), GetRules(Operator.Instances))

@@ -5,14 +5,14 @@ namespace Scover.Psdc.StaticAnalysis;
 
 public static class SemanticNodeExtensions
 {
-    private static SemanticMetadata Meta(SemanticNode node) => new(node.Meta.Scope, SourceTokens.Empty);
+    static SemanticMetadata Meta(SemanticNode node) => new(node.Meta.Scope, SourceTokens.Empty);
 
     /// Invert an expression, assuming it is boolean.
     /// </summary>
     /// <param name="expr">The expression.</param>
     /// <returns>The inverse of <paramref name="expr"/>. If <param name="expr"> is not a boolean expression, a simple NOT logical operation is created.</returns>
     internal static Expression Invert(this Expression expr) => expr switch {
-        Expression.Literal { Value: BooleanValue b } l => new Expression.Literal(Meta(expr), !(bool)l.UnderlyingValue, b.Invert()),
+        Expression.Literal { Value: BooleanValue b } l => new Expression.Literal(Meta(expr), !b.Status.ComptimeValue.Unwrap(), b.Invert()),
         Expression.Bracketed e => new Expression.Bracketed(Meta(expr), e.ContainedExpression.Invert(), e.Value.Invert()),
         Expression.UnaryOperation uo when uo.Operator is UnaryOperator.Not => uo.Operand,
         Expression.BinaryOperation bo when bo.Invert() is { HasValue: true } bov => bov.Value,
@@ -58,8 +58,8 @@ public static class SemanticNodeExtensions
 
     internal static ValueOption<Expression.Literal> ToLiteral<TType, TUnderlying>(this Value<TType, TUnderlying> value, Scope scope)
     where TType : EvaluatedType
-    where TUnderlying : IConvertible
-     => /*value.Status is ValueStatus.Comptime<TUnderlying> c
-         ? new Expression.Literal(new(scope, SourceTokens.Empty), c.Value, value).Some()
-         :*/ default;
+    where TUnderlying : notnull
+     => value.Status is ValueStatus.Comptime<TUnderlying> comptime
+         ? new Expression.Literal(new(scope, SourceTokens.Empty), comptime.Value, value).Some()
+         : default;
 }

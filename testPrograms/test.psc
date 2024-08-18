@@ -5,7 +5,7 @@ type tNotes = tableau[6] de réel;
 type A = structure début
     i: entier;
     @evaluateExpr("im in a struct")
-fin
+fin;
 
 @evaluateExpr("im at da top lvl")
 

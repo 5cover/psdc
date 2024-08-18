@@ -6,28 +6,6 @@ interface Value : IEquatable<Value>
 {
     EvaluatedType Type { get; }
     ValueStatus Status { get; }
-
-    /// <summary>
-    /// Status for a value that is known at compile-time.
-    /// </summary>
-    /// <typeparam name="TUnderlying">The type of the underlying value.</typeparam>
-    /// <param name="value">The actual value.</param>
-    public static ValueStatus<TUnderlying> Comptime<TUnderlying>(TUnderlying value) => new ValueStatus<TUnderlying>.ComptimeValue(value);
-
-    /// <summary>
-    /// Status for a value that is known at run-time.
-    /// </summary>
-    public static ValueStatus<TUnderlying> Runtime<TUnderlying>() => ValueStatus<TUnderlying>.RuntimeValue.Instance;
-
-    /// <summary>
-    /// Status for a garbage value, i.e. neither known at compile-time or runtime.
-    /// </summary>
-    public static ValueStatus<TUnderlying> Garbage<TUnderlying>() => ValueStatus<TUnderlying>.GarbageValue.Instance;
-
-    /// <summary>
-    /// Status for a semantically invalid value that causes a compilation error.
-    /// </summary>
-    public static ValueStatus<TUnderlying> Invalid<TUnderlying>() => ValueStatus<TUnderlying>.RuntimeValue.Instance;
 }
 
 interface Value<out TType, TUnderlying> : Value where TType : EvaluatedType

@@ -17,6 +17,7 @@ public sealed partial class Parser
     readonly Parser<CompilerDirective> _parseCompilerDirective;
 
     ParseResult<CompilerDirective.Assert> ParseAtAssert(IEnumerable<Token> tokens) => ParseOperation.Start(_msger, tokens, "@assert")
+        .ParseToken(Keyword.AtAssert)
         .ParseToken(Punctuation.LParen)
         .Parse(out var expr, ParseExpression)
         .ParseOptional(out var msg, o => o
@@ -27,12 +28,14 @@ public sealed partial class Parser
         .MapResult(t => new CompilerDirective.Assert(t, expr, msg));
 
     ParseResult<CompilerDirective.EvaluateExpr> ParseAtEvaluateExpr(IEnumerable<Token> tokens) => ParseOperation.Start(_msger, tokens, "@evaluateExpr")
+        .ParseToken(Keyword.AtEvaluateExpr)
         .ParseToken(Punctuation.LParen)
         .Parse(out var expr, ParseExpression)
         .ParseToken(Punctuation.RParen)
         .MapResult(t => new CompilerDirective.EvaluateExpr(t, expr));
 
     ParseResult<CompilerDirective.EvaluateType> ParseAtEvaluateType(IEnumerable<Token> tokens) => ParseOperation.Start(_msger, tokens, "@evaluateType")
+        .ParseToken(Keyword.AtEvaluateType)
         .ParseToken(Punctuation.LParen)
         .Parse(out var type, _parseType)
         .ParseToken(Punctuation.RParen)

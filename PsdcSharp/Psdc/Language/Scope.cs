@@ -7,8 +7,8 @@ namespace Scover.Psdc.Language;
 
 public abstract class Scope(Scope? parent)
 {
-    protected readonly Dictionary<string, Symbol> _symbolTable = [];
-    protected readonly Scope? _parentScope = parent;
+    private protected readonly Dictionary<string, Symbol> _symbolTable = [];
+    private protected readonly Scope? _parentScope = parent;
 
     public IEnumerable<T> GetSymbols<T>() where T : Symbol
     {
@@ -16,7 +16,7 @@ public abstract class Scope(Scope? parent)
             foreach (T t in scope._symbolTable.Values.OfType<T>()) {
                 yield return t;
             }
-        }   
+        }
     }
 
     public Option<T, Message> GetSymbol<T>(Identifier name) where T : Symbol

@@ -40,7 +40,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
     public string GenerateDeclaration(IEnumerable<string> declarators)
      => $"{_typeName}{_typeQualifier} {string.Join(", ", declarators.Select(name => _stars + name + _postModifier))}";
 
-     public string GenerateDeclaration(string declarator) => GenerateDeclaration(declarator.Yield());
+    public string GenerateDeclaration(string declarator) => GenerateDeclaration(declarator.Yield());
 
     public TypeInfo ToConst()
      => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length, _postModifier,
@@ -80,7 +80,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             var arrayType = Create(array.ItemType, indent, help);
             StringBuilder postModifier = new(arrayType._postModifier);
             foreach (var dimension in array.Dimensions.Select(dim => help.GenExpr(dim.Expression))) {
-                postModifier.Append($"[{dimension}]");
+                postModifier.Append(Format.Code, $"[{dimension}]");
             }
             return new(arrayType._typeName,
                 requiredHeaders: arrayType.RequiredHeaders,
@@ -93,7 +93,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression
                 .Map(help.GenExpr.Invoke)
-                .ValueOr((strlen.Length + 1).ToString());
+                .ValueOr((strlen.Length + 1).ToString(Format.Code));
             return new("char const", "%s", postModifier: $"[{lengthPlus1}]");
         }
 

@@ -41,7 +41,7 @@ partial class Parser
     readonly IReadOnlyDictionary<TokenType, Parser<Expression>> _literalParsers;
     delegate ParseResult<TRight> RightParser<in TLeft, out TRight>(TLeft left, IEnumerable<Token> rightTokens);
 
-    private Parser<Expression>? _expressionParser;
+    Parser<Expression>? _expressionParser;
     ParseResult<Expression> ParseExpression(IEnumerable<Token> tokens)
      => (_expressionParser ??=
         ParserBinaryOperation(operatorsOr,
@@ -164,17 +164,17 @@ partial class Parser
     Parser<Expression> ParserUnaryOperation(
         Parser<Expression> descentParser)
      => tokens => {
-        var prOp = ParseUnaryOperator(tokens);
-        return prOp.Match(
-            op => {
-                var prOperand = ParserUnaryOperation(descentParser)(tokens.Skip(prOp.SourceTokens.Count));
-                return prOperand.WithSourceTokens(new(tokens, prOp.SourceTokens.Count + prOperand.SourceTokens.Count))
-                    .Map((t, expr) => new Expression.UnaryOperation(t, op, expr));
-            },
-            _ => descentParser(tokens));
+         var prOp = ParseUnaryOperator(tokens);
+         return prOp.Match(
+             op => {
+                 var prOperand = ParserUnaryOperation(descentParser)(tokens.Skip(prOp.SourceTokens.Count));
+                 return prOperand.WithSourceTokens(new(tokens, prOp.SourceTokens.Count + prOperand.SourceTokens.Count))
+                     .Map((t, expr) => new Expression.UnaryOperation(t, op, expr));
+             },
+             _ => descentParser(tokens));
      };
 
-    private Parser<UnaryOperator>? _parseUnaryOperator;
+    Parser<UnaryOperator>? _parseUnaryOperator;
     Parser<UnaryOperator> ParseUnaryOperator => _parseUnaryOperator ??= ParserFirst<UnaryOperator>(
         t => ParseToken(t, Operator.Minus, t => new UnaryOperator.Minus(t)),
         t => ParseToken(t, Operator.Not, t => new UnaryOperator.Not(t)),

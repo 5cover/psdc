@@ -290,8 +290,8 @@ abstract class ParseOperation
     {
         static readonly TokenTypeSet ignoredTokenTypes = Set.Of<TokenType>(TokenType.PreprocessorDirective.Instance);
 
-        private readonly Messenger _msger = messenger;
-        private readonly string _prod = production;
+        readonly Messenger _msger = messenger;
+        readonly string _prod = production;
 
         ValueOption<Token> NextToken {
             get {
@@ -483,9 +483,8 @@ abstract class ParseOperation
         }
 
         void AddOrSyntaxError<T>(ICollection<T> items, ParseResult<T> item)
-         => item.Tap(
-                some: items.Add,
-                none: error => _msger.Report(Message.ErrorSyntax(item.SourceTokens, error))
+         => item.Tap(items.Add,
+                     error => _msger.Report(Message.ErrorSyntax(item.SourceTokens, error))
             );
 
         bool Match(TokenType type)
@@ -513,12 +512,8 @@ abstract class ParseOperation
         ValueOption<bool> Peek(TokenType type)
          => NextToken.Map(token => type.Equals(token.Type));
 
-        void ParseWhile<T>(ICollection<T> items, Parser<T> parse, Func<bool> keepGoingWhile, Func<bool>? skimWhile = null)
+        void ParseWhile<T>(ICollection<T> items, Parser<T> parse, Func<bool> keepGoingWhile)
         {
-            while (skimWhile?.Invoke() ?? false) {
-                _readCount++;
-            }
-
             ParseError? lastError = null;
             while (keepGoingWhile()) {
                 var item = CallParser(parse);
@@ -530,9 +525,6 @@ abstract class ParseOperation
 
                 if (!item.HasValue) {
                     lastError = item.Error;
-                    while (skimWhile?.Invoke() ?? false) {
-                        _readCount++;
-                    }
                 }
             }
         }

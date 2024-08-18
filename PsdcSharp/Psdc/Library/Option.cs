@@ -4,6 +4,7 @@ namespace Scover.Psdc.Library;
 
 // Covariant Option monad
 
+[SuppressMessage("Naming", "CA1716", Justification = "Might use the .NET option in a future version")]
 public interface Option<out T>
 {
     [MemberNotNullWhen(true, nameof(Value))]
@@ -12,6 +13,7 @@ public interface Option<out T>
     T? Value { get; }
 }
 
+[SuppressMessage("Naming", "CA1716", Justification = "Might use the .NET option in a future version")]
 public interface Option<out T, out TError>
 {
     TError? Error { get; }
@@ -57,6 +59,7 @@ public readonly record struct ValueOption<T, TError> : Option<T, TError>
     public static implicit operator ValueOption<T, TError>(TError error) => new(false, default, error);
 }
 
+[SuppressMessage("Naming", "CA1716", Justification = "Might use the .NET option in a future version")]
 public static class Option
 {
     public static ValueOption<T> Some<T>(this T value) => new(true, value);

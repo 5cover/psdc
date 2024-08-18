@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 
 using Scover.Psdc.Parsing;
@@ -96,7 +97,7 @@ interface EvaluatedType<out TValue> : EvaluatedType where TValue : Value
     public new TValue InvalidValue { get; }
 }
 
-internal sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, Value[]>
+sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, Value[]>
 {
     ArrayType(EvaluatedType elementType, IReadOnlyList<ConstantExpression<int>> dimensions, Identifier? alias)
      : base(alias, CreateArray(elementType.GarbageValue, dimensions.Select(d => d.Value)))
@@ -105,7 +106,7 @@ internal sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, Valu
         Dimensions = dimensions;
     }
 
-    private static Value[] CreateArray(Value value, IEnumerable<int> dimensions)
+    static Value[] CreateArray(Value value, IEnumerable<int> dimensions)
     {
         var array = new Value[dimensions.Product()];
         Array.Fill(array, value);
@@ -135,14 +136,14 @@ internal sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, Valu
 
     protected override ArrayValue CreateValue(ValueStatus<Value[]> status)
     {
-        Debug.Assert(status.Comptime is not { HasValue: true } c
+        Debug.Assert(status.ComptimeValue is not { HasValue: true } c
                   || c.Value.Length == Dimensions.Select(d => d.Value).Product()
                   && c.Value.All(v => v.Type.IsConvertibleTo(ItemType)));
         return new(this, status);
     }
 }
 
-internal sealed class BooleanType : EvaluatedTypeImplInstantiable<BooleanValue, bool>
+sealed class BooleanType : EvaluatedTypeImplInstantiable<BooleanValue, bool>
 {
     BooleanType(Identifier? alias) : base(alias, false)
     { }
@@ -157,7 +158,7 @@ internal sealed class BooleanType : EvaluatedTypeImplInstantiable<BooleanValue, 
     protected override BooleanValue CreateValue(ValueStatus<bool> status) => new(this, status);
 }
 
-internal sealed class CharacterType : EvaluatedTypeImplInstantiable<CharacterValue, char>
+sealed class CharacterType : EvaluatedTypeImplInstantiable<CharacterValue, char>
 {
     CharacterType(Identifier? alias) : base(alias, '\0')
     { }
@@ -172,9 +173,9 @@ internal sealed class CharacterType : EvaluatedTypeImplInstantiable<CharacterVal
     protected override CharacterValue CreateValue(ValueStatus<char> status) => new(this, status);
 }
 
-internal sealed class FileType : EvaluatedTypeImplNotInstantiable<FileValue>
+sealed class FileType : EvaluatedTypeImplNotInstantiable<FileValue>
 {
-    FileType(Identifier? alias) : base(alias, ValueStatus.Garbage)
+    FileType(Identifier? alias) : base(alias, ValueStatus.Garbage.Instance)
     { }
 
     public static FileType Instance { get; } = new(null);
@@ -186,9 +187,9 @@ internal sealed class FileType : EvaluatedTypeImplNotInstantiable<FileValue>
     protected override FileValue CreateValue(ValueStatus status) => new(this, status);
 }
 
-internal sealed class LengthedStringType : EvaluatedTypeImplInstantiable<LengthedStringValue, string>
+sealed class LengthedStringType : EvaluatedTypeImplInstantiable<LengthedStringValue, string>
 {
-    LengthedStringType(Option<Expression> lengthExpression, int length, Identifier? alias = null) : base(alias, Value.Garbage<string>())
+    LengthedStringType(Option<Expression> lengthExpression, int length, Identifier? alias = null) : base(alias, ValueStatus.Garbage<string>.Instance)
     {
         LengthConstantExpression = lengthExpression;
         Length = length;
@@ -211,12 +212,12 @@ internal sealed class LengthedStringType : EvaluatedTypeImplInstantiable<Lengthe
     public override LengthedStringType ToAliasReference(Identifier alias) => new(LengthConstantExpression, Length, alias);
     protected override LengthedStringValue CreateValue(ValueStatus<string> status)
     {
-        Debug.Assert(status.Comptime is not { HasValue: true } c || c.Value.Length == Length);
+        Debug.Assert(status.ComptimeValue is not { HasValue: true } c || c.Value.Length == Length);
         return new(this, status);
     }
 }
 
-internal sealed class IntegerType : EvaluatedTypeImplInstantiable<IntegerValue, int>
+sealed class IntegerType : EvaluatedTypeImplInstantiable<IntegerValue, int>
 {
     IntegerType(Identifier? alias) : base(alias, 0)
     { }
@@ -232,7 +233,7 @@ internal sealed class IntegerType : EvaluatedTypeImplInstantiable<IntegerValue, 
     protected override IntegerValue CreateValue(ValueStatus<int> status) => new(this, status);
 }
 
-internal sealed class RealType : EvaluatedTypeImplInstantiable<RealValue, decimal>
+sealed class RealType : EvaluatedTypeImplInstantiable<RealValue, decimal>
 {
     RealType(Identifier? alias) : base(alias, 0m)
     { }
@@ -245,9 +246,9 @@ internal sealed class RealType : EvaluatedTypeImplInstantiable<RealValue, decima
     protected override RealValue CreateValue(ValueStatus<decimal> status) => new RealValueImpl(this, status);
 }
 
-internal class StringType : EvaluatedTypeImplInstantiable<StringValue, string>
+sealed class StringType : EvaluatedTypeImplInstantiable<StringValue, string>
 {
-    StringType(Identifier? alias) : base(alias, Value.Garbage<string>())
+    StringType(Identifier? alias) : base(alias, ValueStatus.Garbage<string>.Instance)
     { }
 
     public static StringType Instance { get; } = new(null);
@@ -260,7 +261,7 @@ internal class StringType : EvaluatedTypeImplInstantiable<StringValue, string>
     protected override StringValue CreateValue(ValueStatus<string> status) => new StringValueImpl(this, status);
 }
 
-internal sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, IReadOnlyDictionary<Identifier, Value>>
+sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, IReadOnlyDictionary<Identifier, Value>>
 {
     public StructureType(OrderedMap<Identifier, EvaluatedType> components, Identifier? alias = null) : base(alias, components.Map.ToDictionary(kv => kv.Key, kv => kv.Value.DefaultValue))
     {
@@ -270,7 +271,7 @@ internal sealed class StructureType : EvaluatedTypeImplInstantiable<StructureVal
                 StringBuilder sb = new();
                 sb.AppendLine("structure début");
                 foreach (var comp in components.Map) {
-                    sb.AppendLine($"{comp.Key} : {comp.Value.Representation};");
+                    sb.AppendLine(CultureInfo.InvariantCulture, $"{comp.Key} : {comp.Value.Representation};");
                 }
                 sb.Append("fin");
                 return sb.ToString();
@@ -298,9 +299,9 @@ internal sealed class StructureType : EvaluatedTypeImplInstantiable<StructureVal
      }));
 }
 
-internal sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
+sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
 {
-    UnknownType(SourceTokens sourceTokens, string repr, Identifier? alias = null) : base(alias, ValueStatus.Garbage)
+    UnknownType(SourceTokens sourceTokens, string repr, Identifier? alias = null) : base(alias, ValueStatus.Garbage.Instance)
     {
         SourceTokens = sourceTokens;
         ActualRepresentation = repr;

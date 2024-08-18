@@ -40,7 +40,6 @@ public interface Node : EquatableSemantics<Node>
                 && o.Expression.SemanticsEqual(Expression)
                 && o.Message.OptionSemanticsEqual(Message);
         }
-
     }
 
     public sealed record Algorithm(SourceTokens SourceTokens, Identifier Name, IReadOnlyList<Declaration> Declarations) : Node
@@ -401,7 +400,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.ComponentName.SemanticsEqual(ComponentName);
             }
 
-            internal sealed new record Bracketed
+            internal new sealed record Bracketed
             : Lvalue, BracketedExpression
             {
                 public Bracketed(SourceTokens sourceTokens,
@@ -493,11 +492,11 @@ public interface Node : EquatableSemantics<Node>
             TType ValueType,
             TUnderlying Value)
         : Literal
-            where TUnderlying : IConvertible
             where TValue : Value
             where TType : EvaluatedType, InstantiableType<TValue, TUnderlying>
+            where TUnderlying : notnull
         {
-            IConvertible Literal.Value => Value;
+            object Literal.Value => Value;
             EvaluatedType Literal.ValueType => ValueType;
 
             public Value CreateValue() => ValueType.Instantiate(Value);
@@ -508,7 +507,7 @@ public interface Node : EquatableSemantics<Node>
 
         internal interface Literal : Expression
         {
-            IConvertible Value { get; }
+            object Value { get; }
             EvaluatedType ValueType { get; }
             Value CreateValue();
 
@@ -695,7 +694,7 @@ public interface Node : EquatableSemantics<Node>
     internal abstract record UnaryOperator(SourceTokens SourceTokens, string Representation) : Node
     {
         public bool SemanticsEqual(Node other) => other is UnaryOperator o
-         && o.Representation.Equals(Representation);
+         && o.Representation == Representation;
 
         public sealed record Cast(SourceTokens SourceTokens, Type Target) : UnaryOperator(SourceTokens, "(cast)");
         public sealed record Minus(SourceTokens SourceTokens) : UnaryOperator(SourceTokens, "-");
@@ -706,7 +705,7 @@ public interface Node : EquatableSemantics<Node>
     internal abstract record BinaryOperator(SourceTokens SourceTokens, string Representation) : Node
     {
         public bool SemanticsEqual(Node other) => other is UnaryOperator o
-         && o.Representation.Equals(Representation);
+         && o.Representation == Representation;
 
         public sealed record Add(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "ET");
         public sealed record And(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "/");

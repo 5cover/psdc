@@ -252,7 +252,7 @@ public interface TokenType
         PreprocessorDirective()
         {
             Representation = GetRepr("directive", true);
-            Rules = GetRules(this, [t => new RegexTokenRule(t, "#\\p{Z}*(.*)\\p{Z}*\\n") ]);
+            Rules = GetRules(this, [t => new RegexTokenRule(t, "#\\p{Z}*(.*)\\p{Z}*\\n")]);
         }
 
         public string Representation { get; }

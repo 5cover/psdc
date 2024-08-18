@@ -88,7 +88,7 @@ static class Program
 
             var lineNoPadding = end.Line.DigitCount();
 
-            Stderr.WriteLine($"{start}: {message.Severity.ToString().ToLower()}: {message.Content.Get(input)}");
+            Stderr.WriteLine($"{start}: {message.Severity.ToString().ToLower(Format.Msg)}: {message.Content.Get(input)}");
 
             // If the error spans over only 1 line, show it with carets underneath
             if (start.Line == end.Line) {
@@ -166,7 +166,7 @@ static class Program
         static void StartLine(int padding, int line)
         {
             Stderr.Write(LineNoMargin);
-            Stderr.Write((line + 1).ToString().PadLeft(padding));
+            Stderr.Write((line + 1).ToString(Format.Msg).PadLeft(padding));
             Stderr.Write(Bar);
         }
 

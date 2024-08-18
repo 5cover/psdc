@@ -5,7 +5,7 @@ namespace Scover.Psdc.CodeGeneration.C;
 
 sealed class KeywordTable : CodeGeneration.KeywordTable
 {
-    private KeywordTable() { }
+    KeywordTable() { }
     public static KeywordTable Instance { get; } = new();
 
     public string Validate(Scope scope, SourceTokens sourceTokens, string ident, Messenger msger)
@@ -23,7 +23,7 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
         return ident;
     }
 
-    private static readonly HashSet<string> keywords = [
+    static readonly HashSet<string> keywords = [
         "_Alignas", "_Alignof", "_Atomic", "_BitInt", "_Bool", "_Complex",
         "_Decimal128", "_Decimal32", "_Decimal64", "_Generic", "_Imaginary", "_Noreturn",
         "_Static_assert", "_Thread_local", "alignas", "alignof", "auto", "bool",

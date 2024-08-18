@@ -264,7 +264,7 @@ public interface SemanticNode
         : Expression, BracketedExpression;
 
         internal sealed record Literal(SemanticMetadata Meta,
-            IConvertible UnderlyingValue,
+            object UnderlyingValue,
             Value Value)
         : Expression;
     }

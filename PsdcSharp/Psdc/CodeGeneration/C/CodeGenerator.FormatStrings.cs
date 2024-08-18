@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.Text;
+﻿using System.Text;
 using Scover.Psdc.Messages;
 
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
@@ -15,7 +14,7 @@ partial class CodeGenerator
 
         foreach (var part in parts) {
             if (part is Expression.Literal l) {
-                format.Append(l.UnderlyingValue.ToString(CultureInfo.InvariantCulture)
+                format.Append(l.UnderlyingValue.ToStringInvariant()?
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
             } else {

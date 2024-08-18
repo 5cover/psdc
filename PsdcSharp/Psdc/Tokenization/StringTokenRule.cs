@@ -3,7 +3,7 @@ namespace Scover.Psdc.Tokenization;
 sealed class StringTokenRule(TokenType tokenType, string expected, StringComparison comparison) : TokenRule
 {
     readonly StringComparison _comparison = comparison;
-    
+
     public TokenType TokenType => tokenType;
     public string Expected => expected;
 

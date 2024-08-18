@@ -91,7 +91,10 @@ static class OptionCollectionExtensions
 
     public static ValueOption<TValue> GetValueOrNone<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key)
      => dictionary.TryGetValue(key, out TValue? v) ? v.Some() : default;
-    
+
     public static ValueOption<KeyValuePair<TKey, TValue>> GetEntryOrNone<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key)
      => dictionary.TryGetValue(key, out TValue? v) ? KeyValuePair.Create(key, v) : default;
+
+    public static IEnumerable<T> WhereSome<T>(this IEnumerable<Option<T>> source) => source.Where(o => o.HasValue).Select(o => o.Value!);
+    public static IEnumerable<T> WhereSome<T>(this IEnumerable<ValueOption<T>> source) => source.Where(o => o.HasValue).Select(o => o.Value!);
 }

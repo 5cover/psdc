@@ -13,7 +13,7 @@ static class ConstantFolding
         ValueStatus<TOperand> value,
         Func<TOperand, TResult> operation) where TResultValue : Value
      => OperationResult.OkUnary(
-            value.Comptime.Map(v => type.Instantiate(operation(v))).ValueOr(type.RuntimeValue));
+            value.ComptimeValue.Map(v => type.Instantiate(operation(v))).ValueOr(type.RuntimeValue));
 
     static OperationResult<BinaryOperationMessage> Operate<TResultValue, TLeft, TRight, TResult>(
         InstantiableType<TResultValue, TResult> type,
@@ -21,13 +21,13 @@ static class ConstantFolding
         ValueStatus<TRight> right,
         Func<TLeft, TRight, TResult> operation) where TResultValue : Value
      => OperationResult.OkBinary(
-            left.Comptime.Zip(right.Comptime).Map((l, r) => type.Instantiate(operation(l, r))).ValueOr(type.RuntimeValue));
+            left.ComptimeValue.Zip(right.ComptimeValue).Map((l, r) => type.Instantiate(operation(l, r))).ValueOr(type.RuntimeValue));
 
     static TResult Operate<TLeft, TRight, TResult>(
         ValueStatus<TLeft> left,
         ValueStatus<TRight> right,
         Func<Option<TLeft>, Option<TRight>, TResult> operation)
-     => operation(left.Comptime, right.Comptime);
+     => operation(left.ComptimeValue, right.ComptimeValue);
 
     internal static OperationResult<UnaryOperationMessage> EvaluateOperation(this StaticAnalyzer sa, Scope scope, UnaryOperator op, Value operand) => (op, operand) switch {
         (_, UnknownValue) => OperationResult.OkUnary(operand),
@@ -41,7 +41,7 @@ static class ConstantFolding
         _ => (UnaryOperationMessage)Message.ErrorUnsupportedOperation,
     };
 
-    private static OperationResult<UnaryOperationMessage> EvaluateCast(this StaticAnalyzer sa, Scope scope, Cast cast, Value operand)
+    static OperationResult<UnaryOperationMessage> EvaluateCast(this StaticAnalyzer sa, Scope scope, Cast cast, Value operand)
     {
         EvaluatedType targetType = sa.EvaluateType(scope, cast.Target);
         // Implicit conversions
