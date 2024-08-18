@@ -1619,3 +1619,55 @@ Asserts that a given expression is comptime-known and true. Errors if any of the
 Message.AssertionFailed(expression, message?)
 
 No need to call it `@staticAssert` since the `@` already indicates it comptime nature.
+
+## parser blocks
+
+Interesting idea, avoids having to create meaningless `ParseOperation`s. Needs overloads.
+
+Parser blocks are useful when 2 conditions are met:
+
+- We don't use the produced `SourceTokens` (discard it in the result)
+- The production name is the same
+
+In any case, it's only really useful for optimization and DRY. So low priority.
+
+## Review ParseOperation error reporting logic
+
+We need to rethink ParseZeroOrMore\* and ParseOneOrMore\*. They are complex. I don't think they should report errors.
+
+Maybe a good approach would be to start with manual multi-parsing
+
+```cs
+o.Parse(out var stmt1, ParseStatement)
+ .Parse(out var stmt2, ParseStatement)
+ .Parse(out var stmt3, ParseStatement)
+ // ...
+```
+
+Now what happens if any of these fail?
+
+It fails the whole operation, and we switch to the error implementation. This means we get a failed result.
+
+That's not what we want. When we're parsing a function body, failing to parse a statement should not incur the failure of the whole function body, but only of the statement itself.
+
+Okay, so what about:
+
+```cs
+o.ParseOptional(out var stmt1, ParseStatement)
+ .ParseOptional(out var stmt2, ParseStatement)
+ .ParseOptional(out var stmt3, ParseStatement)
+ // ...
+ .MapResult(t => new Block([stmt1, stmt2, stmt3].WhereSome()))
+```
+
+This is better. Now, an invalid statement doesn't fail the whole block. But what about errors? We still want an error when a statement has failed to parse.
+
+Currently, what we do is that we report this error in ParseOperation. But the issue is that if there is an alternative parsing method available (i.e. the ParseOperation chain is a `ParserFirst` operand), the error is still reported, which means we get a false positive.
+
+I mean, all our errors are reported in `AddOrSyntaxError`. Because everything that we parse evenetually ends up in a statement or declaration. So this is quite a fundamental issue. This must also be the reason why we get duplicate errors sometimes.
+
+What should we do instead?
+
+We could:
+
+- Return a list of `ParseResult`s. This means we would have to explicitly drop each error, and allow for recovery. Make a method that takes a list of ParseResults, reports errors the erros and returns the payloads.

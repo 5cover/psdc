@@ -298,6 +298,111 @@ Maybe we could tokenize them as identifiers always and expect an identifier of a
 
 That seems like an easy way to implement this feature.
 
+## more expression static analysis
+
+- Check if file arguments to file builtins are files
+- Check for loop start, step and end
+    - start must be assignable to variant
+    - variant and step must support operator '+'
+    - variant and end must support operator '<'
+    - so I need a way to query which operators are supported between 2 types. Oh no.
+
+- Check the type and const-ness of each case
+- Check if condition is a boolean in alternatives and loops
+- Check the assignability of target and value in assignment
+- Check if return value corresponds to function's return type
+
+## Preprocessor directives
+
+Since a PD can be located anywher in the program, it cannot be parsed as part of the normal syntax, unless we want to make the grammar extremely messy.
+
+The Tokenizer recognizes and interprets them, but does not produce tokens. Instead, it does something special.
+
+Each PD is not it's own token type. Rather, there's a general token type which values to the PD name. Encountered in Tokenizer, we evaluate it. If unknown name, raise an error. May have to create Parse class for the more complex ones. If they require parsing expressions. See if we can reuse existing code.
+
+### `#config <name: ident> := <value: expr>`
+
+Alters the config immutable dictionary.
+
+Each Token has this immutable dictionary.
+
+### `#config <name: ident> reset`
+
+### Conditional compilation
+
+But don't copy C with `#if`, `#elsif`, `#else`, `#endif`. They're kinda cumbersome.
+
+Instead, use braces. Will require parsing of multiple PD lines, though.
+
+### `#include`
+
+Add support for modularity.
+
+Just use an include statement. It is dead simple, but it works. No special extension for header files.
+
+It's more of a DIY approach, like in C. Common issues of a modularity system based on include statements can be mitagated.
+
+issue|solution
+-|-
+Naming conflicts|Manual prefixing of declared symbols
+Encapsulation|Public header file containing the interface<br>internal header file(s) for internals
+Circular includes|Implicit include guards<br>`#pragma include <expr>` for explictly allowing multiple inclusions
+
+### Implementation
+
+#### 1. Run a preprocessor
+
+Works for things like #include but would require rewriting static analyisis for PD like `#compiler log`.
+
+#### 2. Token channels (like in ANTLR)
+
+Basically return a separate list for the PD-related tokens.
+
+## allow compiler directives anywhere
+
+there's no reason not no. Embrace flexibility. This may be hard to implement.
+
+They are not statements. They don't really need indentation. We could use '#' instead of '@' for familiarity with C.
+
+## `@pragma include <expr>`, `#pragma include any`
+
+Allows a file to be included X times. `<expr>` is a comptime expression that evaluates to integer (min value: 0).
+
+If the `<expr>` evaluates to 0, the file cannot be included.
+
+`any` to include any number of times.
+
+`#pragma include 1` is implicitly present before the first line of every file.
+
+Later directives override earlier directives, so that
+
+```psc
+#pragma include 2
+#pragma include 3 // this directive overrides the previous
+```
+
+## Configuration
+
+Ecrire (`ecrire`, `ecrireEcran`) newline control
+
+Different ways to configure (ordered by predecence, lower value replace higher values):
+
+location|scope|syntax
+-|-|-
+config json file|global|`{ "ecrire-nl": vrai }`
+CLI options|global|`--config ecrire-nl:vrai`
+preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config ecrire-nl reset` &rarr; resets to inherited value
+
+config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
+
+## Parsing: put LBracket in SourceTokens of ArraySubscript
+
+To get prettier error messages.
+
+## GNU-compliant message formatting
+
+We should adhere to what's standard.
+
 ## File handling PSC &rarr; C
 
 ### Step 1. Declaration
@@ -373,116 +478,17 @@ And what happens if we return a file or pass it to a function/procedure. We shou
 
 Also what happens of closing the file occurs in a if statement? How do we know for sure it's been closed? Can we analyze the truthfulness of the condition? You can push static analysis further and further to support scenarios that are unlikely to happen in real code anyway. It's difficult to implement. I won't do that.
 
-## thoughts on parser blocks
-
-Interesting idea, avoids having to create meaningless `ParseOperation`s. Needs overloads.
-
-Parser blocks are useful when 2 conditions are met:
-
-- We don't use the produced `SourceTokens` (discard it in the result)
-- The production name is the same
-
-In any case, it's only really useful for optimization and DRY. So low priority.
-
 ## code formatting
 
-Explicit non-default access modifiers everywhere, remove them if default.
-
-Sort members.
+Sort members. Code maid. Resharper subscription.
 
 ## call a function as a statement
 
 self-explanatory.
 
-## more expression static analysis
-
-- Check if file arguments to file builtins are files
-- Check for loop start, step and end
-    - start must be assignable to variant
-    - variant and step must support operator '+'
-    - variant and end must support operator '<'
-    - so I need a way to query which operators are supported between 2 types. Oh no.
-
-- Check the type and const-ness of each case
-- Check if condition is a boolean in alternatives and loops
-- Check the assignability of target and value in assignment
-- Check if return value corresponds to function's return type
-
-## Configuration
-
-Ecrire (`ecrire`, `ecrireEcran`) newline control
-
-Different ways to configure (ordered by predecence, lower value replace higher values):
-
-location|scope|syntax
--|-|-
-config json file|global|`{ "ecrire-nl": vrai }`
-CLI options|global|`--config ecrire-nl:vrai`
-preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config ecrire-nl reset` &rarr; resets to inherited value
-
-config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
-
-## Preprocessor directives
-
-Since a PD can be located anywher in the program, it cannot be parsed as part of the normal syntax, unless we want to make the grammar extremely messy.
-
-The Tokenizer recognizes and interprets them, but does not produce tokens. Instead, it does something special.
-
-Each PD is not it's own token type. Rather, there's a general token type which values to the PD name. Encountered in Tokenizer, we evaluate it. If unknown name, raise an error. May have to create Parse class for the more complex ones. If they require parsing expressions. See if we can reuse existing code.
-
-### `#config <name: ident> := <value: expr>`
-
-Alters the config immutable dictionary.
-
-Each Token has this immutable dictionary.
-
-### `#config <name: ident> reset`
-
-### Conditional compilation
-
-But don't copy C with `#if`, `#elsif`, `#else`, `#endif`. They're kinda cumbersome.
-
-Instead, use braces. Will require parsing of multiple PD lines, though.
-
-### `#include`
-
-Add support for modularity.
-
-Just use an include statement. It is dead simple, but it works. No special extension for header files.
-
-It's more of a DIY approach, like in C. Common issues of a modularity system based on include statements can be mitagated.
-
-issue|solution
--|-
-Naming conflicts|Manual prefixing of declared symbols
-Encapsulation|Public header file containing the interface<br>internal header file(s) for internals
-Circular includes|Implicit include guards<br>`pragma multiple` for explictly allowing multiple inclusions
-
-### `#pragma multiple`
-
-Allows a file to be included multiple times.
-
-### Implementation
-
-#### 1. Run a preprocessor
-
-Works for things like #include but would require rewriting static analyisis for PD like `#compiler log`.
-
-#### 2. Token channels (like in ANTLR)
-
-Basically return a separate list for the PD-related tokens.
-
 ## Trailing commas
 
 Allow trailing commas in parameter lists, local variable lists, array subscripts.
-
-## Parsing: put LBracket in SourceTokens of ArraySubscript
-
-To get prettier error messages.
-
-## GNU-compliant message formatting
-
-We should adhere to what's standard.
 
 ## Test compile-time values
 
@@ -516,45 +522,10 @@ Tests (increasing complexity):
 - Structure > Array constant
 - Array > Structure constant
 
-## What do we need equatable semantics for again?
+## Why do we need equatable semantics again?
 
 Anything that is not a node can simply use equality. This makes it compatible with records.
 
-## Review ParseOperation error reporting logic
+## Disambiguate terms: comptime and constant
 
-We need to rethink ParseZeroOrMore\* and ParseOneOrMore\*. They are complex. I don't think they should report errors.
-
-Maybe a good approach would be to start with manual multi-parsing
-
-```cs
-o.Parse(out var stmt1, ParseStatement)
- .Parse(out var stmt2, ParseStatement)
- .Parse(out var stmt3, ParseStatement)
- // ...
-```
-
-Now what happens if any of these fail?
-
-It fails the whole operation, and we switch to the error implementation. This means we get a failed result.
-
-That's not what we want. When we're parsing a function body, failing to parse a statement should not incur the failure of the whole function body, but only of the statement itself.
-
-Okay, so what about:
-
-```cs
-o.ParseOptional(out var stmt1, ParseStatement)
- .ParseOptional(out var stmt2, ParseStatement)
- .ParseOptional(out var stmt3, ParseStatement)
- // ...
- .MapResult(t => new Block([stmt1, stmt2, stmt3].WhereSome()))
-```
-
-This is better. Now, an invalid statement doesn't fail the whole block. But what about errors? We still want an error when a statement has failed to parse.
-
-Currently, what we do is that we report this error in ParseOperation. But the issue is that if there is an alternative parsing method available (i.e. the ParseOperation chain is a `ParserFirst` operand), the error is still reported, which means we get a false positive.
-
-What should we do instead?
-
-We could:
-
-- Return a list of `ParseResult`s. This means we would have to expliciitly drop each error.
+Those mean the same thing, except constant is also a node. So rename all to comptime.
