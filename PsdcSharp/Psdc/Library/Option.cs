@@ -23,22 +23,35 @@ public interface Option<out T, out TError>
     T? Value { get; }
 }
 
-public readonly struct ValueOption<T>(bool hasValue, T? value) : Option<T>
+public readonly record struct ValueOption<T> : Option<T>
 {
+    public ValueOption(bool hasValue, T? value)
+    {
+        HasValue = hasValue;
+        Value = value;
+    }
+
     [MemberNotNullWhen(true, nameof(Value))]
-    public bool HasValue => hasValue;
-    public T? Value => value;
+    public bool HasValue { get; }
+    public T? Value { get; }
 
     public static implicit operator ValueOption<T>(T value) => new(true, value);
 }
 
-public readonly struct ValueOption<T, TError>(bool hasValue, T? value, TError? error) : Option<T, TError>
+public readonly record struct ValueOption<T, TError> : Option<T, TError>
 {
+    public ValueOption(bool hasValue, T? value, TError? error)
+    {
+        HasValue = hasValue;
+        Value = value;
+        Error = error;
+    }
+
     [MemberNotNullWhen(true, nameof(HasValue))]
     [MemberNotNullWhen(false, nameof(Error))]
-    public bool HasValue => hasValue;
-    public T? Value => value;
-    public TError? Error => error;
+    public bool HasValue { get; }
+    public T? Value { get; }
+    public TError? Error { get; }
 
     public static implicit operator ValueOption<T, TError>(T value) => new(true, value, default);
     public static implicit operator ValueOption<T, TError>(TError error) => new(false, default, error);

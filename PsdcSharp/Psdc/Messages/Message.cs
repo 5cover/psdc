@@ -44,19 +44,30 @@ public readonly struct Message
     internal static Message ErrorIndexWrongRank(SourceTokens sourceTokens, int badRank, int arrayRank)
      => new(sourceTokens, MessageCode.IndexWrongRank,
         $"index has {Quantity(badRank, "dimension", "dimensions")}, but {Quantity(arrayRank, "was", "were")} expected");
-
+    internal static Message ErrorAssertionFailed(CompilerDirective compilerDirective, Option<string> message)
+     => new(compilerDirective.SourceTokens, MessageCode.AssertionFailed,
+        message.Match(ms => $"compile-time assertion failed: {ms}",
+                      () => $"compile-time assertion failed"));
     internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, IReadOnlyList<string> problems)
      => new(sourceTokens, MessageCode.IndexOutOfBounds,
         $"index out of bounds for array",
         problems);
-
+    
     internal static string ProblemOutOfBoundsDimension(int dimNumber, int dimIndex, int dimLength)
      => $"dimension {dimNumber + 1} out of bounds (indexed at {dimIndex}, length is {dimLength})";
 
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
         $"reassigning constant `{constant.Name}`");
-
+    internal static Message DebugEvaluateExpression(SourceTokens sourceTokens, ValueStatus valueStatus)
+     => new(sourceTokens, MessageCode.EvaluateExpression,
+        $"evaluated value: {valueStatus switch {
+            //ValueStatus.Comptime v => $"comptime: {v.Value}",
+            ValueStatus.Garbage => "garbage",
+            ValueStatus.Runtime => "runtime",
+            ValueStatus.Invalid => "invalid",
+            _ => throw valueStatus.ToUnmatchedException(),
+        }}");
     internal static Message ErrorUnsupportedInitializer(SourceTokens sourceTokens, EvaluatedType initializerTargetType)
      => new(sourceTokens, MessageCode.UnsupportedInitializer,
         $"unsupported initializer for type `{initializerTargetType}`");

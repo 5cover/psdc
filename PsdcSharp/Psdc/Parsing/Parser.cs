@@ -10,25 +10,55 @@ namespace Scover.Psdc.Parsing;
 
 public sealed partial class Parser
 {
-    readonly IReadOnlyDictionary<TokenType, Parser<Type>> _typeParsers;
-    readonly IReadOnlyDictionary<TokenType, Parser<Declaration>> _declarationParsers;
-    readonly IReadOnlyDictionary<TokenType, Parser<Statement>> _statementParsers;
-
     readonly Messenger _msger;
+    readonly Parser<Type> _parseType;
+    readonly Parser<Declaration> _parseDeclaration;
+    readonly Parser<Statement> _parseStatement;
+    readonly Parser<CompilerDirective> _parseCompilerDirective;
+
+    ParseResult<CompilerDirective.Assert> ParseAtAssert(IEnumerable<Token> tokens) => ParseOperation.Start(_msger, tokens, "@assert")
+        .ParseToken(Punctuation.LParen)
+        .Parse(out var expr, ParseExpression)
+        .ParseOptional(out var msg, o => o
+            .ParseToken(Punctuation.Comma)
+            .Parse(out var e, ParseExpression)
+            .MapResult(_ => e))
+        .ParseToken(Punctuation.RParen)
+        .MapResult(t => new CompilerDirective.Assert(t, expr, msg));
+
+    ParseResult<CompilerDirective.EvaluateExpr> ParseAtEvaluateExpr(IEnumerable<Token> tokens) => ParseOperation.Start(_msger, tokens, "@evaluateExpr")
+        .ParseToken(Punctuation.LParen)
+        .Parse(out var expr, ParseExpression)
+        .ParseToken(Punctuation.RParen)
+        .MapResult(t => new CompilerDirective.EvaluateExpr(t, expr));
+
+    ParseResult<CompilerDirective.EvaluateType> ParseAtEvaluateType(IEnumerable<Token> tokens) => ParseOperation.Start(_msger, tokens, "@evaluateType")
+        .ParseToken(Punctuation.LParen)
+        .Parse(out var type, _parseType)
+        .ParseToken(Punctuation.RParen)
+        .MapResult(t => new CompilerDirective.EvaluateType(t, type));
 
     Parser(Messenger messenger)
     {
         _msger = messenger;
 
-        _declarationParsers = new Dictionary<TokenType, Parser<Declaration>>() {
+        Dictionary<TokenType, Parser<CompilerDirective>> compilerDirectiveParsers = new() {
+            [Keyword.AtAssert] = ParseAtAssert,
+            [Keyword.AtEvaluateType] = ParseAtEvaluateType,
+            [Keyword.AtEvaluateExpr] = ParseAtEvaluateExpr,
+        };
+        _parseCompilerDirective = t => ParseByTokenType(t, "compiler directive", compilerDirectiveParsers);
+
+        Dictionary<TokenType, Parser<Declaration>> declarationParsers = new() {
             [Keyword.Begin] = ParseMainProgram,
             [Keyword.Constant] = ParseConstant,
             [Keyword.Function] = ParseFunctionDeclarationOrDefinition,
             [Keyword.Procedure] = ParseProcedureDeclarationOrDefinition,
             [Keyword.TypeAlias] = ParseAliasDeclaration,
         };
+        _parseDeclaration = t => ParseByTokenType(t, "declaration", declarationParsers, _parseCompilerDirective);
 
-        _statementParsers = new Dictionary<TokenType, Parser<Statement>>() {
+        Dictionary<TokenType, Parser<Statement>> statementParsers = new() {
             [Valued.Identifier] = ParserFirst(ParseAssignment, ParseLocalVariable, ParseProcedureCall),
             [Keyword.Do] = ParseDoWhileLoop,
             [Keyword.For] = ParseForLoop,
@@ -39,8 +69,9 @@ public sealed partial class Parser
             [Keyword.While] = ParseWhileLoop,
             [Punctuation.Semicolon] = ParseNop,
         };
+        _parseStatement = t => ParseByTokenType(t, "statement", statementParsers, ParserFirst(ParseBuiltin, _parseCompilerDirective));
 
-        _typeParsers = new Dictionary<TokenType, Parser<Type>> {
+        Dictionary<TokenType, Parser<Type>> typeParsers = new() {
             [Keyword.Integer] = ParserReturn(1, t => new Type.Integer(t)),
             [Keyword.Real] = ParserReturn(1, t => new Type.Real(t)),
             [Keyword.Character] = ParserReturn(1, t => new Type.Character(t)),
@@ -51,6 +82,7 @@ public sealed partial class Parser
             [Valued.Identifier] = ParserReturn1((t, val) => new Type.AliasReference(t, new(t, val))),
             [Keyword.Structure] = ParseTypeStructure,
         };
+        _parseType = t => ParseByTokenType(t, "type", typeParsers);
 
         _literalParsers = new Dictionary<TokenType, Parser<Expression>> {
             [Keyword.False] = tokens
@@ -87,9 +119,8 @@ public sealed partial class Parser
         .ParseToken(Keyword.Program)
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Keyword.Is)
-        .ParseZeroOrMoreUntilToken(out var declarations, t
-         => ParseByTokenType(t, "declaration", _declarationParsers),
-        [Eof])
+        .ParseZeroOrMoreUntilToken(out var declarations, _parseDeclaration,
+        Set.Of<TokenType>(Eof))
         .MapResult(t => new Algorithm(t, name, declarations));
 
     #region Declarations
@@ -99,14 +130,14 @@ public sealed partial class Parser
         .ParseToken(Keyword.TypeAlias)
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Operator.Equal)
-        .Parse(out var type, ParseType)
+        .Parse(out var type, _parseType)
         .ParseToken(Punctuation.Semicolon)
         .MapResult(t => new Declaration.TypeAlias(t, name, type));
 
     ParseResult<Declaration.Constant> ParseConstant(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "constant")
         .ParseToken(Keyword.Constant)
-        .Parse(out var type, ParseType)
+        .Parse(out var type, _parseType)
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Operator.ColonEqual)
         .Parse(out var value, ParseExpression)
@@ -120,13 +151,13 @@ public sealed partial class Parser
         .ParseToken(Punctuation.LParen)
         .ParseZeroOrMoreSeparated(out var parameters, ParseParameterFormal, Punctuation.Comma, Punctuation.RParen)
         .ParseToken(Keyword.Delivers)
-        .Parse(out var returnType, ParseType)
+        .Parse(out var returnType, _parseType)
         .Get(out var signature, t => new FunctionSignature(t, name, parameters, returnType))
         .Switch<Declaration>(out var branch, new() {
             [Punctuation.Semicolon] = o => (o, t => new Declaration.Function(t, signature)),
             [Keyword.Is] = o
              => (o.ParseToken(Keyword.Begin)
-                .ParseZeroOrMoreUntilToken(out var block, ParseStatement, [Keyword.End])
+                .ParseZeroOrMoreUntilToken(out var block, _parseStatement, Set.Of<TokenType>(Keyword.End))
                 .ParseToken(Keyword.End),
                 t => new Declaration.FunctionDefinition(t, signature, block)),
         })
@@ -136,7 +167,7 @@ public sealed partial class Parser
     ParseResult<Declaration.MainProgram> ParseMainProgram(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "main program")
         .ParseToken(Keyword.Begin)
-        .ParseZeroOrMoreUntilToken(out var block, ParseStatement, [Keyword.End])
+        .ParseZeroOrMoreUntilToken(out var block, _parseStatement, Set.Of<TokenType>(Keyword.End))
         .ParseToken(Keyword.End)
         .MapResult(t => new Declaration.MainProgram(t, block));
 
@@ -151,7 +182,7 @@ public sealed partial class Parser
             [Punctuation.Semicolon] = o => (o, t => new Declaration.Procedure(t, signature)),
             [Keyword.Is] = o
              => (o.ParseToken(Keyword.Begin)
-                .ParseZeroOrMoreUntilToken(out var block, ParseStatement, [Keyword.End])
+                .ParseZeroOrMoreUntilToken(out var block, _parseStatement, Set.Of<TokenType>(Keyword.End))
                 .ParseToken(Keyword.End),
                 t => new Declaration.ProcedureDefinition(t, signature, block))
         })
@@ -167,8 +198,8 @@ public sealed partial class Parser
         .ParseToken(Keyword.If)
         .Parse(out var ifCondition, ParseExpression)
         .ParseToken(Keyword.Then)
-        .ParseZeroOrMoreUntilToken(out var ifBlock, ParseStatement,
-        [Keyword.EndIf, Keyword.Else, Keyword.ElseIf])
+        .ParseZeroOrMoreUntilToken(out var ifBlock, _parseStatement,
+        Set.Of<TokenType>(Keyword.EndIf, Keyword.Else, Keyword.ElseIf))
         .Get(out var ifClause, t => new Statement.Alternative.IfClause(t, ifCondition, ifBlock))
 
         .ParseZeroOrMoreUntilToken(out var elseIfClauses, tokens
@@ -176,16 +207,16 @@ public sealed partial class Parser
             .ParseToken(Keyword.ElseIf)
             .Parse(out var condition, ParseExpression)
             .ParseToken(Keyword.Then)
-            .ParseZeroOrMoreUntilToken(out var block, ParseStatement,
-            [Keyword.EndIf, Keyword.Else, Keyword.ElseIf])
+            .ParseZeroOrMoreUntilToken(out var block, _parseStatement,
+            Set.Of<TokenType>(Keyword.EndIf, Keyword.Else, Keyword.ElseIf))
             .MapResult(t => new Statement.Alternative.ElseIfClause(t, condition, block)),
-        [Keyword.EndIf, Keyword.Else])
+        Set.Of<TokenType>(Keyword.EndIf, Keyword.Else))
 
         .ParseOptional(out var elseClause, tokens
          => ParseOperation.Start(_msger, tokens, "alternative sinon")
             .ParseToken(Keyword.Else)
-            .ParseZeroOrMoreUntilToken(out var elseBlock, ParseStatement,
-            [Keyword.EndIf])
+            .ParseZeroOrMoreUntilToken(out var elseBlock, _parseStatement,
+            Set.Of<TokenType>(Keyword.EndIf))
             .MapResult(t => new Statement.Alternative.ElseClause(t, elseBlock)))
 
         .ParseToken(Keyword.EndIf)
@@ -246,7 +277,7 @@ public sealed partial class Parser
     ParseResult<Statement> ParseDoWhileLoop(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "do..while loop")
         .ParseToken(Keyword.Do)
-        .ParseZeroOrMoreUntilToken(out var block, ParseStatement, [Keyword.While])
+        .ParseZeroOrMoreUntilToken(out var block, _parseStatement, Set.Of<TokenType>(Keyword.While))
         .ParseToken(Keyword.While)
         .Parse(out var condition, ParseExpression)
         .MapResult(t => new Statement.DoWhileLoop(t, condition, block));
@@ -261,7 +292,7 @@ public sealed partial class Parser
                 .Parse(out var start, ParseExpression)
                 .ParseToken(Keyword.To)
                 .Parse(out var end, ParseExpression)
-                .ParseOptional(out var step, o => ParseOperation.Start(_msger, t, "for loop step")
+                .ParseOptional(out var step, t => ParseOperation.Start(_msger, t, "for loop step")
                     .ParseToken(Keyword.Step)
                     .Parse(out var step, ParseExpression)
                     .MapResult(_ => step))
@@ -280,7 +311,7 @@ public sealed partial class Parser
                 .ParseToken(Punctuation.RParen)
                 .MapResult(_ => (variant, start, end, step))))
         .ParseToken(Keyword.Do)
-        .ParseZeroOrMoreUntilToken(out var block, ParseStatement, [Keyword.EndDo])
+        .ParseZeroOrMoreUntilToken(out var block, _parseStatement, Set.Of<TokenType>(Keyword.EndDo))
         .ParseToken(Keyword.EndDo)
         .MapResult(t => new Statement.ForLoop(t, head.variant, head.start, head.end, head.step, block));
 
@@ -292,7 +323,7 @@ public sealed partial class Parser
     ParseResult<Statement> ParseRepeatLoop(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "repeat loop")
         .ParseToken(Keyword.Repeat)
-        .ParseZeroOrMoreUntilToken(out var block, ParseStatement, [Keyword.Until])
+        .ParseZeroOrMoreUntilToken(out var block, _parseStatement, Set.Of<TokenType>(Keyword.Until))
         .ParseToken(Keyword.Until)
         .Parse(out var condition, ParseExpression)
         .MapResult(t => new Statement.RepeatLoop(t, condition, block));
@@ -322,9 +353,6 @@ public sealed partial class Parser
         .ParseToken(Punctuation.Semicolon)
         .MapResult(t => new Statement.ProcedureCall(t, name, arguments));
 
-    ParseResult<Statement> ParseStatement(IEnumerable<Token> tokens)
-     => ParseByTokenType(tokens, "statement", _statementParsers, ParseBuiltin);
-
     ParseResult<Statement> ParseSwitch(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "switch statement")
         .ParseToken(Keyword.Switch)
@@ -335,16 +363,16 @@ public sealed partial class Parser
             .ParseToken(Keyword.When)
             .Parse(out var when, ParseExpression)
             .ParseToken(Punctuation.Arrow)
-            .ParseZeroOrMoreUntilToken(out var block, ParseStatement,
-            [Keyword.When, Keyword.WhenOther])
+            .ParseZeroOrMoreUntilToken(out var block, _parseStatement,
+            Set.Of<TokenType>(Keyword.When, Keyword.WhenOther))
             .MapResult(t => new Statement.Switch.Case(t, when, block)),
-        [Keyword.WhenOther, Keyword.EndSwitch])
+        Set.Of<TokenType>(Keyword.WhenOther, Keyword.EndSwitch))
 
         .ParseOptional(out var @default, t => ParseOperation.Start(_msger, t, "switch default case")
             .ParseToken(Keyword.WhenOther)
             .ParseToken(Punctuation.Arrow)
-            .ParseZeroOrMoreUntilToken(out var block, ParseStatement,
-            [Keyword.EndSwitch])
+            .ParseZeroOrMoreUntilToken(out var block, _parseStatement,
+            Set.Of<TokenType>(Keyword.EndSwitch))
             .MapResult(t => new Statement.Switch.DefaultCase(t, block)))
 
         .ParseToken(Keyword.EndSwitch)
@@ -355,7 +383,7 @@ public sealed partial class Parser
         .ParseToken(Keyword.While)
         .Parse(out var condition, ParseExpression)
         .ParseToken(Keyword.Do)
-        .ParseZeroOrMoreUntilToken(out var block, ParseStatement, [Keyword.EndDo])
+        .ParseZeroOrMoreUntilToken(out var block, _parseStatement, Set.Of<TokenType>(Keyword.EndDo))
         .ParseToken(Keyword.EndDo)
         .MapResult(t => new Statement.WhileLoop(t, condition, block));
 
@@ -374,11 +402,8 @@ public sealed partial class Parser
         .ParseToken(Punctuation.LBracket)
         .ParseOneOrMoreSeparated(out var dimensions, ParseExpression, Punctuation.Comma, Punctuation.RBracket)
         .ParseToken(Keyword.From)
-        .Parse(out var type, ParseType)
+        .Parse(out var type, _parseType)
         .MapResult(t => new Type.Array(t, type, dimensions));
-
-    ParseResult<Type> ParseType(IEnumerable<Token> tokens)
-     => ParseByTokenType(tokens, "type", _typeParsers);
 
     ParseResult<Type> ParseTypeString(IEnumerable<Token> tokens)
      => ParseOperation.Start(_msger, tokens, "string type")
@@ -396,10 +421,14 @@ public sealed partial class Parser
      => ParseOperation.Start(_msger, tokens, "structure type")
         .ParseToken(Keyword.Structure)
         .ParseToken(Keyword.Begin)
-        .ParseZeroOrMoreUntilToken(out var varDecls, op => op
-            .Parse(out var varDecl, t => ParseVariableDeclaration(t, "structure component"))
-            .ParseToken(Punctuation.Semicolon)
-            .GetResult(_ => varDecl), [Keyword.End])
+        .ParseZeroOrMoreUntilToken(out var varDecls, ParserFirst<Component>(t => {
+            const string Prod = "structure component";
+            return ParseOperation.Start(_msger, t, Prod)
+                .Parse(out var varDecl, t => ParseVariableDeclaration(t, Prod))
+                .ParseToken(Punctuation.Semicolon)
+                .MapResult(_ => varDecl);
+        },
+        _parseCompilerDirective), Set.Of<TokenType>(Keyword.End))
         .ParseToken(Keyword.End)
         .MapResult(t => new Type.Structure(t, varDecls));
 
@@ -418,21 +447,22 @@ public sealed partial class Parser
         .Parse(out var mode, t => GetByTokenType(t, "formal parameter mode", parameterFormalModes))
         .Parse(out var name, ParseIdentifier)
         .ParseToken(Punctuation.Colon)
-        .Parse(out var type, ParseType)
+        .Parse(out var type, _parseType)
         .MapResult(t => new ParameterFormal(t, mode, name, type));
 
     ParseResult<Initializer> ParseInitializer(IEnumerable<Token> tokens) => ParseOperation.Start(_msger, tokens, "initializer")
-        .Parse(out var initializer, ParserFirst(ParseBracedInitializer, ParseExpression))
-        .MapResult(t => initializer);
+        .Parse(out var init, ParserFirst(ParseBracedInitializer, ParseExpression))
+        .MapResult(t => init);
 
     ParseResult<Initializer> ParseBracedInitializer(IEnumerable<Token> tokens)
          => ParseOperation.Start(_msger, tokens, "braced initializer")
             .ParseToken(Punctuation.LBrace)
-            .ParseZeroOrMoreSeparated(out var values, (tokens)
-             => ParseOperation.Start(_msger, tokens, "braced initializer item")
-                .ParseOptional(out var designator, ParserFirst<Designator>(ParseArrayDesignator, ParseStructureDesignator))
-                .Parse(out var init, ParseInitializer)
-                .MapResult(t => new Initializer.Braced.Item(t, designator, init)),
+            .ParseZeroOrMoreSeparated(out var values, ParserFirst<Initializer.Braced.Item>((tokens)
+                 => ParseOperation.Start(_msger, tokens, "braced initializer item")
+                    .ParseOptional(out var designator, ParserFirst<Designator>(ParseArrayDesignator, ParseStructureDesignator))
+                    .Parse(out var init, ParseInitializer)
+                    .MapResult(t => new Initializer.Braced.ValuedItem(t, designator, init)),
+                _parseCompilerDirective),
             Punctuation.Comma, Punctuation.RBrace, allowTrailingSeparator: true)
             .MapResult(t => new Initializer.Braced(t, values));
 
@@ -455,7 +485,7 @@ public sealed partial class Parser
     ParseResult<VariableDeclaration> ParseVariableDeclaration(IEnumerable<Token> tokens, string production)
      => ParseOperation.Start(_msger, tokens, production)
         .ParseOneOrMoreSeparated(out var names, ParseIdentifier, Punctuation.Comma, Punctuation.Colon)
-        .Parse(out var type, ParseType)
+        .Parse(out var type, _parseType)
         .MapResult(t => new VariableDeclaration(t, names, type));
 
     #endregion Other

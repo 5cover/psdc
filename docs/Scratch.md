@@ -298,22 +298,6 @@ Maybe we could tokenize them as identifiers always and expect an identifier of a
 
 That seems like an easy way to implement this feature.
 
-## Modularity
-
-Add support for modularity.
-
-I think we should have two preprocessor directives for reusing code in other files.
-
-### `#include`
-
-Dumb. Like in C. Expands into the contents of the included file.
-
-### `#use`
-
-Smarter. Useful for libraries. Like includes but only referenced declarations are copied. (and the declarations they themselves reference, trees.)
-
-Basically does tree-shaking from the start.
-
 ## File handling PSC &rarr; C
 
 ### Step 1. Declaration
@@ -440,13 +424,43 @@ config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
 
 ## Preprocessor directives
 
-Add infrastructure to later implement
-
-- `#config`
-- `#include`/`#import`
-- ...
-
 Since a PD can be located anywher in the program, it cannot be parsed as part of the normal syntax, unless we want to make the grammar extremely messy.
+
+The Tokenizer recognizes and interprets them, but does not produce tokens. Instead, it does something special.
+
+Each PD is not it's own token type. Rather, there's a general token type which values to the PD name. Encountered in Tokenizer, we evaluate it. If unknown name, raise an error. May have to create Parse class for the more complex ones. If they require parsing expressions. See if we can reuse existing code.
+
+### `#config <name: ident> := <value: expr>`
+
+Alters the config immutable dictionary.
+
+Each Token has this immutable dictionary.
+
+### `#config <name: ident> reset`
+
+### Conditional compilation
+
+But don't copy C with `#if`, `#elsif`, `#else`, `#endif`. They're kinda cumbersome.
+
+Instead, use braces. Will require parsing of multiple PD lines, though.
+
+### `#include`
+
+Add support for modularity.
+
+Just use an include statement. It is dead simple, but it works. No special extension for header files.
+
+It's more of a DIY approach, like in C. Common issues of a modularity system based on include statements can be mitagated.
+
+issue|solution
+-|-
+Naming conflicts|Manual prefixing of declared symbols
+Encapsulation|Public header file containing the interface<br>internal header file(s) for internals
+Circular includes|Implicit include guards<br>`pragma multiple` for explictly allowing multiple inclusions
+
+### `#pragma multiple`
+
+Allows a file to be included multiple times.
 
 ### Implementation
 
@@ -506,31 +520,65 @@ Tests (increasing complexity):
 
 Compiler directives are compile-time instructions that are evaluated in the static analyzer. They may be translated to the target lanugage (see C's `static_assert`), but they do not affect the machine code output of the target language compilation.
 
-Preprocessor directives don't require static analysis: `#include`, `#config`. Other stuff, like compiler log, static asserts, are semantically similar to statetements and should appear as such. Maybe we should reuse Zig's syntax for builtins: `@compilerLog`, `@assert`... except the `@` symbol indicates that this call is evaluated at compile-time and does not affect the machine code output.
+Preprocessor directives don't require static analysis: `#include`, `#config`. Other stuff, like compiler log, static asserts, are semantically similar to statements and should appear as such. Maybe we should reuse Zig's syntax for builtins: `@compilerLog`, `@assert`... except the `@` symbol indicates that this call is evaluated at compile-time and does not affect the machine code output.
 
-They require the context given by static analysis to run (otherwise we'd use preprocessor directives whih)
+They require the context given by static analysis to run (otherwise we'd use preprocessor directives)
 
-### `@log`
+They are allowed in
+
+- Declarations
+- Struct components
+- Initializers values
+- Statements
+
+### `@evaluateExpr(<expr>)`
 
 Logs the value status of an expression as a message. (including comptime value if present)
 
 Add a new category of message: Debug. Shown in light green.
 
-MessageCode.CompilerLog
+Message.DebugEvaluateExpr(result)
 
-### `@assert`
+### `@evaluateType(<type>)`
 
-These "compiler directives" can be either declarations or statements, so they can appear at the top level or in a function body.
+Logs an evaluated type.
 
-Do we even need these? Not if we can find a way to:
+Message.DebugEvaluateType(result)
 
-### Implementation
+### `@assert(<expr>,<message: expr?>)`
 
-- Parse them as compiler directives (CDs) using a separate token chanel and a new parser class
-- Somehow able them to be evaluated in the SA, in the context of regular AST nodes. I see solutions for this:
-    - Somehow put CDs in the regular AST: nope
-    - Put them in a list that is passed alongside the AST (no need for a tree since they are sequential). Compare the source tokens of each AST node to progress gradually through the list of CDs, and evaluate them when we move down one: nope
-    - Same as above, but somehow keep a context so we don't have to compare the SourceTokens of every analyzed AST node to locate the CD: ok
-        - Maybe keep a reference, in the CD, to the last non-CD token parsed. Then if the SourceTokens of the node contain this token:
-            - if this token is the last token of the node, then it the CD comes after the node, so evaluate it after the node.
-            - otherwise, it is inside the node, so evaluate it before
+Asserts that a given expression is comptime-known and true. Errors if any of these cases fail.
+
+Message.AssertionFailed(expression, message?)
+
+No need to call it `@staticAssert` since the `@` already indicates it comptime nature.
+
+## Redesign values
+
+What is a value? Fundamentally, a discriminated union that aggregates an evaluated type, aither:
+
+- Comptime of some TUnderlying
+- Runtime
+- Garbage
+- Invalid
+
+Okay. What do we want to be able to do with it?
+
+- Retrive the strongly typed underlying value
+- Map the underlying value based on the type
+
+We want to avoid having to express the underlying type directly. Instead, handle operations through the evaluated type.
+
+How to say that a Value whose type is an IntegerType has an `int` underlying value?
+
+Instead of carrying the underlying type around, the EvaluatedType should handle operations, no?
+
+```cs
+// in InstantiableType
+public OperationResult<UnaryOperationMessage> OperateUnary(UnaryOperator @operator, TUnderlying operand);
+
+// in EvaluatedType
+public OperationResult<UnaryOperationMessage> OperateUnary(UnaryOperationMessage @operator, Value operand);
+```
+
+This method would essentially switch over the operator and map the comptime value. But for that it needs to be.

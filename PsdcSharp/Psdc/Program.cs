@@ -80,7 +80,7 @@ static class Program
             if (!_msgCountsBySeverity.TryAdd(message.Severity, 1)) {
                 ++_msgCountsBySeverity[message.Severity];
             }
-            var msgColor = message.Severity.GetConsoleColor();
+            var msgColor = ConsoleColorInfo.ForMessageSeverity(message.Severity);
             msgColor.DoInColor(() => Stderr.Write($"[P{(int)message.Code:d4}] "));
 
             Position start = input.GetPositionAt(message.InputRange.Start);
@@ -124,8 +124,10 @@ static class Program
                     Console.ResetColor();
                 }
 
-                var badLines = Enumerable.Range(start.Line + 1, end.Line - start.Line - 1);
-                foreach (var line in badLines.Take(MaxMultilineErrorLines - 2)) {
+                int badLineCount = end.Line - start.Line - 1;
+                var badLines = Enumerable.Range(start.Line + 1, badLineCount);
+                const int MaxBadLines = MaxMultilineErrorLines - 2;
+                foreach (var line in badLines.Take(MaxBadLines)) {
                     ReadOnlySpan<char> badLine = input.GetLine(line);
                     StartLine(lineNoPadding, line);
                     msgColor.SetColor();
@@ -134,8 +136,10 @@ static class Program
                 };
 
                 badLines.FirstOrNone().Tap(l => {
-                    StartLine(lineNoPadding, l);
-                    EndLine($"({end.Line - start.Line + 1 - MaxMultilineErrorLines} more lines...)");
+                    if (badLineCount > MaxBadLines) {
+                        StartLine(lineNoPadding, l);
+                        EndLine($"({badLineCount - MaxBadLines} more lines...)");
+                    }
                 });
 
                 StartLine(lineNoPadding, end.Line);

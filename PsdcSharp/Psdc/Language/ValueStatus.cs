@@ -22,7 +22,7 @@ enum ValueStatus
     Invalid,
 }
 
-interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>>
+interface ValueStatus<TUnderlying> : IEquatable<ValueStatus<TUnderlying>>
 {
     ValueStatus Status { get; }
 
@@ -33,12 +33,10 @@ interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>
     readonly record struct ComptimeValue(TUnderlying Value) : ValueStatus<TUnderlying>
     {
         public ValueStatus Status => ValueStatus.Comptime;
-
         public ValueOption<TUnderlying> Comptime => Value;
-
-        public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is ComptimeValue o
-         && EqualityComparer<TUnderlying>.Default.Equals(o.Value, Value);
-        public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) => Language.Value.Comptime(transform(Value));
+        ValueStatus<TResult> ValueStatus<TUnderlying>.Map<TResult>(Func<TUnderlying, TResult> transform) => Language.Value.Comptime(transform(Value));
+        public bool Equals(ValueStatus<TUnderlying>? other) => other is ComptimeValue o
+         && Equals(o.Value, Value);
     }
 
     class RuntimeValue : ValueStatus<TUnderlying>
@@ -46,11 +44,9 @@ interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>
         RuntimeValue() {}
         public static RuntimeValue Instance { get; } = new();
         public ValueStatus Status => ValueStatus.Runtime;
-
         public ValueOption<TUnderlying> Comptime => default;
-
-        public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is RuntimeValue;
-        public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) => Value.Runtime<TResult>();
+        ValueStatus<TResult> ValueStatus<TUnderlying>.Map<TResult>(Func<TUnderlying, TResult> transform) => Value.Runtime<TResult>();
+        public bool Equals(ValueStatus<TUnderlying>? other) => other is RuntimeValue;
     }
 
     class GarbageValue : ValueStatus<TUnderlying>
@@ -58,11 +54,9 @@ interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>
         GarbageValue() {}
         public static GarbageValue Instance { get; } = new();
         public ValueStatus Status => ValueStatus.Garbage;
-
         public ValueOption<TUnderlying> Comptime => default;
-
-        public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is GarbageValue;
-        public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) => Value.Garbage<TResult>();
+        ValueStatus<TResult> ValueStatus<TUnderlying>.Map<TResult>(Func<TUnderlying, TResult> transform) => Value.Garbage<TResult>();
+        public bool Equals(ValueStatus<TUnderlying>? other) => other is GarbageValue;
     }
 
     class InvalidValue : ValueStatus<TUnderlying>
@@ -70,11 +64,8 @@ interface ValueStatus<TUnderlying> : EquatableSemantics<ValueStatus<TUnderlying>
         InvalidValue() {}
         public static InvalidValue Instance { get; } = new();
         public ValueStatus Status => ValueStatus.Invalid;
-
         public ValueOption<TUnderlying> Comptime => default;
-
-        public bool SemanticsEqual(ValueStatus<TUnderlying> other) => other is InvalidValue;
-        
-        public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) => Value.Invalid<TResult>();
+        ValueStatus<TResult> ValueStatus<TUnderlying>.Map<TResult>(Func<TUnderlying, TResult> transform) => Value.Invalid<TResult>();
+        public bool Equals(ValueStatus<TUnderlying>? other) => other is InvalidValue;
     }
 }

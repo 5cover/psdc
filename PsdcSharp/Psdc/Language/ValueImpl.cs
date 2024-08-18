@@ -7,7 +7,7 @@ where TType : EvaluatedType
     public ValueStatus Status { get; } = value;
     EvaluatedType Value.Type => Type;
 
-    public bool SemanticsEqual(Value other) => other is ValueImpl<TType> o
+    public bool Equals(Value? other) => other is ValueImpl<TType> o
      && o.Type.SemanticsEqual(Type)
      && o.Status.Equals(Status);
 }
@@ -22,10 +22,9 @@ where TSelf : ValueImpl<TSelf, TType, TUnderlying>
 
     ValueStatus Value.Status => Status.Status;
 
-    public bool SemanticsEqual(Value other) => other is ValueImpl<TSelf, TType, TUnderlying> o
+    public bool Equals(Value? other) => other is TSelf o
      && o.Type.SemanticsEqual(Type)
-     && o.Status.SemanticsEqual(Status);
-     
+     && o.Status.Equals(Status);
     public TSelf Map(Func<TUnderlying, TUnderlying> transform) => Clone(Status.Map(transform));
 
     protected abstract TSelf Clone(ValueStatus<TUnderlying> value);

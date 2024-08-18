@@ -30,7 +30,7 @@ public enum MessageCode
     TargetLanguageError,
     ReturnInNonFunction,
     InvalidCast,
-
+    AssertionFailed,
     CustomError = 999,
 
     #endregion Errors
@@ -52,4 +52,11 @@ public enum MessageCode
     CustomSuggestion = 2999,
 
     #endregion Suggestions
+
+    #region Debug
+
+    EvaluateExpression,
+    EvaluateType,
+
+    #endregion Debug
 }

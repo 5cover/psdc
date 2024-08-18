@@ -30,7 +30,7 @@ public interface Symbol : EquatableSemantics<Symbol>
         public bool SemanticsEqual(Symbol other) => other is Variable o
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type)
-         && o.Initializer.OptionSemanticsEqual(Initializer);
+         && o.Initializer.Equals(Initializer);
     }
 
     internal sealed record Constant(Identifier Name, SourceTokens SourceTokens,
@@ -42,7 +42,7 @@ public interface Symbol : EquatableSemantics<Symbol>
         public bool SemanticsEqual(Symbol other) => other is Constant o
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type)
-         && o.Value.SemanticsEqual(Value);
+         && o.Value.Equals(Value);
     }
 
     internal sealed record TypeAlias(Identifier Name, SourceTokens SourceTokens,

@@ -20,8 +20,10 @@ public sealed class Tokenizer
         .Concat(GetRules(Keyword.Instances).OrderByDescending(r => r.Expected.Length))
         .Concat(Enumerable.Concat(GetRules(Punctuation.Instances), GetRules(Operator.Instances))
                 .OrderByDescending(r => r.Expected.Length))
-        // Identifiers last
+        // Identifiers after keywords and punctuation/operators (just to be sure that they won't be lexed as identifiers)
         .Concat(Identifier.Rules)
+        // Directives start with an unique symbol (#), so they can be wherever, but putting them last is the safest if the syntax changes.
+        .Concat(PreprocessorDirective.Instance.Rules)
         .ToArray();
 
     Tokenizer(Messenger msger, string code) => (_msger, _code) = (msger, code);

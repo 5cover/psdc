@@ -138,6 +138,14 @@ public interface TokenType
             public static Keyword SortF { get; } = new("sortF");
 
             #endregion Parameters
+
+            #region Compiler directives
+
+            public static Keyword AtAssert { get; } = new("@assert");
+            public static Keyword AtEvaluateExpr { get; } = new("@evaluateExpr");
+            public static Keyword AtEvaluateType { get; } = new("@evaluateType");
+
+            #endregion Compiler directives
         }
 
         internal sealed class Operator : Regular, Ruled<StringTokenRule>
@@ -232,29 +240,25 @@ public interface TokenType
             public static Valued LiteralCharacter { get; } = new("character literal", "'(.)'");
             public static Valued LiteralInteger { get; } = new("integer literal", @"(-?\d+)");
             public static Valued LiteralReal { get; } = new("real literal", @"(-?\d*\.\d+)");
-            public static Valued LiteralString { get; } = new("string literal", @"""(.*?)""");
+            public static Valued LiteralString { get; } = new("string literal", @"""(.*?)""", RegexOptions.Singleline);
 
             // Matches Identifier's regex second part: [\p{L}_0-9]
             internal static bool IsIdentifierChar(char c) => c == '_' || char.IsLetterOrDigit(c);
         }
     }
 
-    internal abstract class Freestanding : TokenType
+    internal sealed class PreprocessorDirective : TokenType, Ruled<RegexTokenRule>
     {
-        Freestanding(string repr, bool isStaticCode) => Representation = GetRepr(repr, isStaticCode);
+        PreprocessorDirective()
+        {
+            Representation = GetRepr("directive", true);
+            Rules = GetRules(this, [t => new RegexTokenRule(t, "#\\p{Z}*(.*)\\p{Z}*\\n") ]);
+        }
 
         public string Representation { get; }
+        public IEnumerable<RegexTokenRule> Rules { get; }
 
-        internal sealed class CompilerDirective : Freestanding, Ruled<WordTokenRule>
-        {
-            CompilerDirective(string cd) : base(cd, true)
-             => Rules = GetRules(this, [t => new WordTokenRule(t, cd, StringComparison.Ordinal)]);
-
-            public IEnumerable<WordTokenRule> Rules { get; }
-
-            public static CompilerDirective AtLog { get; } = new("@log");
-            public static CompilerDirective AtAssert { get; } = new("@assert");
-        }
+        public static PreprocessorDirective Instance { get; } = new();
     }
 
 }

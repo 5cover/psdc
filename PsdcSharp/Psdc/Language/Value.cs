@@ -2,7 +2,7 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Language;
 
-interface Value : EquatableSemantics<Value>
+interface Value : IEquatable<Value>
 {
     EvaluatedType Type { get; }
     ValueStatus Status { get; }

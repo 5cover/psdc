@@ -181,7 +181,7 @@ partial class Parser
         t => ParseToken(t, Operator.Plus, t => new UnaryOperator.Plus(t)),
         t => ParseOperation.Start(_msger, t, "cast operator")
             .ParseToken(Punctuation.LParen)
-            .Parse(out var target, ParseType)
+            .Parse(out var target, _parseType)
             .ParseToken(Punctuation.RParen)
         .MapResult(t => new UnaryOperator.Cast(t, target)));
 

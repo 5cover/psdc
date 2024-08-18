@@ -18,6 +18,7 @@ $$
     ⟨ProcedureDeclaration⟩ \to ⟨Procedureignature⟩ \text{;} \\
     ⟨ProcedureDefinition⟩ \to ⟨ProcedureSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
     \text{début} ⟨Block⟩ \text{fin} \\
+    ⟨CompilerDirective⟩\\
 \end{Bmatrix*}
 
 \\&\textbf{Statements} \\
@@ -59,6 +60,7 @@ $$
     ⟨BuiltinOuvrirEcriture⟩ \to \text{ouvrirÉcriture}\text{(}⟨Expr⟩\text{)}\text{;} \\
     ⟨BuiltinOuvrirLecture⟩ \to \text{ouvrirLecture}\text{(}⟨Expr⟩\text{)}\text{;} \\
     ⟨Nop⟩ \to \text{;} \\
+    ⟨CompilerDirective⟩\\
 \end{Bmatrix*}
 \\
 &⟨Alternative.If⟩ \to \text{si} ⟨Expr⟩ \text{alors} ⟨Block⟩
@@ -72,9 +74,9 @@ $$
 &⟨Switch.Default⟩ \to \text{quand\ autre} \text{=>} ⟨Statement⟩^+
 \\
 &⟨Initializer⟩ \to \begin{Bmatrix*}[l]
-    ⟨Expr⟩ \\
+    ⟨Expr⟩\\
     ⟨Braced⟩ \to \text{\{}
-        \begin{pmatrix}
+        \begin{Bmatrix*}[l]
             \begin{pmatrix}
                 \begin{Bmatrix*}
                     ⟨Index⟩ \\
@@ -82,9 +84,10 @@ $$
                 \end{Bmatrix*}
                 \text{:=}
             \end{pmatrix}^?
-            ⟨Initializer⟩
-        \end{pmatrix}^{*\#}
-    \text{\}} \\
+            ⟨Initializer⟩\\
+            ⟨CompilerDirective⟩\\
+        \end{Bmatrix*}^{*\#}
+    \text{\}}\\
 \end{Bmatrix*}
 \\
 &⟨Component⟩ \to \text{.}Identifier
@@ -199,11 +202,22 @@ $$
     ⟨Real⟩ \to \text{réel} \\
     ⟨String⟩ \to \text{chaîne} \\
     ⟨StringLengthed⟩ \to \text{chaîne}\text{(}⟨Expr⟩\text{)} \\
-    ⟨Structure⟩ \to \text{structure\ début} \begin{pmatrix}⟨VariableDeclaration⟩\text{;}\end{pmatrix}^+ \text{fin} \\
+    ⟨Structure⟩ \to \text{structure\ début} ⟨Component⟩^+ \text{fin} \\
+\end{Bmatrix*}
+\\
+&⟨Component⟩ \to \begin{Bmatrix*}[l]
+    ⟨VariableDeclaration⟩\text{;}
+    ⟨CompilerDirective⟩
 \end{Bmatrix*}
 
 \\\\&\textbf{Other} \\
 
+&⟨CompilerDirective⟩ \to \begin{Bmatrix*}[l]
+    \text{@assert}\text{(}⟨Expr⟩\begin{pmatrix}\text{,}⟨Expr⟩\end{pmatrix}^?\text{)}\\
+    \text{@evaluateExpr}\text{(}⟨Expr⟩\text{)}\\
+    \text{@evaluateType}\text{(}⟨Type⟩\text{)}\\
+\end{Bmatrix*}
+\\
 &⟨ParameterFormal⟩ \to \begin{Bmatrix*}[l]
     \text{entF} \\
     \text{sortF} \\

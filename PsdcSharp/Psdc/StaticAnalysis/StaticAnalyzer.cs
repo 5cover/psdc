@@ -2,6 +2,7 @@ using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 using Scover.Psdc.Parsing;
+using Scover.Psdc.CodeGeneration.C;
 
 namespace Scover.Psdc.StaticAnalysis;
 
@@ -13,6 +14,35 @@ public sealed class StaticAnalyzer
     ValueOption<FunctionSignature> _currentFunction;
 
     StaticAnalyzer(Messenger messenger) => _msger = messenger;
+
+    void EvaluateCompilerDirective(Scope scope, Node.CompilerDirective compilerDirective)
+    {
+        switch (compilerDirective) {
+        case Node.CompilerDirective.Assert cd: {
+            GetConstantValue<BooleanType, bool>(BooleanType.Instance, EvaluateExpression(scope, cd.Expression))
+            .DropError(_msger.Report)
+            .Tap(@true => {
+                if (!@true) {
+                    _msger.Report(Message.ErrorAssertionFailed(compilerDirective,
+                        cd.Message.Bind(msgExpr => GetConstantValue<StringType, string>(
+                            StringType.Instance, EvaluateExpression(scope, msgExpr)).DropError(_msger.Report))));
+                }
+            });
+            break;
+        }
+        case Node.CompilerDirective.EvaluateExpr cd: {
+            GetConstantValue(EvaluateExpression(scope, cd.Expression))
+            .DropError(_msger.Report)
+            .Tap(expr => {
+
+            });
+            break;
+        }
+        case Node.CompilerDirective.EvaluateType cd: {
+            break;
+        }
+        }
+    }
 
     public static Algorithm Analyze(Messenger messenger, Node.Algorithm root)
     {
@@ -33,6 +63,7 @@ public sealed class StaticAnalyzer
 
         return semanticAst;
     }
+
 
     Declaration AnalyzeDeclaration(MutableScope scope, Node.Declaration decl)
     {
@@ -355,7 +386,7 @@ public sealed class StaticAnalyzer
                 switch (targetType) {
                 case ArrayType targetArrayType: {
                     var dimensions = targetArrayType.Dimensions.Select(d => d.Value).ToArray();
-                    var sitems = EvaluateItems(init, targetArrayType.ItemType);
+                    var sitems = AnalyzeItems(scope, init, targetArrayType.ItemType);
 
                     int currentIndex = 0;
                     Value[] arrayValue = Enumerable.Repeat(
@@ -401,37 +432,35 @@ public sealed class StaticAnalyzer
                     Dictionary<Identifier, Value> structValues = [];
                     List<Initializer.Braced.Item> sitems = [];
 
-                    foreach (var item in init.Items) {
-                        item.Designator.Match(
-                            d => d.SomeAs<Designator.Structure>()
-                            .OrWithError(Message.ErrorUnsupportedDesignator(d.SourceTokens, targetType))
-                            .Bind(d => targetStructType.Components.Map.GetEntryOrNone(d.Component)
-                                       .OrWithError(Message.ErrorStructureComponentDoesntExist(d.Component, targetStructType)))
-                            .Map(kvp => {
-                                currentComponentIndex = targetStructType.Components.List.IndexOf(kvp).Unwrap();
-                                return kvp.ToTuple();
-                            }),
-                            
-                            () => targetStructType.Components.List
-                                .ElementAtOrNone(currentComponentIndex++)
-                                .Map(d => d.ToTuple())
-                                .OrWithError(Message.ErrorExcessElementInInitializer(item.SourceTokens))
+                    EvaluateItems(scope, init, i => i.Designator
+                        .Match(d => d.SomeAs<Designator.Structure>()
+                        .OrWithError(Message.ErrorUnsupportedDesignator(d.SourceTokens, targetType))
+                        .Bind(d => targetStructType.Components.Map.GetEntryOrNone(d.Component)
+                                  .OrWithError(Message.ErrorStructureComponentDoesntExist(d.Component, targetStructType)))
+                        .Map(kvp => {
+                            currentComponentIndex = targetStructType.Components.List.IndexOf(kvp).Unwrap();
+                            return kvp.ToTuple();
+                        }),
+
+                        () => targetStructType.Components.List
+                            .ElementAtOrNone(currentComponentIndex++)
+                            .Map(d => d.ToTuple())
+                            .OrWithError(Message.ErrorExcessElementInInitializer(i.SourceTokens))
+
                         ).Tap(
                             (name, type) => {
-                                var sitem = EvaluateItem(item, type);
+                                var sitem = AnalyzeItem(i, type);
                                 sitems.Add(sitem);
                                 structValues[name] = sitem.Initializer.Value;
                             },
                             _msger.Report
-                        );
-                        
-                    }
+                        ));
 
                     return (sitems, targetStructType.Instantiate(structValues));
                 }
                 default: {
                     _msger.Report(Message.ErrorUnsupportedInitializer(initializer.SourceTokens, targetType));
-                    return (EvaluateItems(init, targetType), targetType.InvalidValue);
+                    return (AnalyzeItems(scope, init, targetType), targetType.InvalidValue);
                 }
                 }
             }
@@ -440,10 +469,32 @@ public sealed class StaticAnalyzer
             throw initializer.ToUnmatchedException();
         }
 
-        Initializer.Braced.Item[] EvaluateItems(Node.Initializer.Braced braced, EvaluatedType targetType)
-         => braced.Items.Select(i => EvaluateItem(i, targetType)).ToArray();
+        void EvaluateItems(Scope scope, Node.Initializer.Braced braced, Action<Node.Initializer.Braced.ValuedItem> evaluateValuedItem)
+        {
+            foreach (var item in braced.Items) {
+                switch (item) {
+                case Node.Initializer.Braced.ValuedItem i: {
+                    evaluateValuedItem(i);
+                    break;
+                }
+                case Node.CompilerDirective cd: {
+                    EvaluateCompilerDirective(scope, cd);
+                    break;
+                }
+                default:
+                    throw item.ToUnmatchedException();
+                }
+            }
+        }
 
-        Initializer.Braced.Item EvaluateItem(Node.Initializer.Braced.Item item, EvaluatedType targetType)
+        List<Initializer.Braced.Item> AnalyzeItems(Scope scope, Node.Initializer.Braced braced, EvaluatedType targetType)
+        {
+            List<Initializer.Braced.Item> items = [];
+            EvaluateItems(scope, braced, i => items.Add(AnalyzeItem(i, targetType)));
+            return items;
+        }
+
+        Initializer.Braced.Item AnalyzeItem(Node.Initializer.Braced.ValuedItem item, EvaluatedType targetType)
          => new(new(scope, item.SourceTokens),
                 item.Designator.Map(d => AnalyzeDesignator(scope, d)),
                 EvaluateInitializer(scope, item.Initializer, typeComparer, targetType));
@@ -640,7 +691,7 @@ public sealed class StaticAnalyzer
         };
     }
 
-    UnaryOperator AnalyzeOperator(Scope scope, Node.UnaryOperator unOp)
+    internal UnaryOperator AnalyzeOperator(Scope scope, Node.UnaryOperator unOp)
     {
         SemanticMetadata meta = new(scope, unOp.SourceTokens);
         return unOp switch {
@@ -682,10 +733,14 @@ public sealed class StaticAnalyzer
         .ValueOr<EvaluatedType>(UnknownType.Declared(_msger.Input, array));
 
     static ValueOption<TUnderlying, Message> GetConstantValue<TType, TUnderlying>(TType expectedType, Expression expr)
-     where TType : EvaluatedType
+    where TType : EvaluatedType
      => expr is { Value: Value<TType, TUnderlying> v }
         ? v.Status.Comptime.OrWithError(Message.ErrorConstantExpressionExpected(expr.Meta.SourceTokens))
         : Message.ErrorExpressionHasWrongType(expr.Meta.SourceTokens, expectedType, expr.Value.Type);
+
+    static ValueOption<object, Message> GetConstantValue(Expression expr)
+     => /*expr.Value.Status.Comptime
+        .OrWithError(Message.ErrorConstantExpressionExpected(expr.Meta.SourceTokens));*/default;
 
     Option<ConstantExpression<TUnderlying>, Message> GetConstantExpression<TType, TUnderlying>(TType type, Scope scope, Node.Expression expr)
     where TType : EvaluatedType
@@ -702,14 +757,25 @@ public sealed class StaticAnalyzer
     {
         Dictionary<Identifier, EvaluatedType> componentsMap = [];
         List<KeyValuePair<Identifier, EvaluatedType>> componentsList = [];
-        foreach (var comp in structure.Components) {
-            foreach (var name in comp.Names) {
-                var type = EvaluateType(scope, comp.Type);
-                if (componentsMap.TryAdd(name, type)) {
-                    componentsList.Add(new(name, type));
-                } else {
-                    _msger.Report(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
+        foreach (var c in structure.Components) {
+            switch (c) {
+            case Node.VariableDeclaration comp: {
+                foreach (var name in comp.Names) {
+                    var type = EvaluateType(scope, comp.Type);
+                    if (componentsMap.TryAdd(name, type)) {
+                        componentsList.Add(new(name, type));
+                    } else {
+                        _msger.Report(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
+                    }
                 }
+                break;
+            }
+            case Node.CompilerDirective cd: {
+                EvaluateCompilerDirective(scope, cd);
+                break;
+            }
+            default:
+                throw c.ToUnmatchedException();
             }
         }
         return new StructureType(new(componentsMap, componentsList));

@@ -2,9 +2,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
-using Scover.Psdc.Messages;
-using Scover.Psdc.Tokenization;
-
 namespace Scover.Psdc.Library;
 
 readonly record struct Position(int Line, int Column)
@@ -55,9 +52,9 @@ static class Extensions
     /// <returns>An enumarable containing 0-based index in each dimension. Same count as <paramref name="dimensionLengths"/>.</returns>
     public static IEnumerable<int> NDimIndex(this int flatIndex, IReadOnlyList<int> dimensionLengths)
      => dimensionLengths.Reverse().Select(l => {
-            flatIndex = Math.DivRem(flatIndex, l, out var i);
-            return i;
-        }).Reverse();
+         flatIndex = Math.DivRem(flatIndex, l, out var i);
+         return i;
+     }).Reverse();
 
     public static T Product<T>(this IEnumerable<T> source) where T : IMultiplyOperators<T, T, T>
      => source.Aggregate((soFar, next) => soFar *= next);
@@ -88,20 +85,6 @@ static class Extensions
         }
         return default;
     }
-
-    public static void DoInColor(this (ConsoleColor? foreground, ConsoleColor? background) color, Action action)
-    {
-        color.SetColor();
-        action();
-        Console.ResetColor();
-    }
-
-    public static (ConsoleColor? foreground, ConsoleColor? background) GetConsoleColor(this MessageSeverity msgSeverity) => msgSeverity switch {
-        MessageSeverity.Error => (ConsoleColor.Red, null),
-        MessageSeverity.Warning => (ConsoleColor.Yellow, null),
-        MessageSeverity.Suggestion => (ConsoleColor.Blue, null),
-        _ => throw msgSeverity.ToUnmatchedException(),
-    };
 
     public static IEnumerator<T> GetGenericEnumerator<T>(this T[] array) => ((IEnumerable<T>)array).GetEnumerator();
 
@@ -168,12 +151,6 @@ static class Extensions
         return t;
     }
 
-    public static ValueOption<bool> NextIsOfType(this IEnumerable<Token> tokens, IReadOnlySet<TokenType> types)
-     => tokens.FirstOrNone().Map(token => types.Contains(token.Type));
-
-    public static ValueOption<bool> NextIsOfType(this IEnumerable<Token> tokens, TokenType type)
-     => tokens.FirstOrNone().Map(token => type.Equals(token.Type));
-
     /// <summary>Asserts that <paramref name="t" /> isn't <see langword="null" />.</summary>
     /// <remarks>This is a safer replacement for the null-forgiving operator (<c>!</c>).</remarks>
     /// <returns><paramref name="t" />, not null.</returns>
@@ -187,16 +164,6 @@ static class Extensions
      => first.HasValue && second.HasValue
         ? first.Value.SemanticsEqual(second.Value)
         : first.HasValue == second.HasValue;
-
-    public static void SetColor(this (ConsoleColor? foreground, ConsoleColor? background) color)
-    {
-        if (color.foreground is { } fg) {
-            Console.ForegroundColor = fg;
-        }
-        if (color.background is { } bg) {
-            Console.BackgroundColor = bg;
-        }
-    }
 
     public static UnreachableException ToUnmatchedException<T>(this T t) => new($"Unmatched {typeof(T).Name}: {t}");
 
@@ -231,4 +198,9 @@ static class Function
                  action(item);
              }
          };
+}
+
+static class Set
+{
+    public static HashSet<T> Of<T>(params T[] items) => [.. items];
 }

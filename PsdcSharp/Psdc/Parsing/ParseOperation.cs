@@ -3,7 +3,7 @@ using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
 
-using TokenTypeSet = HashSet<TokenType>;
+using TokenTypeSet = IReadOnlySet<TokenType>;
 
 /// <summary>
 /// A branch in a parsing operation to parse a specific type of node.
@@ -26,8 +26,8 @@ delegate ParseResult<T> Parser<out T>(IEnumerable<Token> tokens);
 /// </summary>
 /// <typeparam name="T">The type of node parsed.</typeparam>
 /// <param name="operation">The enclosing parsing operation.</param>
-/// <returns>A tuple of the parsing operation used and the result produced.</returns>
-delegate (ParseOperation, ParseResult<T>) ParseBlock<T>(ParseOperation operation);
+/// <returns>A result that encapsulates <typeparamref name="T"/>.</returns>
+delegate ParseResult<T> ParseBlock<out T>(ParseOperation operation);
 
 /// <summary>
 /// A function that creates a node from source tokens.
@@ -111,14 +111,6 @@ abstract class ParseOperation
     /// <returns>An Ok result containing the parsed node, or a failure result with a error indicating what went wrong.</returns>
     public abstract ParseResult<T> MapResult<T>(ResultCreator<T> resultCreator);
 
-    /// <summary>
-    /// Get an intermediate result based on the tokens read so far; the parsing operation can continue.
-    /// </summary>
-    /// <typeparam name="T">The type of node to parse.</typeparam>
-    /// <param name="resultCreator">The result creator function.</param>
-    /// <returns>Tuple of the current <see cref="ParseOperation"/> and the created result.</returns>
-    public abstract (ParseOperation, ParseResult<T>) GetResult<T>(ResultCreator<T> resultCreator);
-
     /// <summary>Parse a single node.</summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>
     /// <param name="result">Assigned to the parsed result.</param>
@@ -151,6 +143,14 @@ abstract class ParseOperation
     /// <param name="parse">The node parser.</param>
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
     public abstract ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse);
+
+    /// <summary>Parse a node, optionally.</summary>
+    /// <typeparam name="T">The type of node to parse.</typeparam>
+    /// <param name="result">Assigned to the parsed node option.</param>
+    /// <param name="block">The block to execute to get each node.</param>
+    /// <param name="parse">The node parser.</param>
+    /// <returns>The current <see cref="ParseOperation"/>.</returns>
+    public abstract ParseOperation ParseOptional<T>(out Option<T> result, ParseBlock<T> parse);
 
     /// <summary>Parse a token, optionally.</summary>
     /// <param name="type">The type of token to parse.</param>
@@ -227,8 +227,6 @@ abstract class ParseOperation
 
         public override ParseResult<T> MapResult<T>(ResultCreator<T> result) => ParseResult.Fail<T>(ReadTokens, _error);
 
-        public override (ParseOperation, ParseResult<T>) GetResult<T>(ResultCreator<T> resultCreator) => (this, ParseResult.Fail<T>(ReadTokens, _error));
-
         public override ParseOperation Parse<T>(out T result, Parser<T> parse)
         {
             result = default!;
@@ -281,18 +279,34 @@ abstract class ParseOperation
         }
 
         public override ParseOperation Skim(int n) => this;
+        public override ParseOperation ParseOptional<T>(out Option<T> result, ParseBlock<T> parse)
+        {
+            result = default!;
+            return this;
+        }
     }
 
     sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, Messenger messenger, string production) : ParseOperation(tokens, 0)
     {
+        static readonly TokenTypeSet ignoredTokenTypes = Set.Of<TokenType>(TokenType.PreprocessorDirective.Instance);
+
         private readonly Messenger _msger = messenger;
         private readonly string _prod = production;
 
-        IEnumerable<Token> ParsingTokens => _tokens.Skip(_readCount);
+        ValueOption<Token> NextToken {
+            get {
+                var t = _tokens.ElementAtOrNone(_readCount);
+                while (t.HasValue && ignoredTokenTypes.Contains(t.Value.Type)) {
+                    t = _tokens.ElementAtOrNone(++_readCount);
+                }
+                return t;
+            }
+        }
+        ParseResult<T> CallParser<T>(Parser<T> parser) => parser(_tokens.Skip(_readCount));
 
         public override ParseOperation Switch<T>(out Branch<T> branch, IReadOnlyDictionary<TokenType, Branch<T>> cases, Branch<T>? @default)
         {
-            var token = ParsingTokens.FirstOrNone();
+            var token = NextToken;
             if (token.HasValue && cases.TryGetValue(token.Value.Type, out branch!)) {
                 _readCount++;
                 return this;
@@ -318,12 +332,9 @@ abstract class ParseOperation
 
         public override ParseResult<T> MapResult<T>(ResultCreator<T> resultCreator) => MakeOkResult(resultCreator(ReadTokens));
 
-        public override (ParseOperation, ParseResult<T>) GetResult<T>(ResultCreator<T> resultCreator)
-         => (this, MakeOkResult(resultCreator(ReadTokens)));
-
         public override ParseOperation Parse<T>(out T result, Parser<T> parse)
         {
-            var pr = parse(ParsingTokens);
+            var pr = CallParser(parse);
             _readCount += pr.SourceTokens.Count;
             if (pr.HasValue) {
                 result = pr.Value;
@@ -341,10 +352,10 @@ abstract class ParseOperation
 
             if (Peek(end).ValueOr(true)) {
                 // try to parse to get an appropriate error, it should fail since we're on the end token. 
-                return Fail(parse(ParsingTokens).Error.NotNull());
+                return Fail(CallParser(parse).Error.NotNull());
             } else {
                 do {
-                    var item = parse(ParsingTokens);
+                    var item = CallParser(parse);
                     _readCount += item.SourceTokens.Count;
                     AddOrSyntaxError(items, item);
                 } while (Match(separator) && (!allowTrailingSeparator || !Peek(end).ValueOr(true)));
@@ -358,7 +369,7 @@ abstract class ParseOperation
             List<T> items = [];
             result = items;
 
-            ParseResult<T> item = parse(ParsingTokens);
+            ParseResult<T> item = CallParser(parse);
             _readCount += Math.Max(1, item.SourceTokens.Count);
 
             AddOrSyntaxError(items, item);
@@ -374,7 +385,18 @@ abstract class ParseOperation
 
         public override ParseOperation ParseOptional<T>(out Option<T> result, Parser<T> parse)
         {
-            var pr = parse(ParsingTokens);
+            var pr = CallParser(parse);
+            if (pr.HasValue) {
+                _readCount += pr.SourceTokens.Count;
+            }
+            result = pr.DropError();
+            return this;
+        }
+
+        public override ParseOperation ParseOptional<T>(out Option<T> result, ParseBlock<T> parse)
+        {
+            var pr = parse(this);
+
             if (pr.HasValue) {
                 _readCount += pr.SourceTokens.Count;
             }
@@ -384,7 +406,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseOptionalToken(TokenType type)
         {
-            var token = ParsingTokens.FirstOrNone();
+            var token = NextToken;
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
             }
@@ -393,7 +415,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseToken(TokenType type)
         {
-            var token = ParsingTokens.FirstOrNone();
+            var token = NextToken;
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 return this;
@@ -403,7 +425,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseTokenValue(out string result, TokenType type)
         {
-            var token = ParsingTokens.FirstOrNone();
+            var token = NextToken;
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 result = token.Value.Value ?? throw new InvalidOperationException("Parsed token doesn't have a value");
@@ -421,7 +443,7 @@ abstract class ParseOperation
 
             if (!Peek(end).ValueOr(true)) {
                 do {
-                    var item = parse(ParsingTokens);
+                    var item = CallParser(parse);
                     _readCount += item.SourceTokens.Count;
                     AddOrSyntaxError(items, item);
                 } while (Match(separator) && (!allowTrailingSeparator || !Peek(end).ValueOr(true)));
@@ -449,7 +471,9 @@ abstract class ParseOperation
             List<T> items = [];
             result = items;
 
-            return ParseWhile(items, block, () => !Peek(endTokens).ValueOr(true));
+            ParseWhile(items, block, () => !Peek(endTokens).ValueOr(true));
+
+            return this;
         }
 
         public override ParseOperation Skim(int n)
@@ -484,10 +508,10 @@ abstract class ParseOperation
                 error.ErroneousToken, error.ExpectedTokens, error.FailedProduction);
 
         ValueOption<bool> Peek(TokenTypeSet types)
-         => ParsingTokens.NextIsOfType(types);
+         => NextToken.Map(token => types.Contains(token.Type));
 
         ValueOption<bool> Peek(TokenType type)
-         => ParsingTokens.NextIsOfType(type);
+         => NextToken.Map(token => type.Equals(token.Type));
 
         void ParseWhile<T>(ICollection<T> items, Parser<T> parse, Func<bool> keepGoingWhile, Func<bool>? skimWhile = null)
         {
@@ -497,7 +521,7 @@ abstract class ParseOperation
 
             ParseError? lastError = null;
             while (keepGoingWhile()) {
-                var item = parse(ParsingTokens);
+                var item = CallParser(parse);
                 _readCount += Math.Max(1, item.SourceTokens.Count);
 
                 if (item.HasValue || !item.Error.IsEquivalent(lastError)) {
@@ -513,20 +537,18 @@ abstract class ParseOperation
             }
         }
 
-        ParseOperation ParseWhile<T>(ICollection<T> items, ParseBlock<T> block, Func<bool> keepGoingWhile)
+        void ParseWhile<T>(ICollection<T> items, ParseBlock<T> block, Func<bool> keepGoingWhile)
         {
             if (!keepGoingWhile()) {
-                return this;
+                return;
             }
 
-            var (po, item) = block(this);
+            var prItem = block(this);
 
-            while (po is SuccessfulSoFarOperation p && keepGoingWhile()) {
-                p.AddOrSyntaxError(items, item);
-                (po, item) = block(po);
+            while (keepGoingWhile()) {
+                AddOrSyntaxError(items, prItem);
+                prItem = block(this);
             }
-
-            return po;
         }
     }
 }

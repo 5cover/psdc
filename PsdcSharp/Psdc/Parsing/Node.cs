@@ -20,6 +20,29 @@ public interface Node : EquatableSemantics<Node>
         public Expression ContainedExpression { get; }
     }
 
+    internal interface CompilerDirective : Declaration, Statement, Component, Initializer.Braced.Item
+    {
+        internal sealed record EvaluateExpr(SourceTokens SourceTokens, Expression Expression) : CompilerDirective
+        {
+            public bool SemanticsEqual(Node other) => other is EvaluateExpr o
+                && o.Expression.SemanticsEqual(Expression);
+        }
+
+        internal sealed record EvaluateType(SourceTokens SourceTokens, Type Type) : CompilerDirective
+        {
+            public bool SemanticsEqual(Node other) => other is EvaluateType o
+                && o.Type.SemanticsEqual(Type);
+        }
+
+        internal sealed record Assert(SourceTokens SourceTokens, Expression Expression, Option<Expression> Message) : CompilerDirective
+        {
+            public bool SemanticsEqual(Node other) => other is Assert o
+                && o.Expression.SemanticsEqual(Expression)
+                && o.Message.OptionSemanticsEqual(Message);
+        }
+
+    }
+
     public sealed record Algorithm(SourceTokens SourceTokens, Identifier Name, IReadOnlyList<Declaration> Declarations) : Node
     {
         public bool SemanticsEqual(Node other) => other is Algorithm o
@@ -350,12 +373,14 @@ public interface Node : EquatableSemantics<Node>
             public bool SemanticsEqual(Node other) => other is Braced o
              && o.Items.AllSemanticsEqual(Items);
 
-            public sealed record Item(SourceTokens SourceTokens,
+            internal interface Item : Node;
+
+            public sealed record ValuedItem(SourceTokens SourceTokens,
                 Option<Designator> Designator,
                 Initializer Initializer)
-            : Node
+            : Item
             {
-                public bool SemanticsEqual(Node other) => other is Item o
+                public bool SemanticsEqual(Node other) => other is ValuedItem o
                  && o.Designator.OptionSemanticsEqual(Designator)
                  && o.Initializer.SemanticsEqual(Initializer);
             }
@@ -584,7 +609,7 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record Structure(SourceTokens SourceTokens,
-            IReadOnlyList<VariableDeclaration> Components)
+            IReadOnlyList<Component> Components)
         : Type
         {
             public bool SemanticsEqual(Node other) => other is Structure o
@@ -611,6 +636,8 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
+    internal interface Component : Node;
+
     internal sealed record ParameterActual(SourceTokens SourceTokens,
         ParameterMode Mode,
         Expression Value)
@@ -636,7 +663,7 @@ public interface Node : EquatableSemantics<Node>
     internal sealed record VariableDeclaration(SourceTokens SourceTokens,
         IReadOnlyList<Identifier> Names,
         Type Type)
-    : Node
+    : Component
     {
         public bool SemanticsEqual(Node other) => other is VariableDeclaration o
          && o.Names.AllSemanticsEqual(Names)

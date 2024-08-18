@@ -2,22 +2,25 @@ programme StructureExamples c'est
 
 type tNotes = tableau[6] de réel;
 
+type A = structure début
+    i: entier;
+    @evaluateExpr("im in a struct")
+fin
+
+@evaluateExpr("im at da top lvl")
+
 début
-    notes : tNotes;
-
-    notes[0, 1] := 0; // error: index out of bounds
-    notes[1] := 5.4;
-    notes[2] := 12.7;
-    notes[6] := -1;
-    notes[7] := -2;
-
-    e : entier;
-
-    notes2 : tNotes := {
-        [1] := 1,
-        [-1] := 2,
-        3,
+    x: A := {
+        @evaluateExpr("im in an initializer")
     };
 
-    écrireEcran(notes[6]);
+    @evaluateExpr("im a stmt")
+    
+    pour x.i de 1 à 10 pas 2 faire
+        écrireEcran("a
+        aaaa
+        aa");
+    finfaire
+
+    @evaluateType(tNotes)
 fin
