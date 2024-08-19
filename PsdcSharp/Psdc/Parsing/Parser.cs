@@ -430,7 +430,7 @@ public sealed partial class Parser
      => ParseOperation.Start(tokens, "braced initializer")
         .ParseToken(Punctuation.LBrace)
         .ParseZeroOrMoreSeparated(out var values, ParserFirst<Initializer.Braced.Item>((tokens)
-                => ParseOperation.Start(tokens, "braced initializer item")
+             => ParseOperation.Start(tokens, "braced initializer item")
                 .ParseOptional(out var designator, ParserFirst<Designator>(ArrayDesignator, StructureDesignator))
                 .Parse(out var init, Initializer)
                 .MapResult(t => new Initializer.Braced.ValuedItem(t, designator, init)),

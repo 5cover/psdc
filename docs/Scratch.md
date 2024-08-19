@@ -296,6 +296,14 @@ Simply add some graph-building logic in the NodeImpl constructor.
 - Check the assignability of target and value in assignment
 - Check if return value corresponds to function's return type
 
+## Values domain model allows invalid state
+
+It doesn't make sense for a value of a non-instantiable time to be comptime. Yet, it is allowed.
+
+See if we can refactor this possibility of invalid state out.
+
+This is a minor issue.
+
 ## Preprocessor directives
 
 Since a PD can be located anywher in the program, it cannot be parsed as part of the normal syntax, unless we want to make the grammar extremely messy.
@@ -478,34 +486,42 @@ self-explanatory.
 
 Allow trailing commas in parameter lists, local variable lists, array subscripts.
 
-## Test compile-time values
+## Fix empty initializers code gen
 
-We'll need all kinds of expressions that yield comptime-known integers.
+Empty initializer = zero in C23.
 
-Tests (increasing complexity):
+Is this in line with Pseudocode semantics?
 
-- Literal
-- Operations (combine multiple operations that yield a constant result)
-    - Addition
-    - Substraction
-    - Division
-    - Mod
-    - Cast from real
-    - Cast from bool
-        - vrai
-        - faux
-        - Not
-        - Or
-        - And
-        - Xor
-- Scalar constant
-- Array constant
-    - no designators
-    - with designators
-    - only designators
-- Structure constant
-    - no designators
-    - with designators
-    - only designators
-- Structure > Array constant
-- Array > Structure constant
+## Fix multidimensional array initialization
+
+Let:
+
+```psc
+type Matrix2D = tableau[3,3] de entier;
+type MatrixJagged = tableau[3] de tableau[3] de entier;
+``
+
+`MatrixJagged` can be initialized as such:
+
+```psc
+ := {{ 7, 8, 9 },
+     { 4, 5, 6 },
+     { 1, 2, 3 }};
+```
+
+This syntax doesn't work for `Matrix2D` though. It should, since `Matrix2D` and `MatrixJagged` are equivalent, at least in C.
+
+Should we consider them to be equivalent in Pseudocode too? So that `Matrix2D` is only a shorthand syntax for `MatrixJagged`?
+
+I don't see any downsides to this approach. I don't see any situation where we'd want a jagged array. The only usage of jagged array is if the inner arrays may be of different sizes, which cannot be the case since we don't have dynamic arrays (yet).
+
+The only problem is with indexing:
+
+```psc
+matrix2d[2,2];
+matrixJagged[2][2];
+```
+
+Consider `matrix2d`'s indexing syntax as a shorthand for `matrixJagged`'s indexing syntax.
+
+I don't know. I feel removing one of these (or converting it to the other) might cause use trouble later. The current approach is flexible, albeit unneededly so.

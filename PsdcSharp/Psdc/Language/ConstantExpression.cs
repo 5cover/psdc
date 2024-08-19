@@ -8,7 +8,7 @@ static class ComptimeExpression
      => new(expression, value);
 }
 
-sealed record ComptimeExpression<TValue>(Expression Expression, TValue Value)
+readonly record struct ComptimeExpression<TValue>(Expression Expression, TValue Value)
 {
     public override string? ToString() => Value?.ToString();
 }

@@ -1,5 +1,16 @@
 namespace Scover.Psdc.Language;
 
+file static class ValueStatusExtensions
+{
+    public static string GetPart(this ValueStatus valueStatus) => valueStatus switch {
+        ValueStatus.Comptime => "",
+        ValueStatus.Garbage => "garbage ",
+        ValueStatus.Invalid => "invalid ",
+        ValueStatus.Runtime => "runtime ",
+        _ => throw valueStatus.ToUnmatchedException(),
+    };
+}
+
 abstract class ValueImpl<TType>(TType type, ValueStatus status) : FormattableUsableImpl, Value
 where TType : EvaluatedType
 {
@@ -11,7 +22,7 @@ where TType : EvaluatedType
      && o.Status.Equals(Status);
     public override string ToString(string? format, IFormatProvider? formatProvider) => format switch {
         Value.FmtMin => Type.ToString(formatProvider),
-        _ when string.IsNullOrEmpty(format) => string.Create(formatProvider, $"{Status.Representation} {Type}"),
+        _ when string.IsNullOrEmpty(format) => string.Create(formatProvider, $"{Status.GetPart()}{Type}"),
         _ => throw new FormatException($"Unsupported format: '{format}'")
     };
 }
@@ -34,8 +45,8 @@ where TUnderlying : notnull
     public override string ToString(string? format, IFormatProvider? fmtProvider) => format switch {
         Value.FmtMin => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider)).ValueOr(Type.ToString(fmtProvider)),
         _ when string.IsNullOrEmpty(format) => Status.ComptimeValue.Match(
-             v => string.Create(fmtProvider, $"{Status.Representation} {Type}: {ValueToString(v, fmtProvider)}"),
-            () => string.Create(fmtProvider, $"{Status.Representation} {Type}")),
+             v => string.Create(fmtProvider, $"{Status.GetPart()}{Type}: {ValueToString(v, fmtProvider)}"),
+            () => string.Create(fmtProvider, $"{Status.GetPart()}{Type}")),
         _ => throw new FormatException($"Unsupported format: '{format}'")
     };
 }

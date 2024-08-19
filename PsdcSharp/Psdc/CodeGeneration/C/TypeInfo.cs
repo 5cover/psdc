@@ -38,7 +38,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
     public override string ToString() => string.Concat(_typeName, _stars, _postModifier, _typeQualifier);
 
     public string GenerateDeclaration(IEnumerable<string> declarators)
-     => string.Concat(_typeName, _typeQualifier,
+     => string.Concat(_typeName, _typeQualifier, " ",
             string.Join(", ", declarators.Select(name => string.Concat(_stars, name, _postModifier))));
 
     public string GenerateDeclaration(string declarator) => GenerateDeclaration(declarator.Yield());
@@ -100,17 +100,17 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
 
         TypeInfo CreateStructure(StructureType structure, Help help)
         {
-            StringBuilder sb = new("struct {");
-            sb.AppendLine();
+            StringBuilder o = new("struct {");
+            o.AppendLine();
             indent.Increase();
             var components = structure.Components.Map.ToDictionary(kv => kv.Key,
                 kv => Create(kv.Value, indent, help));
             foreach (var comp in components) {
-                indent.Indent(sb).Append(comp.Value.GenerateDeclaration(help.KwTable.Validate(help.Scope, comp.Key, help.Msger).Yield())).AppendLine(";");
+                indent.Indent(o).Append(comp.Value.GenerateDeclaration(help.KwTable.Validate(help.Scope, comp.Key, help.Msger).Yield())).AppendLine(";");
             }
             indent.Decrease();
-            sb.Append('}');
-            return new(sb.ToString(),
+            o.Append('}');
+            return new(o.ToString(),
                 // it's ok if there are duplicate headers, since IncludeSet.Ensure will ignore duplicates.
                 requiredHeaders: components.Values.SelectMany(type => type.RequiredHeaders));
         }

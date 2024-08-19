@@ -265,16 +265,16 @@ sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, IRead
      }));
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider)
     {
-        var sb = new StringBuilder()
+        var o = new StringBuilder()
             .Append("structure { ")
             .AppendJoin(", ", Components.List.Take(MaxComponentsInRepresentation)
                 .Select(c => string.Create(fmtProvider, $"{c.Key}: {c.Value}")));
 
         var nbExcessComps = Components.Count - MaxComponentsInRepresentation;
         if (nbExcessComps > 0) {
-            sb.Append(fmtProvider, $", ({nbExcessComps} more...)");
+            o.Append(fmtProvider, $", ({nbExcessComps} more...)");
         }
-        return sb.Append(" }").ToString();
+        return o.Append(" }").ToString();
     }
 }
 

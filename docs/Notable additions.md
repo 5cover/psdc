@@ -13,3 +13,7 @@ Sometimes it is necessary to convert values from one type to another. This can b
 ## Preprocessor directives
 
 Preprocessor directives (lines starting with `#`) are necessary for configuration (ecrire newlines&hellip;) and provide organizational features like modularity.
+
+## Primitive initializers
+
+Initialiers for primitive types (any type except structure or arrays) are supported.

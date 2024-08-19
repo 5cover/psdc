@@ -1716,3 +1716,35 @@ Instead of switching in message, add tostring to value.
 Give a friendly representation of the underlying value always (see ArrayValue and StructureValue)
 
 use Format
+
+## Test compile-time values
+
+We'll need all kinds of expressions that yield comptime-known integers.
+
+Tests (increasing complexity):
+
+- Literal
+- Operations (combine multiple operations that yield a constant result)
+    - Addition
+    - Substraction
+    - Division
+    - Mod
+    - Cast from real
+    - Cast from bool
+        - vrai
+        - faux
+        - Not
+        - Or
+        - And
+        - Xor
+- Scalar constant
+- Array constant
+    - no designators
+    - with designators
+    - only designators
+- Structure constant
+    - no designators
+    - with designators
+    - only designators
+- Structure > Array constant
+- Array > Structure constant

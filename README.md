@@ -84,12 +84,13 @@ Notation: bold &rarr; underway
 - [ ] Documentation
     - [ ] CLI
     - [ ] Language standard
-- [ ] Initial releas
+- [ ] Initial release
 - [ ] Sample "real" program
 - [ ] Self-hosting (rewrite in Pseudocode)
 - [ ] VSCode tooling
     - [ ] Debugger
     - [ ] Language server
+    - [ ] Better syntax highlighter
 
 ### C output configuration
 

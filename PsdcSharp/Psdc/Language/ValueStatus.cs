@@ -3,7 +3,6 @@ namespace Scover.Psdc.Language;
 interface ValueStatus : IEquatable<ValueStatus>
 {
     ValueOption<object> ComptimeValue { get; }
-    string Representation { get; }
 
     /// <summary>
     /// The value is known at compile-time.
@@ -19,9 +18,6 @@ interface ValueStatus : IEquatable<ValueStatus>
         protected Comptime(object value) => Value = value;
         public object Value { get; }
         ValueOption<object> ValueStatus.ComptimeValue => Value;
-
-        public string Representation => "comptime";
-
         public bool Equals(ValueStatus? other) => other is Comptime o && Equals(o.Value, Value);
     }
     internal sealed class Comptime<TUnderlying>(TUnderlying value) : Comptime(value), ValueStatus<TUnderlying>
@@ -41,7 +37,6 @@ interface ValueStatus : IEquatable<ValueStatus>
         ValueOption<object> ValueStatus.ComptimeValue => default;
         public bool Equals(ValueStatus? other) => other is Runtime;
         public static Runtime Instance { get; } = Runtime<object>.Instance;
-        public string Representation => "runtime";
     }
     internal sealed class Runtime<TUnderlying> : Runtime, ValueStatus<TUnderlying>
     {
@@ -60,7 +55,6 @@ interface ValueStatus : IEquatable<ValueStatus>
         ValueOption<object> ValueStatus.ComptimeValue => default;
         public bool Equals(ValueStatus? other) => other is Garbage;
         public static Garbage Instance { get; } = Garbage<object>.Instance;
-        public string Representation => "garbage";
     }
     internal sealed class Garbage<TUnderlying> : Garbage, ValueStatus<TUnderlying>
     {
@@ -78,7 +72,6 @@ interface ValueStatus : IEquatable<ValueStatus>
         ValueOption<object> ValueStatus.ComptimeValue => default;
         public bool Equals(ValueStatus? other) => other is Invalid;
         public static Invalid Instance { get; } = Invalid<object>.Instance;
-        public string Representation => "invalid";
     }
     internal sealed class Invalid<TUnderlying> : Invalid, ValueStatus<TUnderlying>
     {
