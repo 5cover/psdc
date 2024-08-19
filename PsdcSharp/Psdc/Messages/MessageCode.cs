@@ -9,7 +9,6 @@ public enum MessageCode
     RedefinedSymbol,
     RedefinedMainProgram,
     CallableNotDefined,
-    MissingMainProgram,
     SignatureMismatch,
     ConstantAssignment,
     CallParameterMismatch,

@@ -51,10 +51,6 @@ public sealed class StaticAnalyzer
         Algorithm semanticAst = new(new(scope, root.SourceTokens), root.Name,
             root.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).WhereSome().ToArray());
 
-        if (!a._seenMainProgram) {
-            messenger.Report(Message.ErrorMissingMainProgram(root.SourceTokens));
-        }
-
         foreach (var callable in scope.GetSymbols<Symbol.Callable>().Where(c => !c.HasBeenDefined)) {
             messenger.Report(Message.ErrorCallableNotDefined(callable));
         }

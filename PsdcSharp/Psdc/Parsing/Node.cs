@@ -538,7 +538,7 @@ public interface Node : EquatableSemantics<Node>
             {
                 public Real(SourceTokens sourceTokens, string valueStr)
                 : this(sourceTokens, decimal.Parse(valueStr, Format.Code)) { }
-            };
+            }
 
             internal sealed record String(SourceTokens SourceTokens, string Value)
             : Literal<LengthedStringType, LengthedStringValue, string>(SourceTokens, LengthedStringType.Create(Value.Length), Value);

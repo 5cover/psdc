@@ -200,5 +200,3 @@ constante tPoint C_POINT_ONLY_DES := { .x := 3.14, .y := 14.3 };
 #eval expr C_POINT
 #eval expr C_POINT_SOME_DES
 #eval expr C_POINT_ONLY_DES
-
-début fin

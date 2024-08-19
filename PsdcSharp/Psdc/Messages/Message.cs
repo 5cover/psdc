@@ -88,10 +88,6 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.ExpressionHasWrongType,
         $"can't convert expression of type '{actual}' to '{expected}'");
 
-    internal static Message ErrorMissingMainProgram(SourceTokens sourceTokens)
-     => new(sourceTokens, MessageCode.MissingMainProgram,
-        "main program missing");
-
     internal static Message ErrorCallableNotDefined(Symbol.Callable callable)
      => new(callable.SourceTokens, MessageCode.CallableNotDefined,
         $"{callable.Kind} `{callable.Name}` declared but not defined",

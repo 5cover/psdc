@@ -1698,3 +1698,13 @@ That seems like an easy way to implement this feature.
 ## Disambiguate terms: comptime and constant
 
 Those mean the same thing, except constant is also a node. So rename all to comptime.
+
+## Make main program optional
+
+Empty programs have rights!
+
+Some languages (like Python or SQL) support NO-OP programs.
+
+So we should support it to.
+
+Remove the empty main program from comptime.psc.
