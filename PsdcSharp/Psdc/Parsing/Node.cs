@@ -20,7 +20,7 @@ public interface Node : EquatableSemantics<Node>
         public Expression ContainedExpression { get; }
     }
 
-    internal interface CompilerDirective : Declaration, Statement, Component, Initializer.Braced.Item
+    public interface CompilerDirective : Declaration, Statement, Component, Initializer.Braced.Item
     {
         internal sealed record EvaluateExpr(SourceTokens SourceTokens, Expression Expression) : CompilerDirective
         {
@@ -42,9 +42,13 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    public sealed record Algorithm(SourceTokens SourceTokens, Identifier Name, IReadOnlyList<Declaration> Declarations) : Node
+    public sealed record Algorithm(SourceTokens SourceTokens,
+        IReadOnlyList<CompilerDirective> LeadingDirectives,
+        Identifier Name,
+        IReadOnlyList<Declaration> Declarations) : Node
     {
         public bool SemanticsEqual(Node other) => other is Algorithm o
+         && o.LeadingDirectives.AllSemanticsEqual(LeadingDirectives)
          && o.Name.SemanticsEqual(Name)
          && o.Declarations.AllSemanticsEqual(Declarations);
     }
@@ -118,7 +122,7 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    internal interface Statement : Node
+    public interface Statement : Node
     {
         internal sealed record Nop(SourceTokens SourceTokens)
         : Statement
@@ -363,18 +367,18 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    internal interface Initializer : Node
+    public interface Initializer : Node
     {
-        internal sealed record Braced(SourceTokens SourceTokens,
+        public sealed record Braced(SourceTokens SourceTokens,
             IReadOnlyList<Braced.Item> Items)
         : Initializer
         {
             public bool SemanticsEqual(Node other) => other is Braced o
              && o.Items.AllSemanticsEqual(Items);
 
-            internal interface Item : Node;
+            public interface Item : Node;
 
-            public sealed record ValuedItem(SourceTokens SourceTokens,
+            internal sealed record ValuedItem(SourceTokens SourceTokens,
                 Option<Designator> Designator,
                 Initializer Initializer)
             : Item
@@ -635,7 +639,7 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    internal interface Component : Node;
+    public interface Component : Node;
 
     internal sealed record ParameterActual(SourceTokens SourceTokens,
         ParameterMode Mode,

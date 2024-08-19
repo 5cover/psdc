@@ -1,4 +1,3 @@
-using Scover.Psdc.Messages;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
@@ -161,13 +160,18 @@ abstract class ParseOperation
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
     public abstract ParseOperation ParseToken(TokenType type);
 
+    /// <summary>Parse a contextual keyword, by expecting an identifier of the defined name.</summary>
+    /// <param name="contextKeyword">The contextual keyword to parse.</param>
+    /// <returns>The current <see cref="ParseOperation"/>.</returns>
+    public abstract ParseOperation ParseContextKeyword(TokenType.ContextKeyword contextKeyword);
+
     /// <summary>Parse a token's value.</summary>
     /// <param name="result">Assigned to the parsed token's value.</param>
     /// <param name="type">The type of token to parse.</param>
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
     public abstract ParseOperation ParseTokenValue(out string result, TokenType type);
 
-    /// <summary>Parses zero or more separated nodes.</summary>
+    /// <summary>Parse zero or more separated nodes.</summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>
     /// <param name="allowTrailingSeparator">To allow a trailing separator.</param>
     /// <param name="separator">The separator token.</param>
@@ -179,7 +183,7 @@ abstract class ParseOperation
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
     public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<ParseResult<T>> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true, bool allowTrailingSeparator = false);
 
-    /// <summary>Parses zero or more nodes until an end token is encountered.</summary>
+    /// <summary>Parse zero or more nodes until an end token is encountered.</summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>
     /// <param name="result">Assigned to the list of parsed nodes.</param>
     /// <param name="parse">The node parser.</param>
@@ -283,27 +287,21 @@ abstract class ParseOperation
             result = default!;
             return this;
         }
+
+        public override ParseOperation ParseContextKeyword(TokenType.ContextKeyword contextKeyword) => this;
     }
 
     sealed class SuccessfulSoFarOperation(IEnumerable<Token> tokens, string production) : ParseOperation(tokens, 0)
     {
-        static readonly TokenTypeSet ignoredTokenTypes = Set.Of<TokenType>(TokenType.PreprocessorDirective.Instance);
         readonly string _prod = production;
 
-        ValueOption<Token> NextToken {
-            get {
-                var t = _tokens.ElementAtOrNone(_readCount);
-                while (t.HasValue && ignoredTokenTypes.Contains(t.Value.Type)) {
-                    t = _tokens.ElementAtOrNone(++_readCount);
-                }
-                return t;
-            }
-        }
+        ValueOption<Token> Advance() => _tokens.ElementAtOrNone(_readCount);
+
         ParseResult<T> CallParser<T>(Parser<T> parser) => parser(_tokens.Skip(_readCount));
 
         public override ParseOperation Switch<T>(out Branch<T> branch, IReadOnlyDictionary<TokenType, Branch<T>> cases, Branch<T>? @default)
         {
-            var token = NextToken;
+            var token = Advance();
             if (token.HasValue && cases.TryGetValue(token.Value.Type, out branch!)) {
                 _readCount++;
                 return this;
@@ -403,7 +401,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseOptionalToken(TokenType type)
         {
-            var token = NextToken;
+            var token = Advance();
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
             }
@@ -412,7 +410,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseToken(TokenType type)
         {
-            var token = NextToken;
+            var token = Advance();
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 return this;
@@ -420,9 +418,21 @@ abstract class ParseOperation
             return Fail(ParseError.ForTerminal(_prod, token, type));
         }
 
+        public override ParseOperation ParseContextKeyword(TokenType.ContextKeyword contextKeyword)
+        {
+            var token = Advance();
+            if (token.HasValue
+             && token.Value.Type == TokenType.Valued.Identifier
+             && contextKeyword.Names.Contains(token.Value.Value.NotNull())) {
+                _readCount++;
+                return this;
+            }
+            return Fail(ParseError.ForContextKeyword(_prod, token, contextKeyword.Names));
+        }
+
         public override ParseOperation ParseTokenValue(out string result, TokenType type)
         {
-            var token = NextToken;
+            var token = Advance();
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 result = token.Value.Value ?? throw new InvalidOperationException("Parsed token doesn't have a value");
@@ -499,10 +509,10 @@ abstract class ParseOperation
                 error.ErroneousToken, error.ExpectedTokens, error.FailedProduction);
 
         ValueOption<bool> Peek(TokenTypeSet types)
-         => NextToken.Map(token => types.Contains(token.Type));
+         => Advance().Map(token => types.Contains(token.Type));
 
         ValueOption<bool> Peek(TokenType type)
-         => NextToken.Map(token => type.Equals(token.Type));
+         => Advance().Map(token => type.Equals(token.Type));
 
         void ParseWhile<T>(ICollection<ParseResult<T>> items, Parser<T> parse, Func<bool> keepGoingWhile)
         {

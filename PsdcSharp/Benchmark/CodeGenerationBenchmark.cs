@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using Scover.Psdc.CodeGeneration;
+using Scover.Psdc.Library;
 using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.Benchmark;
@@ -7,7 +8,8 @@ namespace Scover.Psdc.Benchmark;
 [MemoryDiagnoser]
 public class CodeGenerationBenchmark
 {
-    SemanticNode.Algorithm _sast;
+    static readonly Parameters p = Program.Parameters;
+    SemanticNode.Algorithm? _sast;
 
     [GlobalSetup]
     public void Setup()
@@ -18,5 +20,6 @@ public class CodeGenerationBenchmark
     }
 
     [Benchmark]
-    public string RunC() => CodeGenerator.GenerateC(IgnoreMessenger.Instance, _sast);
+    public string RunC()
+     => CodeGenerator.GenerateC(p.Msger, _sast.NotNull());
 }

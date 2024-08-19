@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
@@ -18,15 +19,28 @@ partial class Parser
     static Parser<T> ParserReturn1<T>(Func<SourceTokens, string, T> makeNodeWithValue) where T : Node
          => tokens => ParseResult.Ok(makeNodeWithValue(new(tokens, 1), tokens.First().Value.NotNull()));
 
-    static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, Parser<T>? fallback = null)
+    static ParseResult<T> ParseByTokenType<T>(IEnumerable<Token> tokens, string production, IReadOnlyDictionary<TokenType, Parser<T>> parserMap, int index = 0, Parser<T>? fallback = null)
     {
-        var firstToken = tokens.FirstOrNone();
-        var error = ParseError.ForProduction(production, firstToken, parserMap.Keys);
-        return firstToken.HasValue && parserMap.TryGetValue(firstToken.Value.Type, out var parser)
+        var keyToken = tokens.ElementAtOrNone(index);
+        return keyToken.HasValue && parserMap.TryGetValue(keyToken.Value.Type, out var parser)
             ? parser(tokens)
-            : fallback?.Invoke(tokens).MapError(e
-                 => error.CombineWith(error) with { ExpectedProductions = error.ExpectedProductions })
-            ?? ParseResult.Fail<T>(SourceTokens.Empty, error);
+            : fallback?.Invoke(tokens).MapError(Error().CombineWith)
+                ?? ParseResult.Fail<T>(SourceTokens.Empty, Error());
+
+        ParseError Error() => ParseError.ForProduction(production, keyToken, parserMap.Keys);
+    }
+
+    static ParseResult<T> ParseByIdentifierValue<T>(IEnumerable<Token> tokens, string production, Dictionary<string, Parser<T>> parserMap, int index = 0, Parser<T>? fallback = null)
+    {
+        var keyToken = tokens.ElementAtOrNone(index);
+        return keyToken.HasValue
+            && keyToken.Value.Type == TokenType.Valued.Identifier
+            && parserMap.TryGetValue(keyToken.Value.Value.NotNull(), out var parser)
+                ? parser(tokens)
+                : fallback?.Invoke(tokens).MapError(Error().CombineWith)
+                    ?? ParseResult.Fail<T>(SourceTokens.Empty, Error());
+
+        ParseError Error() => ParseError.ForContextKeyword(production, keyToken, ImmutableHashSet.CreateRange(parserMap.Keys));
     }
 
     /// <summary>
@@ -58,4 +72,11 @@ partial class Parser
      => ParseOperation.Start(tokens, expectedType.Representation)
                 .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => resultCreator(tokens, value));
+
+    static void AddContextKeyword<T>(Dictionary<string, Parser<T>> parsers, TokenType.ContextKeyword contextKeyword, Parser<T> parser)
+    {
+        foreach (var name in contextKeyword.Names) {
+            parsers.Add(name, parser);
+        }
+    }
 }

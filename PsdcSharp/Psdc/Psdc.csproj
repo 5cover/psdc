@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Scover.Psdc</RootNamespace>
-    <OutputType>Exe</OutputType>
     <AssemblyName>psdc</AssemblyName>
-    <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>12</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <PublishAot>true</PublishAot>
     <IsAotCompatible>true</IsAotCompatible>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <PublishAot>true</PublishAot>
+    <RootNamespace>Scover.Psdc</RootNamespace>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>

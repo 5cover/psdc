@@ -19,3 +19,9 @@ Instead of creating a list to hold the parsed items, count number of separators 
 ## Use structs where appropriate
 
 Avoids memory allocations
+
+## ParseOperation: don't reparse item after selecting in dictionary
+
+For parseby of TokenTypes and Identifiers values
+
+We do that to make parsers more reusable.

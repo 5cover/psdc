@@ -1583,43 +1583,6 @@ Add syntax for a negative integer literal.
 
 This makes the syntax more concise. No need to call .Some() or .None(), especially the later which requires a generic argument, so the payload type is restated.
 
-## Compiler directives
-
-Compiler directives are compile-time instructions that are evaluated in the static analyzer. They may be translated to the target lanugage (see C's `static_assert`), but they do not affect the machine code output of the target language compilation.
-
-Preprocessor directives don't require static analysis: `#include`, `#config`. Other stuff, like compiler log, static asserts, are semantically similar to statements and should appear as such. Maybe we should reuse Zig's syntax for builtins: `@compilerLog`, `@assert`... except the `@` symbol indicates that this call is evaluated at compile-time and does not affect the machine code output.
-
-They require the context given by static analysis to run (otherwise we'd use preprocessor directives)
-
-They are allowed in
-
-- Declarations
-- Struct components
-- Initializers values
-- Statements
-
-### `@evaluateExpr(<expr>)`
-
-Logs the value status of an expression as a message. (including comptime value if present)
-
-Add a new category of message: Debug. Shown in light green.
-
-Message.DebugEvaluateExpr(result)
-
-### `@evaluateType(<type>)`
-
-Logs an evaluated type.
-
-Message.DebugEvaluateType(result)
-
-### `@assert(<expr>,<message: expr?>)`
-
-Asserts that a given expression is comptime-known and true. Errors if any of these cases fail.
-
-Message.AssertionFailed(expression, message?)
-
-No need to call it `@staticAssert` since the `@` already indicates it comptime nature.
-
 ## parser blocks
 
 Interesting idea, avoids having to create meaningless `ParseOperation`s. Needs overloads.
@@ -1671,3 +1634,47 @@ What should we do instead?
 We could:
 
 - Return a list of `ParseResult`s. This means we would have to explicitly drop each error, and allow for recovery. Make a method that takes a list of ParseResults, reports errors the erros and returns the payloads.
+
+## Directives
+
+Directives are compile-time instructions that are evaluated in the static analyzer. They may be translated to the target lanugage (see C's `static_assert`), but they do not affect the machine code output of the target language compilation.
+
+Some directives don't require static analysis: `#include`, `#config` (will be implemented later, handled specially in the Tokenizer).
+
+Other stuff, like compiler log, static asserts, require static analysis. However, we will still use a hash prefix, because it makes little sense to use a different syntax from the user's perspective.
+
+We reuses C-s syntax. The directive starts with a `#`, and ends with a newline not prefixed by a `\`. These explicit line continuators are kind of inconvenient, but they should be seldom needed, since we don't have `#define`.
+
+Ideally, directives should be allowed everywhere, but for now, we will allow them as:
+
+- Declarations
+- Struct components
+- Initializers values
+- Statements
+
+### `#eval expr <expr>`
+
+Logs the value status of an expression as a message. (including comptime value if present)
+
+Message.DebugEvaluateExpr
+
+### `#eval type <type>`
+
+Logs an evaluated type.
+
+Message.DebugEvaluateType
+
+### `#assert <expr> <message: expr?>`
+
+Asserts that a given expression is comptime-known and true. Errors if any of these cases fail.
+
+Message.AssertionFailed(expression, message?)
+
+No need to call it `#static_assert` (like in C) since the `#` already indicates it comptime nature.
+
+### Implementation
+
+- TokenType for `#`
+- Parse contextual keywords (assert, type) by requring an identifier with a specific name specified in TokenType.
+
+What about preprocessing? `#include` has to be handled at the tokenizer level. We can later check for the `#` token in the tokenizer and call a parser for preprocessor directives. If it fails to parse, we emit the token to the regular parser.

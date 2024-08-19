@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
@@ -16,7 +15,7 @@ static class Program
         const bool Debug = false;
 
         if (args.Length > 1) {
-            WriteError("usage: <test_program_filename>");
+            WriteError("usage: INPUT_FILE");
             return SysExits.Usage;
         }
 
@@ -30,10 +29,10 @@ static class Program
             return SysExits.NoInput;
         }
 
-        PrintMessenger messenger = new(input);
+        PrintMessenger messenger = new(Console.Error, input);
 
         var tokens = "Tokenizing".LogOperation(Debug,
-            () => Tokenizer.Tokenize(messenger, input).ToImmutableArray());
+            () => Tokenizer.Tokenize(messenger, input).ToArray());
 
         var ast = "Parsing".LogOperation(Debug,
             () => Parser.Parse(messenger, tokens));
@@ -57,124 +56,5 @@ static class Program
     }
 
     static void WriteError(string message)
-         => Console.Error.WriteLine($"psdc: {message}");
-
-    sealed class PrintMessenger(string input) : Messenger
-    {
-        public string Input => input;
-
-        readonly DefaultDictionary<MessageSeverity, int> _msgCountsBySeverity = new(0);
-        static TextWriter Stderr => Console.Error;
-
-        const string LineNoMargin = "    ";
-        const string Bar = " | ";
-        const int MaxMultilineErrorLines = 10;
-
-        public void PrintConclusion()
-         => Stderr.WriteLine($"Compilation terminated ({_msgCountsBySeverity[MessageSeverity.Error]} errors, "
-                           + $"{_msgCountsBySeverity[MessageSeverity.Warning]} warnings, "
-                           + $"{_msgCountsBySeverity[MessageSeverity.Suggestion]} suggestions).");
-
-        public void Report(Message message)
-        {
-            if (!_msgCountsBySeverity.TryAdd(message.Severity, 1)) {
-                ++_msgCountsBySeverity[message.Severity];
-            }
-            var msgColor = ConsoleColorInfo.ForMessageSeverity(message.Severity);
-            msgColor.DoInColor(() => Stderr.Write($"[P{(int)message.Code:d4}] "));
-
-            Position start = input.GetPositionAt(message.InputRange.Start);
-            Position end = input.GetPositionAt(message.InputRange.End);
-
-            var lineNoPadding = end.Line.DigitCount();
-
-            Stderr.WriteLine($"{start}: {message.Severity.ToString().ToLower(Format.Msg)}: {message.Content.Get(input)}");
-
-            // If the error spans over only 1 line, show it with carets underneath
-            if (start.Line == end.Line) {
-                ReadOnlySpan<char> badLine = input.GetLine(end.Line);
-
-                // Bad line
-                StartLine(lineNoPadding, end.Line);
-                {
-                    Stderr.Write(badLine[..start.Column]); // keep indentation
-                    msgColor.SetColor();
-                    Stderr.Write(badLine[start.Column..end.Column]);
-                    Console.ResetColor();
-                    EndLine(badLine[end.Column..]);
-                }
-
-                // Caret line
-                StartLine(lineNoPadding);
-                {
-                    var offset = Math.Max(badLine.GetLeadingWhitespaceCount(), start.Column);
-                    Stderr.WriteNTimes(offset, ' ');
-                    msgColor.DoInColor(() => Stderr.WriteNTimes(end.Column - offset, '^'));
-                    Stderr.WriteLine();
-                }
-            }
-            // Otherwise, show all the bad code
-            else {
-                StartLine(lineNoPadding, start.Line);
-                {
-                    ReadOnlySpan<char> badLine = input.GetLine(start.Line);
-                    Stderr.Write(badLine[..start.Column]);
-                    msgColor.SetColor();
-                    EndLine(badLine[start.Column..]);
-                    Console.ResetColor();
-                }
-
-                int badLineCount = end.Line - start.Line - 1;
-                var badLines = Enumerable.Range(start.Line + 1, badLineCount);
-                const int MaxBadLines = MaxMultilineErrorLines - 2;
-                foreach (var line in badLines.Take(MaxBadLines)) {
-                    ReadOnlySpan<char> badLine = input.GetLine(line);
-                    StartLine(lineNoPadding, line);
-                    msgColor.SetColor();
-                    EndLine(badLine);
-                    Console.ResetColor();
-                };
-
-                badLines.FirstOrNone().Tap(l => {
-                    if (badLineCount > MaxBadLines) {
-                        StartLine(lineNoPadding, l);
-                        EndLine($"({badLineCount - MaxBadLines} more lines...)");
-                    }
-                });
-
-                StartLine(lineNoPadding, end.Line);
-                {
-                    ReadOnlySpan<char> badLine = input.GetLine(end.Line);
-                    msgColor.SetColor();
-                    Stderr.Write(badLine[..end.Column]);
-                    Console.ResetColor();
-                    EndLine(badLine[end.Column..]);
-                }
-            }
-
-            // Advice lines
-            foreach (var advice in message.AdvicePieces) {
-                StartLine(lineNoPadding);
-                Stderr.WriteLine(advice);
-            };
-
-            Stderr.WriteLine();
-        }
-
-        static void EndLine(ReadOnlySpan<char> content) => Stderr.WriteLine(content.TrimEnd());
-
-        static void StartLine(int padding, int line)
-        {
-            Stderr.Write(LineNoMargin);
-            Stderr.Write((line + 1).ToString(Format.Msg).PadLeft(padding));
-            Stderr.Write(Bar);
-        }
-
-        static void StartLine(int padding)
-        {
-            Stderr.Write(LineNoMargin);
-            Stderr.WriteNTimes(padding, ' ');
-            Stderr.Write(Bar);
-        }
-    }
+     => Console.Error.WriteLine($"usage: {Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "psdc")}: {message}");
 }

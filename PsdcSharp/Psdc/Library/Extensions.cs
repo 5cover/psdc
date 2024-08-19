@@ -10,9 +10,9 @@ readonly record struct Position(int Line, int Column)
     public override string ToString() => $"L {Line + 1}, col {Column + 1}";
 }
 
-static class Extensions
+public static class Extensions
 {
-    public static void CheckKeys<TKey, TValue>(
+    internal static void CheckKeys<TKey, TValue>(
         this IDictionary<TKey, TValue> dictionary,
         IReadOnlyCollection<TKey> keys,
         Func<TKey, TValue> fallbackValueSelector,
@@ -27,7 +27,7 @@ static class Extensions
             _ = dictionary.TryAdd(key, fallbackValueSelector(key));
         }
     }
-    public static (TKey, TValue) ToTuple<TKey, TValue>(this KeyValuePair<TKey, TValue> kvp)
+    internal static (TKey, TValue) ToTuple<TKey, TValue>(this KeyValuePair<TKey, TValue> kvp)
      => (kvp.Key, kvp.Value);
 
     /// <summary>
@@ -36,7 +36,7 @@ static class Extensions
     /// <param name="dimensionIndexes">The 0-based index in each dimension.</param>
     /// <param name="dimensionLengths">The length of each dimension.</param>
     /// <returns>An integer that indexes a 1-dimensional array whose length is the product of <paramref name="dimensionLengths"/>.</returns>
-    public static int FlatIndex(this IEnumerable<int> dimensionIndexes, IEnumerable<int> dimensionLengths)
+    internal static int FlatIndex(this IEnumerable<int> dimensionIndexes, IEnumerable<int> dimensionLengths)
     {
         Debug.Assert(dimensionIndexes.Count() == dimensionLengths.Count());
         return dimensionLengths
@@ -51,19 +51,19 @@ static class Extensions
     /// <param name="dimensionLengths">The length of each dimension.</param>
     /// <remarks>This function is the inverse of <see cref="FlatIndex"/>.</remarks>
     /// <returns>An enumarable containing 0-based index in each dimension. Same count as <paramref name="dimensionLengths"/>.</returns>
-    public static IEnumerable<int> NDimIndex(this int flatIndex, IReadOnlyList<int> dimensionLengths)
+    internal static IEnumerable<int> NDimIndex(this int flatIndex, IReadOnlyList<int> dimensionLengths)
      => dimensionLengths.Reverse().Select(l => {
          flatIndex = Math.DivRem(flatIndex, l, out var i);
          return i;
      }).Reverse();
 
-    public static T Product<T>(this IEnumerable<T> source) where T : IMultiplyOperators<T, T, T>
+    internal static T Product<T>(this IEnumerable<T> source) where T : IMultiplyOperators<T, T, T>
      => source.Aggregate((soFar, next) => soFar *= next);
 
-    public static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T>
+    internal static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T>
      => first.AllZipped(second, (f, s) => f.SemanticsEqual(s));
 
-    public static bool AllZipped<T1, T2>(this IEnumerable<T1> first, IEnumerable<T2> second, Func<T1, T2, bool> predicate)
+    internal static bool AllZipped<T1, T2>(this IEnumerable<T1> first, IEnumerable<T2> second, Func<T1, T2, bool> predicate)
     {
         using var e1 = first.GetEnumerator();
         using var e2 = second.GetEnumerator();
@@ -75,9 +75,9 @@ static class Extensions
         return !e2.MoveNext() && all;
     }
 
-    public static int DigitCount(this int n, int @base = 10) => n == 0 ? 1 : 1 + (int)Math.Log(n, @base);
+    internal static int DigitCount(this int n, int @base = 10) => n == 0 ? 1 : 1 + (int)Math.Log(n, @base);
 
-    public static ValueOption<int> IndexOf<T>(this IReadOnlyList<T> list, T item)
+    internal static ValueOption<int> IndexOf<T>(this IReadOnlyList<T> list, T item)
     {
         for (int i = 0; i < list.Count; ++i) {
             if (EqualityComparer<T>.Default.Equals(list[i], item)) {
@@ -87,9 +87,9 @@ static class Extensions
         return default;
     }
 
-    public static IEnumerator<T> GetGenericEnumerator<T>(this T[] array) => ((IEnumerable<T>)array).GetEnumerator();
+    internal static IEnumerator<T> GetGenericEnumerator<T>(this T[] array) => ((IEnumerable<T>)array).GetEnumerator();
 
-    public static int GetLeadingWhitespaceCount(this ReadOnlySpan<char> str)
+    internal static int GetLeadingWhitespaceCount(this ReadOnlySpan<char> str)
     {
         var count = 0;
         var enumerator = str.GetEnumerator();
@@ -100,7 +100,7 @@ static class Extensions
         return count;
     }
 
-    public static ReadOnlySpan<char> GetLine(this string str, int lineNumber)
+    internal static ReadOnlySpan<char> GetLine(this string str, int lineNumber)
     {
         var lines = str.AsSpan().EnumerateLines();
         bool success = true;
@@ -110,7 +110,7 @@ static class Extensions
         return success ? lines.Current : throw new ArgumentOutOfRangeException(nameof(lineNumber), "Line number is out of range");
     }
 
-    public static Position GetPositionAt(this string str, Index index)
+    internal static Position GetPositionAt(this string str, Index index)
     {
         int line = 0, column = 0;
         for (int i = 0; i < index.Value; i++) {
@@ -137,10 +137,10 @@ static class Extensions
     /// <para>Otherwise; <see langword="false"/>.</para>
     /// </returns>
     /// <remarks>Note that unrelated methods may throw any of these exceptions.</remarks>
-    public static bool IsFileSystemExogenous(this Exception e)
+    internal static bool IsFileSystemExogenous(this Exception e)
         => e is IOException or UnauthorizedAccessException or System.Security.SecurityException;
 
-    public static T LogOperation<T>(this string name, bool verbose, Func<T> operation)
+    internal static T LogOperation<T>(this string name, bool verbose, Func<T> operation)
     {
         if (verbose) {
             Console.Error.Write($"{name}...");
@@ -161,20 +161,20 @@ static class Extensions
         return t;
     }
 
-    public static string? ToStringInvariant(this object obj) => obj switch {
+    internal static string? ToStringInvariant(this object obj) => obj switch {
         IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
         IConvertible c => c.ToString(CultureInfo.InvariantCulture),
         _ => obj.ToString()
     };
 
-    public static bool OptionSemanticsEqual<T>(this Option<T> first, Option<T> second) where T : EquatableSemantics<T>
+    internal static bool OptionSemanticsEqual<T>(this Option<T> first, Option<T> second) where T : EquatableSemantics<T>
      => first.HasValue && second.HasValue
         ? first.Value.SemanticsEqual(second.Value)
         : first.HasValue == second.HasValue;
 
-    public static UnreachableException ToUnmatchedException<T>(this T t) => new($"Unmatched {typeof(T).Name}: {t}");
+    internal static UnreachableException ToUnmatchedException<T>(this T t) => new($"Unmatched {typeof(T).Name}: {t}");
 
-    public static void WriteNTimes(this TextWriter writer, int n, char c)
+    internal static void WriteNTimes(this TextWriter writer, int n, char c)
     {
         if (n < 0) {
             throw new ArgumentOutOfRangeException(nameof(n), "cannot be negative");
@@ -185,7 +185,7 @@ static class Extensions
         }
     }
 
-    public static IEnumerable<T> Yield<T>(this T t)
+    internal static IEnumerable<T> Yield<T>(this T t)
     {
         yield return t;
     }
@@ -199,7 +199,7 @@ static class Function
     /// <typeparam name="T">The type of items in the collection.</typeparam>
     /// <param name="action">The action to be executed for each item.</param>
     /// <returns>An action that can be used to iterate over a collection and execute the specified action for each item.</returns>
-    public static Action<IEnumerable<T>> Foreach<T>(this Action<T> action)
+    internal static Action<IEnumerable<T>> Foreach<T>(this Action<T> action)
          => items => {
              foreach (var item in items) {
                  action(item);
@@ -209,5 +209,5 @@ static class Function
 
 static class Set
 {
-    public static HashSet<T> Of<T>(params T[] items) => [.. items];
+    internal static HashSet<T> Of<T>(params T[] items) => [.. items];
 }

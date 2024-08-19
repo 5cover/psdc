@@ -1,8 +1,7 @@
 using Scover.Psdc.Messages;
 
 using static Scover.Psdc.Tokenization.TokenType;
-using static Scover.Psdc.Tokenization.TokenType.Regular;
-using static Scover.Psdc.Tokenization.TokenType.Regular.Valued;
+using static Scover.Psdc.Tokenization.TokenType.Valued;
 
 namespace Scover.Psdc.Tokenization;
 
@@ -22,8 +21,6 @@ public sealed class Tokenizer
                 .OrderByDescending(r => r.Expected.Length))
         // Identifiers after keywords and punctuation/operators (just to be sure that they won't be lexed as identifiers)
         .Concat(Identifier.Rules)
-        // Directives start with an unique symbol (#), so they can be wherever, but putting them last is the safest if the syntax changes.
-        .Concat(PreprocessorDirective.Instance.Rules)
         .ToArray();
 
     Tokenizer(Messenger msger, string code) => (_msger, _code) = (msger, code);

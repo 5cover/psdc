@@ -2,11 +2,9 @@ using Scover.Psdc.Messages;
 
 namespace Scover.Psdc.Benchmark;
 
-sealed class IgnoreMessenger : Messenger
+sealed class IgnoreMessenger(string input) : Messenger
 {
-    IgnoreMessenger() { }
-    public static IgnoreMessenger Instance { get; } = new();
-    public string Input => Program.Code;
+    public string Input { get; } = input;
 
     public void Report(Message message)
     {

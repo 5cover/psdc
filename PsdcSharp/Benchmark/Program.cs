@@ -1,60 +1,37 @@
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
+using Scover.Psdc.Messages;
 
 static class Program
 {
     static void Main(string[] args)
-     => BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args,
-        ManualConfig.Create(DefaultConfig.Instance)
-        .WithOptions(ConfigOptions.JoinSummary)
-        .WithOptions(ConfigOptions.DisableLogFile));
+    {
+        if (args.Length < 1) {
+            Console.Error.WriteLine($"usage: {Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "benchmark")} INPUT_FILE");
+            return;
+        }
 
-    public const string Code =
-"""
-/*
-Algorithme programme principal Sudoku
-*/
-programme Sudoku c'est
+        var filename = Path.GetFullPath(args[0]);
+        Console.WriteLine($"Benchmarking {filename}");
 
-// Un jeu de Sudoku
+        Environment.SetEnvironmentVariable(EnvNameFilename, filename);
 
-constante entier N := 3;
-constante entier NB_FICHIERS_GRILLES := 10;
-constante entier LONGUEUR_MAX_COMMANDE := 64;
-constante entier COTE_GRILLE := N * N;
+        BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args[1..],
+            ManualConfig.Create(DefaultConfig.Instance)
+            .WithOptions(ConfigOptions.JoinSummary));
+    }
 
-type t_grilleEntier = tableau[COTE_GRILLE, COTE_GRILLE] de entier;
+    const string EnvNameFilename = "psdc_benchmark_filename";
 
-début
-    grilleJeu : t_grilleEntier;
-    ligneCurseur, colonneCurseur : entier;
-    partieAbandonnée : booléen;
-    commandeRéussie : booléen;
-    commande : chaîne(LONGUEUR_MAX_COMMANDE);
+    public static Parameters Parameters {
+        get {
+            var code = File.ReadAllText(
+                Environment.GetEnvironmentVariable(EnvNameFilename)
+                ?? throw new InvalidOperationException("Filename env var not set"));
 
-    partieAbandonnée := faux;
-    ligneCurseur := 1;
-    colonneCurseur := 1;
-
-    chargerGrille(entE entierAléatoire(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
-
-    // Boucle principale du jeu
-    faire
-        écrireGrille(entE grilleJeu);
-        faire
-            commande := entréeCommande();
-            commandeRéussie := exécuterCommande(entE commande,
-                                                entE/sortE grilleJeu,
-                                                entE/sortE ligneCurseur,
-                                                entE/sortE colonneCurseur,
-                                                sortE partieAbandonnée);
-        tant que (NON commandeRéussie)
-    tant que (NON partieAbandonnée ET NON estGrilleComplète(entE grilleJeu))
-
-    // La partie n'a pas été abandonnée, elle s'est donc terminée par une victoire
-    si (NON partieAbandonnée) alors
-        écrireEcran("Bravo, vous avez gagné !");
-    finsi
-fin
-""";
+            return new(code, new BenchmarkMessenger(code));
+        }
+    }
 }
+
+readonly record struct Parameters(string Code, Messenger Msger);

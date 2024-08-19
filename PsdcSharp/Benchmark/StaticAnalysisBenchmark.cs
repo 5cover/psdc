@@ -8,7 +8,9 @@ namespace Scover.Psdc.Benchmark;
 [MemoryDiagnoser]
 public class StaticAnalysisBenchmark
 {
-    Node.Algorithm _ast;
+    static readonly Parameters p = Program.Parameters;
+    Node.Algorithm _ast = null!;
+
     [GlobalSetup]
     public void Setup()
     {
@@ -18,5 +20,6 @@ public class StaticAnalysisBenchmark
     }
 
     [Benchmark]
-    public SemanticNode.Algorithm Run() => StaticAnalyzer.Analyze(IgnoreMessenger.Instance, _ast);
+    public SemanticNode.Algorithm Run()
+     => StaticAnalyzer.Analyze(p.Msger, _ast);
 }

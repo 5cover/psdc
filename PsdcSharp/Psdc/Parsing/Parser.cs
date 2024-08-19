@@ -2,7 +2,7 @@ using Scover.Psdc.Messages;
 using Scover.Psdc.Tokenization;
 
 using static Scover.Psdc.Parsing.Node;
-using static Scover.Psdc.Tokenization.TokenType.Regular;
+using static Scover.Psdc.Tokenization.TokenType;
 
 using Type = Scover.Psdc.Parsing.Node.Type;
 
@@ -20,21 +20,19 @@ public sealed partial class Parser
     {
         _msger = messenger;
 
-        Dictionary<TokenType, Parser<CompilerDirective>> compilerDirectiveParsers = new() {
-            [Keyword.AtAssert] = AtAssert,
-            [Keyword.AtEvaluateType] = AtEvaluateType,
-            [Keyword.AtEvaluateExpr] = AtEvaluateExpr,
-        };
-        _compilerDirective = t => ParseByTokenType(t, "compiler directive", compilerDirectiveParsers);
+        Dictionary<string, Parser<CompilerDirective>> compilerDirectiveParsers = [];
+        AddContextKeyword(compilerDirectiveParsers, ContextKeyword.Assert, Assert);
+        AddContextKeyword(compilerDirectiveParsers, ContextKeyword.Eval, ParserFirst<CompilerDirective>(EvaluateExpr, EvaluateType));
+        _compilerDirective = t => ParseByIdentifierValue(t, "compiler directive", compilerDirectiveParsers, 1);
 
         Dictionary<TokenType, Parser<Declaration>> declarationParsers = new() {
             [Keyword.Begin] = MainProgram,
             [Keyword.Constant] = Constant,
             [Keyword.Function] = FunctionDeclarationOrDefinition,
             [Keyword.Procedure] = ProcedureDeclarationOrDefinition,
-            [Keyword.TypeAlias] = AliasDeclaration,
+            [Keyword.Type] = AliasDeclaration,
         };
-        _declaration = t => ParseByTokenType(t, "declaration", declarationParsers, _compilerDirective);
+        _declaration = t => ParseByTokenType(t, "declaration", declarationParsers, fallback: _compilerDirective);
 
         Dictionary<TokenType, Parser<Statement>> statementParsers = new() {
             [Valued.Identifier] = ParserFirst(Assignment, LocalVariable, ProcedureCall),
@@ -47,7 +45,7 @@ public sealed partial class Parser
             [Keyword.While] = WhileLoop,
             [Punctuation.Semicolon] = Nop,
         };
-        _statement = t => ParseByTokenType(t, "statement", statementParsers, ParserFirst(Builtin, _compilerDirective));
+        _statement = t => ParseByTokenType(t, "statement", statementParsers, fallback: ParserFirst(Builtin, _compilerDirective));
 
         Dictionary<TokenType, Parser<Type>> typeParsers = new() {
             [Keyword.Integer] = ParserReturn(1, t => new Type.Integer(t)),
@@ -95,18 +93,19 @@ public sealed partial class Parser
 
     ParseResult<Algorithm> Algorithm(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "algorithm")
+        .ParseOneOrMoreUntilToken(out var leadingDirectives, _compilerDirective, Set.Of<TokenType>(Keyword.Program))
         .ParseToken(Keyword.Program)
         .Parse(out var name, Identifier)
         .ParseToken(Keyword.Is)
         .ParseZeroOrMoreUntilToken(out var declarations, _declaration,
-        Set.Of<TokenType>(Eof))
-        .MapResult(t => new Algorithm(t, name, ReportErrors(declarations)));
+        Set.Of(Eof))
+        .MapResult(t => new Algorithm(t, ReportErrors(leadingDirectives), name, ReportErrors(declarations)));
 
     #region Declarations
 
     ParseResult<Declaration.TypeAlias> AliasDeclaration(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "type alias")
-        .ParseToken(Keyword.TypeAlias)
+        .ParseToken(Keyword.Type)
         .Parse(out var name, Identifier)
         .ParseToken(Operator.Equal)
         .Parse(out var type, _type)
@@ -465,29 +464,25 @@ public sealed partial class Parser
 
     #region Compiler directives
 
-    ParseResult<CompilerDirective.Assert> AtAssert(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "@assert")
-        .ParseToken(Keyword.AtAssert)
-        .ParseToken(Punctuation.LParen)
+    ParseResult<CompilerDirective.Assert> Assert(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "#assert")
+        .ParseToken(Punctuation.NumberSign)
+        .ParseContextKeyword(ContextKeyword.Assert)
         .Parse(out var expr, Expression)
-        .ParseOptional(out var msg, o => o
-            .ParseToken(Punctuation.Comma)
-            .Parse(out var e, Expression)
-            .MapResult(_ => e))
-        .ParseToken(Punctuation.RParen)
+        .ParseOptional(out var msg, Expression)
         .MapResult(t => new CompilerDirective.Assert(t, expr, msg));
 
-    ParseResult<CompilerDirective.EvaluateExpr> AtEvaluateExpr(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "@evaluateExpr")
-        .ParseToken(Keyword.AtEvaluateExpr)
-        .ParseToken(Punctuation.LParen)
+    ParseResult<CompilerDirective.EvaluateExpr> EvaluateExpr(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "#eval expr")
+        .ParseToken(Punctuation.NumberSign)
+        .ParseContextKeyword(ContextKeyword.Eval)
+        .ParseContextKeyword(ContextKeyword.Expr)
         .Parse(out var expr, Expression)
-        .ParseToken(Punctuation.RParen)
         .MapResult(t => new CompilerDirective.EvaluateExpr(t, expr));
 
-    ParseResult<CompilerDirective.EvaluateType> AtEvaluateType(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "@evaluateType")
-        .ParseToken(Keyword.AtEvaluateType)
-        .ParseToken(Punctuation.LParen)
+    ParseResult<CompilerDirective.EvaluateType> EvaluateType(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "#eval type")
+        .ParseToken(Punctuation.NumberSign)
+        .ParseContextKeyword(ContextKeyword.Eval)
+        .ParseToken(Keyword.Type)
         .Parse(out var type, _type)
-        .ParseToken(Punctuation.RParen)
         .MapResult(t => new CompilerDirective.EvaluateType(t, type));
 
     #endregion Compiler directives

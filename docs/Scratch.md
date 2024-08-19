@@ -282,22 +282,6 @@ We know the ast is build from the bottom up, but it could be interesting to see 
 
 Simply add some graph-building logic in the NodeImpl constructor.
 
-## Contextual keywords
-
-Keywords like `de`, `à`, `pas` are very short and only used in specific contexts.
-
-They can use up useful symbol names.
-
-We should make them contextal, ie. have them become identifier when outside of a designated context.
-
-- `de` : array types, for loop begin part
-- `à` : for loop end part
-- `pas` : for loop step part
-
-Maybe we could tokenize them as identifiers always and expect an identifier of a specific name in ParseOperation? (`ParseContextualKeyword`)
-
-That seems like an easy way to implement this feature.
-
 ## more expression static analysis
 
 - Check if file arguments to file builtins are files
@@ -394,6 +378,10 @@ CLI options|global|`--config ecrire-nl:vrai`
 preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config ecrire-nl reset` &rarr; resets to inherited value
 
 config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
+
+## CLI
+
+Configure code lang (currently invariant)
 
 ## Parsing: put LBracket in SourceTokens of ArraySubscript
 
@@ -529,3 +517,19 @@ Anything that is not a node can simply use equality. This makes it compatible wi
 ## Disambiguate terms: comptime and constant
 
 Those mean the same thing, except constant is also a node. So rename all to comptime.
+
+## Contextual keywords
+
+Keywords like `de`, `à`, `pas` are very short and only used in specific contexts.
+
+They can use up useful symbol names.
+
+We should make them contextal, ie. have them become identifier when outside of a designated context.
+
+- `de` : array types, for loop begin part
+- `à` : for loop end part
+- `pas` : for loop step part
+
+Maybe we could tokenize them as identifiers always and expect an identifier of a specific name in ParseOperation? (`ParseContextualKeyword`)
+
+That seems like an easy way to implement this feature.
