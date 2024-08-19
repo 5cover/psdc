@@ -5,6 +5,9 @@ programme CompilerDirectives c'est
 type tNotes = tableau[6] de réel;
 #eval type tNotes
 
+constante entier TEN := 10;
+#assert TEN == 11 "Apologies."
+
 type A = structure début
     i: entier;
 //#eval expr "im in a struct"
@@ -18,7 +21,7 @@ début
     };
 
 //#eval expr "im a stmt"
-    
+
     pour x.i de 1 à 10 pas 2 faire
         écrireEcran("hello");
 #eval expr x
