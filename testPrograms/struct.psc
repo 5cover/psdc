@@ -8,7 +8,14 @@ début
     c_age: entier;
 fin;
 
+type tPoint = structure début x, y : réel; fin;
+//constante tPoint C_POINT := { 3.14, 14.3 };
+//constante tPoint C_POINT_SOME_DES := { .x := 3.14, 14.3 };
+//constante tPoint C_POINT_ONLY_DES := { .x := 3.14, .y := 14.3 };
+
 début
+    a : tPoint := { .x := 3.14, .y := 14.3 };
+
     p : t_personne;
     p.c_prenom := "Scover";
     p.c_nom := "NoLastName";

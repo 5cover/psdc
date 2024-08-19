@@ -10,7 +10,7 @@ $$
 \\\\&\textbf{Declarations} \\
 
 &⟨Declaration⟩ \to \begin{Bmatrix*}[l]
-    ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \\
+    ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \text{;} \\
     ⟨DeclarationConstant⟩ \to \text{constante} ⟨Type⟩ Identifier \text{:=} ⟨Expr⟩\text{;} \\
     ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin} \\
     ⟨FunctionDeclaration⟩ \to ⟨FunctionSignature⟩ \text{;} \\

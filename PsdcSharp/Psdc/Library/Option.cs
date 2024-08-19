@@ -101,10 +101,14 @@ public static class Option
      => option.HasValue ? transform(option.Value).Some() : default;
     public static ValueOption<TResult> Map<T1, T2, TResult>(this Option<(T1, T2)> option, Func<T1, T2, TResult> transform)
      => option.HasValue ? transform(option.Value.Item1, option.Value.Item2).Some() : default;
+     public static ValueOption<TResult> Map<T1, T2, T3, TResult>(this Option<(T1, T2, T3)> option, Func<T1, T2, T3, TResult> transform)
+     => option.HasValue ? transform(option.Value.Item1, option.Value.Item2, option.Value.Item3).Some() : default;
     public static ValueOption<TResult, TError> Map<T, TResult, TError>(this Option<T, TError> option, Func<T, TResult> transform)
      => option.HasValue ? transform(option.Value) : option.Error;
     public static ValueOption<TResult, TError> Map<T1, T2, TResult, TError>(this Option<(T1, T2), TError> option, Func<T1, T2, TResult> transform)
      => option.HasValue ? transform(option.Value.Item1, option.Value.Item2) : option.Error;
+    public static ValueOption<TResult, TError> Map<T1, T2, T3, TResult, TError>(this Option<(T1, T2, T3), TError> option, Func<T1, T2, T3, TResult> transform)
+     => option.HasValue ? transform(option.Value.Item1, option.Value.Item2, option.Value.Item3) : option.Error;
 
     public static Option<T> Tap<T>(this Option<T> option, Action<T>? some = null, Action? none = null)
     {
@@ -133,6 +137,7 @@ public static class Option
         }
         return option;
     }
+
     public static Option<(T1, T2), TError> Tap<T1, T2, TError>(this Option<(T1, T2), TError> option, Action<T1, T2>? some = null, Action<TError>? none = null)
     {
         if (option.HasValue) {

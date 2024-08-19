@@ -51,7 +51,7 @@ static class ConstantFolding
         // Explicit conversions
         return (targetType, operand) switch {
             (IntegerType it, RealValue rv) => Operate(it, rv.Status, r => (int)r),
-            // we don't know what encoding is used, so the value is runtime-known
+            // we don't know what encoding is used in the target language, so the value is runtime-known.
             (IntegerType it, CharacterValue) => OperationResult.OkUnary(it.RuntimeValue),
             (CharacterType ct, IntegerValue) => OperationResult.OkUnary(ct.RuntimeValue),
             (IntegerType it, BooleanValue bv) => Operate(it, bv.Status, b => b ? 1 : 0),

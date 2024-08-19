@@ -1,30 +1,33 @@
-#eval expr "im before u guys"
+programme StructureExamples c'est
 
-programme CompilerDirectives c'est
-
-type tNotes = tableau[6] de réel;
-
-type A = structure début
-    i: entier;
-#eval expr "im in a struct"
+type t_personne = structure
+début
+    c_prenom: chaîne(50);
+    c_nom: chaîne(50);
+    c_estUnHomme: booléen;
+    c_age: entier;
 fin;
 
-#eval expr "im at da top lvl"
+type tPoint = structure début x, y : réel; fin;
+//constante tPoint C_POINT := { 3.14, 14.3 };
+//constante tPoint C_POINT_SOME_DES := { .x := 3.14, 14.3 };
+//constante tPoint C_POINT_ONLY_DES := { .x := 3.14, .y := 14.3 };
 
 début
-    x: A := {
-#eval expr "im in an initializer"
+    a : tPoint := { .x := 3.14, .y := 14.3 };
+
+    p : t_personne;
+    p.c_prenom := "Scover";
+    p.c_nom := "NoLastName";
+    p.c_estUnHomme := vrai;
+    p.c_age := 300;
+
+    // Structure initializer
+    p2 : t_personne := {
+        "Scover",
+        "NoLastName"
     };
 
-#eval expr "im a stmt"
-    
-    pour x.i de 1 à 10 pas 2 faire
-        écrireEcran("a
-        aaaa
-        aa");
-    finfaire
-
-#eval type tNotes
+    //struct.arr[i] := 0;
+    //arr[i].struct := 0;
 fin
-
-#eval expr "im after u guys"

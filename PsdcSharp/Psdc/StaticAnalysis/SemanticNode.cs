@@ -41,7 +41,7 @@ public interface SemanticNode
         internal sealed record Constant(SemanticMetadata Meta,
             EvaluatedType Type,
             Identifier Name,
-            Expression Value)
+            Initializer Value)
         : Declaration;
 
         internal sealed record Procedure(SemanticMetadata Meta,

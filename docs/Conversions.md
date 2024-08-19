@@ -4,8 +4,8 @@ This is a graph of the allowed implicit and explicit conversions between types.
 
 Legend:
 
-- Dotted link: implicit conversion
-- Solid link: explicit conversion (with cast syntax)
+- Solid link: implicit conversion
+- Dotted link: explicit conversion (with cast syntax)
 
 ```mermaid
 flowchart LR

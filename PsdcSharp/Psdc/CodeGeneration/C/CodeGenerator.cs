@@ -38,7 +38,11 @@ sealed partial class CodeGenerator(Messenger messenger)
     {
         SetGroup(o, Group.Macros);
         Indent(o).Append(Format.Code, $"#define {ValidateIdentifier(constant.Meta.Scope, constant.Name)} ");
-        return AppendExpression(o, constant.Value, _opTable.ShouldBracketOperand(_opTable.None, constant.Value)).AppendLine();
+        return (constant.Value switch {
+            Initializer.Braced braced => AppendBracedInitializerAsCompoundLiteral(o, CreateTypeInfo(constant.Meta.Scope, constant.Type), braced),
+            Expression expr => AppendExpression(o, expr, _opTable.ShouldBracketOperand(_opTable.None, expr)),
+            _ => throw constant.Value.ToUnmatchedException(),
+        }).AppendLine();
     }
 
     protected override StringBuilder AppendFunctionDeclaration(StringBuilder o, Declaration.Function func)
@@ -268,6 +272,9 @@ sealed partial class CodeGenerator(Messenger messenger)
         Initializer.Braced array => AppendBracedInitializer(o, array),
         _ => throw initializer.ToUnmatchedException(),
     };
+
+    StringBuilder AppendBracedInitializerAsCompoundLiteral(StringBuilder o, TypeInfo type, Initializer.Braced initializer)
+     => AppendBracedInitializer(o.Append($"({type})"), initializer);
 
     StringBuilder AppendBracedInitializer(StringBuilder o, Initializer.Braced initializer)
     {

@@ -485,7 +485,7 @@ We'll need all kinds of expressions that yield comptime-known integers.
 Tests (increasing complexity):
 
 - Literal
-- Computation (combine multiple operations that yield a constant result)
+- Operations (combine multiple operations that yield a constant result)
     - Addition
     - Substraction
     - Division
@@ -510,6 +510,20 @@ Tests (increasing complexity):
 - Structure > Array constant
 - Array > Structure constant
 
-## Why do we need equatable semantics again?
+## Value tostring
 
-Anything that is not a node can simply use equality. This makes it compatible with records.
+Instead of switching in message, add tostring to value.
+
+Give a friendly representation of the underlying value always (see ArrayValue and StructureValue)
+
+use Format
+
+## Make main program optional
+
+Empty programs have rights!
+
+Some languages (like Python or SQL) support NO-OP programs.
+
+So we should support it to.
+
+Remove the empty main program from comptime.psc.

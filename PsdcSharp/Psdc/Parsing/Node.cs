@@ -74,7 +74,7 @@ public interface Node : EquatableSemantics<Node>
         internal sealed record Constant(SourceTokens SourceTokens,
             Type Type,
             Identifier Name,
-            Expression Value)
+            Initializer Value)
         : Declaration
         {
             public bool SemanticsEqual(Node other) => other is Constant o

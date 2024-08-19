@@ -118,7 +118,7 @@ public sealed partial class Parser
         .Parse(out var type, _type)
         .Parse(out var name, Identifier)
         .ParseToken(Operator.ColonEqual)
-        .Parse(out var value, Expression)
+        .Parse(out var value, Initializer)
         .ParseToken(Punctuation.Semicolon)
         .MapResult(t => new Declaration.Constant(t, type, name, value));
 
