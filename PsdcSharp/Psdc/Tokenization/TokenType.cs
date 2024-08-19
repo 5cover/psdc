@@ -49,7 +49,6 @@ public class TokenType
         public static Keyword Array { get; } = new("tableau");
         public static Keyword Constant { get; } = new("constante");
         public static Keyword False { get; } = new("faux");
-        public static Keyword From { get; } = new("de");
         public static Keyword True { get; } = new("vrai");
 
         #endregion Data
@@ -113,11 +112,8 @@ public class TokenType
                                                     "répeter",
                                                     "repéter",
                                                     "repeter");
-        public static Keyword Step { get; } = new("pas");
         public static Keyword Switch { get; } = new("selon");
         public static Keyword Then { get; } = new("alors");
-        public static Keyword To { get; } = new("à",
-                                                "a");
         public static Keyword Until { get; } = new("jusqu'à",
                                                    "jusqu'a");
         public static Keyword When { get; } = new("quand");
@@ -240,10 +236,13 @@ public class TokenType
     internal class ContextKeyword
     {
         public IImmutableSet<string> Names { get; }
-        private ContextKeyword(IImmutableSet<string> names) => Names = names;
+        ContextKeyword(IImmutableSet<string> names) => Names = names;
 
-        public static ContextKeyword Expr { get; } = new(["expr"]);
         public static ContextKeyword Assert { get; } = new(["assert"]);
         public static ContextKeyword Eval { get; } = new(["eval"]);
+        public static ContextKeyword Expr { get; } = new(["expr"]);
+        public static ContextKeyword From { get; } = new(["de"]);
+        public static ContextKeyword Step { get; } = new(["pas"]);
+        public static ContextKeyword To { get; } = new(["à", "a"]);
     }
 }

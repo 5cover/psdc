@@ -517,19 +517,3 @@ Anything that is not a node can simply use equality. This makes it compatible wi
 ## Disambiguate terms: comptime and constant
 
 Those mean the same thing, except constant is also a node. So rename all to comptime.
-
-## Contextual keywords
-
-Keywords like `de`, `à`, `pas` are very short and only used in specific contexts.
-
-They can use up useful symbol names.
-
-We should make them contextal, ie. have them become identifier when outside of a designated context.
-
-- `de` : array types, for loop begin part
-- `à` : for loop end part
-- `pas` : for loop step part
-
-Maybe we could tokenize them as identifiers always and expect an identifier of a specific name in ParseOperation? (`ParseContextualKeyword`)
-
-That seems like an easy way to implement this feature.

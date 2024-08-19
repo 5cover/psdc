@@ -712,8 +712,8 @@ public interface Node : EquatableSemantics<Node>
         public sealed record Add(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "ET");
         public sealed record And(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "/");
         public sealed record Divide(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "==");
-        public sealed record Equal(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "/>");
-        public sealed record GreaterThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "/>=");
+        public sealed record Equal(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, ">");
+        public sealed record GreaterThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, ">=");
         public sealed record GreaterThanOrEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "<");
         public sealed record LessThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "<=");
         public sealed record LessThanOrEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "-");

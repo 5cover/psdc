@@ -266,24 +266,24 @@ public sealed partial class Parser
         .Parse(out var head, ParserFirst(
             t => ParseOperation.Start(t, "for loop")
                 .Parse(out var variant, ParseLvalue)
-                .ParseToken(Keyword.From)
+                .ParseContextKeyword(ContextKeyword.From)
                 .Parse(out var start, Expression)
-                .ParseToken(Keyword.To)
+                .ParseContextKeyword(ContextKeyword.To)
                 .Parse(out var end, Expression)
                 .ParseOptional(out var step, t => ParseOperation.Start(t, "for loop step")
-                    .ParseToken(Keyword.Step)
+                    .ParseContextKeyword(ContextKeyword.Step)
                     .Parse(out var step, Expression)
                     .MapResult(_ => step))
                 .MapResult(_ => (variant, start, end, step)),
             t => ParseOperation.Start(t, "for loop")
                 .ParseToken(Punctuation.LParen)
                 .Parse(out var variant, ParseLvalue)
-                .ParseToken(Keyword.From)
+                .ParseContextKeyword(ContextKeyword.From)
                 .Parse(out var start, Expression)
-                .ParseToken(Keyword.To)
+                .ParseContextKeyword(ContextKeyword.To)
                 .Parse(out var end, Expression)
                 .ParseOptional(out var step, t => ParseOperation.Start(t, "for loop step")
-                    .ParseToken(Keyword.Step)
+                    .ParseContextKeyword(ContextKeyword.Step)
                     .Parse(out var step, Expression)
                     .MapResult(_ => step))
                 .ParseToken(Punctuation.RParen)
@@ -373,7 +373,7 @@ public sealed partial class Parser
         .ParseToken(Keyword.Array)
         .ParseToken(Punctuation.LBracket)
         .ParseOneOrMoreSeparated(out var dimensions, Expression, Punctuation.Comma, Punctuation.RBracket)
-        .ParseToken(Keyword.From)
+        .ParseContextKeyword(ContextKeyword.From)
         .Parse(out var type, _type)
         .MapResult(t => new Type.Array(t, type, ReportErrors(dimensions)));
 
@@ -427,16 +427,16 @@ public sealed partial class Parser
         .MapResult(t => init);
 
     ParseResult<Initializer> BracedInitializer(IEnumerable<Token> tokens)
-         => ParseOperation.Start(tokens, "braced initializer")
-            .ParseToken(Punctuation.LBrace)
-            .ParseZeroOrMoreSeparated(out var values, ParserFirst<Initializer.Braced.Item>((tokens)
-                 => ParseOperation.Start(tokens, "braced initializer item")
-                    .ParseOptional(out var designator, ParserFirst<Designator>(ArrayDesignator, StructureDesignator))
-                    .Parse(out var init, Initializer)
-                    .MapResult(t => new Initializer.Braced.ValuedItem(t, designator, init)),
-                _compilerDirective),
-            Punctuation.Comma, Punctuation.RBrace, allowTrailingSeparator: true)
-            .MapResult(t => new Initializer.Braced(t, ReportErrors(values)));
+     => ParseOperation.Start(tokens, "braced initializer")
+        .ParseToken(Punctuation.LBrace)
+        .ParseZeroOrMoreSeparated(out var values, ParserFirst<Initializer.Braced.Item>((tokens)
+                => ParseOperation.Start(tokens, "braced initializer item")
+                .ParseOptional(out var designator, ParserFirst<Designator>(ArrayDesignator, StructureDesignator))
+                .Parse(out var init, Initializer)
+                .MapResult(t => new Initializer.Braced.ValuedItem(t, designator, init)),
+            _compilerDirective),
+        Punctuation.Comma, Punctuation.RBrace, allowTrailingSeparator: true)
+        .MapResult(t => new Initializer.Braced(t, ReportErrors(values)));
 
     ParseResult<Designator.Array> ArrayDesignator(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "array designator")

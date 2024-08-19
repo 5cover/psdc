@@ -1678,3 +1678,19 @@ No need to call it `#static_assert` (like in C) since the `#` already indicates 
 - Parse contextual keywords (assert, type) by requring an identifier with a specific name specified in TokenType.
 
 What about preprocessing? `#include` has to be handled at the tokenizer level. We can later check for the `#` token in the tokenizer and call a parser for preprocessor directives. If it fails to parse, we emit the token to the regular parser.
+
+## Contextual keywords
+
+Keywords like `de`, `à`, `pas` are very short and only used in specific contexts.
+
+They can use up useful symbol names.
+
+We should make them contextal, ie. have them become identifier when outside of a designated context.
+
+- `de` : array types, for loop begin part
+- `à` : for loop end part
+- `pas` : for loop step part
+
+Maybe we could tokenize them as identifiers always and expect an identifier of a specific name in ParseOperation? (`ParseContextualKeyword`)
+
+That seems like an easy way to implement this feature.

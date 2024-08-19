@@ -16,8 +16,8 @@ sealed class OperatorTable : CodeGeneration.OperatorTable
     public override OperatorInfo And { get; } = new(LeftToRight, "&&", 11);
     public override OperatorInfo Divide { get; } = new(LeftToRight, "/", 3);
     public override OperatorInfo Equal { get; } = new(LeftToRight, "==", 7);
-    public override OperatorInfo GreaterThan { get; } = new(LeftToRight, "/>", 6);
-    public override OperatorInfo GreaterThanOrEqual { get; } = new(LeftToRight, "/>=", 6);
+    public override OperatorInfo GreaterThan { get; } = new(LeftToRight, ">", 6);
+    public override OperatorInfo GreaterThanOrEqual { get; } = new(LeftToRight, ">=", 6);
     public override OperatorInfo LessThan { get; } = new(LeftToRight, "<", 6);
     public override OperatorInfo LessThanOrEqual { get; } = new(LeftToRight, "<=", 6);
     public override OperatorInfo Subtract { get; } = new(LeftToRight, "-", 4);
