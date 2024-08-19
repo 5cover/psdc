@@ -1694,3 +1694,7 @@ We should make them contextal, ie. have them become identifier when outside of a
 Maybe we could tokenize them as identifiers always and expect an identifier of a specific name in ParseOperation? (`ParseContextualKeyword`)
 
 That seems like an easy way to implement this feature.
+
+## Disambiguate terms: comptime and constant
+
+Those mean the same thing, except constant is also a node. So rename all to comptime.

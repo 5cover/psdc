@@ -79,7 +79,7 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.UnsupportedInitializer,
         $"unsupported initializer for type `{initializerTargetType}`");
 
-    internal static Message ErrorConstantExpressionExpected(SourceTokens sourceTokens)
+    internal static Message ErrorComptimeExpressionExpected(SourceTokens sourceTokens)
      => new(sourceTokens, MessageCode.ConstantExpressionExpected,
         $"constant expression expected");
 

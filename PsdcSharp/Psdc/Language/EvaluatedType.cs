@@ -98,7 +98,7 @@ interface EvaluatedType<out TValue> : EvaluatedType where TValue : Value
 
 sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, Value[]>
 {
-    ArrayType(EvaluatedType itemType, IReadOnlyList<ConstantExpression<int>> dimensions, ValueOption<Identifier> alias)
+    ArrayType(EvaluatedType itemType, IReadOnlyList<ComptimeExpression<int>> dimensions, ValueOption<Identifier> alias)
      : base(alias,
         $"tableau [{string.Join(", ", dimensions)}] de {itemType.Representation}",
         CreateArray(itemType.GarbageValue, dimensions.Select(d => d.Value)))
@@ -114,12 +114,12 @@ sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, Value[]>
         return array;
     }
 
-    public IReadOnlyList<ConstantExpression<int>> Dimensions { get; }
+    public IReadOnlyList<ComptimeExpression<int>> Dimensions { get; }
 
     public EvaluatedType ItemType { get; }
 
     public ArrayType(EvaluatedType itemType,
-        IReadOnlyList<ConstantExpression<int>> dimensions)
+        IReadOnlyList<ComptimeExpression<int>> dimensions)
       : this(itemType, dimensions, default) { }
 
     // Arrays can't be reassigned.
@@ -186,7 +186,7 @@ sealed class LengthedStringType : EvaluatedTypeImplInstantiable<LengthedStringVa
 
     public int Length { get; }
     public Option<Expression> LengthConstantExpression { get; }
-    public static LengthedStringType Create(ConstantExpression<int> length)
+    public static LengthedStringType Create(ComptimeExpression<int> length)
      => new(length.Expression.Some(), length.Value);
     public static LengthedStringType Create(int length)
      => new(Option.None<Expression>(), length, default);

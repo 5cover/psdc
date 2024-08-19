@@ -513,7 +513,3 @@ Tests (increasing complexity):
 ## Why do we need equatable semantics again?
 
 Anything that is not a node can simply use equality. This makes it compatible with records.
-
-## Disambiguate terms: comptime and constant
-
-Those mean the same thing, except constant is also a node. So rename all to comptime.

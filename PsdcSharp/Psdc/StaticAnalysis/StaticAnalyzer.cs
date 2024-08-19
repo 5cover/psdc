@@ -18,12 +18,12 @@ public sealed class StaticAnalyzer
     {
         switch (compilerDirective) {
         case Node.CompilerDirective.Assert cd: {
-            GetConstantValue<BooleanType, bool>(BooleanType.Instance, EvaluateExpression(scope, cd.Expression))
+            GetComptimeValue<BooleanType, bool>(BooleanType.Instance, EvaluateExpression(scope, cd.Expression))
             .DropError(_msger.Report)
             .Tap(@true => {
                 if (!@true) {
                     _msger.Report(Message.ErrorAssertionFailed(compilerDirective,
-                        cd.Message.Bind(msgExpr => GetConstantValue<StringType, string>(
+                        cd.Message.Bind(msgExpr => GetComptimeValue<StringType, string>(
                             StringType.Instance, EvaluateExpression(scope, msgExpr)).DropError(_msger.Report))));
                 }
             });
@@ -73,7 +73,7 @@ public sealed class StaticAnalyzer
             var value = expr.Value;
 
             if (value.Status is not ValueStatus.Comptime) {
-                _msger.Report(Message.ErrorConstantExpressionExpected(constant.Value.SourceTokens));
+                _msger.Report(Message.ErrorComptimeExpressionExpected(constant.Value.SourceTokens));
             }
 
             if (!value.Type.IsAssignableTo(declaredType)) {
@@ -319,7 +319,7 @@ public sealed class StaticAnalyzer
                 s.Cases.Select(c => {
                     var caseExpr = EvaluateExpression(scope, c.Value, EvaluatedType.IsConvertibleTo, expr.Value.Type);
                     if (caseExpr.Value.Status is not ValueStatus.Comptime) {
-                        _msger.Report(Message.ErrorConstantExpressionExpected(c.Value.SourceTokens));
+                        _msger.Report(Message.ErrorComptimeExpressionExpected(c.Value.SourceTokens));
                     }
                     return new Statement.Switch.Case(new(scope, c.SourceTokens), caseExpr, AnalyzeStatements(scope, c.Block));
                 }).ToArray(),
@@ -406,7 +406,7 @@ public sealed class StaticAnalyzer
                                 .Must(d => d.Index.Count == dimensions.Length,
                                     d => Message.ErrorIndexWrongRank(d.Meta.SourceTokens, d.Index.Count, dimensions.Length).Yield())
                                 .Bind(d => d.Index
-                                    .Select(i => GetConstantValue<IntegerType, int>(IntegerType.Instance, i))
+                                    .Select(i => GetComptimeValue<IntegerType, int>(IntegerType.Instance, i))
                                     .Sequence())
                                 .Map(i => {
                                     var flatIndex = i.Select(i => i - 1)
@@ -726,32 +726,32 @@ public sealed class StaticAnalyzer
     };
 
     EvaluatedType EvaluateLengthedStringType(Scope scope, Node.Type.LengthedString str)
-     => GetConstantExpression<IntegerType, int>(IntegerType.Instance, scope, str.Length)
+     => GetComptimeExpression<IntegerType, int>(IntegerType.Instance, scope, str.Length)
         .DropError(_msger.Report)
         .Map(LengthedStringType.Create)
         .ValueOr<EvaluatedType>(UnknownType.Declared(_msger.Input, str));
 
     EvaluatedType EvaluateArrayType(Scope scope, Node.Type.Array array)
-     => array.Dimensions.Select(d => GetConstantExpression<IntegerType, int>(IntegerType.Instance, scope, d)).Sequence()
+     => array.Dimensions.Select(d => GetComptimeExpression<IntegerType, int>(IntegerType.Instance, scope, d)).Sequence()
         .DropError(Function.Foreach<Message>(_msger.Report))
         .Map(values => new ArrayType(EvaluateType(scope, array.Type), values))
         .ValueOr<EvaluatedType>(UnknownType.Declared(_msger.Input, array));
 
-    static ValueOption<TUnderlying, Message> GetConstantValue<TType, TUnderlying>(TType expectedType, Expression expr)
+    static ValueOption<TUnderlying, Message> GetComptimeValue<TType, TUnderlying>(TType expectedType, Expression expr)
     where TType : EvaluatedType
      => expr is { Value: Value<TType, TUnderlying> v }
-        ? v.Status.ComptimeValue.OrWithError(Message.ErrorConstantExpressionExpected(expr.Meta.SourceTokens))
+        ? v.Status.ComptimeValue.OrWithError(Message.ErrorComptimeExpressionExpected(expr.Meta.SourceTokens))
         : Message.ErrorExpressionHasWrongType(expr.Meta.SourceTokens, expectedType, expr.Value.Type);
 
-    Option<ConstantExpression<TUnderlying>, Message> GetConstantExpression<TType, TUnderlying>(TType type, Scope scope, Node.Expression expr)
+    Option<ComptimeExpression<TUnderlying>, Message> GetComptimeExpression<TType, TUnderlying>(TType type, Scope scope, Node.Expression expr)
     where TType : EvaluatedType
     {
         var sexpr = EvaluateExpression(scope, expr);
         return sexpr.Value is Value<TType, TUnderlying> tval
             ? tval.Status.ComptimeValue.Map(v =>
-                ConstantExpression.Create(sexpr, v))
-                .OrWithError(Message.ErrorConstantExpressionExpected(expr.SourceTokens))
-            : Message.ErrorExpressionHasWrongType(expr.SourceTokens, type, sexpr.Value.Type).None<ConstantExpression<TUnderlying>, Message>();
+                ComptimeExpression.Create(sexpr, v))
+                .OrWithError(Message.ErrorComptimeExpressionExpected(expr.SourceTokens))
+            : Message.ErrorExpressionHasWrongType(expr.SourceTokens, type, sexpr.Value.Type).None<ComptimeExpression<TUnderlying>, Message>();
     }
 
     StructureType EvaluateStructureType(Scope scope, Node.Type.Structure structure)
