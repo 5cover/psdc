@@ -2,13 +2,21 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Language;
 
-abstract class EvaluatedTypeImpl<TValue>(Identifier? alias) : EvaluatedType<TValue> where TValue : Value
+abstract class EvaluatedTypeImpl<TValue> : EvaluatedType<TValue> where TValue : Value
 {
-    public Identifier? Alias { get; } = alias;
 
-    public string Representation => Alias?.Name ?? ActualRepresentation;
+    protected EvaluatedTypeImpl(Option<Identifier> alias, string representationNoAlias)
+    {
+        Representation = alias.Match(
+            a => $"({a.Name}) {representationNoAlias}",
+            () => representationNoAlias);
+        Alias = alias;
+        RepresentationNoAlias = representationNoAlias;
+    }
+    public Option<Identifier> Alias { get; }
 
-    protected abstract string ActualRepresentation { get; }
+    public string Representation { get; }
+    protected string RepresentationNoAlias { get; }
 
     public virtual bool IsConvertibleTo(EvaluatedType other) => SemanticsEqual(other);
 
@@ -37,7 +45,7 @@ abstract class EvaluatedTypeImpl<TValue>(Identifier? alias) : EvaluatedType<TVal
     Value EvaluatedType.InvalidValue => InvalidValue;
 }
 
-abstract class EvaluatedTypeImplNotInstantiable<TValue>(Identifier? alias, ValueStatus defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias)
+abstract class EvaluatedTypeImplNotInstantiable<TValue>(Option<Identifier> alias, string representationNoAlias, ValueStatus defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias, representationNoAlias)
 where TValue : class, Value
 {
     TValue? _defaultValue;
@@ -52,11 +60,11 @@ where TValue : class, Value
     protected abstract TValue CreateValue(ValueStatus status);
 }
 
-abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Identifier? alias, ValueStatus<TUnderlying> defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias), InstantiableType<TValue, TUnderlying>
+abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Option<Identifier> alias, string representationNoAlias, ValueStatus<TUnderlying> defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias, representationNoAlias), InstantiableType<TValue, TUnderlying>
 where TValue : class, Value
 where TUnderlying : notnull
 {
-    protected EvaluatedTypeImplInstantiable(Identifier? alias, TUnderlying defaultValue) : this(alias, ValueStatus.Comptime.Of(defaultValue))
+    protected EvaluatedTypeImplInstantiable(Option<Identifier> alias, string representationNoAlias, TUnderlying defaultValue) : this(alias, representationNoAlias, ValueStatus.Comptime.Of(defaultValue))
     { }
 
     TValue? _defaultValue;

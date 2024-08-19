@@ -1,30 +1,29 @@
-#eval expr "im before u guys"
+//#eval expr "im before u guys"
 
 programme CompilerDirectives c'est
 
 type tNotes = tableau[6] de réel;
+#eval type tNotes
 
 type A = structure début
     i: entier;
-#eval expr "im in a struct"
+//#eval expr "im in a struct"
 fin;
 
-#eval expr "im at da top lvl"
+//#eval expr "im at da top lvl"
 
 début
     x: A := {
-#eval expr "im in an initializer"
+//#eval expr "im in an initializer"
     };
 
-#eval expr "im a stmt"
+//#eval expr "im a stmt"
     
     pour x.i de 1 à 10 pas 2 faire
-        écrireEcran("a
-        aaaa
-        aa");
+        écrireEcran("hello");
+#eval expr x
+#eval expr x.i
     finfaire
-
-#eval type tNotes
 fin
 
-#eval expr "im after u guys"
+//#eval expr "im after u guys"

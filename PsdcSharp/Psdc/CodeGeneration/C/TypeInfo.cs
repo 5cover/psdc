@@ -71,9 +71,9 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             _ => throw type.ToUnmatchedException(),
         };
 
-        return type.Alias is { } alias
-            ? new TypeInfo(help.KwTable.Validate(help.Scope, alias, help.Msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders)
-            : typeInfo;
+        return type.Alias.Match(
+            a => new TypeInfo(help.KwTable.Validate(help.Scope, a, help.Msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders),
+            () => typeInfo);
 
         TypeInfo CreateArrayType(ArrayType array, Help help)
         {

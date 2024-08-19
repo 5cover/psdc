@@ -93,7 +93,7 @@ public sealed partial class Parser
 
     ParseResult<Algorithm> Algorithm(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "algorithm")
-        .ParseOneOrMoreUntilToken(out var leadingDirectives, _compilerDirective, Set.Of<TokenType>(Keyword.Program))
+        .ParseZeroOrMoreUntilToken(out var leadingDirectives, _compilerDirective, Set.Of<TokenType>(Keyword.Program))
         .ParseToken(Keyword.Program)
         .Parse(out var name, Identifier)
         .ParseToken(Keyword.Is)

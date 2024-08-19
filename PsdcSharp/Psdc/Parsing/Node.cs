@@ -1,6 +1,4 @@
 global using Block = System.Collections.Generic.IReadOnlyList<Scover.Psdc.Parsing.Node.Statement>;
-
-using System.Globalization;
 using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Parsing;
@@ -532,14 +530,14 @@ public interface Node : EquatableSemantics<Node>
             : Literal<IntegerType, IntegerValue, int>(SourceTokens, IntegerType.Instance, Value)
             {
                 public Integer(SourceTokens sourceTokens, string valueStr)
-                : this(sourceTokens, int.Parse(valueStr, CultureInfo.InvariantCulture)) { }
+                : this(sourceTokens, int.Parse(valueStr, Format.Code)) { }
             }
 
             internal sealed record Real(SourceTokens SourceTokens, decimal Value)
             : Literal<RealType, RealValue, decimal>(SourceTokens, RealType.Instance, Value)
             {
                 public Real(SourceTokens sourceTokens, string valueStr)
-                : this(sourceTokens, decimal.Parse(valueStr, CultureInfo.InvariantCulture)) { }
+                : this(sourceTokens, decimal.Parse(valueStr, Format.Code)) { }
             };
 
             internal sealed record String(SourceTokens SourceTokens, string Value)
