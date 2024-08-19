@@ -34,11 +34,12 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
     public IEnumerable<string> RequiredHeaders { get; }
 
     public string DecorateExpression(string expr)
-     => $"{_stars}{expr}";
-    public override string ToString() => $"{_typeName}{_stars}{_postModifier}{_typeQualifier}";
+     => string.Concat(_stars, expr);
+    public override string ToString() => string.Concat(_typeName, _stars, _postModifier, _typeQualifier);
 
     public string GenerateDeclaration(IEnumerable<string> declarators)
-     => $"{_typeName}{_typeQualifier} {string.Join(", ", declarators.Select(name => _stars + name + _postModifier))}";
+     => string.Concat(_typeName, _typeQualifier,
+            string.Join(", ", declarators.Select(name => string.Concat(_stars, name, _postModifier))));
 
     public string GenerateDeclaration(string declarator) => GenerateDeclaration(declarator.Yield());
 
@@ -50,7 +51,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
      => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length + level,
         _postModifier, null);
 
-    static string AddSpaceBefore(string? str) => str is null ? "" : $" {str}";
+    static string AddSpaceBefore(string? str) => str is null ? "" : string.Concat(" ", str);
 
     public static TypeInfo Create(EvaluatedType type, Help help)
      => Create(type, new(), help);
@@ -58,7 +59,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
     static TypeInfo Create(EvaluatedType type, Indentation indent, Help help)
     {
         TypeInfo typeInfo = type switch {
-            UnknownType u => new(help.KwTable.Validate(help.Scope, u.SourceTokens, u.Representation, help.Msger)),
+            UnknownType u => new(help.KwTable.Validate(help.Scope, u.SourceTokens, u.ToString(Format.Code), help.Msger)),
             FileType => new("FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield()),
             BooleanType => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
             CharacterType => new("char", "%c"),

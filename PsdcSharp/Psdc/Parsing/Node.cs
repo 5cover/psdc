@@ -9,7 +9,7 @@ public interface Node : EquatableSemantics<Node>
 
     internal interface Call : Node
     {
-        public Identifier Name { get; }
+        public Identifier Callee { get; }
         public IReadOnlyList<ParameterActual> Parameters { get; }
     }
 
@@ -42,12 +42,12 @@ public interface Node : EquatableSemantics<Node>
 
     public sealed record Algorithm(SourceTokens SourceTokens,
         IReadOnlyList<CompilerDirective> LeadingDirectives,
-        Identifier Name,
+        Identifier Title,
         IReadOnlyList<Declaration> Declarations) : Node
     {
         public bool SemanticsEqual(Node other) => other is Algorithm o
          && o.LeadingDirectives.AllSemanticsEqual(LeadingDirectives)
-         && o.Name.SemanticsEqual(Name)
+         && o.Title.SemanticsEqual(Title)
          && o.Declarations.AllSemanticsEqual(Declarations);
     }
 
@@ -317,12 +317,12 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record ProcedureCall(SourceTokens SourceTokens,
-            Identifier Name,
+            Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters)
         : Statement, Call
         {
             public bool SemanticsEqual(Node other) => other is ProcedureCall o
-             && o.Name.SemanticsEqual(Name)
+             && o.Callee.SemanticsEqual(Callee)
              && o.Parameters.AllSemanticsEqual(Parameters);
         }
 
@@ -468,12 +468,12 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record FunctionCall(SourceTokens SourceTokens,
-            Identifier Name,
+            Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters)
         : Expression, Call
         {
             public bool SemanticsEqual(Node other) => other is FunctionCall o
-             && o.Name.SemanticsEqual(Name)
+             && o.Callee.SemanticsEqual(Callee)
              && o.Parameters.AllSemanticsEqual(Parameters);
         }
 

@@ -48,7 +48,7 @@ public sealed class StaticAnalyzer
 
         MutableScope scope = new(null);
 
-        Algorithm semanticAst = new(new(scope, root.SourceTokens), root.Name,
+        Algorithm semanticAst = new(new(scope, root.SourceTokens), root.Title,
             root.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).WhereSome().ToArray());
 
         foreach (var callable in scope.GetSymbols<Symbol.Callable>().Where(c => !c.HasBeenDefined)) {
@@ -283,7 +283,7 @@ public sealed class StaticAnalyzer
         }
         case Node.Statement.ProcedureCall s: {
             DiagnoseCall<Symbol.Procedure>(scope, s);
-            return new Statement.ProcedureCall(meta, s.Name, AnalyzeParameters(scope, s.Parameters));
+            return new Statement.ProcedureCall(meta, s.Callee, AnalyzeParameters(scope, s.Parameters));
         }
         case Node.Statement.RepeatLoop s: {
             return new Statement.RepeatLoop(meta,
@@ -331,7 +331,7 @@ public sealed class StaticAnalyzer
 
     Option<TSymbol> DiagnoseCall<TSymbol>(Scope scope, Node.Call call) where TSymbol : Symbol.Callable
     {
-        var callable = scope.GetSymbol<TSymbol>(call.Name).DropError(_msger.Report);
+        var callable = scope.GetSymbol<TSymbol>(call.Callee).DropError(_msger.Report);
         callable.Tap(callable => {
             List<string> problems = [];
 
@@ -548,7 +548,7 @@ public sealed class StaticAnalyzer
             return new Expression.UnaryOperation(meta, AnalyzeOperator(scope, opUn.Operator), operand, result.Value);
         }
         case Node.Expression.FunctionCall call: {
-            return new Expression.FunctionCall(meta, call.Name, AnalyzeParameters(scope, call.Parameters),
+            return new Expression.FunctionCall(meta, call.Callee, AnalyzeParameters(scope, call.Parameters),
                 DiagnoseCall<Symbol.Function>(scope, call)
                 .Map(f => f.ReturnType).ValueOr(UnknownType.Inferred)
                 .RuntimeValue);

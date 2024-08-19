@@ -1,11 +1,16 @@
+using System.Text;
 using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Language;
 
-interface Value : IEquatable<Value>
+interface Value : IEquatable<Value>, IFormattableUsable
 {
     EvaluatedType Type { get; }
     ValueStatus Status { get; }
+    /// <summary>
+    /// Format string for a minimal representation.
+    /// </summary>
+    public const string FmtMin = "M";
 }
 
 interface Value<out TType, TUnderlying> : Value where TType : EvaluatedType
@@ -19,8 +24,8 @@ sealed class IntegerValue(IntegerType type, ValueStatus<int> value)
 {
     RealType Value<RealType, decimal>.Type => RealType.Instance;
     ValueStatus<decimal> Value<RealType, decimal>.Status => Status.Map(v => (decimal)v);
-
     protected override IntegerValue Clone(ValueStatus<int> value) => new(Type, value);
+    protected override string ValueToString(int value, IFormatProvider? fmtProvider) => value.ToString(fmtProvider);
 }
 
 interface RealValue : Value<RealType, decimal>;
@@ -28,6 +33,7 @@ interface RealValue : Value<RealType, decimal>;
 sealed class RealValueImpl(RealType type, ValueStatus<decimal> value) : ValueImpl<RealValueImpl, RealType, decimal>(type, value), RealValue
 {
     protected override RealValueImpl Clone(ValueStatus<decimal> value) => new(Type, value);
+    protected override string ValueToString(decimal value, IFormatProvider? fmtProvider) => value.ToString(fmtProvider);
 }
 
 interface StringValue : Value<StringType, string>;
@@ -35,11 +41,17 @@ interface StringValue : Value<StringType, string>;
 sealed class StringValueImpl(StringType type, ValueStatus<string> value) : ValueImpl<StringValueImpl, StringType, string>(type, value), StringValue
 {
     protected override StringValueImpl Clone(ValueStatus<string> value) => new(Type, value);
+    protected override string ValueToString(string value, IFormatProvider? fmtProvider) => value.ToString(fmtProvider);
 }
 
 sealed class StructureValue(StructureType type, ValueStatus<IReadOnlyDictionary<Identifier, Value>> value) : ValueImpl<StructureValue, StructureType, IReadOnlyDictionary<Identifier, Value>>(type, value)
 {
     protected override StructureValue Clone(ValueStatus<IReadOnlyDictionary<Identifier, Value>> value) => new(Type, value);
+    protected override string ValueToString(IReadOnlyDictionary<Identifier, Value> value, IFormatProvider? fmtProvider)
+     => new StringBuilder("{ ")
+        .AppendJoin(", ", value.Select(kvp => $".{kvp.Key} := {kvp.Value.ToString(Value.FmtMin, fmtProvider)}"))
+        .Append(" }")
+        .ToString();
 }
 
 sealed class UnknownValue(UnknownType type, ValueStatus value) : ValueImpl<UnknownType>(type, value);
@@ -47,24 +59,32 @@ sealed class UnknownValue(UnknownType type, ValueStatus value) : ValueImpl<Unkno
 sealed class ArrayValue(ArrayType type, ValueStatus<Value[]> value) : ValueImpl<ArrayValue, ArrayType, Value[]>(type, value)
 {
     protected override ArrayValue Clone(ValueStatus<Value[]> value) => new(Type, value);
+    protected override string ValueToString(Value[] value, IFormatProvider? fmtProvider)
+     => new StringBuilder("{ ")
+        .AppendJoin(", ", value.Select(v => v.ToString(Value.FmtMin, fmtProvider)))
+        .Append(" }")
+        .ToString();
 }
 
 sealed class BooleanValue(BooleanType type, ValueStatus<bool> value) : ValueImpl<BooleanValue, BooleanType, bool>(type, value)
 {
     protected override BooleanValue Clone(ValueStatus<bool> value) => new(Type, value);
+    protected override string ValueToString(bool value, IFormatProvider? fmtProvider) => value ? "vrai" : "faux";
 }
 
 sealed class CharacterValue(CharacterType type, ValueStatus<char> value) : ValueImpl<CharacterValue, CharacterType, char>(type, value)
 {
     protected override CharacterValue Clone(ValueStatus<char> value) => new(Type, value);
+    protected override string ValueToString(char value, IFormatProvider? fmtProvider) => value.ToString(fmtProvider);
 }
 
 sealed class FileValue(FileType type, ValueStatus value) : ValueImpl<FileType>(type, value);
 
 sealed class LengthedStringValue(LengthedStringType type, ValueStatus<string> value)
-        : ValueImpl<LengthedStringValue, LengthedStringType, string>(type, value), StringValue
+: ValueImpl<LengthedStringValue, LengthedStringType, string>(type, value), StringValue
 {
     StringType Value<StringType, string>.Type => StringType.Instance;
 
     protected override LengthedStringValue Clone(ValueStatus<string> value) => new(Type, value);
+    protected override string ValueToString(string value, IFormatProvider? fmtProvider) => value.ToString(fmtProvider);
 }

@@ -13,7 +13,7 @@ public interface SemanticNode
 
     internal interface Call : SemanticNode
     {
-        public Identifier Name { get; }
+        public Identifier Callee { get; }
         public IReadOnlyList<ParameterActual> Parameters { get; }
     }
 
@@ -23,7 +23,7 @@ public interface SemanticNode
     }
 
     public sealed record Algorithm(SemanticMetadata Meta,
-        Identifier Name,
+        Identifier Title,
         IReadOnlyList<Declaration> Declarations)
     : SemanticNode;
 
@@ -166,7 +166,7 @@ public interface SemanticNode
         : Statement;
 
         internal sealed record ProcedureCall(SemanticMetadata Meta,
-            Identifier Name,
+            Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters)
         : Statement, Call;
 
@@ -253,7 +253,7 @@ public interface SemanticNode
         : Expression;
 
         internal sealed record FunctionCall(SemanticMetadata Meta,
-            Identifier Name,
+            Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters,
             Value Value)
         : Expression, Call;

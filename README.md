@@ -71,6 +71,7 @@ Notation: bold &rarr; underway
     - [ ] Conditional compilation
 - [ ] Configuration
 - [ ] [GNU](https://www.gnu.org/prep/standards/standards.html#Errors)-compliant message formatting
+- [ ] Translations : resx, fr
 - [ ] CLI (use nuget package)
     - [ ] custom header
     - [ ] -d, --documentation: none, all, file?

@@ -4,7 +4,7 @@ public sealed class PrintMessenger(TextWriter output, string input) : Messenger
 {
     public string Input => input;
 
-    readonly DefaultDictionary<MessageSeverity, int> _msgCountsBySeverity = new(0);
+    readonly DefaultDictionary<MessageSeverity, int> _msgCounts = new(0);
     readonly TextWriter _output = output;
 
     const string LineNoMargin = "    ";
@@ -12,24 +12,23 @@ public sealed class PrintMessenger(TextWriter output, string input) : Messenger
     const int MaxMultilineErrorLines = 10;
 
     public void PrintConclusion()
-     => _output.WriteLine($"Compilation terminated ({_msgCountsBySeverity[MessageSeverity.Error]} errors, "
-                       + $"{_msgCountsBySeverity[MessageSeverity.Warning]} warnings, "
-                       + $"{_msgCountsBySeverity[MessageSeverity.Suggestion]} suggestions).");
+     => _output.WriteLine(string.Create(Format.Msg,
+        $"Compilation terminated ({_msgCounts[MessageSeverity.Error]} errors, {_msgCounts[MessageSeverity.Warning]} warnings, {_msgCounts[MessageSeverity.Suggestion]} suggestions)."));
 
     public void Report(Message message)
     {
-        if (!_msgCountsBySeverity.TryAdd(message.Severity, 1)) {
-            ++_msgCountsBySeverity[message.Severity];
+        if (!_msgCounts.TryAdd(message.Severity, 1)) {
+            ++_msgCounts[message.Severity];
         }
         var msgColor = ConsoleColorInfo.ForMessageSeverity(message.Severity);
-        msgColor.DoInColor(() => _output.Write($"[P{(int)message.Code:d4}] "));
+        msgColor.DoInColor(() => _output.Write(string.Create(Format.Msg, $"[P{(int)message.Code:d4}] ")));
 
         Position start = input.GetPositionAt(message.InputRange.Start);
         Position end = input.GetPositionAt(message.InputRange.End);
 
         var lineNoPadding = end.Line.DigitCount();
 
-        _output.WriteLine($"{start}: {message.Severity.ToString().ToLower(Format.Msg)}: {message.Content.Get(input)}");
+        _output.WriteLine(string.Create(Format.Msg, $"{start}: {message.Severity.ToString().ToLower(Format.Msg)}: {message.Content.Get(input)}"));
 
         // If the error spans over only 1 line, show it with carets underneath
         if (start.Line == end.Line) {
@@ -79,7 +78,7 @@ public sealed class PrintMessenger(TextWriter output, string input) : Messenger
             badLines.FirstOrNone().Tap(l => {
                 if (badLineCount > MaxBadLines) {
                     StartLine(lineNoPadding, l);
-                    EndLine($"({badLineCount - MaxBadLines} more lines...)");
+                    EndLine(string.Create(Format.Msg, $"({badLineCount - MaxBadLines} more lines...)"));
                 }
             });
 

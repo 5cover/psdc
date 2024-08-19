@@ -27,8 +27,8 @@ sealed class OperatorTable : CodeGeneration.OperatorTable
     public override OperatorInfo Or { get; } = new(LeftToRight, "||", 12);
     public override OperatorInfo Add { get; } = new(LeftToRight, "+", 4);
     public override OperatorInfo Xor { get; } = new(LeftToRight, "^", 9);
-
-    public override OperatorInfo Cast(EvaluatedType target) => new(RightToLeft, new(typeGen => $"({typeGen(target)})"), 2);
+    public override OperatorInfo Cast(EvaluatedType target) => new(RightToLeft,
+        new(typeGen => string.Create(Format.Code, $"({typeGen(target)})")), 2);
     public override OperatorInfo UnaryMinus { get; } = new(RightToLeft, "-", 2);
     public override OperatorInfo Not { get; } = new(RightToLeft, "!", 2);
     public override OperatorInfo UnaryPlus { get; } = new(RightToLeft, "+", 2);

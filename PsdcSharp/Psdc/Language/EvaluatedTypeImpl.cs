@@ -2,21 +2,13 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Language;
 
-abstract class EvaluatedTypeImpl<TValue> : EvaluatedType<TValue> where TValue : Value
+abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<TValue> where TValue : Value
 {
 
-    protected EvaluatedTypeImpl(Option<Identifier> alias, string representationNoAlias)
-    {
-        Representation = alias.Match(
-            a => $"({a.Name}) {representationNoAlias}",
-            () => representationNoAlias);
-        Alias = alias;
-        RepresentationNoAlias = representationNoAlias;
-    }
+    protected EvaluatedTypeImpl(Option<Identifier> alias) => Alias = alias;
     public Option<Identifier> Alias { get; }
 
-    public string Representation { get; }
-    protected string RepresentationNoAlias { get; }
+    protected abstract string ToStringNoAlias(IFormatProvider? fmtProvider);
 
     public virtual bool IsConvertibleTo(EvaluatedType other) => SemanticsEqual(other);
 
@@ -33,7 +25,9 @@ abstract class EvaluatedTypeImpl<TValue> : EvaluatedType<TValue> where TValue : 
 
     public abstract EvaluatedType ToAliasReference(Identifier alias);
 
-    public override string ToString() => Representation;
+    public override string ToString(string? format, IFormatProvider? fmtProvider) => Alias.Match(
+        a => $"({a}) {ToStringNoAlias(fmtProvider)}",
+        () => ToStringNoAlias(fmtProvider));
 
     public abstract TValue DefaultValue { get; }
     public abstract TValue RuntimeValue { get; }
@@ -45,7 +39,7 @@ abstract class EvaluatedTypeImpl<TValue> : EvaluatedType<TValue> where TValue : 
     Value EvaluatedType.InvalidValue => InvalidValue;
 }
 
-abstract class EvaluatedTypeImplNotInstantiable<TValue>(Option<Identifier> alias, string representationNoAlias, ValueStatus defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias, representationNoAlias)
+abstract class EvaluatedTypeImplNotInstantiable<TValue>(Option<Identifier> alias, ValueStatus defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias)
 where TValue : class, Value
 {
     TValue? _defaultValue;
@@ -60,11 +54,11 @@ where TValue : class, Value
     protected abstract TValue CreateValue(ValueStatus status);
 }
 
-abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Option<Identifier> alias, string representationNoAlias, ValueStatus<TUnderlying> defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias, representationNoAlias), InstantiableType<TValue, TUnderlying>
+abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Option<Identifier> alias, ValueStatus<TUnderlying> defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias), InstantiableType<TValue, TUnderlying>
 where TValue : class, Value
 where TUnderlying : notnull
 {
-    protected EvaluatedTypeImplInstantiable(Option<Identifier> alias, string representationNoAlias, TUnderlying defaultValue) : this(alias, representationNoAlias, ValueStatus.Comptime.Of(defaultValue))
+    protected EvaluatedTypeImplInstantiable(Option<Identifier> alias, TUnderlying defaultValue) : this(alias, ValueStatus.Comptime.Of(defaultValue))
     { }
 
     TValue? _defaultValue;

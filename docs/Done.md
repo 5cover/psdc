@@ -1708,3 +1708,11 @@ Some languages (like Python or SQL) support NO-OP programs.
 So we should support it to.
 
 Remove the empty main program from comptime.psc.
+
+## Value tostring
+
+Instead of switching in message, add tostring to value.
+
+Give a friendly representation of the underlying value always (see ArrayValue and StructureValue)
+
+use Format

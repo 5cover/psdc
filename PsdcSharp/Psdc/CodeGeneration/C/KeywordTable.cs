@@ -14,7 +14,7 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
             var newIdent = ident + "_";
             int identNo = 1;
             while (scope.HasSymbol(newIdent)) {
-                newIdent = $"{ident}_{identNo++}";
+                newIdent = string.Create(Format.Code, $"{ident}_{identNo++}");
             }
             msger.Report(Message.WarningTargetLanguageReservedKeyword(
                 sourceTokens, LanguageName.C, ident, newIdent));

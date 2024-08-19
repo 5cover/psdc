@@ -230,7 +230,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     protected override StringBuilder AppendReturn(StringBuilder o, Statement.Return ret)
     {
-        Indent(o).Append($"return ");
+        Indent(o).Append("return ");
         AppendExpression(o, ret.Value);
         return o.AppendLine(";");
     }
@@ -274,7 +274,7 @@ sealed partial class CodeGenerator(Messenger messenger)
     };
 
     StringBuilder AppendBracedInitializerAsCompoundLiteral(StringBuilder o, TypeInfo type, Initializer.Braced initializer)
-     => AppendBracedInitializer(o.Append($"({type})"), initializer);
+     => AppendBracedInitializer(o.Append(Format.Code, $"({type})"), initializer);
 
     StringBuilder AppendBracedInitializer(StringBuilder o, Initializer.Braced initializer)
     {
@@ -332,10 +332,10 @@ sealed partial class CodeGenerator(Messenger messenger)
         _ = left switch {
             BracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracket),
             Expression.FunctionCall call => AppendCall(o, call),
-            Expression.Literal { Value: CharacterValue v } => o.Append(Format.Code, $"'{v.Status.ComptimeValue.Unwrap().ToStringInvariant()}'"),
+            Expression.Literal { Value: CharacterValue v } => o.Append(Format.Code, $"'{v.Status.ComptimeValue.Unwrap()}'"),
             Expression.Literal { Value: BooleanValue v } => AppendLiteralBoolean(v.Status.ComptimeValue.Unwrap()),
-            Expression.Literal { Value: StringValue v } => o.Append(Format.Code, $"\"{v.Status.ComptimeValue.Unwrap().ToStringInvariant()}\""),
-            Expression.Literal l => o.Append(l.UnderlyingValue.ToStringInvariant()),
+            Expression.Literal { Value: StringValue v } => o.Append(Format.Code, $"\"{v.Status.ComptimeValue.Unwrap()}\""),
+            Expression.Literal l => o.Append(l.UnderlyingValue.ToStringFmt(Format.Code)),
             Expression.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
             Expression.Lvalue.ComponentAccess compAccess
              => AppendExpression(o, compAccess.Structure, _opTable.ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
@@ -397,7 +397,7 @@ sealed partial class CodeGenerator(Messenger messenger)
     {
         const string ParameterSeparator = ", ";
 
-        o.Append(Format.Code, $"{ValidateIdentifier(call.Meta.Scope, call.Name)}(");
+        o.Append(Format.Code, $"{ValidateIdentifier(call.Meta.Scope, call.Callee)}(");
         foreach (var param in call.Parameters) {
             if (C.RequiresPointer(param.Mode) && !C.IsPointer(param.Value)) {
                 AppendUnaryPrefixOperation(o, _opTable.AddressOf, param.Value,
@@ -415,7 +415,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     static StringBuilder AppendFileHeader(StringBuilder o, Algorithm algorithm) => o.AppendLine(Format.Code, $"""
         /** @file
-         * @brief {algorithm.Name}
+         * @brief {algorithm.Title}
          * @author {Environment.UserName}
          * @date {DateOnly.FromDateTime(DateTime.Now)}
          */
@@ -440,9 +440,9 @@ sealed partial class CodeGenerator(Messenger messenger)
         Func<T, T, T> collapseLiterals) where T : notnull
         // Collapse literals
          => left is Expression.Literal { UnderlyingValue: T leftVal }
-                ? o.Append(collapseLiterals(leftVal, right).ToStringInvariant())
+                ? o.Append(collapseLiterals(leftVal, right).ToStringFmt(Format.Code))
                 : AppendExpression(o, left, _opTable.ShouldBracketOperand(@operator, left))
-                    .Append(Format.Code, $" {@operator.Code.Get(GenerateType(left.Meta.Scope))} {right.ToStringInvariant()}");
+                    .Append(Format.Code, $" {@operator.Code.Get(GenerateType(left.Meta.Scope))} {right}");
 
     protected override TypeGenerator GenerateType(Scope scope)
      => type => CreateTypeInfo(scope, type);

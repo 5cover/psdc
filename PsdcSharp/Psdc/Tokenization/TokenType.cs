@@ -15,13 +15,13 @@ public class TokenType
     static string GetRepr(string repr, bool isStaticCode) => isStaticCode ? repr : $"`{repr}`";
     protected static IEnumerable<T> GetRules<T>(TokenType self, IEnumerable<Func<TokenType, T>> rules) => rules.Select(r => r(self));
 
-    public string Representation { get; }
+    private readonly string _repr;
 
-    TokenType(string repr, bool isStaticCode) => Representation = GetRepr(repr, isStaticCode);
+    TokenType(string repr, bool isStaticCode) => _repr = GetRepr(repr, isStaticCode);
 
     public static TokenType Eof { get; } = new("end of file", false);
 
-    public override string ToString() => Representation;
+    public override string ToString() => _repr;
 
     internal sealed class Keyword : TokenType, Ruled<WordTokenRule>
     {
@@ -233,7 +233,7 @@ public class TokenType
         internal static bool IsIdentifierChar(char c) => c == '_' || char.IsLetterOrDigit(c);
     }
 
-    internal class ContextKeyword
+    internal sealed class ContextKeyword
     {
         public IImmutableSet<string> Names { get; }
         ContextKeyword(IImmutableSet<string> names) => Names = names;

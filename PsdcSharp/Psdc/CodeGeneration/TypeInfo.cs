@@ -2,10 +2,8 @@ namespace Scover.Psdc.CodeGeneration;
 
 interface TypeInfo
 {
-    public string DecorateExpression(string expr);
-
-    public string ToString();
-
-    public string GenerateDeclaration(IEnumerable<string> names);
-    public string GenerateDeclaration(string name);
+    string DecorateExpression(string expr);
+    string ToString();
+    string GenerateDeclaration(IEnumerable<string> names);
+    string GenerateDeclaration(string name);
 }

@@ -5,11 +5,6 @@ using System.Numerics;
 
 namespace Scover.Psdc.Library;
 
-readonly record struct Position(int Line, int Column)
-{
-    public override string ToString() => $"L {Line + 1}, col {Column + 1}";
-}
-
 public static class Extensions
 {
     internal static void CheckKeys<TKey, TValue>(
@@ -161,9 +156,9 @@ public static class Extensions
         return t;
     }
 
-    internal static string? ToStringInvariant(this object obj) => obj switch {
-        IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
-        IConvertible c => c.ToString(CultureInfo.InvariantCulture),
+    internal static string? ToStringFmt(this object obj, IFormatProvider? fmtProvider) => obj switch {
+        IFormattable f => f.ToString(null, fmtProvider),
+        IConvertible c => c.ToString(fmtProvider),
         _ => obj.ToString()
     };
 
@@ -172,7 +167,8 @@ public static class Extensions
         ? first.Value.SemanticsEqual(second.Value)
         : first.HasValue == second.HasValue;
 
-    internal static UnreachableException ToUnmatchedException<T>(this T t) => new($"Unmatched {typeof(T).Name}: {t}");
+    internal static UnreachableException ToUnmatchedException<T>(this T t)
+     => new(string.Create(CultureInfo.InvariantCulture, $"Unmatched {typeof(T).Name}: {t}"));
 
     internal static void WriteNTimes(this TextWriter writer, int n, char c)
     {

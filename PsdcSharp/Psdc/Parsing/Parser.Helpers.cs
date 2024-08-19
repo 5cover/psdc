@@ -64,12 +64,12 @@ partial class Parser
      };
 
     static ParseResult<T> ParseToken<T>(IEnumerable<Token> tokens, TokenType expectedType, ResultCreator<T> resultCreator)
-     => ParseOperation.Start(tokens, expectedType.Representation)
+     => ParseOperation.Start(tokens, expectedType.ToString())
         .ParseToken(expectedType)
     .MapResult(resultCreator);
 
     static ParseResult<T> ParseTokenValue<T>(IEnumerable<Token> tokens, TokenType expectedType, Func<SourceTokens, string, T> resultCreator)
-     => ParseOperation.Start(tokens, expectedType.Representation)
+     => ParseOperation.Start(tokens, expectedType.ToString())
                 .ParseTokenValue(out var value, expectedType)
     .MapResult(tokens => resultCreator(tokens, value));
 
