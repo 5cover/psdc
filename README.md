@@ -41,6 +41,7 @@ The target language code must be ready for human reading and modification, and s
 
 Notation: bold &rarr; underway
 
+- [x] Formal grammar
 - [x] Alternatives
 - [x] Loops
     - [x] For
@@ -56,17 +57,19 @@ Notation: bold &rarr; underway
 - [x] Constant folding for type checking and division by zero
 - [x] Optional brackets in control structures
 - [x] Benchmarks
-- [x] **Formal grammar**
-- [x] **Brace initialization (see TD14 ex 1)**
-- [ ] More static analysis
+- [x] Brace initialization (see TD14 ex 1)
+- [x] Compiler directives
+- [x] Contextual keywords
 - [ ] `finPour` keyword (equivalent to `fin` but only for loops)
 - [ ] Escape sequences in string and character literals
 - [x] Case-insensitive boolean operators
-- [ ] Modules, #include?
+- [ ] More static analysis
 - [ ] Numeroted control stuctures (`si1`, `si2`, `si3`)
 - [ ] File handling (low priority)
-- [ ] Preprocessor (limitations of the language)
-    - [ ] `ecrireEcran` newlines
+- [ ] Preprocessor
+    - [ ] Modularity (`#include`)
+    - [ ] Conditional compilation
+- [ ] Configuration
 - [ ] [GNU](https://www.gnu.org/prep/standards/standards.html#Errors)-compliant message formatting
 - [ ] CLI (use nuget package)
     - [ ] custom header
@@ -80,7 +83,8 @@ Notation: bold &rarr; underway
 - [ ] Documentation
     - [ ] CLI
     - [ ] Language standard
-- [ ] Initial release
+- [ ] Initial releas
+- [ ] Sample "real" program
 - [ ] Self-hosting (rewrite in Pseudocode)
 - [ ] VSCode tooling
     - [ ] Debugger
