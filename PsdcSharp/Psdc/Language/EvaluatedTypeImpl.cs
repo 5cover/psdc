@@ -10,9 +10,9 @@ abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<
 
     protected abstract string ToStringNoAlias(IFormatProvider? fmtProvider);
 
-    public virtual bool IsConvertibleTo(EvaluatedType other) => SemanticsEqual(other);
+    public virtual bool IsConvertibleTo(EvaluatedType other) => SemanticsEqual(other) || other is EvaluatedTypeImpl<TValue> o && o.IsConvertibleFrom(this);
 
-    public virtual bool IsAssignableTo(EvaluatedType other) => IsConvertibleTo(other) || other is EvaluatedTypeImpl<TValue> o && o.IsConvertibleFrom(this);
+    public virtual bool IsAssignableTo(EvaluatedType other) => IsConvertibleTo(other);
 
     /// <summary>
     /// Is another type implicitly convertible to this type?
@@ -71,6 +71,6 @@ where TUnderlying : notnull
     public override TValue GarbageValue => _garbageValue ??= CreateValue(ValueStatus.Garbage<TUnderlying>.Instance);
     public override TValue InvalidValue => _invalidValue ??= CreateValue(ValueStatus.Invalid<TUnderlying>.Instance);
 
-    public TValue Instantiate(TUnderlying value) => CreateValue(ValueStatus.Comptime.Of(value));
+    public TValue Instanciate(TUnderlying value) => CreateValue(ValueStatus.Comptime.Of(value));
     protected abstract TValue CreateValue(ValueStatus<TUnderlying> status);
 }

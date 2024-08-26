@@ -20,15 +20,15 @@ public interface Node : EquatableSemantics<Node>
 
     public interface CompilerDirective : Declaration, Statement, Component, Initializer.Braced.Item
     {
-        internal sealed record EvaluateExpr(SourceTokens SourceTokens, Expression Expression) : CompilerDirective
+        internal sealed record EvalExpr(SourceTokens SourceTokens, Expression Expression) : CompilerDirective
         {
-            public bool SemanticsEqual(Node other) => other is EvaluateExpr o
+            public bool SemanticsEqual(Node other) => other is EvalExpr o
                 && o.Expression.SemanticsEqual(Expression);
         }
 
-        internal sealed record EvaluateType(SourceTokens SourceTokens, Type Type) : CompilerDirective
+        internal sealed record EvalType(SourceTokens SourceTokens, Type Type) : CompilerDirective
         {
-            public bool SemanticsEqual(Node other) => other is EvaluateType o
+            public bool SemanticsEqual(Node other) => other is EvalType o
                 && o.Type.SemanticsEqual(Type);
         }
 
@@ -346,12 +346,12 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record LocalVariable(SourceTokens SourceTokens,
             VariableDeclaration Declaration,
-            Option<Initializer> Initializer)
+            Option<Initializer> Value)
         : Statement
         {
             public bool SemanticsEqual(Node other) => other is LocalVariable o
              && o.Declaration.SemanticsEqual(Declaration)
-             && o.Initializer.OptionSemanticsEqual(Initializer);
+             && o.Value.OptionSemanticsEqual(Value);
         }
 
         internal sealed record WhileLoop(SourceTokens SourceTokens,
@@ -377,13 +377,13 @@ public interface Node : EquatableSemantics<Node>
             public interface Item : Node;
 
             internal sealed record ValuedItem(SourceTokens SourceTokens,
-                Option<Designator> Designator,
-                Initializer Initializer)
+                IReadOnlyList<Designator> Designators,
+                Initializer Value)
             : Item
             {
                 public bool SemanticsEqual(Node other) => other is ValuedItem o
-                 && o.Designator.OptionSemanticsEqual(Designator)
-                 && o.Initializer.SemanticsEqual(Initializer);
+                 && o.Designators.AllSemanticsEqual(Designators)
+                 && o.Value.SemanticsEqual(Value);
             }
         }
     }
@@ -420,12 +420,12 @@ public interface Node : EquatableSemantics<Node>
 
             internal sealed record ArraySubscript(SourceTokens SourceTokens,
                 Expression Array,
-                IReadOnlyList<Expression> Index)
+                Expression Index)
             : Lvalue
             {
                 public bool SemanticsEqual(Node other) => other is ArraySubscript o
                  && o.Array.SemanticsEqual(Array)
-                 && o.Index.AllSemanticsEqual(Index);
+                 && o.Index.SemanticsEqual(Index);
             }
 
             internal sealed record VariableReference(SourceTokens SourceTokens,
@@ -501,7 +501,7 @@ public interface Node : EquatableSemantics<Node>
             object Literal.Value => Value;
             EvaluatedType Literal.ValueType => ValueType;
 
-            public Value CreateValue() => ValueType.Instantiate(Value);
+            public Value CreateValue() => ValueType.Instanciate(Value);
 
             public bool SemanticsEqual(Node other) => other is Literal<TType, TValue, TUnderlying> o
              && o.Value.Equals(Value);
@@ -621,11 +621,11 @@ public interface Node : EquatableSemantics<Node>
     internal interface Designator : Node
     {
         internal sealed record Array(SourceTokens SourceTokens,
-            IReadOnlyList<Expression> Index)
+            Expression Index)
         : Designator
         {
             public bool SemanticsEqual(Node other) => other is Array o
-             && o.Index.AllSemanticsEqual(Index);
+             && o.Index.SemanticsEqual(Index);
         }
 
         internal sealed record Structure(SourceTokens SourceTokens,

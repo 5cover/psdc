@@ -2,10 +2,13 @@ using Scover.Psdc.Language;
 using Scover.Psdc.Messages;
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 using Scover.Psdc.Parsing;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Collections.Immutable;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-public sealed class StaticAnalyzer
+public sealed partial class StaticAnalyzer
 {
     readonly Messenger _msger;
 
@@ -29,11 +32,11 @@ public sealed class StaticAnalyzer
             });
             break;
         }
-        case Node.CompilerDirective.EvaluateExpr cd: {
+        case Node.CompilerDirective.EvalExpr cd: {
             _msger.Report(Message.DebugEvaluateExpression(cd.SourceTokens, EvaluateExpression(scope, cd.Expression).Value));
             break;
         }
-        case Node.CompilerDirective.EvaluateType cd: {
+        case Node.CompilerDirective.EvalType cd: {
             _msger.Report(Message.DebugEvaluateType(cd.SourceTokens, EvaluateType(scope, cd.Type)));
             break;
         }
@@ -65,7 +68,7 @@ public sealed class StaticAnalyzer
         switch (decl) {
         case Node.Declaration.Constant constant: {
             var type = EvaluateType(scope, constant.Type);
-            var init = EvaluateInitializer(scope, constant.Value, EvaluatedType.IsAssignableTo, type);
+            var init = AnalyzeInitializer(scope, constant.Value, EvaluatedType.IsAssignableTo, type);
 
             if (init.Value.Status is not ValueStatus.Comptime) {
                 _msger.Report(Message.ErrorComptimeExpressionExpected(constant.Value.SourceTokens));
@@ -270,10 +273,10 @@ public sealed class StaticAnalyzer
             var declaration = new VariableDeclaration(new(scope, s.Declaration.SourceTokens),
                 s.Declaration.Names,
                 type);
-            var initializer = s.Initializer.Map(i => EvaluateInitializer(scope, i, EvaluatedType.IsAssignableTo, type));
+            var initializer = s.Value.Map(i => AnalyzeInitializer(scope, i, EvaluatedType.IsAssignableTo, type));
 
             foreach (var name in declaration.Names) {
-                scope.AddOrError(_msger, new Symbol.Variable(name, s.SourceTokens, type, initializer.Map(i => i.Value)));
+                scope.AddOrError(_msger, new Symbol.LocalVariable(name, s.SourceTokens, type, initializer.Map(i => i.Value)));
             }
 
             return new Statement.LocalVariable(meta, declaration, initializer);
@@ -364,102 +367,76 @@ public sealed class StaticAnalyzer
         return callable;
     }
 
-    Initializer EvaluateInitializer(Scope scope, Node.Initializer initializer, TypeComparer typeComparer, EvaluatedType targetType)
+    Initializer AnalyzeInitializer(Scope scope, Node.Initializer initializer, TypeComparer typeComparer, EvaluatedType targetType)
     {
         SemanticMetadata meta = new(scope, initializer.SourceTokens);
 
         switch (initializer) {
         case Node.Expression expr:
             return EvaluateExpression(scope, expr, typeComparer, targetType);
-        case Node.Initializer.Braced init: {
-            var (items, value) = Evaluate();
+        case Node.Initializer.Braced braced: {
+            var (value, items) = Evaluate();
             return new Initializer.Braced(meta, items, value);
 
-            (IReadOnlyList<Initializer.Braced.Item>, Value) Evaluate()
+            (Value, IReadOnlyList<Initializer.Braced.Item>) Evaluate()
             {
                 switch (targetType) {
                 case ArrayType targetArrayType: {
-                    var dimensions = targetArrayType.Dimensions.Select(d => d.Value).ToArray();
+                    // Deeply initializes each subobject to its default value.
+                    var arrayValue = targetArrayType.DefaultValue; // todo: let this be a comptime value abstraction (couple bewteen type and comptime value that is implicitly convertible to Value)
 
-                    int currentIndex = 0;
-                    Value[] arrayValue = Enumerable.Repeat(
-                        targetArrayType.ItemType.DefaultValue,
-                        dimensions.Product()).ToArray();
+                    var currentPath = Option.None<InitializerPath.Array>();
 
-                    var sitems = AnalyzeItems(scope, init, item => item.Designator
-                        .Match(designator => designator
-                            .SomeAs<Node.Designator.Array>()
-                            .OrWithError(Message.ErrorUnsupportedDesignator(designator.SourceTokens, targetType).Yield())
-                            .Must(des => des.Index.Count == dimensions.Length,
-                                    des => Message.ErrorIndexWrongRank(des.SourceTokens, des.Index.Count, dimensions.Length).Yield())
-                            .Map(des => AnalyzeArrayDesignator(scope, des))
-                            .Bind(sdes => sdes.Index
-                                .Select(i => GetComptimeValue<IntegerType, int>(IntegerType.Instance, i))
-                                .Sequence().Map(i => (sdes, i)))
-                            .Map((sdes, index) => {
-                                var flatIndex = index.Select(i => i - 1)
-                                                .FlatIndex(dimensions.Select(d => d - 1));
-                                currentIndex = flatIndex + 1;
-                                return (sdes.Some(), flatIndex, index.Some());
-                            })
-                            .DropError(Function.Foreach<Message>(_msger.Report)),
-
-                            () => (Option.None<Designator.Array>(), currentIndex++, Option.None<IReadOnlyList<int>>()).Some()
-                        ).Map((sdes, flatIndex, index) => {
-                            var sitem = AnalyzeItem(item, targetArrayType.ItemType, sdes);
-
-                            if (flatIndex >= 0 && flatIndex < arrayValue.Length) {
-                                arrayValue[flatIndex] = sitem.Initializer.Value;
+                    return (arrayValue, AnalyzeItems(scope, braced, (item, sdes) => {
+                        if (sdes.Length > 0) {
+                            if (sdes[0] is Designator.Array first) {
+                                currentPath = EvaluateArrayPath(scope, first, sdes.AsSpan()[1..], targetArrayType)
+                                    .DropError(_msger.Report).Or(currentPath);
                             } else {
-                                _msger.Report(Message.ErrorIndexOutOfBounds(item.Designator.ValueOr<Node>(item).SourceTokens,
-                                    GetOutOfBoundsDimIndexProblems(
-                                        index.ValueOr(() => flatIndex.NDimIndex(dimensions))
-                                                .Select(i => (i + 1).Some()).Zip(dimensions))));
+                                _msger.Report(Message.ErrorUnsupportedDesignator(sdes[0].Meta.SourceTokens, targetArrayType));
                             }
+                        } else {
+                            currentPath = currentPath.Match(
+                                p => p.Advance(item.Value.SourceTokens),
+                                () => InitializerPath.Array.OfFirstObject(targetArrayType, braced.Items[0].SourceTokens))
+                            .DropError(_msger.Report);
+                        }
 
-                            return sitem;
-                        })).ToArray();
-                    return (sitems, targetArrayType.Instantiate(arrayValue));
+                        return currentPath.Map(p => p.Type.ItemType);
+                    }, sitem => currentPath.Bind(p => p.SetValue(sitem.Meta.SourceTokens, arrayValue.Status.ComptimeValue.Unwrap(), sitem.Value.Value)
+                                                       .DropError(_msger.Report))
+                                           .Tap(v => arrayValue = v)
+                    ).ToArray());
                 }
                 case StructureType targetStructType: {
-                    int currentComponentIndex = 0;
-                    Dictionary<Identifier, Value> structValues = [];
+                    var structValue = targetStructType.DefaultValue;
 
-                    var sitems = AnalyzeItems(scope, init, item => item.Designator
-                        .Match(designator => designator.SomeAs<Node.Designator.Structure>()
-                            .OrWithError(Message.ErrorUnsupportedDesignator(designator.SourceTokens, targetType))
-                            .Bind(des => targetStructType.Components.Map.GetEntryOrNone(des.Component)
-                                  .OrWithError(Message.ErrorStructureComponentDoesntExist(des.Component, targetStructType))
-                                  .Map(kvp => (AnalyzeStructureDesignator(scope, des), kvp)))
-                            .Map((des, kvp) => {
-                                currentComponentIndex = targetStructType.Components.List.IndexOf(kvp).Unwrap();
-                                return (des.Some(), kvp);
-                            }),
-                            () => targetStructType.Components.List
-                                .ElementAtOrNone(currentComponentIndex++)
-                                .Map(kvp => (Option.None<Designator.Structure>(), kvp))
-                                .OrWithError(Message.ErrorExcessElementInInitializer(item.SourceTokens))
-                        ).Match(
-                            (des, kvp) => {
-                                var sitem = AnalyzeItem(item, kvp.Value, des);
-                                structValues[kvp.Key] = sitem.Initializer.Value;
-                                return sitem;
-                            },
-                            msg => {
-                                _msger.Report(msg);
-                                return Option.None<Initializer.Braced.Item>();
+                    var currentPath = Option.None<InitializerPath.Structure>();
+
+                    return (structValue, AnalyzeItems(scope, braced, (item, sdes) => {
+                        if (sdes.Length > 0) {
+                            if (sdes[0] is Designator.Structure first) {
+                                currentPath = EvaluateStructurePath(scope, first, sdes.AsSpan()[1..], targetStructType)
+                                    .DropError(_msger.Report).Or(currentPath);
+                            } else {
+                                _msger.Report(Message.ErrorUnsupportedDesignator(sdes[0].Meta.SourceTokens, targetStructType));
                             }
-                        )).ToArray();
+                        } else {
+                            currentPath = currentPath.Match(
+                                p => p.Advance(item.Value.SourceTokens),
+                                () => InitializerPath.Structure.OfFirstObject(targetStructType, braced.Items[0].SourceTokens))
+                            .DropError(_msger.Report);
+                        }
 
-                    return (sitems, targetStructType.Instantiate(structValues));
+                        return currentPath.Map(p => p.Type.Components.Map[p.First.Component]);
+                    }, sitem => currentPath.Bind(p => p.SetValue(sitem.Meta.SourceTokens, structValue.Status.ComptimeValue.Unwrap(), sitem.Value.Value)
+                                           .DropError(_msger.Report))
+                                .Tap(v => structValue = v))
+                    .ToArray());
                 }
                 default: {
                     _msger.Report(Message.ErrorUnsupportedInitializer(initializer.SourceTokens, targetType));
-                    return (AnalyzeItems(scope, init,
-                                i => AnalyzeItem(i, targetType,
-                                    i.Designator.Map(d => AnalyzeDesignator(scope, d))).Some())
-                            .ToArray(),
-                            targetType.InvalidValue);
+                    return (UnknownType.Inferred.DefaultValue, AnalyzeItems(scope, braced, (_, _) => Option.None<EvaluatedType>(), null).ToArray());
                 }
                 }
             }
@@ -469,13 +446,21 @@ public sealed class StaticAnalyzer
         }
 
         IEnumerable<Initializer.Braced.Item> AnalyzeItems(Scope scope, Node.Initializer.Braced braced,
-            Func<Node.Initializer.Braced.ValuedItem, Option<Initializer.Braced.Item>> evaluateValuedItem)
+            Func<Node.Initializer.Braced.ValuedItem, ImmutableArray<Designator>, Option<EvaluatedType>> itemTargetType,
+            Action<Initializer.Braced.Item>? onItemAdded)
         {
             foreach (var item in braced.Items) {
                 switch (item) {
                 case Node.Initializer.Braced.ValuedItem i: {
-                    if (evaluateValuedItem(i) is { HasValue: true } evalI) {
-                        yield return evalI.Value;
+                    var sdes = i.Designators
+                    .Select(d => AnalyzeDesignator(scope, d).DropError(_msger.Report))
+                    .WhereSome().ToImmutableArray();
+
+                    if (itemTargetType(i, sdes) is { HasValue: true } t) {
+                        var sinit = AnalyzeInitializer(scope, i.Value, typeComparer, t.Value);
+                        var sitem = new Initializer.Braced.Item(new(scope, item.SourceTokens), sdes, sinit);
+                        onItemAdded?.Invoke(sitem);
+                        yield return sitem;
                     }
                     break;
                 }
@@ -488,43 +473,42 @@ public sealed class StaticAnalyzer
                 }
             }
         }
-
-        Initializer.Braced.Item AnalyzeItem(Node.Initializer.Braced.ValuedItem item, EvaluatedType targetType, Option<Designator> designator)
-         => new(new(scope, item.SourceTokens), designator,
-                EvaluateInitializer(scope, item.Initializer, typeComparer, targetType));
-
-        Designator AnalyzeDesignator(Scope scope, Node.Designator d) => d switch {
-            Node.Designator.Array a => AnalyzeArrayDesignator(scope, a),
-            Node.Designator.Structure s => AnalyzeStructureDesignator(scope, s),
-            _ => throw d.ToUnmatchedException(),
-        };
-
-        Designator.Structure AnalyzeStructureDesignator(Scope scope, Node.Designator.Structure s)
-         => new(new(scope, s.SourceTokens), s.Component);
-        Designator.Array AnalyzeArrayDesignator(Scope scope, Node.Designator.Array a)
-         => new(new(scope, a.SourceTokens), a.Index.Select(i => EvaluateExpression(scope, i)).ToArray());
     }
+
+    Option<Designator, Message> AnalyzeDesignator(Scope scope, Node.Designator designator) => designator switch {
+        Node.Designator.Array a => AnalyzeArrayDesignator(scope, a),
+        Node.Designator.Structure s => AnalyzeStructureDesignator(scope, s).Some<Designator, Message>(),
+        _ => throw designator.ToUnmatchedException(),
+    };
+
+    ValueOption<Designator.Array, Message> AnalyzeArrayDesignator(Scope scope, Node.Designator.Array designator)
+     => GetComptimeExpression<IntegerType, int>(IntegerType.Instance, scope, designator.Index)
+        .Map(i => new Designator.Array(new(scope, designator.SourceTokens), i));
+
+    static Designator.Structure AnalyzeStructureDesignator(Scope scope, Node.Designator.Structure designator)
+     => new(new(scope, designator.SourceTokens), designator.Component);
 
     Expression EvaluateExpression(Scope scope, Node.Expression expr, TypeComparer typeComparer, EvaluatedType targetType)
-    {
-        var sexpr = EvaluateExpression(scope, expr);
-        if (!typeComparer(sexpr.Value.Type, targetType)) {
-            _msger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, targetType, sexpr.Value.Type));
-        }
-        return sexpr;
-    }
+     => EvaluateExpression(scope, expr, v => {
+         if (typeComparer(v.Type, targetType)) {
+             return v;
+         }
+         _msger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, targetType, v.Type));
+         return targetType.InvalidValue;
+     });
 
-    Expression EvaluateExpression(Scope scope, Node.Expression expr)
+    Expression EvaluateExpression(Scope scope, Node.Expression expr, Func<Value, Value>? adjustValue = null)
     {
+        adjustValue ??= v => v;
         SemanticMetadata meta = new(scope, expr.SourceTokens);
         switch (expr) {
         case Node.Expression.Literal lit: {
             var value = lit.CreateValue();
-            return new Expression.Literal(meta, lit.Value, value);
+            return new Expression.Literal(meta, lit.Value, adjustValue(value));
         }
         case Node.Expression.Bracketed b: {
             var contained = EvaluateExpression(scope, b.ContainedExpression);
-            return new Expression.Bracketed(meta, contained, contained.Value);
+            return new Expression.Bracketed(meta, contained, adjustValue(contained.Value));
         }
         case Node.Expression.BinaryOperation opBin: {
             var left = EvaluateExpression(scope, opBin.Left);
@@ -535,7 +519,7 @@ public sealed class StaticAnalyzer
                 _msger.Report(msg(opBin, left.Value.Type, right.Value.Type));
             }
 
-            return new Expression.BinaryOperation(meta, left, AnalyzeOperator(scope, opBin.Operator), right, result.Value);
+            return new Expression.BinaryOperation(meta, left, AnalyzeOperator(scope, opBin.Operator), right, adjustValue(result.Value));
         }
         case Node.Expression.UnaryOperation opUn: {
             var operand = EvaluateExpression(scope, opUn.Operand);
@@ -545,21 +529,22 @@ public sealed class StaticAnalyzer
                 _msger.Report(msg(opUn, operand.Value.Type));
             }
 
-            return new Expression.UnaryOperation(meta, AnalyzeOperator(scope, opUn.Operator), operand, result.Value);
+            return new Expression.UnaryOperation(meta, AnalyzeOperator(scope, opUn.Operator), operand, adjustValue(result.Value));
         }
         case Node.Expression.FunctionCall call: {
             return new Expression.FunctionCall(meta, call.Callee, AnalyzeParameters(scope, call.Parameters),
-                DiagnoseCall<Symbol.Function>(scope, call)
-                .Map(f => f.ReturnType).ValueOr(UnknownType.Inferred)
-                .RuntimeValue);
+                adjustValue(DiagnoseCall<Symbol.Function>(scope, call)
+                    .Map(f => f.ReturnType)
+                    .ValueOr(UnknownType.Inferred)
+                    .RuntimeValue));
         }
         case Node.Expression.BuiltinFdf fdf: {
             return new Expression.BuiltinFdf(meta,
                 EvaluateExpression(scope, fdf.ArgumentNomLog, EvaluatedType.IsConvertibleTo, FileType.Instance),
-                BooleanType.Instance.RuntimeValue);
+                adjustValue(BooleanType.Instance.RuntimeValue));
         }
         case Node.Expression.Lvalue lvalue: {
-            return EvaluateLvalue(scope, lvalue);
+            return EvaluateLvalue(scope, lvalue, adjustValue);
         }
         default:
             throw expr.ToUnmatchedException();
@@ -567,55 +552,46 @@ public sealed class StaticAnalyzer
     }
 
     Expression.Lvalue EvaluateLvalue(Scope scope, Node.Expression.Lvalue expr, TypeComparer typeComparer, EvaluatedType targetType)
-    {
-        var sexpr = EvaluateLvalue(scope, expr);
-        if (!typeComparer(sexpr.Value.Type, targetType)) {
-            _msger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, targetType, sexpr.Value.Type));
-        }
-        return sexpr;
-    }
+     => EvaluateLvalue(scope, expr, v => {
+         if (typeComparer(v.Type, targetType)) {
+             return v;
+         }
+         _msger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, targetType, v.Type));
+         return targetType.InvalidValue;
+     });
 
-    Expression.Lvalue EvaluateLvalue(Scope scope, Node.Expression.Lvalue lvalue)
+    Expression.Lvalue EvaluateLvalue(Scope scope, Node.Expression.Lvalue lvalue, Func<Value, Value>? adjustValue = null)
     {
+        adjustValue ??= v => v;
         SemanticMetadata meta = new(scope, lvalue.SourceTokens);
         switch (lvalue) {
         case Node.Expression.Lvalue.ArraySubscript arrSub: {
-            var index = arrSub.Index.Select(i => EvaluateExpression(scope, i));
+            var index = EvaluateExpression(scope, arrSub.Index);
 
             var array = EvaluateExpression(scope, arrSub.Array);
-            return new Expression.Lvalue.ArraySubscript(meta, array, index.ToArray(), Evaluate());
+            return new Expression.Lvalue.ArraySubscript(meta, array, index, adjustValue(Evaluate()));
 
             Value Evaluate()
             {
-                var dimIndexes = index.Select(i => {
-                    if (i.Value is IntegerValue intVal) {
-                        return intVal.Status.ComptimeValue;
-                    } else {
-                        _msger.Report(Message.ErrorNonIntegerIndex(i.Meta.SourceTokens, i.Value.Type));
-                        return default;
-                    }
-                }).ToArray();
-
                 if (array.Value is ArrayValue arrVal) {
-                    if (dimIndexes.Length != arrVal.Type.Dimensions.Count) {
-                        _msger.Report(Message.ErrorIndexWrongRank(
-                            arrSub.SourceTokens,
-                            dimIndexes.Length,
-                            arrVal.Type.Dimensions.Count));
+                    ValueOption<int> actualIndex;
+
+                    if (index.Value is IntegerValue intVal) {
+                        actualIndex = intVal.Status.ComptimeValue;
+                    } else {
+                        _msger.Report(Message.ErrorNonIntegerIndex(index.Meta.SourceTokens, index.Value.Type));
                         return arrVal.Type.ItemType.InvalidValue;
                     }
 
-                    var outOfBoundsDims = GetOutOfBoundsDimIndexProblems(dimIndexes.Zip(
-                            arrVal.Type.Dimensions,
-                            (index, length) => (index, length.Value)));
+                    var length = arrVal.Type.Length.Value;
 
-                    if (outOfBoundsDims.Length > 0) {
-                        _msger.Report(Message.ErrorIndexOutOfBounds(arrSub.SourceTokens, outOfBoundsDims));
+                    if (actualIndex is { HasValue: true } i && !i.Value.Indexes(length, 1)) {
+                        _msger.Report(Message.ErrorIndexOutOfBounds(arrSub.SourceTokens, i.Value, length));
                         return arrVal.Type.ItemType.InvalidValue;
                     }
 
-                    return arrVal.Status.ComptimeValue.Zip(dimIndexes.Sequence())
-                        .Map((arr, index) => arr[index.FlatIndex(arrVal.Type.Dimensions.Select(d => d.Value))])
+                    return arrVal.Status.ComptimeValue.Zip(actualIndex)
+                        .Map((arr, index) => arr[index])
                         .ValueOr(arrVal.Type.ItemType.RuntimeValue);
                 } else {
                     _msger.Report(Message.ErrorSubscriptOfNonArray(arrSub, array.Value.Type));
@@ -625,11 +601,11 @@ public sealed class StaticAnalyzer
         }
         case Node.Expression.Lvalue.Bracketed b: {
             var contained = EvaluateLvalue(scope, b.ContainedLvalue);
-            return new Expression.Lvalue.Bracketed(meta, contained, contained.Value);
+            return new Expression.Lvalue.Bracketed(meta, contained, adjustValue(contained.Value));
         }
         case Node.Expression.Lvalue.ComponentAccess compAccess: {
             var @struct = EvaluateExpression(scope, compAccess.Structure);
-            return new Expression.Lvalue.ComponentAccess(meta, @struct, compAccess.ComponentName, Evaluate());
+            return new Expression.Lvalue.ComponentAccess(meta, @struct, compAccess.ComponentName, adjustValue(Evaluate()));
 
             Value Evaluate()
             {
@@ -647,22 +623,17 @@ public sealed class StaticAnalyzer
         }
         case Node.Expression.Lvalue.VariableReference varRef: {
             return new Expression.Lvalue.VariableReference(meta, varRef.Name,
-                scope.GetSymbol<Symbol.ValueProvider>(varRef.Name)
+                adjustValue(scope.GetSymbol<Symbol.Variable>(varRef.Name)
                     .DropError(_msger.Report)
                     .Map(vp => vp is Symbol.Constant constant
                         ? constant.Value
                         : vp.Type.RuntimeValue)
-                    .ValueOr(UnknownType.Inferred.InvalidValue));
+                    .ValueOr(UnknownType.Inferred.InvalidValue)));
         }
         default:
             throw lvalue.ToUnmatchedException();
         }
     }
-
-    static string[] GetOutOfBoundsDimIndexProblems(IEnumerable<(ValueOption<int> Index, int Length)> dimIndexes)
-     => dimIndexes.Where((d) => d.Index.Map(i => i < 1 || i > d.Length).ValueOr(false))
-                  .Select((d, i) => Message.ProblemOutOfBoundsDimension(
-                        i, d.Index.Value, d.Length)).ToArray();
 
     static BinaryOperator AnalyzeOperator(Scope scope, Node.BinaryOperator binOp)
     {
@@ -724,8 +695,16 @@ public sealed class StaticAnalyzer
     EvaluatedType EvaluateArrayType(Scope scope, Node.Type.Array array)
      => array.Dimensions.Select(d => GetComptimeExpression<IntegerType, int>(IntegerType.Instance, scope, d)).Sequence()
         .DropError(Function.Foreach<Message>(_msger.Report))
-        .Map(values => new ArrayType(EvaluateType(scope, array.Type), values))
-        .ValueOr<EvaluatedType>(UnknownType.Declared(_msger.Input, array));
+        .Map(dimensions => {
+            var type = EvaluateType(scope, array.Type);
+            Debug.Assert(dimensions.Any());
+            // Start innermost with the least significant dimension
+            foreach (var dim in dimensions.Reverse()) {
+                type = new ArrayType(type, dim);
+            }
+            return type;
+        })
+        .ValueOr(UnknownType.Declared(_msger.Input, array));
 
     static ValueOption<TUnderlying, Message> GetComptimeValue<TType, TUnderlying>(TType expectedType, Expression expr)
     where TType : EvaluatedType

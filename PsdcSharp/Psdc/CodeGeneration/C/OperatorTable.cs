@@ -40,7 +40,7 @@ sealed class OperatorTable : CodeGeneration.OperatorTable
     public OperatorInfo AddressOf { get; } = new(RightToLeft, "&", 2);
 
     public override int GetPrecedence(Expression expr)
-     => C.IsPointer(expr)
+     => C.IsPointerParameter(expr)
         ? Dereference.Precedence
         : base.GetPrecedence(expr);
 }

@@ -36,13 +36,19 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     protected override StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant)
     {
-        SetGroup(o, Group.Macros);
-        Indent(o).Append(Format.Code, $"#define {ValidateIdentifier(constant.Meta.Scope, constant.Name)} ");
-        return (constant.Value switch {
-            Initializer.Braced braced => AppendBracedInitializerAsCompoundLiteral(o, CreateTypeInfo(constant.Meta.Scope, constant.Type), braced),
-            Expression expr => AppendExpression(o, expr, _opTable.ShouldBracketOperand(_opTable.None, expr)),
+        var normalName = ValidateIdentifier(constant.Meta.Scope, constant.Name);
+        return AppendCDefine(o, normalName, constant.Value switch {
+            Initializer.Braced braced => AppendBracedInitializer(new(), braced),
+            Expression expr => AppendExpression(new(), expr, _opTable.ShouldBracketOperand(_opTable.None, expr)),
             _ => throw constant.Value.ToUnmatchedException(),
-        }).AppendLine();
+        });
+    }
+
+    StringBuilder AppendCDefine(StringBuilder o, string name, StringBuilder body)
+    {
+        SetGroup(o, Group.Macros);
+        return Indent(o).AppendLine(Format.Code,
+            $"#define {name} {body.Replace(Environment.NewLine, '\\' + Environment.NewLine)}");
     }
 
     protected override StringBuilder AppendFunctionDeclaration(StringBuilder o, Declaration.Function func)
@@ -262,18 +268,18 @@ sealed partial class CodeGenerator(Messenger messenger)
     {
         Indent(o).Append(CreateTypeInfo(local.Meta.Scope, local.Declaration.Type)
             .GenerateDeclaration(local.Declaration.Names.Select(n => ValidateIdentifier(local.Meta.Scope, n))));
-        local.Initializer.Tap(i => AppendInitializer(o.Append(" = "), i));
+        local.Value.Tap(i => AppendInitializer(o.Append(" = "), i, false));
         return o.AppendLine(";");
     }
 
-    StringBuilder AppendInitializer(StringBuilder o, Initializer initializer) => initializer switch {
-        Expression left => AppendExpression(o, left),
-        Initializer.Braced array => AppendBracedInitializer(o, array),
-        _ => throw initializer.ToUnmatchedException(),
-    };
-
-    StringBuilder AppendBracedInitializerAsCompoundLiteral(StringBuilder o, TypeInfo type, Initializer.Braced initializer)
-     => AppendBracedInitializer(o.Append(Format.Code, $"({type})"), initializer);
+    StringBuilder AppendInitializer(StringBuilder o, Initializer initializer,
+        bool convertInitToCompoundLiteral = true)
+     => initializer switch {
+         Expression left => AppendExpression(o, left,
+            convertInitToCompoundLiteral: convertInitToCompoundLiteral),
+         Initializer.Braced array => AppendBracedInitializer(o, array),
+         _ => throw initializer.ToUnmatchedException(),
+     };
 
     StringBuilder AppendBracedInitializer(StringBuilder o, Initializer.Braced initializer)
     {
@@ -281,12 +287,14 @@ sealed partial class CodeGenerator(Messenger messenger)
         _indent.Increase();
         foreach (var value in initializer.Items) {
             Indent(o);
-            value.Designator.Tap(d => (d switch {
-                Designator.Array array => AppendIndex(o, array.Index),
-                Designator.Structure structure => o.Append(Format.Code, $".{structure.Component}"),
-                _ => throw d.ToUnmatchedException(),
-            }).Append(" = "));
-            AppendInitializer(o, value.Initializer);
+            foreach (var d in value.Designators) {
+                (d switch {
+                    Designator.Array array => AppendIndex(o, array.Index.Expression),
+                    Designator.Structure structure => o.Append(Format.Code, $".{structure.Component}"),
+                    _ => throw d.ToUnmatchedException(),
+                }).Append(" = ");
+            }
+            AppendInitializer(o, value.Value);
             o.AppendLine(",");
         }
         _indent.Decrease();
@@ -314,48 +322,51 @@ sealed partial class CodeGenerator(Messenger messenger)
         return o;
     }
 
-    StringBuilder AppendIndex(StringBuilder o, IReadOnlyList<Expression> index)
-    {
-        foreach (Expression i in index) {
-            AppendExpressionAlter(o.Append('['), i, _opTable.Subtract, 1, (l, r) => l - r).Append(']');
-        }
-        return o;
-    }
+    StringBuilder AppendIndex(StringBuilder o, Expression index)
+     => AppendExpressionAlter(o.Append('['), index, _opTable.Subtract, 1, (l, r) => l - r).Append(']');
 
     StringBuilder AppendBracketedExpression(StringBuilder o, Expression left)
      => AppendExpression(o, left, left is not BracketedExpression);
 
     StringBuilder AppendExpression(StringBuilder o, Expression left) => AppendExpression(o, left, false);
 
-    StringBuilder AppendExpression(StringBuilder o, Expression left, bool bracket) => AppendBracketed(o, bracket, o => {
-        _ = left switch {
-            BracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracket),
-            Expression.FunctionCall call => AppendCall(o, call),
-            Expression.Literal { Value: CharacterValue v } => o.Append(Format.Code, $"'{v.Status.ComptimeValue.Unwrap()}'"),
-            Expression.Literal { Value: BooleanValue v } => AppendLiteralBoolean(v.Status.ComptimeValue.Unwrap()),
-            Expression.Literal { Value: StringValue v } => o.Append(Format.Code, $"\"{v.Status.ComptimeValue.Unwrap()}\""),
-            Expression.Literal l => o.Append(l.UnderlyingValue.ToStringFmt(Format.Code)),
-            Expression.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
-            Expression.Lvalue.ComponentAccess compAccess
-             => AppendExpression(o, compAccess.Structure, _opTable.ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
-            Expression.Lvalue.VariableReference variable => AppendVariableReference(o, variable),
-            Expression.BinaryOperation opBin => AppendOperationBinary(o, opBin),
-            Expression.UnaryOperation opUn => AppendOperationUnary(o, opUn),
-            _ => throw left.ToUnmatchedException(),
-        };
+    StringBuilder AppendExpression(StringBuilder o, Expression left,
+        bool bracket = false, bool convertInitToCompoundLiteral = true)
+     => AppendBracketed(o, bracket, o => {
+         _ = left switch {
+             BracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracket),
+             Expression.FunctionCall call => AppendCall(o, call),
+             Expression.Literal { Value: CharacterValue } l => o.Append(Format.Code, $"'{l.UnderlyingValue}'"),
+             Expression.Literal { Value: BooleanValue } l => AppendLiteralBoolean((bool)l.UnderlyingValue),
+             Expression.Literal { Value: StringValue } l => o.Append(Format.Code, $"\"{l.UnderlyingValue}\""),
+             Expression.Literal l => o.Append(l.UnderlyingValue.ToStringFmt(Format.Code)),
+             Expression.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
+             Expression.Lvalue.ComponentAccess compAccess
+              => AppendExpression(o, compAccess.Structure, _opTable.ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
+             Expression.Lvalue.VariableReference variable => AppendVariableReference(o, variable, convertInitToCompoundLiteral),
+             Expression.BinaryOperation opBin => AppendOperationBinary(o, opBin),
+             Expression.UnaryOperation opUn => AppendOperationUnary(o, opUn),
+             _ => throw left.ToUnmatchedException(),
+         };
 
-        StringBuilder AppendLiteralBoolean(bool b)
-        {
-            _includes.Ensure(IncludeSet.StdBool);
-            return o.Append(b ? "true" : "false");
+         StringBuilder AppendLiteralBoolean(bool b)
+         {
+             _includes.Ensure(IncludeSet.StdBool);
+             return o.Append(b ? "true" : "false");
+         }
+     });
+
+    StringBuilder AppendVariableReference(StringBuilder o, Expression.Lvalue.VariableReference variable, bool convertInitToCompoundLiteral)
+    {
+        if (convertInitToCompoundLiteral && variable.Meta.Scope.GetSymbol<Symbol.Constant>(variable.Name) is { HasValue: true } s
+            && s.Value.Type is ArrayType or StructureType) {
+            o.Append(Format.Code, $"({CreateTypeInfo(variable.Meta.Scope, s.Value.Type)})");
         }
-    });
-
-    StringBuilder AppendVariableReference(StringBuilder o, Expression.Lvalue.VariableReference variable)
-     => C.IsPointer(variable)
-        ? AppendUnaryPrefixOperation(o, _opTable.Dereference, variable,
-                                    (o, v) => o.Append(ValidateIdentifier(v.Meta.Scope, v.Name)))
-        : o.Append(ValidateIdentifier(variable.Meta.Scope, variable.Name));
+        return C.IsPointerParameter(variable)
+            ? AppendUnaryPrefixOperation(o, _opTable.Dereference, variable,
+                                        (o, v) => o.Append(ValidateIdentifier(v.Meta.Scope, v.Name)))
+            : o.Append(ValidateIdentifier(variable.Meta.Scope, variable.Name));
+    }
 
     StringBuilder AppendOperationBinary(StringBuilder o, Expression.BinaryOperation opBin)
     {
@@ -398,7 +409,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
         o.Append(Format.Code, $"{ValidateIdentifier(call.Meta.Scope, call.Callee)}(");
         foreach (var param in call.Parameters) {
-            if (C.RequiresPointer(param.Mode) && !C.IsPointer(param.Value)) {
+            if (C.RequiresPointer(param.Mode) && !C.IsPointerParameter(param.Value)) {
                 AppendUnaryPrefixOperation(o, _opTable.AddressOf, param.Value,
                                            AppendExpression);
             } else {
@@ -418,7 +429,6 @@ sealed partial class CodeGenerator(Messenger messenger)
          * @author {Environment.UserName}
          * @date {DateOnly.FromDateTime(DateTime.Now)}
          */
-
         """);
 
     TypeInfo CreateTypeInfo(Scope scope, EvaluatedType type)

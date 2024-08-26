@@ -27,7 +27,10 @@ where TOpTable : OperatorTable
     protected readonly TKwTable _kwTable = keywordTable;
     protected readonly TOpTable _opTable = operatorTable;
 
-    protected string ValidateIdentifier(Scope scope, Identifier ident) => _kwTable.Validate(scope, ident, _msger);
+    protected string ValidateIdentifier(Scope scope, Identifier ident)
+     => _kwTable.Validate(scope, ident, _msger);
+    protected string ValidateIdentifier(Scope scope, SourceTokens sourceTokens, string ident)
+     => _kwTable.Validate(scope, sourceTokens, ident, _msger);
 
     public abstract string Generate(Algorithm algorithm);
 

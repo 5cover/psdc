@@ -35,7 +35,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
 
     public string DecorateExpression(string expr)
      => string.Concat(_stars, expr);
-    public override string ToString() => string.Concat(_typeName, _stars, _postModifier, _typeQualifier);
+    public override string ToString() => string.Concat(_typeName, _stars, _typeQualifier, _postModifier);
 
     public string GenerateDeclaration(IEnumerable<string> declarators)
      => string.Concat(_typeName, _typeQualifier, " ",
@@ -80,9 +80,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
         {
             var arrayType = Create(array.ItemType, indent, help);
             StringBuilder postModifier = new(arrayType._postModifier);
-            foreach (var dimension in array.Dimensions.Select(dim => help.GenExpr(dim.Expression))) {
-                postModifier.Append(Format.Code, $"[{dimension}]");
-            }
+            postModifier.Append(Format.Code, $"[{help.GenExpr(array.Length.Expression)}]");
             return new(arrayType._typeName,
                 requiredHeaders: arrayType.RequiredHeaders,
                 starCount: arrayType._stars.Length,

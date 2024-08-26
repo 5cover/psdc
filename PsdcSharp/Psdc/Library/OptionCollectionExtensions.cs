@@ -55,24 +55,10 @@ static class OptionCollectionExtensions
     public static ValueOption<IReadOnlyList<T>> Sequence<T>(this IEnumerable<ValueOption<T>> options)
      => Sequence(options.Cast<Option<T>>());
 
-    public static ValueOption<T> ElementAtOrNone<T>(this IEnumerable<T> source, int index)
-    {
-        if (index >= 0) {
-            if (source is IReadOnlyList<T> list) {
-                if (index < list.Count) {
-                    return list[index];
-                }
-            } else {
-                using var enumerator = source.GetEnumerator();
-                while (enumerator.MoveNext()) {
-                    if (index-- == 0) {
-                        return enumerator.Current;
-                    }
-                }
-            }
-        }
-        return default;
-    }
+    public static ValueOption<T> ElementAtOrNone<T>(this IEnumerable<T> source, int index) where T : notnull
+     => source.TryGetAt(index, out var item)
+        ? item.Some()
+        : default;
 
     public static ValueOption<T> FirstOrNone<T>(this IEnumerable<T> source)
     {

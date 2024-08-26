@@ -10,10 +10,14 @@ This document provides an exhaustive list of these "notable additions".
 
 Sometimes it is necessary to convert values from one type to another. This can be done with a C-like syntax for type casting, or through implicit conversions. [More details](Conversions.md)
 
-## Preprocessor directives
+## Directives
 
-Preprocessor directives (lines starting with `#`) are necessary for configuration (ecrire newlines&hellip;) and provide organizational features like modularity.
+Directives (lines starting with `#`) are used for configuration, comptime introspection, and modularity.
 
 ## Primitive initializers
 
 Initialiers for primitive types (any type except structure or arrays) are supported.
+
+## NOP statements
+
+Just a semi-colon `;`. Does nothing. Not officially allowed.

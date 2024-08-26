@@ -44,20 +44,18 @@ public readonly struct Message
         Fmt($"call to {callable.Kind} `{callable.Name}` does not correspond to signature"),
         problems);
 
-    internal static Message ErrorIndexWrongRank(SourceTokens sourceTokens, int badRank, int arrayRank)
-     => new(sourceTokens, MessageCode.IndexWrongRank,
-        Fmt($"index has {Quantity(badRank, "dimension", "dimensions")}, but {Quantity(arrayRank, "was", "were")} expected"));
     internal static Message ErrorAssertionFailed(CompilerDirective compilerDirective, Option<string> message)
      => new(compilerDirective.SourceTokens, MessageCode.AssertionFailed,
         message.Match(ms => Fmt($"compile-time assertion failed: {ms}"),
                       () => "compile-time assertion failed"));
-    internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, IReadOnlyList<string> problems)
+
+    internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, int index, int length)
      => new(sourceTokens, MessageCode.IndexOutOfBounds,
         Fmt($"index out of bounds for array"),
-        problems);
+        [Fmt($"indexed at {index}, length is {length}")]);
 
-    internal static string ProblemOutOfBoundsDimension(int dimNumber, int dimIndex, int dimLength)
-     => Fmt($"dimension {dimNumber + 1} out of bounds (indexed at {dimIndex}, length is {dimLength})");
+    internal static Message ErrorIndexOutOfBounds(ComptimeExpression<int> index, int length)
+     => ErrorIndexOutOfBounds(index.Expression.Meta.SourceTokens, index.Value, length);
 
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
@@ -162,11 +160,11 @@ public readonly struct Message
 
     internal static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier) where TSymbol : Symbol
      => new(identifier.SourceTokens, MessageCode.UndefinedSymbol,
-        Fmt($"undefined {TSymbol.TypeKind} `{identifier}`"));
+        Fmt($"undefined {Symbol.GetKind<TSymbol>()} `{identifier}`"));
 
     internal static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier, Symbol existingSymbol) where TSymbol : Symbol
      => new(identifier.SourceTokens, MessageCode.UndefinedSymbol,
-        Fmt($"`{identifier}` is a {existingSymbol.Kind}, {TSymbol.TypeKind} expected"));
+        Fmt($"`{identifier}` is a {existingSymbol.Kind}, {Symbol.GetKind<TSymbol>()} expected"));
 
     internal static Message ErrorUnknownToken(Range inputRange)
      => new(inputRange, MessageCode.UnknownToken, new(input =>

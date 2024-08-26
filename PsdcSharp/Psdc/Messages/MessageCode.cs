@@ -22,7 +22,6 @@ public enum MessageCode
     CannotSwitchOnString,
     NonIntegerIndex,
     IndexOutOfBounds,
-    IndexWrongRank,
     ExcessElementInInitializer,
     UnsupportedInitializer,
     UnsupportedDesignator,

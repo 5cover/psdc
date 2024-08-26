@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Tokenization;
 
@@ -15,14 +16,15 @@ public sealed partial class Parser
     readonly Parser<Declaration> _declaration;
     readonly Parser<Statement> _statement;
     readonly Parser<CompilerDirective> _compilerDirective;
+    readonly Parser<IEnumerable<Designator>> _designator;
 
     Parser(Messenger messenger)
     {
         _msger = messenger;
 
         Dictionary<string, Parser<CompilerDirective>> compilerDirectiveParsers = [];
-        AddContextKeyword(compilerDirectiveParsers, ContextKeyword.Assert, Assert);
-        AddContextKeyword(compilerDirectiveParsers, ContextKeyword.Eval, ParserFirst<CompilerDirective>(EvaluateExpr, EvaluateType));
+        AddContextKeyword(compilerDirectiveParsers, ContextKeyword.Assert, HashAssert);
+        AddContextKeyword(compilerDirectiveParsers, ContextKeyword.Eval, ParserFirst<CompilerDirective>(HashEvalExpr, HashEvalType));
         _compilerDirective = t => ParseByIdentifierValue(t, "compiler directive", compilerDirectiveParsers, 1);
 
         Dictionary<TokenType, Parser<Declaration>> declarationParsers = new() {
@@ -61,20 +63,20 @@ public sealed partial class Parser
         _type = t => ParseByTokenType(t, "type", typeParsers);
 
         Dictionary<TokenType, Parser<Expression.Literal>> literalParsers = new() {
-            [Keyword.False] = tokens
-             => ParseToken(tokens, Keyword.False, t => new Expression.Literal.False(t)),
-            [Keyword.True] = tokens
-             => ParseToken(tokens, Keyword.True, t => new Expression.Literal.True(t)),
-            [Valued.LiteralCharacter] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralCharacter, (t, val) => new Expression.Literal.Character(t, val)),
-            [Valued.LiteralInteger] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralInteger, (t, val) => new Expression.Literal.Integer(t, val)),
-            [Valued.LiteralReal] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralReal, (t, val) => new Expression.Literal.Real(t, val)),
-            [Valued.LiteralString] = tokens
-             => ParseTokenValue(tokens, Valued.LiteralString, (t, val) => new Expression.Literal.String(t, val)),
+            [Keyword.False] = t => ParseToken(t, Keyword.False, t => new Expression.Literal.False(t)),
+            [Keyword.True] = t => ParseToken(t, Keyword.True, t => new Expression.Literal.True(t)),
+            [Valued.LiteralCharacter] = t => ParseTokenValue(t, Valued.LiteralCharacter, (t, val) => new Expression.Literal.Character(t, val)),
+            [Valued.LiteralInteger] = t => ParseTokenValue(t, Valued.LiteralInteger, (t, val) => new Expression.Literal.Integer(t, val)),
+            [Valued.LiteralReal] = t => ParseTokenValue(t, Valued.LiteralReal, (t, val) => new Expression.Literal.Real(t, val)),
+            [Valued.LiteralString] = t => ParseTokenValue(t, Valued.LiteralString, (t, val) => new Expression.Literal.String(t, val)),
         };
         _literal = t => ParseByTokenType(t, "literal", literalParsers);
+
+        Dictionary<TokenType, Parser<IEnumerable<Designator>>> designatorParsers = new() {
+            [Punctuation.LBracket] = ArrayDesignator,
+            [Operator.Dot] = StructureDesignator,
+        };
+        _designator = t => ParseByTokenType(t, "designator", designatorParsers);
     }
 
     // Parsing starts here with the "Algorithm" production rule
@@ -424,35 +426,34 @@ public sealed partial class Parser
 
     ParseResult<Initializer> Initializer(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "initializer")
         .Parse(out var init, ParserFirst(BracedInitializer, Expression))
-        .MapResult(t => init);
+        .MapResult(_ => init);
 
     ParseResult<Initializer> BracedInitializer(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "braced initializer")
         .ParseToken(Punctuation.LBrace)
         .ParseZeroOrMoreSeparated(out var values, ParserFirst<Initializer.Braced.Item>((tokens)
              => ParseOperation.Start(tokens, "braced initializer item")
-                .ParseOptional(out var designator, ParserFirst<Designator>(ArrayDesignator, StructureDesignator))
+                .ParseOptional(out var designators, t => ParseOperation.Start(t, "designators")
+                    .ParseZeroOrMoreUntilToken(out var des, _designator, Set.Of<TokenType>(Operator.ColonEqual))
+                    .ParseToken(Operator.ColonEqual)
+                    .MapResult(_ => des))
                 .Parse(out var init, Initializer)
-                .MapResult(t => new Initializer.Braced.ValuedItem(t, designator, init)),
+                .MapResult(t => new Initializer.Braced.ValuedItem(t, designators.Match(des => ReportErrors(des).SelectMany(d => d).ToArray(), () => []), init)),
             _compilerDirective),
         Punctuation.Comma, Punctuation.RBrace, allowTrailingSeparator: true)
         .MapResult(t => new Initializer.Braced(t, ReportErrors(values)));
 
-    ParseResult<Designator.Array> ArrayDesignator(IEnumerable<Token> tokens)
+    ParseResult<IEnumerable<Designator.Array>> ArrayDesignator(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "array designator")
         .ParseToken(Punctuation.LBracket)
         .ParseOneOrMoreSeparated(out var indexes, Expression, Punctuation.Comma, Punctuation.RBracket)
-        .Get(out var d, t => new Designator.Array(t, ReportErrors(indexes)))
-        .ParseToken(Operator.ColonEqual) // hide this token from the designator's SourceToken, as it's not "technically" part of it.
-        .MapResult(_ => d);
+        .MapResult(_ => ReportErrors(indexes).Select(i => new Designator.Array(i.SourceTokens, i)));
 
-    ParseResult<Designator.Structure> StructureDesignator(IEnumerable<Token> tokens)
+    ParseResult<IEnumerable<Designator.Structure>> StructureDesignator(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "structure designator")
         .ParseToken(Operator.Dot)
         .Parse(out var component, Identifier)
-        .Get(out var d, t => new Designator.Structure(t, component))
-        .ParseToken(Operator.ColonEqual)
-        .MapResult(_ => d);
+        .MapResult(t => new Designator.Structure(t, component).Yield());
 
     ParseResult<VariableDeclaration> VariableDeclaration(IEnumerable<Token> tokens, string production)
      => ParseOperation.Start(tokens, production)
@@ -464,26 +465,26 @@ public sealed partial class Parser
 
     #region Compiler directives
 
-    ParseResult<CompilerDirective.Assert> Assert(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "#assert")
+    ParseResult<CompilerDirective.Assert> HashAssert(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "#assert")
         .ParseToken(Punctuation.NumberSign)
         .ParseContextKeyword(ContextKeyword.Assert)
         .Parse(out var expr, Expression)
         .ParseOptional(out var msg, Expression)
         .MapResult(t => new CompilerDirective.Assert(t, expr, msg));
 
-    ParseResult<CompilerDirective.EvaluateExpr> EvaluateExpr(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "#eval expr")
+    ParseResult<CompilerDirective.EvalExpr> HashEvalExpr(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "#eval expr")
         .ParseToken(Punctuation.NumberSign)
         .ParseContextKeyword(ContextKeyword.Eval)
         .ParseContextKeyword(ContextKeyword.Expr)
         .Parse(out var expr, Expression)
-        .MapResult(t => new CompilerDirective.EvaluateExpr(t, expr));
+        .MapResult(t => new CompilerDirective.EvalExpr(t, expr));
 
-    ParseResult<CompilerDirective.EvaluateType> EvaluateType(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "#eval type")
+    ParseResult<CompilerDirective.EvalType> HashEvalType(IEnumerable<Token> tokens) => ParseOperation.Start(tokens, "#eval type")
         .ParseToken(Punctuation.NumberSign)
         .ParseContextKeyword(ContextKeyword.Eval)
         .ParseToken(Keyword.Type)
         .Parse(out var type, _type)
-        .MapResult(t => new CompilerDirective.EvaluateType(t, type));
+        .MapResult(t => new CompilerDirective.EvalType(t, type));
 
     #endregion Compiler directives
 

@@ -78,16 +78,19 @@ $$
     ⟨Braced⟩ \to \text{\{}
         \begin{Bmatrix*}[l]
             \begin{pmatrix}
-                \begin{Bmatrix*}
-                    ⟨Index⟩ \\
-                    ⟨Component⟩ \\
-                \end{Bmatrix*}
+                ⟨Designator⟩^+
                 \text{:=}
             \end{pmatrix}^?
-            ⟨Initializer⟩\\
-            ⟨CompilerDirective⟩\\
+            ⟨Initializer⟩
+            \\
+            ⟨CompilerDirective⟩
         \end{Bmatrix*}^{*\#}
     \text{\}}\\
+\end{Bmatrix*}
+\\
+&⟨Designator⟩ \to \begin{Bmatrix*}[l]
+    ⟨Index⟩ \\
+    ⟨Component⟩ \\
 \end{Bmatrix*}
 \\
 &⟨Component⟩ \to \text{.}Identifier
@@ -207,15 +210,16 @@ $$
 \\
 &⟨Component⟩ \to \begin{Bmatrix*}[l]
     ⟨VariableDeclaration⟩\text{;}
+    \\
     ⟨CompilerDirective⟩
 \end{Bmatrix*}
 
 \\\\&\textbf{Other} \\
 
 &⟨CompilerDirective⟩ \to \begin{Bmatrix*}[l]
-    \text{@assert}\text{(}⟨Expr⟩\begin{pmatrix}\text{,}⟨Expr⟩\end{pmatrix}^?\text{)}\\
-    \text{@evaluateExpr}\text{(}⟨Expr⟩\text{)}\\
-    \text{@evaluateType}\text{(}⟨Type⟩\text{)}\\
+    \text{\#}\text{assert}⟨Expr⟩⟨Expr⟩^?\\
+    \text{\#}\text{eval}\ \text{expr}⟨Expr⟩\\
+    \text{\#}\text{eval}\ \text{type}⟨Type⟩\\
 \end{Bmatrix*}
 \\
 &⟨ParameterFormal⟩ \to \begin{Bmatrix*}[l]

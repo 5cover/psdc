@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
 
@@ -10,11 +11,11 @@ interface InstantiableType<TValue, TUnderlying> : EvaluatedType<TValue>
 where TValue : Value
 {
     /// <summary>
-    /// Instantiate this type.
+    /// Instanciate this type.
     /// </summary>
     /// <param name="value">The underlying value of the new instance.</param>
     /// <returns>An instance of this type.</returns>
-    public TValue Instantiate(TUnderlying value);
+    public TValue Instanciate(TUnderlying value);
 }
 
 interface EvaluatedType : IFormattableUsable, EquatableSemantics<EvaluatedType>
@@ -60,7 +61,7 @@ interface EvaluatedType : IFormattableUsable, EquatableSemantics<EvaluatedType>
     /// <summary>
     /// Get the default value for this type.
     /// </summary>
-    /// <value>A value of this type, whose status is always <see cref="ValueStatus.Garbage"/> or <see cref="ValueStatus.Runtime"/>.</value>
+    /// <value>A value of this type, whose status is always <see cref="ValueStatus.Garbage"/> or <see cref="ValueStatus.Comptime"/>. Represents the default value to set to in an initializer.</value>
     public Value DefaultValue { get; }
 
     /// <summary>
@@ -89,50 +90,61 @@ interface EvaluatedType<out TValue> : EvaluatedType where TValue : Value
     public new TValue InvalidValue { get; }
 }
 
-sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, Value[]>
+sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArray<Value>>
 {
-    ArrayType(EvaluatedType itemType, IReadOnlyList<ComptimeExpression<int>> dimensions, ValueOption<Identifier> alias)
-     : base(alias, CreateArray(itemType.GarbageValue, dimensions.Select(d => d.Value)))
+    ArrayType(EvaluatedType itemType, ComptimeExpression<int> length, ValueOption<Identifier> alias)
+     : base(alias, CreateDefaultValue(itemType, length))
     {
         ItemType = itemType;
-        Dimensions = dimensions;
+        Length = length;
     }
 
-    static Value[] CreateArray(Value value, IEnumerable<int> dimensions)
-    {
-        var array = new Value[dimensions.Product()];
-        Array.Fill(array, value);
-        return array;
-    }
-
-    public IReadOnlyList<ComptimeExpression<int>> Dimensions { get; }
+    public ComptimeExpression<int> Length { get; }
 
     public EvaluatedType ItemType { get; }
 
-    public ArrayType(EvaluatedType itemType,
-        IReadOnlyList<ComptimeExpression<int>> dimensions)
-      : this(itemType, dimensions, default) { }
+    public ImmutableArray<Value> CreateDefaultValue() => CreateDefaultValue(ItemType, Length);
+    static ImmutableArray<Value> CreateDefaultValue(EvaluatedType type, ComptimeExpression<int> length) => Enumerable.Repeat(type.DefaultValue, length.Value).ToImmutableArray();
 
-    // Arrays can't be reassigned.
-    public override bool IsAssignableTo(EvaluatedType other) => false;
+    public ArrayType(EvaluatedType itemType,
+        ComptimeExpression<int> length)
+      : this(itemType, length, default) { }
 
     public override ArrayType ToAliasReference(Identifier alias)
-     => new(ItemType, Dimensions, alias);
+     => new(ItemType, Length, alias);
 
     public override bool SemanticsEqual(EvaluatedType other) => other is ArrayType o
      && o.ItemType.SemanticsEqual(ItemType)
-     && o.Dimensions.AllZipped(Dimensions, (od, d) => od == d);
+     && o.Length.Value == Length.Value;
 
-    protected override ArrayValue CreateValue(ValueStatus<Value[]> status)
+    protected override ArrayValue CreateValue(ValueStatus<ImmutableArray<Value>> status)
     {
         Debug.Assert(status.ComptimeValue is not { HasValue: true } c
-                  || c.Value.Length == Dimensions.Select(d => d.Value).Product()
+                  || c.Value.Length == Length.Value
                   && c.Value.All(v => v.Type.IsConvertibleTo(ItemType)));
         return new(this, status);
     }
 
+    private ImmutableList<ComptimeExpression<int>>? _dimensions;
+    private IReadOnlyList<ComptimeExpression<int>> Dimensions => _dimensions ??= GetDimensions();
+
+    private ImmutableList<ComptimeExpression<int>> GetDimensions()
+    {
+        var l = ImmutableList.Create(Length);
+        return ItemType is ArrayType arr
+            ? l.AddRange(arr.Dimensions)
+            : l;
+    }
+
+    private EvaluatedType? _innermostItemType;
+    private EvaluatedType InnermostItemType => _innermostItemType ??= GetInnermostItemType();
+    private EvaluatedType GetInnermostItemType()
+     => ItemType is ArrayType arr
+        ? arr.InnermostItemType
+        : ItemType;
+
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider)
-     => string.Create(fmtProvider, $"tableau [{string.Join(", ", Dimensions)}] de {ItemType}");
+     => string.Create(fmtProvider, $"tableau [{string.Join(", ", Dimensions)}] de {InnermostItemType}");
 }
 
 sealed class BooleanType : EvaluatedTypeImplInstantiable<BooleanValue, bool>
@@ -242,11 +254,11 @@ sealed class StringType : EvaluatedTypeImplInstantiable<StringValue, string>
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider) => "chaîne";
 }
 
-sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, IReadOnlyDictionary<Identifier, Value>>
+sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, ImmutableDictionary<Identifier, Value>>
 {
     const int MaxComponentsInRepresentation = 3;
     public StructureType(OrderedMap<Identifier, EvaluatedType> components, ValueOption<Identifier> alias = default)
-     : base(alias, components.Map.ToDictionary(kv => kv.Key, kv => kv.Value.DefaultValue))
+     : base(alias, CreateDefaultValue(components.Map))
      => Components = components;
 
     public OrderedMap<Identifier, EvaluatedType> Components { get; }
@@ -255,14 +267,19 @@ sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, IRead
     public override bool SemanticsEqual(EvaluatedType other) => other is StructureType o
      && o.Components.Map.Keys.AllSemanticsEqual(Components.Map.Keys)
      && o.Components.Map.Values.AllSemanticsEqual(Components.Map.Values);
-    protected override StructureValue CreateValue(ValueStatus<IReadOnlyDictionary<Identifier, Value>> status)
-     => new(this, status.Map(value => {
-         Dictionary<Identifier, Value> completedValue = new(value);
-         completedValue.CheckKeys(Components.Map.Keys.ToList(),
-             missingKey => Components.Map[missingKey].GarbageValue,
-             excessKey => Debug.Fail($"Excess key: `{excessKey}`"));
-         return value;
-     }));
+
+    public ImmutableDictionary<Identifier, Value> CreateDefaultValue() => CreateDefaultValue(Components.Map);
+
+    public static ImmutableDictionary<Identifier, Value> CreateDefaultValue(IReadOnlyDictionary<Identifier, EvaluatedType> components)
+     => components.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.DefaultValue);
+
+    protected override StructureValue CreateValue(ValueStatus<ImmutableDictionary<Identifier, Value>> status)
+    {
+        Debug.Assert(status.ComptimeValue is not { HasValue: true } v
+                  || Components.Map.Keys.ToHashSet().SetEquals(v.Value.Keys), "Provided value and struture has different components");
+        return new(this, status);
+    }
+
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider)
     {
         var o = new StringBuilder()
@@ -281,7 +298,7 @@ sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, IRead
 sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
 {
     private readonly string _repr;
-    UnknownType(SourceTokens sourceTokens, string repr, ValueOption<Identifier> alias = default) : base(alias, ValueStatus.Garbage.Instance)
+    UnknownType(SourceTokens sourceTokens, string repr, ValueOption<Identifier> alias = default) : base(alias, ValueStatus.Invalid.Instance)
      => (SourceTokens, _repr) = (sourceTokens, repr);
 
     public SourceTokens SourceTokens { get; }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Scover.Psdc.Library;
@@ -42,6 +43,7 @@ public readonly record struct ValueOption<T> : Option<T>
 
 public readonly record struct ValueOption<T, TError> : Option<T, TError>
 {
+    public ValueOption() => Debug.Fail("Can't construct without parameters");
     public ValueOption(bool hasValue, T? value, TError? error)
     {
         HasValue = hasValue;
@@ -88,20 +90,33 @@ public static class Option
 
     public static Option<TResult> Bind<T, TResult>(this Option<T> option, Func<T, Option<TResult>> transform)
      => option.HasValue ? transform(option.Value) : None<TResult>();
+    public static ValueOption<TResult> Bind<T, TResult>(this Option<T> option, Func<T, ValueOption<TResult>> transform)
+     => option.HasValue ? transform(option.Value) : None<TResult>();
+
     public static Option<TResult> Bind<T1, T2, TResult>(this Option<(T1, T2)> option, Func<T1, T2, Option<TResult>> transform)
      => option.HasValue ? transform(option.Value.Item1, option.Value.Item2) : None<TResult>();
+    public static ValueOption<TResult> Bind<T1, T2, TResult>(this Option<(T1, T2)> option, Func<T1, T2, ValueOption<TResult>> transform)
+     => option.HasValue ? transform(option.Value.Item1, option.Value.Item2) : None<TResult>();
+
     public static Option<TResult, TError> Bind<T, TResult, TError>(this Option<T, TError> option,
         Func<T, Option<TResult, TError>> transform)
      => option.HasValue ? transform(option.Value) : None<TResult, TError>(option.Error);
+    public static ValueOption<TResult, TError> Bind<T, TResult, TError>(this Option<T, TError> option,
+        Func<T, ValueOption<TResult, TError>> transform)
+     => option.HasValue ? transform(option.Value) : None<TResult, TError>(option.Error);
+
     public static Option<TResult, TError> Bind<T1, T2, TResult, TError>(this Option<(T1, T2), TError> option,
         Func<T1, T2, Option<TResult, TError>> transform)
+     => option.HasValue ? transform(option.Value.Item1, option.Value.Item2) : None<TResult, TError>(option.Error);
+    public static ValueOption<TResult, TError> Bind<T1, T2, TResult, TError>(this Option<(T1, T2), TError> option,
+        Func<T1, T2, ValueOption<TResult, TError>> transform)
      => option.HasValue ? transform(option.Value.Item1, option.Value.Item2) : None<TResult, TError>(option.Error);
 
     public static ValueOption<TResult> Map<T, TResult>(this Option<T> option, Func<T, TResult> transform)
      => option.HasValue ? transform(option.Value).Some() : default;
     public static ValueOption<TResult> Map<T1, T2, TResult>(this Option<(T1, T2)> option, Func<T1, T2, TResult> transform)
      => option.HasValue ? transform(option.Value.Item1, option.Value.Item2).Some() : default;
-     public static ValueOption<TResult> Map<T1, T2, T3, TResult>(this Option<(T1, T2, T3)> option, Func<T1, T2, T3, TResult> transform)
+    public static ValueOption<TResult> Map<T1, T2, T3, TResult>(this Option<(T1, T2, T3)> option, Func<T1, T2, T3, TResult> transform)
      => option.HasValue ? transform(option.Value.Item1, option.Value.Item2, option.Value.Item3).Some() : default;
     public static ValueOption<TResult, TError> Map<T, TResult, TError>(this Option<T, TError> option, Func<T, TResult> transform)
      => option.HasValue ? transform(option.Value) : option.Error;
@@ -109,6 +124,9 @@ public static class Option
      => option.HasValue ? transform(option.Value.Item1, option.Value.Item2) : option.Error;
     public static ValueOption<TResult, TError> Map<T1, T2, T3, TResult, TError>(this Option<(T1, T2, T3), TError> option, Func<T1, T2, T3, TResult> transform)
      => option.HasValue ? transform(option.Value.Item1, option.Value.Item2, option.Value.Item3) : option.Error;
+
+    public static ValueOption<T, TNewError> MapError<T, TError, TNewError>(this Option<T, TError> option, Func<TError, TNewError> transform)
+     => option.HasValue ? Some<T, TNewError>(option.Value) : None<T, TNewError>(transform(option.Error));
 
     public static Option<T> Tap<T>(this Option<T> option, Action<T>? some = null, Action? none = null)
     {
@@ -165,6 +183,24 @@ public static class Option
             ? option
             : None<T, TError>(falseError(option.Value))
         : option;
+
+    public static Option<T> Or<T>(this Option<T> option, Option<T> fallback)
+     => option.HasValue ? option : fallback;
+    public static ValueOption<T> Or<T>(this ValueOption<T> option, ValueOption<T> fallback)
+        => option.HasValue ? option : fallback;
+    public static Option<T> Or<T>(this Option<T> option, Func<Option<T>> fallback)
+     => option.HasValue ? option : fallback();
+    public static ValueOption<T> Or<T>(this ValueOption<T> option, Func<ValueOption<T>> fallback)
+     => option.HasValue ? option : fallback();
+
+    public static Option<T, TError> Or<T, TError>(this Option<T, TError> option, Option<T, TError> fallback)
+     => option.HasValue ? option : fallback;
+    public static ValueOption<T, TError> Or<T, TError>(this ValueOption<T, TError> option, ValueOption<T, TError> fallback)
+     => option.HasValue ? option : fallback;
+    public static Option<T, TError> Or<T, TError>(this Option<T, TError> option, Func<Option<T, TError>> fallback)
+     => option.HasValue ? option : fallback();
+    public static ValueOption<T, TError> Or<T, TError>(this ValueOption<T, TError> option, Func<ValueOption<T, TError>> fallback)
+     => option.HasValue ? option : fallback();
 
     public static T ValueOr<T>(this Option<T> option, T defaultValue)
      => option.HasValue ? option.Value : defaultValue;

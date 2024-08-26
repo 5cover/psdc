@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 using Scover.Psdc.Parsing;
 
@@ -44,10 +45,10 @@ sealed class StringValueImpl(StringType type, ValueStatus<string> value) : Value
     protected override string ValueToString(string value, IFormatProvider? fmtProvider) => value.ToString(fmtProvider);
 }
 
-sealed class StructureValue(StructureType type, ValueStatus<IReadOnlyDictionary<Identifier, Value>> value) : ValueImpl<StructureValue, StructureType, IReadOnlyDictionary<Identifier, Value>>(type, value)
+sealed class StructureValue(StructureType type, ValueStatus<ImmutableDictionary<Identifier, Value>> value) : ValueImpl<StructureValue, StructureType, ImmutableDictionary<Identifier, Value>>(type, value)
 {
-    protected override StructureValue Clone(ValueStatus<IReadOnlyDictionary<Identifier, Value>> value) => new(Type, value);
-    protected override string ValueToString(IReadOnlyDictionary<Identifier, Value> value, IFormatProvider? fmtProvider)
+    protected override StructureValue Clone(ValueStatus<ImmutableDictionary<Identifier, Value>> value) => new(Type, value);
+    protected override string ValueToString(ImmutableDictionary<Identifier, Value> value, IFormatProvider? fmtProvider)
      => new StringBuilder("{ ")
         .AppendJoin(", ", value.Select(kvp => $".{kvp.Key} := {kvp.Value.ToString(Value.FmtMin, fmtProvider)}"))
         .Append(" }")
@@ -56,10 +57,10 @@ sealed class StructureValue(StructureType type, ValueStatus<IReadOnlyDictionary<
 
 sealed class UnknownValue(UnknownType type, ValueStatus value) : ValueImpl<UnknownType>(type, value);
 
-sealed class ArrayValue(ArrayType type, ValueStatus<Value[]> value) : ValueImpl<ArrayValue, ArrayType, Value[]>(type, value)
+sealed class ArrayValue(ArrayType type, ValueStatus<ImmutableArray<Value>> value) : ValueImpl<ArrayValue, ArrayType, ImmutableArray<Value>>(type, value)
 {
-    protected override ArrayValue Clone(ValueStatus<Value[]> value) => new(Type, value);
-    protected override string ValueToString(Value[] value, IFormatProvider? fmtProvider)
+    protected override ArrayValue Clone(ValueStatus<ImmutableArray<Value>> value) => new(Type, value);
+    protected override string ValueToString(ImmutableArray<Value> value, IFormatProvider? fmtProvider)
      => new StringBuilder("{ ")
         .AppendJoin(", ", value.Select(v => v.ToString(Value.FmtMin, fmtProvider)))
         .Append(" }")

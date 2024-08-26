@@ -13,7 +13,7 @@ static class ConstantFolding
         ValueStatus<TOperand> value,
         Func<TOperand, TResult> operation) where TResultValue : Value
      => OperationResult.OkUnary(
-            value.ComptimeValue.Map(v => type.Instantiate(operation(v))).ValueOr(type.RuntimeValue));
+            value.ComptimeValue.Map(v => type.Instanciate(operation(v))).ValueOr(type.RuntimeValue));
 
     static OperationResult<BinaryOperationMessage> Operate<TResultValue, TLeft, TRight, TResult>(
         InstantiableType<TResultValue, TResult> type,
@@ -21,7 +21,7 @@ static class ConstantFolding
         ValueStatus<TRight> right,
         Func<TLeft, TRight, TResult> operation) where TResultValue : Value
      => OperationResult.OkBinary(
-            left.ComptimeValue.Zip(right.ComptimeValue).Map((l, r) => type.Instantiate(operation(l, r))).ValueOr(type.RuntimeValue));
+            left.ComptimeValue.Zip(right.ComptimeValue).Map((l, r) => type.Instanciate(operation(l, r))).ValueOr(type.RuntimeValue));
 
     static TResult Operate<TLeft, TRight, TResult>(
         ValueStatus<TLeft> left,
@@ -101,7 +101,7 @@ static class ConstantFolding
             (Option<int> l, Option<int> r) => l.Zip(r).Map((l, r) => r == 0
                 ? OperationResult.OkBinary(IntegerType.Instance.RuntimeValue)
                     .WithMessages((opBin, _, _) => Message.WarningDivisionByZero(opBin.SourceTokens))
-                : OperationResult.OkBinary(IntegerType.Instance.Instantiate(l / r)))
+                : OperationResult.OkBinary(IntegerType.Instance.Instanciate(l / r)))
             .ValueOr(OperationResult.OkBinary(IntegerType.Instance.RuntimeValue))),
         (Divide, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l / r),
         (Mod, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l % r),

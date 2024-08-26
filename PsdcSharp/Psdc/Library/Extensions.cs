@@ -7,21 +7,6 @@ namespace Scover.Psdc.Library;
 
 public static class Extensions
 {
-    internal static void CheckKeys<TKey, TValue>(
-        this IDictionary<TKey, TValue> dictionary,
-        IReadOnlyCollection<TKey> keys,
-        Func<TKey, TValue> fallbackValueSelector,
-        Action<TKey> onExcessKey)
-    {
-        foreach (var key in dictionary.Keys) {
-            if (!keys.Contains(key)) {
-                onExcessKey(key);
-            }
-        }
-        foreach (var key in keys) {
-            _ = dictionary.TryAdd(key, fallbackValueSelector(key));
-        }
-    }
     internal static (TKey, TValue) ToTuple<TKey, TValue>(this KeyValuePair<TKey, TValue> kvp)
      => (kvp.Key, kvp.Value);
 
@@ -72,7 +57,7 @@ public static class Extensions
 
     internal static int DigitCount(this int n, int @base = 10) => n == 0 ? 1 : 1 + (int)Math.Log(n, @base);
 
-    internal static ValueOption<int> IndexOf<T>(this IReadOnlyList<T> list, T item)
+    internal static ValueOption<int> IndexOfFirst<T>(this IReadOnlyList<T> list, T item)
     {
         for (int i = 0; i < list.Count; ++i) {
             if (EqualityComparer<T>.Default.Equals(list[i], item)) {
@@ -81,6 +66,22 @@ public static class Extensions
         }
         return default;
     }
+
+    internal static ValueOption<int> IndexOfFirst<T>(this IReadOnlyList<T> list, Predicate<T> predicate)
+    {
+        for (int i = 0; i < list.Count; ++i) {
+            if (predicate(list[i])) {
+                return i;
+            }
+        }
+        return default;
+    }
+
+    internal static bool Indexes(this int index, int length, int @base = 0) => @base <= index && index < length + @base;
+
+    internal static ValueOption<int> SomeIndexes(this int index, int length, int @base = 0) => index.Indexes(length, @base)
+        ? (index - @base).Some()
+        : default;
 
     internal static IEnumerator<T> GetGenericEnumerator<T>(this T[] array) => ((IEnumerable<T>)array).GetEnumerator();
 
@@ -184,6 +185,28 @@ public static class Extensions
     internal static IEnumerable<T> Yield<T>(this T t)
     {
         yield return t;
+    }
+
+    public static bool TryGetAt<T>(this IEnumerable<T> source, int index, [NotNullWhen(true)] out T? item) where T : notnull
+    {
+        if (index >= 0) {
+            if (source is IReadOnlyList<T> list) {
+                if (index < list.Count) {
+                    item = list[index];
+                    return true;
+                }
+            } else {
+                using var enumerator = source.GetEnumerator();
+                while (enumerator.MoveNext()) {
+                    if (index-- == 0) {
+                        item = enumerator.Current;
+                        return true;
+                    }
+                }
+            }
+        }
+        item = default;
+        return false;
     }
 }
 

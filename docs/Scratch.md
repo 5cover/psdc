@@ -8,6 +8,10 @@ Do they check character by character or C tokens? In other words, do they depend
 
 Output a minified version of the code and run a formatter, either from C# or external process
 
+## "(Carful, my friend) (feature) is frowned upon in tests" message
+
+See Notable Additions.
+
 ## Errors that go token after token
 
 fix errors going one from one token:
@@ -276,6 +280,14 @@ What we can do. Try to parse including the failure token. If failed, read it. Or
 
 In any case, we can just make a bajillion error productions to counteract this.
 
+## Encapsulate the underlying type in Values
+
+We are almost already doing that, except for ComptimeExpression and GetComptimeValue. They need access to the underlying type in order to operate with it later or pass around.
+
+Why can't we pass them `IntegerValue` instead of `int`. Because `IntegerValue` contains a status which might not be comptime.
+
+Commit & Redesign.
+
 ## Create a representation of the AST being built
 
 We know the ast is build from the bottom up, but it could be interesting to see it animated.
@@ -295,14 +307,6 @@ Simply add some graph-building logic in the NodeImpl constructor.
 - Check if condition is a boolean in alternatives and loops
 - Check the assignability of target and value in assignment
 - Check if return value corresponds to function's return type
-
-## Values domain model allows invalid state
-
-It doesn't make sense for a value of a non-instantiable time to be comptime. Yet, it is allowed.
-
-See if we can refactor this possibility of invalid state out.
-
-This is a minor issue.
 
 ## Preprocessor directives
 
@@ -432,7 +436,7 @@ element|description|implementation
 
 ### Considerations
 
-Warnings on invalid operation
+Warnings/errors on invalid operation
 
 ### Implementation ideas
 
@@ -478,6 +482,10 @@ Also what happens of closing the file occurs in a if statement? How do we know f
 
 Sort members. Code maid. Resharper subscription.
 
+## Feature not yet implemented warning
+
+for files
+
 ## call a function as a statement
 
 self-explanatory.
@@ -492,36 +500,24 @@ Empty initializer = zero in C23.
 
 Is this in line with Pseudocode semantics?
 
-## Fix multidimensional array initialization
+## Consider using .Equals and .GetHashCode on EvaluatedType instead of SemanticsEqual
 
-Let:
+This would simplify things.
 
-```psc
-type Matrix2D = tableau[3,3] de entier;
-type MatrixJagged = tableau[3] de tableau[3] de entier;
-``
+## Symbols and semantic nodes, what's the difference
 
-`MatrixJagged` can be initialized as such:
+They pretty much have the same properties. Should we ditch the Symbol type hierarchy and use a Symbol interface on some SemanticNodes? This would simplify things (as we won't have to create two objects with similar properties that must have the same value).
 
-```psc
- := {{ 7, 8, 9 },
-     { 4, 5, 6 },
-     { 1, 2, 3 }};
-```
+## SA of initialiers (Constant, LocalVariable): make sure the declared type is the same as the inferred value type
 
-This syntax doesn't work for `Matrix2D` though. It should, since `Matrix2D` and `MatrixJagged` are equivalent, at least in C.
+Currently, we only check that the inferred value type is assignable to the declared type. This is fine except when we retrieve the value of the symbol or semantic node and get the wrong type later on.
 
-Should we consider them to be equivalent in Pseudocode too? So that `Matrix2D` is only a shorthand syntax for `MatrixJagged`?
+## Formalize conversion between LengthedString
 
-I don't see any downsides to this approach. I don't see any situation where we'd want a jagged array. The only usage of jagged array is if the inner arrays may be of different sizes, which cannot be the case since we don't have dynamic arrays (yet).
+What implicit and explicit conversions are allowed between LengthedStrings of different lengths?
 
-The only problem is with indexing:
+Also what's the difference between `tableau [4] de caractère` and `chaîne(4)`?
 
-```psc
-matrix2d[2,2];
-matrixJagged[2][2];
-```
+## Test and fix initializer evaluation
 
-Consider `matrix2d`'s indexing syntax as a shorthand for `matrixJagged`'s indexing syntax.
-
-I don't know. I feel removing one of these (or converting it to the other) might cause use trouble later. The current approach is flexible, albeit unneededly so.
+initializer.psc contains tests.

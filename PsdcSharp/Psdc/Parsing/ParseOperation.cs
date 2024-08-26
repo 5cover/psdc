@@ -295,13 +295,13 @@ abstract class ParseOperation
     {
         readonly string _prod = production;
 
-        ValueOption<Token> Advance() => _tokens.ElementAtOrNone(_readCount);
+        ValueOption<Token> Next() => _tokens.ElementAtOrNone(_readCount);
 
         ParseResult<T> CallParser<T>(Parser<T> parser) => parser(_tokens.Skip(_readCount));
 
         public override ParseOperation Switch<T>(out Branch<T> branch, IReadOnlyDictionary<TokenType, Branch<T>> cases, Branch<T>? @default)
         {
-            var token = Advance();
+            var token = Next();
             if (token.HasValue && cases.TryGetValue(token.Value.Type, out branch!)) {
                 _readCount++;
                 return this;
@@ -365,7 +365,7 @@ abstract class ParseOperation
             result = items;
 
             ParseResult<T> item = CallParser(parse);
-            _readCount += Math.Max(1, item.SourceTokens.Count);
+            _readCount += item.SourceTokens.Count;
 
             items.Add(item);
 
@@ -401,7 +401,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseOptionalToken(TokenType type)
         {
-            var token = Advance();
+            var token = Next();
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
             }
@@ -410,7 +410,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseToken(TokenType type)
         {
-            var token = Advance();
+            var token = Next();
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 return this;
@@ -420,7 +420,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseContextKeyword(TokenType.ContextKeyword contextKeyword)
         {
-            var token = Advance();
+            var token = Next();
             if (token.HasValue
              && token.Value.Type == TokenType.Valued.Identifier
              && contextKeyword.Names.Contains(token.Value.Value.NotNull())) {
@@ -432,7 +432,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseTokenValue(out string result, TokenType type)
         {
-            var token = Advance();
+            var token = Next();
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 result = token.Value.Value ?? throw new InvalidOperationException("Parsed token doesn't have a value");
@@ -509,25 +509,27 @@ abstract class ParseOperation
                 error.ErroneousToken, error.ExpectedTokens, error.FailedProduction);
 
         ValueOption<bool> Peek(TokenTypeSet types)
-         => Advance().Map(token => types.Contains(token.Type));
+         => Next().Map(token => types.Contains(token.Type));
 
         ValueOption<bool> Peek(TokenType type)
-         => Advance().Map(token => type.Equals(token.Type));
+         => Next().Map(token => type.Equals(token.Type));
 
         void ParseWhile<T>(ICollection<ParseResult<T>> items, Parser<T> parse, Func<bool> keepGoingWhile)
         {
-            ParseError? lastError = null;
+            bool prevFailedWith0SrcTokens = false;
             while (keepGoingWhile()) {
                 var prItem = CallParser(parse);
-                _readCount += Math.Max(1, prItem.SourceTokens.Count);
+                _readCount += prItem.SourceTokens.Count;
 
-                if (prItem.HasValue || !prItem.Error.IsEquivalent(lastError)) {
-                    items.Add(prItem);
+                {
+                    var thisFailedWith0SrcTokens = !prItem.HasValue && prItem.SourceTokens.Count == 0;
+                    if (prevFailedWith0SrcTokens && thisFailedWith0SrcTokens) {
+                        break;
+                    }
+                    prevFailedWith0SrcTokens = thisFailedWith0SrcTokens;
                 }
 
-                if (!prItem.HasValue) {
-                    lastError = prItem.Error;
-                }
+                items.Add(prItem);
             }
         }
 

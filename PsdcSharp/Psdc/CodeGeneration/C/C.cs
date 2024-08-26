@@ -8,7 +8,7 @@ static class C
 {
     public static bool RequiresPointer(ParameterMode mode) => mode != ParameterMode.In;
 
-    public static bool IsPointer(Expression expr)
+    public static bool IsPointerParameter(Expression expr)
      => expr is Expression.Lvalue.VariableReference varRef
      && expr.Meta.Scope.TryGetSymbol<Symbol.Parameter>(varRef.Name, out var param)
      && param.Mode != ParameterMode.In;

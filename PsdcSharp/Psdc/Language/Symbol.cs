@@ -4,30 +4,56 @@ namespace Scover.Psdc.Language;
 
 public interface Symbol : EquatableSemantics<Symbol>
 {
-    public Identifier Name { get; }
-    public SourceTokens SourceTokens { get; }
-    public static virtual string TypeKind => "symbol";
+    private const string KindParameter = "parameter";
+    private const string KindFunction = "function";
+    private const string KindProcedure = "procedure";
+    private const string KindTypeAlias = "type alias";
+    private const string KindConstant = "constant";
+    private const string KindLocalVariable = "local variable";
+    private const string KindCallable = "callable";
+    private const string KindVariable = "variable";
+    private const string KindSymbol = "symbol";
+
+    private static readonly Lazy<Dictionary<Type, string>> symbolKinds = new(() => new() {
+        [typeof(Parameter)] = KindParameter,
+        [typeof(Function)] = KindFunction,
+        [typeof(Procedure)] = KindProcedure,
+        [typeof(TypeAlias)] = KindTypeAlias,
+        [typeof(Constant)] = KindConstant,
+        [typeof(LocalVariable)] = KindLocalVariable,
+        [typeof(Callable)] = KindCallable,
+        [typeof(Variable)] = KindVariable,
+        [typeof(Symbol)] = KindSymbol,
+    });
+
+    public static string GetKind<T>() where T : Symbol => symbolKinds.Value[typeof(T)];
+
     public string Kind { get; }
 
-    internal interface ValueProvider : Symbol
+    public Identifier Name { get; }
+    public SourceTokens SourceTokens { get; }
+
+    internal abstract record Variable(Identifier Name, SourceTokens SourceTokens, EvaluatedType Type) : Symbol
     {
-        EvaluatedType Type { get; }
+        public virtual string Kind => KindVariable;
+
+        public abstract bool SemanticsEqual(Symbol other);
     }
 
-    internal interface Callable : Symbol
+    internal abstract record Callable(Identifier Name, SourceTokens SourceTokens, IReadOnlyCollection<Parameter> Parameters) : Symbol
     {
-        public bool HasBeenDefined { get; }
-        public IReadOnlyCollection<Parameter> Parameters { get; }
-        public void MarkAsDefined();
+        public virtual string Kind => KindCallable;
+        public bool HasBeenDefined { get; private set; }
+        public void MarkAsDefined() => HasBeenDefined = true;
+        public abstract bool SemanticsEqual(Symbol other);
     }
 
-    internal sealed record Variable(Identifier Name, SourceTokens SourceTokens,
+    internal sealed record LocalVariable(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type, Option<Value> Initializer)
-    : ValueProvider
+    : Variable(Name, SourceTokens, Type)
     {
-        public static string TypeKind => "variable";
-        public string Kind => TypeKind;
-        public bool SemanticsEqual(Symbol other) => other is Variable o
+        public override string Kind => KindLocalVariable;
+        public override bool SemanticsEqual(Symbol other) => other is LocalVariable o
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type)
          && o.Initializer.Equals(Initializer);
@@ -35,11 +61,10 @@ public interface Symbol : EquatableSemantics<Symbol>
 
     internal sealed record Constant(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type, Value Value)
-    : ValueProvider
+    : Variable(Name, SourceTokens, Type)
     {
-        public static string TypeKind => "constant";
-        public string Kind => TypeKind;
-        public bool SemanticsEqual(Symbol other) => other is Constant o
+        public override string Kind => KindConstant;
+        public override bool SemanticsEqual(Symbol other) => other is Constant o
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type)
          && o.Value.Equals(Value);
@@ -49,8 +74,7 @@ public interface Symbol : EquatableSemantics<Symbol>
         EvaluatedType Type)
     : Symbol
     {
-        public static string TypeKind => "type alias";
-        public string Kind => TypeKind;
+        public string Kind => KindTypeAlias;
         public bool SemanticsEqual(Symbol other) => other is TypeAlias o
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type);
@@ -58,13 +82,10 @@ public interface Symbol : EquatableSemantics<Symbol>
 
     internal sealed record Procedure(Identifier Name, SourceTokens SourceTokens,
         IReadOnlyCollection<Parameter> Parameters)
-    : Callable
+    : Callable(Name, SourceTokens, Parameters)
     {
-        public static string TypeKind => "procedure";
-        public string Kind => TypeKind;
-        public bool HasBeenDefined { get; private set; }
-        public void MarkAsDefined() => HasBeenDefined = true;
-        public bool SemanticsEqual(Symbol other) => other is Procedure o
+        public override string Kind => KindProcedure;
+        public override bool SemanticsEqual(Symbol other) => other is Procedure o
          && o.Name.SemanticsEqual(Name)
          && o.Parameters.AllSemanticsEqual(Parameters);
     }
@@ -72,13 +93,10 @@ public interface Symbol : EquatableSemantics<Symbol>
     internal sealed record Function(Identifier Name, SourceTokens SourceTokens,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType)
-    : Callable
+    : Callable(Name, SourceTokens, Parameters)
     {
-        public static string TypeKind => "function";
-        public string Kind => TypeKind;
-        public bool HasBeenDefined { get; private set; }
-        public void MarkAsDefined() => HasBeenDefined = true;
-        public bool SemanticsEqual(Symbol other) => other is Function o
+        public override string Kind => KindFunction;
+        public override bool SemanticsEqual(Symbol other) => other is Function o
          && o.Name.SemanticsEqual(Name)
          && o.Parameters.AllSemanticsEqual(Parameters)
          && o.ReturnType.SemanticsEqual(ReturnType);
@@ -87,11 +105,10 @@ public interface Symbol : EquatableSemantics<Symbol>
     internal sealed record Parameter(Identifier Name, SourceTokens SourceTokens,
         EvaluatedType Type,
         ParameterMode Mode)
-    : ValueProvider
+    : Variable(Name, SourceTokens, Type)
     {
-        public static string TypeKind => TypeKind;
-        public string Kind => "parameter";
-        public bool SemanticsEqual(Symbol other) => other is Parameter o
+        public override string Kind => KindParameter;
+        public override bool SemanticsEqual(Symbol other) => other is Parameter o
          && o.Name.SemanticsEqual(Name)
          && o.Type.SemanticsEqual(Type)
          && o.Mode == Mode;

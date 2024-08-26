@@ -1748,3 +1748,168 @@ Tests (increasing complexity):
     - only designators
 - Structure > Array constant
 - Array > Structure constant
+
+## Multiparsing madness (again)
+
+If we (what we do currently) move at least one token when multiparsing (so that the child that returns immediately a failure, having read 0 tokens still increments _readCount), we produce tons of failed results until we hit our end token in some unrelated code after.
+
+If we don't do that, we get infinite loop since we keep on parsing the same thing and failing forever. Which is the problem the first thing intended to solve, but it appears we need another solution.
+
+The question is: how do we know when to stop multiparsing? If we get 0 sourcetokens and a failed results twice, that should be enough to determine that we're not on the right track.
+
+## Fix CG #define
+
+Forgot to add backslashes for multiline macros.
+
+## Parse multidimensional array indexes and designators as nested
+
+SO that `[1,2,3]` becomes shorthand for `[1][2][3]`
+
+We can use ParserBinary or ParserBinaryAtLeast1.
+
+Parse to a list of designators
+
+## Fix multidimensional array initialization
+
+Let:
+
+```psc
+type Matrix2D = tableau[3,3] de entier;
+type MatrixJagged = tableau[3] de tableau[3] de entier;
+``
+
+`MatrixJagged` can be initialized as such:
+
+```psc
+ := {{ 7, 8, 9 },
+     { 4, 5, 6 },
+     { 1, 2, 3 }};
+```
+
+This syntax doesn't work for `Matrix2D` though. It should, since `Matrix2D` and `MatrixJagged` are equivalent, at least in C.
+
+Should we consider them to be equivalent in Pseudocode too? So that `Matrix2D` is only a shorthand syntax for `MatrixJagged`?
+
+I don't see any downsides to this approach. I don't see any situation where we'd want a jagged array. The only usage of jagged array is if the inner arrays may be of different sizes, which cannot be the case since we don't have dynamic arrays (yet).
+
+The only problem is with indexing:
+
+```psc
+matrix2d[2,2];
+matrixJagged[2][2];
+```
+
+Consider `matrix2d`'s indexing syntax as a shorthand for `matrixJagged`'s indexing syntax.
+
+I don't know. I feel removing one of these (or converting it to the other) might cause use trouble later. The current approach is flexible, albeit unneededly so.
+
+Okay. Now, `Matrix2D` is the same as `MatrixJagged`. An issue remains with initializers.
+
+We should take this occasion to allow multiple designators and follow C's rules.
+
+- Natural order
+- Unbraced sub-object initialization
+- Multiple designators
+
+Reuse the examples from C.
+
+Our objective: produce the final value of the object, and report any semantic error.
+
+### Implementation
+
+- Create the value.
+- Analyze the designator to figure out the path. If there's no designator, compute the natural order path (from the last path)
+- Mutate the value according to the path.
+
+Question is, how do we represent paths? Before we'd use integers to represent a index into the items of an array or the components list of a structure, but now that we can have multiple designators, we need something more than that.
+
+Maybe an array of either ints or strings
+
+How does the current path evolve as we traverse the initialiser
+
+- Starts as the path to the first subobject
+- Items encountered : advances or stays if none
+
+Considerations:
+
+- If there are no items, return early.
+- If there are too many items, Advance will return a none, we will stay on the last item and return the same error repeatedly. We will consider this to be ok for now.
+
+Problem: when we set a value, we have to descent into the rest path. But what if the stored value is not comptime?
+
+Example: array 5 of structure Point { x, y }.
+
+Our initializer item: `[1].x = 5`
+
+SetValue(arrV, 5) does as follows:
+
+#### In Path.Array
+
+- Are there more designators? (is Rest some?)
+
+Yes, there are. Descend arrV and pass it to Rest's SetValue.
+
+dArrV = Descend(arrV)
+
+- Gets the Value at index 1 of arrV.
+
+What if the value is not comptime? Could this happen? Yes, for example if the default value is garbage. In that case, assign it to the default value.
+
+What if it's the wrong type? Return a message.
+
+What does it mean to set the value in a path?
+
+This operations takes two parameters: the haystack (the object this path descends into) and the needle (the value at the end to set)
+
+If Rest exsits, we delegate it the operation by decending haystack one level based on our knowledge of first.
+
+The issues we're encountering relates to the fact that the intermediate values we descend into might not be comptime. We need to default initialize them.
+
+I think what we should try is implementing this manually first. Then write the InitializerPath abstraction as the need for it emerges.
+
+*An abstraction for comptime values would make this easier, we wouldn't need to unwrap everywhere.*
+
+Okay, based on this what we need is:
+
+- Recursion. As underlying values are immutable, modification requires assignment.
+- Special handling of the last designator (since it's the one that sets the value instead of fetching a subobject)
+    - Really? Can't we just return the value to set?
+
+Imagine we have initializer value `[5][6] = 3`:
+
+function Path.ComputeValue(object haystack, )
+
+Passes the object, the designator and the needle value (3)
+
+- On `[5]`: passes the 5th subobject (ImmutableArray of Value), the remaining designators (1), the needle value (3)
+    - On `[6]`: passes the 6th subobject (ImmutableArray of Value), the remaining designators (0), the needle value (3)
+        - Notices the empty remaining designators are empty: returns the needle value
+    - Returns the subobject with the 6th value set to the return value of above
+- Returns the object with the 5th value set to the return value of above
+
+Assigns the currentObject to the return value of above.
+
+See? We only need assignment at the root level of the call stack. The special handling of the last designator is handled by the base case.
+
+We don't even need special handling for the 0-designator case.
+
+Other stuff to implement
+
+- Natural ordering: to consider undesignated values as having a single designator, given by the natural order of the target type.
+- Subobject persistence: stay in the deepest subobject, advance its parent only when we reach the end
+
+The difference with C initializers is that our arrays are strongly typed and as such don't implicitly convert to pointers. Also an array cannot be susituted to an lvalue to its first element, so `v` and `v[1]` are not equivalent in designator contexts.
+
+So how is this gonna work? We now have a way to navigate to a value and set it.
+
+What is my goal? I can evaluate a path and set the value. I can compute the natural ordering. I have all the puzzle pieces, I just need to put them together. My goal is to build the final value by setting the appropriate subobject for each initializer item.
+
+The appropriate subobject to set is given by the designator, or the natural order if there isn't one.
+
+For each item:
+
+- Evaluate its path
+- Default to the current path and avance it if no designator
+- Set *currentPath*
+
+For struct initializers, it's a bit more complicated. The target type of each item

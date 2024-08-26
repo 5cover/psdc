@@ -63,3 +63,152 @@ I'm not gonna reuse C's syntax. The @ syntax is better, because it does not incu
 ```
 
 We consider lines that begin with '@' (possibly with leading whitespace), to be **directive lines**. Requiring this clearly indicates that they belong to a sub-language.
+
+## Change `:=` to `=` in initialization
+
+**Reason**: consistency with official rules
+
+`:=` means assignment. Initialization isn't assignment since we're setting the value for the first time. Although you could have the same argument for constants, constants use `:=` for the value officially, so maybe it is logical to follow the same logic.
+
+## Simplifing initializer items
+
+**Reason**: another solution found
+
+This is getting quite complicated. I wonder, could we have a process of "simplification" for the initializers? So an initializers simplfies down to all values having exactly one designator. Then we can just reuse our current code.
+
+Consider in C:
+
+```c
+struct {int sec,min,hour,day,mon,year;} z = {.day=31,12,2014,.sec=30,15,17}; // initializes z to {30,15,17,31,12,2014}
+```
+
+Simplifies to:
+
+```c
+struct {int sec,min,hour,day,mon,year;} z = {
+    .day=31,
+    .mon=12,
+    .year=2014,
+    .sec=30,
+    .min=15,
+    .hour=17
+};
+```
+
+Nested initializer:
+
+```c
+struct example {
+    struct addr_t {
+       uint32_t port;
+    } addr;
+    union {
+       uint8_t a8[4];
+       uint16_t a16[2];
+    } in_u;
+};
+struct example ex = {
+    { 80 },
+    { {127,0,0,1} }
+};
+```
+
+Simplfies to:
+
+```c
+struct example ex = {
+    .addr = { .port = 80 },
+    .in_u = { .a8 = {
+            [0]=127,
+            [1]=0,
+            [2]=0,
+            [3]=1
+    } }
+};
+```
+
+Using nested designators:
+
+```c
+struct example ex2 = {
+    .in_u.a8[0]=127,
+    0,
+    0,
+    1,
+    .addr=80
+};
+```
+
+```c
+struct example ex2 = {
+    .in_u = { .a8 = {
+        [0]=127,
+        [1]=0,
+        [2]=0,
+        [3]=1
+    } },
+    .addr = 80
+}
+```
+
+More:
+
+```c
+struct example ex3 = {
+    80,
+    .in_u = {
+        127,
+        .a8[2 ] =1
+    }
+};
+```
+
+```c
+struct example ex3 = {
+    .addr = 80,
+    .in_u = { .a8 = {
+        [0] = 127,
+        [1] = 0,
+        [2] = 0,
+        [3] = 1
+    } }
+}
+```
+
+- Expand successive designators into brace pairs.
+- Give undesignated values a designator based on natural order.
+
+No need to add unmentioned values, since we'll start from the default value for the haystack.
+
+This shoulbe easy enough, provided that:
+
+```c
+struct { int v[3]; }
+    x = { .v = { [1] = 5 } }, // Zeroes [0] and [2]
+    y = { .v[1] = 5 }; // Does it too or does it leave them uninitialized?
+// Are equivalent.
+```
+
+That's the case. Let's go.
+
+The simplified items are held in a structure private to StaticAnalyzer. (since semantic node must keep all info in order to keep the same syntaw when genereating C)
+
+SimpleBracedInitializerItem
+
+- DesignatorInfo Designator
+- Value Value
+
+Implementation
+
+- Produce the list of simplified items along with the list of semantic items in the AnalyzeItems lambda
+
+After the AnalyzeItems call, foreach the simplified items and update the value at the designator. (use a SetValue method on designator info, ig)
+
+To simplify an item:
+
+- Advance the natural order
+- Convert multiple designators into nested braced initializers.
+
+What about the SourceTokens of the node we produce?
+
+Sratch that.

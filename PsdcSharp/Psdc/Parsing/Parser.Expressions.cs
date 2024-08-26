@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Scover.Psdc.Tokenization;
 
@@ -65,7 +66,7 @@ partial class Parser
          int count = result.SourceTokens.Count;
 
          while (result.HasValue && TryGetRightParser(out var rightParser, rightParsers, tokens, count)) {
-             count++;
+             ++count;
              result = rightParser(result.Value, tokens.Skip(count));
              count += result.SourceTokens.Count;
          }
@@ -129,7 +130,7 @@ partial class Parser
     static bool TryGetRightParser<TLeft, TRight>(
         [NotNullWhen(true)] out RightParser<TLeft, TRight>? right,
         IReadOnlyDictionary<TokenType, RightParser<TLeft, TRight>> rightParsers,
-        IEnumerable<Token> tokens, int count) where TRight : TLeft
+        IEnumerable<Token> tokens, int count)
     {
         if (tokens.ElementAtOrNone(count) is { HasValue: true } middle
         && rightParsers.TryGetValue(middle.Value.Type, out right)) {
@@ -205,7 +206,7 @@ partial class Parser
             BracketedLvalue)(tokens);
 
     ParseResult<Expression> TerminalRvalue(IEnumerable<Token> tokens)
-     => ParserFirst<Expression>(
+     => ParserFirst(
             _literal,
             FunctionCall,
             TerminalLvalue,
@@ -218,7 +219,15 @@ partial class Parser
      => ParseOperation.Start(rightTokens, "array subscript")
         .ParseOneOrMoreSeparated(out var indexes, Expression,
             Punctuation.Comma, Punctuation.RBracket)
-        .MapResult(t => new Expression.Lvalue.ArraySubscript(t, expr, ReportErrors(indexes)));
+        .MapResult(t => {
+            var result = expr;
+            var ind = ReportErrors(indexes).AsSpan();
+            Debug.Assert(!ind.IsEmpty);
+            foreach (var index in ind) {
+                result = new Expression.Lvalue.ArraySubscript(index.SourceTokens, result, index);
+            }
+            return (Expression.Lvalue.ArraySubscript)result; // this cast is safe as ind cannot be empty.
+        });
 
     ParseResult<Expression.Lvalue> ComponentAccessRight(
         Expression expr,

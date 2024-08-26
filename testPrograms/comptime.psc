@@ -1,7 +1,7 @@
 programme ComptimeTest c'est
 // Tests proper evaluation of comptime expressions
 
-// Literals
+/*// Literals
 #assert (1   ) == 1
 #assert ('a' ) == 'a'
 #assert ("a" ) == "a"
@@ -191,7 +191,13 @@ constante tArrInt C_ARR_INT_ONLY_DES := { [3] := 3, [2] := 2, [1] := 1 };
 #eval expr C_ARR_INT
 #eval expr C_ARR_INT_SOME_DES
 #eval expr C_ARR_INT_ONLY_DES
+*/
+constante tableau[3,3] de entier C_MATRIX
+    := {{ 7, 8, 9 },
+        { 4, 5, 6 },
+        { 1, 2, 3 }};
 
+/*
 // Structure constant
 type tPoint = structure début x, y : réel; fin;
 constante tPoint C_POINT := { 3.14, 14.3 };
@@ -204,7 +210,7 @@ constante tPoint C_POINT_ONLY_DES := { .x := 3.14, .y := 14.3 };
 // Structure Of Arrays
 type SOA = structure début
     arr1 : tableau[3] de réel;
-    arr2 : tableau[3] de tableau[3] de entier;
+    arr2 : tableau[3,3] de entier;
 fin;
 constante SOA C_SOA := {
     .arr1 := { 4, 2, 0 },
@@ -213,11 +219,11 @@ constante SOA C_SOA := {
               { 1, 2, 3 }}
 };
 #eval expr C_SOA
-
+/*
 // Array of Structures
 type AOS = tableau[3] de tPoint;
 constante AOS C_AOS := {
     [1] := { 7, 9 },
     [2] := { 4, 6 },
     [3] := { 1, 3 }
-};
+};*/

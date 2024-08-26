@@ -181,7 +181,7 @@ public interface SemanticNode
 
         internal sealed record LocalVariable(SemanticMetadata Meta,
             VariableDeclaration Declaration,
-            Option<Initializer> Initializer)
+            Option<Initializer> Value)
         : Statement;
 
         internal sealed record WhileLoop(SemanticMetadata Meta,
@@ -199,8 +199,8 @@ public interface SemanticNode
         : Initializer
         {
             internal sealed record Item(SemanticMetadata Meta,
-                Option<Designator> Designator,
-                Initializer Initializer) : SemanticNode;
+                IReadOnlyList<Designator> Designators,
+                Initializer Value) : SemanticNode;
         }
     }
 
@@ -224,7 +224,7 @@ public interface SemanticNode
 
             internal sealed record ArraySubscript(SemanticMetadata Meta,
                 Expression Array,
-                IReadOnlyList<Expression> Index,
+                Expression Index,
                 Value Value)
             : Lvalue;
 
@@ -272,7 +272,7 @@ public interface SemanticNode
     internal interface Designator : SemanticNode
     {
         internal sealed record Array(SemanticMetadata Meta,
-            IReadOnlyList<Expression> Index)
+            ComptimeExpression<int> Index)
         : Designator;
 
         internal sealed record Structure(SemanticMetadata Meta,
