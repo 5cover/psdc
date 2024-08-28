@@ -3,7 +3,6 @@ using Scover.Psdc.Messages;
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 using Scover.Psdc.Parsing;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Collections.Immutable;
 
 namespace Scover.Psdc.StaticAnalysis;
@@ -66,6 +65,9 @@ public sealed partial class StaticAnalyzer
         SemanticMetadata meta = new(scope, decl.SourceTokens);
 
         switch (decl) {
+        case Node.Nop: {
+            return new Nop(meta);
+        }
         case Node.Declaration.Constant constant: {
             var type = EvaluateType(scope, constant.Type);
             var init = AnalyzeInitializer(scope, constant.Value, EvaluatedType.IsAssignableTo, type);
@@ -192,6 +194,9 @@ public sealed partial class StaticAnalyzer
     {
         SemanticMetadata meta = new(scope, statement.SourceTokens);
         switch (statement) {
+        case Node.Nop: {
+            return new Nop(meta);
+        }
         case Node.Statement.Alternative s: {
             return new Statement.Alternative(meta,
                 new(new(scope, s.If.SourceTokens),
@@ -280,9 +285,6 @@ public sealed partial class StaticAnalyzer
             }
 
             return new Statement.LocalVariable(meta, declaration, initializer);
-        }
-        case Node.Statement.Nop: {
-            return new Statement.Nop(meta);
         }
         case Node.Statement.ProcedureCall s: {
             DiagnoseCall<Symbol.Procedure>(scope, s);

@@ -14,7 +14,7 @@ partial class CodeGenerator
 
         foreach (var part in parts) {
             if (part is Expression.Literal l) {
-                format.Append(l.UnderlyingValue.ToStringFmt(Format.Code)?
+                format.Append(new StringBuilder(l.UnderlyingValue.ToStringFmt(Format.Code))
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences
             } else {

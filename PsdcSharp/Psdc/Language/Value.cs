@@ -42,7 +42,8 @@ interface StringValue : Value<StringType, string>;
 sealed class StringValueImpl(StringType type, ValueStatus<string> value) : ValueImpl<StringValueImpl, StringType, string>(type, value), StringValue
 {
     protected override StringValueImpl Clone(ValueStatus<string> value) => new(Type, value);
-    protected override string ValueToString(string value, IFormatProvider? fmtProvider) => value.ToString(fmtProvider);
+    protected override string ValueToString(string value, IFormatProvider? fmtProvider)
+     => $"\"{Strings.Escape(value, EscapeMode.ForString, fmtProvider)}\"";
 }
 
 sealed class StructureValue(StructureType type, ValueStatus<ImmutableDictionary<Identifier, Value>> value) : ValueImpl<StructureValue, StructureType, ImmutableDictionary<Identifier, Value>>(type, value)
@@ -76,7 +77,8 @@ sealed class BooleanValue(BooleanType type, ValueStatus<bool> value) : ValueImpl
 sealed class CharacterValue(CharacterType type, ValueStatus<char> value) : ValueImpl<CharacterValue, CharacterType, char>(type, value)
 {
     protected override CharacterValue Clone(ValueStatus<char> value) => new(Type, value);
-    protected override string ValueToString(char value, IFormatProvider? fmtProvider) => value.ToString(fmtProvider);
+    protected override string ValueToString(char value, IFormatProvider? fmtProvider)
+     => $"'{Strings.Escape(value.ToString(fmtProvider), EscapeMode.ForChar, fmtProvider)}'";
 }
 
 sealed class FileValue(FileType type, ValueStatus value) : ValueImpl<FileType>(type, value);
@@ -87,5 +89,6 @@ sealed class LengthedStringValue(LengthedStringType type, ValueStatus<string> va
     StringType Value<StringType, string>.Type => StringType.Instance;
 
     protected override LengthedStringValue Clone(ValueStatus<string> value) => new(Type, value);
-    protected override string ValueToString(string value, IFormatProvider? fmtProvider) => value.ToString(fmtProvider);
+    protected override string ValueToString(string value, IFormatProvider? fmtProvider)
+     => $"\"{Strings.Escape(value, EscapeMode.ForString, fmtProvider)}\"";
 }

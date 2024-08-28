@@ -165,7 +165,6 @@ public readonly struct Message
     internal static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier, Symbol existingSymbol) where TSymbol : Symbol
      => new(identifier.SourceTokens, MessageCode.UndefinedSymbol,
         Fmt($"`{identifier}` is a {existingSymbol.Kind}, {Symbol.GetKind<TSymbol>()} expected"));
-
     internal static Message ErrorUnknownToken(Range inputRange)
      => new(inputRange, MessageCode.UnknownToken, new(input =>
         Fmt($"stray `{input[inputRange]}` in program")));

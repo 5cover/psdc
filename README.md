@@ -64,6 +64,7 @@ Notation: bold &rarr; underway
 - [ ] Escape sequences in string and character literals
 - [x] Case-insensitive boolean operators
 - [ ] More static analysis
+- [ ] Alternative array syntax `tableau[INDICE_DEPART..INDICE_FIN] de type;`
 - [ ] Numeroted control stuctures (`si1`, `si2`, `si3`)
 - [ ] File handling (low priority)
 - [ ] Preprocessor

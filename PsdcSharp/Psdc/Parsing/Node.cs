@@ -122,12 +122,6 @@ public interface Node : EquatableSemantics<Node>
 
     public interface Statement : Node
     {
-        internal sealed record Nop(SourceTokens SourceTokens)
-        : Statement
-        {
-            public bool SemanticsEqual(Node other) => other is Nop;
-        }
-
         internal sealed record Alternative(SourceTokens SourceTokens,
             Alternative.IfClause If,
             IReadOnlyList<Alternative.ElseIfClause> ElseIfs,
@@ -638,6 +632,11 @@ public interface Node : EquatableSemantics<Node>
     }
 
     public interface Component : Node;
+
+    internal sealed record Nop(SourceTokens SourceTokens) : Statement, Declaration
+    {
+        public bool SemanticsEqual(Node other) => other is Nop;
+    }
 
     internal sealed record ParameterActual(SourceTokens SourceTokens,
         ParameterMode Mode,

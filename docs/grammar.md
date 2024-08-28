@@ -10,7 +10,7 @@ $$
 \\\\&\textbf{Declarations} \\
 
 &⟨Declaration⟩ \to \begin{Bmatrix*}[l]
-    ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \text{;} \\
+    ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \\
     ⟨DeclarationConstant⟩ \to \text{constante} ⟨Type⟩ Identifier \text{:=} ⟨Expr⟩\text{;} \\
     ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin} \\
     ⟨FunctionDeclaration⟩ \to ⟨FunctionSignature⟩ \text{;} \\
@@ -18,7 +18,8 @@ $$
     ⟨ProcedureDeclaration⟩ \to ⟨Procedureignature⟩ \text{;} \\
     ⟨ProcedureDefinition⟩ \to ⟨ProcedureSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
     \text{début} ⟨Block⟩ \text{fin} \\
-    ⟨CompilerDirective⟩\\
+    ⟨Nop⟩ \\
+    ⟨CompilerDirective⟩ \\
 \end{Bmatrix*}
 
 \\&\textbf{Statements} \\
@@ -59,9 +60,11 @@ $$
     ⟨BuiltinOuvrirAjout⟩ \to \text{ouvrirAjout}\text{(}⟨Expr⟩\text{)}\text{;} \\
     ⟨BuiltinOuvrirEcriture⟩ \to \text{ouvrirÉcriture}\text{(}⟨Expr⟩\text{)}\text{;} \\
     ⟨BuiltinOuvrirLecture⟩ \to \text{ouvrirLecture}\text{(}⟨Expr⟩\text{)}\text{;} \\
-    ⟨Nop⟩ \to \text{;} \\
+    ⟨Nop⟩ \\
     ⟨CompilerDirective⟩\\
 \end{Bmatrix*}
+\\
+⟨Nop⟩ \to \text{;}
 \\
 &⟨Alternative.If⟩ \to \text{si} ⟨Expr⟩ \text{alors} ⟨Block⟩
 \\

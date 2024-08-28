@@ -20,9 +20,9 @@ where TType : EvaluatedType
     public bool Equals(Value? other) => other is ValueImpl<TType> o
      && o.Type.SemanticsEqual(Type)
      && o.Status.Equals(Status);
-    public override string ToString(string? format, IFormatProvider? formatProvider) => format switch {
-        Value.FmtMin => Type.ToString(formatProvider),
-        _ when string.IsNullOrEmpty(format) => string.Create(formatProvider, $"{Status.GetPart()}{Type}"),
+    public override string ToString(string? format, IFormatProvider? fmtProvider) => format switch {
+        Value.FmtMin => Type.ToString(fmtProvider),
+        _ when string.IsNullOrEmpty(format) => string.Create(fmtProvider, $"{Status.GetPart()}{Type}"),
         _ => throw new FormatException($"Unsupported format: '{format}'")
     };
 }
@@ -41,7 +41,7 @@ where TUnderlying : notnull
      && o.Status.Equals(Status);
     public TSelf Map(Func<TUnderlying, TUnderlying> transform) => Clone(Status.Map(transform));
     protected abstract TSelf Clone(ValueStatus<TUnderlying> value);
-    protected abstract string ValueToString(TUnderlying value, IFormatProvider? formatProvider);
+    protected abstract string ValueToString(TUnderlying value, IFormatProvider? fmtProvider);
     public override string ToString(string? format, IFormatProvider? fmtProvider) => format switch {
         Value.FmtMin => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider)).ValueOr(Type.ToString(fmtProvider)),
         _ when string.IsNullOrEmpty(format) => Status.ComptimeValue.Match(

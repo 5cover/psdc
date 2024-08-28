@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Data;
 using System.Text.RegularExpressions;
+using Scover.Psdc.Language;
 
 namespace Scover.Psdc.Tokenization;
 
@@ -214,10 +215,10 @@ public class TokenType
 
         public IEnumerable<RegexTokenRule> Rules { get; }
 
-        Valued(string name, string pattern, RegexOptions options = RegexOptions.None) : base(name, false)
+        Valued(string name, string pattern, RegexOptions options = RegexOptions.None, Func<string, string>? adjustValue = null) : base(name, false)
         {
             instances.Add(this);
-            Rules = GetRules(this, [t => new RegexTokenRule(t, pattern, options)]);
+            Rules = GetRules(this, [t => new RegexTokenRule(t, pattern, options, adjustValue)]);
         }
 
         public static IReadOnlyCollection<Valued> Instances => instances;
@@ -227,7 +228,7 @@ public class TokenType
         public static Valued LiteralCharacter { get; } = new("character literal", "'(.)'");
         public static Valued LiteralInteger { get; } = new("integer literal", @"(-?\d+)");
         public static Valued LiteralReal { get; } = new("real literal", @"(-?\d*\.\d+)");
-        public static Valued LiteralString { get; } = new("string literal", @"""(.*?)""", RegexOptions.Singleline);
+        public static Valued LiteralString { get; } = new("string literal", @"""((?:\\?.)*?)""", adjustValue: s => Strings.Unescape(s, EscapeMode.ForString, Format.Code).ToString());
 
         // Matches Identifier's regex second part: [\p{L}_0-9]
         internal static bool IsIdentifierChar(char c) => c == '_' || char.IsLetterOrDigit(c);

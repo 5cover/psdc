@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Tokenization;
 
@@ -32,7 +31,8 @@ public sealed partial class Parser
             [Keyword.Constant] = Constant,
             [Keyword.Function] = FunctionDeclarationOrDefinition,
             [Keyword.Procedure] = ProcedureDeclarationOrDefinition,
-            [Keyword.Type] = AliasDeclaration,
+            [Keyword.Type] = TypeAlias,
+            [Punctuation.Semicolon] = Nop,
         };
         _declaration = t => ParseByTokenType(t, "declaration", declarationParsers, fallback: _compilerDirective);
 
@@ -105,13 +105,12 @@ public sealed partial class Parser
 
     #region Declarations
 
-    ParseResult<Declaration.TypeAlias> AliasDeclaration(IEnumerable<Token> tokens)
+    ParseResult<Declaration.TypeAlias> TypeAlias(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "type alias")
         .ParseToken(Keyword.Type)
         .Parse(out var name, Identifier)
         .ParseToken(Operator.Equal)
         .Parse(out var type, _type)
-        .ParseToken(Punctuation.Semicolon)
         .MapResult(t => new Declaration.TypeAlias(t, name, type));
 
     ParseResult<Declaration.Constant> Constant(IEnumerable<Token> tokens)
@@ -295,10 +294,10 @@ public sealed partial class Parser
         .ParseToken(Keyword.EndDo)
         .MapResult(t => new Statement.ForLoop(t, head.variant, head.start, head.end, head.step, ReportErrors(block)));
 
-    ParseResult<Statement> Nop(IEnumerable<Token> tokens)
+    ParseResult<Nop> Nop(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "procedure")
         .ParseToken(Punctuation.Semicolon)
-        .MapResult(t => new Statement.Nop(t));
+        .MapResult(t => new Nop(t));
 
     ParseResult<Statement> RepeatLoop(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "repeat loop")

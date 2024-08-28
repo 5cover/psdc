@@ -190,7 +190,12 @@ public static class Extensions
     public static bool TryGetAt<T>(this IEnumerable<T> source, int index, [NotNullWhen(true)] out T? item) where T : notnull
     {
         if (index >= 0) {
-            if (source is IReadOnlyList<T> list) {
+            if (source is IReadOnlyList<T> rolist) {
+                if (index < rolist.Count) {
+                    item = rolist[index];
+                    return true;
+                }
+            } else if (source is IList<T> list) {
                 if (index < list.Count) {
                     item = list[index];
                     return true;

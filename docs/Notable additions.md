@@ -18,6 +18,8 @@ Directives (lines starting with `#`) are used for configuration, comptime intros
 
 Initialiers for primitive types (any type except structure or arrays) are supported.
 
+This is for convenience only &mdash; separating initialization from declaration is recommended to preserve your grade.
+
 ## NOP statements
 
 Just a semi-colon `;`. Does nothing. Not officially allowed.

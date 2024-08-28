@@ -377,6 +377,12 @@ Later directives override earlier directives, so that
 #pragma include 3 // this directive overrides the previous
 ```
 
+## Test and fix initializer evaluation
+
+initializer.psc contains tests.
+
+Currently initializer static analysis is broken, but we're kind of in a rush right now. Users are unlikely to want to use initializers anyway.
+
 ## Configuration
 
 Ecrire (`ecrire`, `ecrireEcran`) newline control
@@ -504,6 +510,10 @@ Is this in line with Pseudocode semantics?
 
 This would simplify things.
 
+## Allow constants inside functions
+
+No reason not no. It's not explicitly disallowed, and it would make some things easier.
+
 ## Symbols and semantic nodes, what's the difference
 
 They pretty much have the same properties. Should we ditch the Symbol type hierarchy and use a Symbol interface on some SemanticNodes? This would simplify things (as we won't have to create two objects with similar properties that must have the same value).
@@ -517,7 +527,3 @@ Currently, we only check that the inferred value type is assignable to the decla
 What implicit and explicit conversions are allowed between LengthedStrings of different lengths?
 
 Also what's the difference between `tableau [4] de caractère` and `chaîne(4)`?
-
-## Test and fix initializer evaluation
-
-initializer.psc contains tests.

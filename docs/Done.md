@@ -1913,3 +1913,11 @@ For each item:
 - Set *currentPath*
 
 For struct initializers, it's a bit more complicated. The target type of each item
+
+## Print escape character representation
+
+## Escape chars in strings and character literals
+
+Just copy C <https://en.cppreference.com/w/c/language/escape>. (except ditch the \? escape sequence, it is only used with trigraphs, which we'll probably never have since we're not in the 1970s anymore)
+
+We still need to unescape strings immediately though. This is because two strings, one using raw characters, one using escape sequences: `"'"` `"\'"` should compare equal.

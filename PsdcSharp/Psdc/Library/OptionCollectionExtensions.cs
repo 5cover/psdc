@@ -62,7 +62,11 @@ static class OptionCollectionExtensions
 
     public static ValueOption<T> FirstOrNone<T>(this IEnumerable<T> source)
     {
-        if (source is IReadOnlyList<T> list) {
+        if (source is IReadOnlyList<T> roList) {
+            if (roList.Count > 0) {
+                return roList[0];
+            }
+        } else if (source is IList<T> list) {
             if (list.Count > 0) {
                 return list[0];
             }

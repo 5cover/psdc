@@ -64,6 +64,10 @@ where TOpTable : OperatorTable
     }
 
     protected StringBuilder AppendStatement(StringBuilder o, Statement stmt) => stmt switch {
+        // Don't generate Nop statements.
+        // They serve no purpose.
+        // In addition we may get them as a result of parsing errors.
+        Nop => o,
         Statement.Alternative alt => AppendAlternative(o, alt),
         Statement.Assignment assignment => AppendAssignment(o, assignment),
         Statement.Builtin.Assigner b => AppendBuiltinAssigner(o, b),
@@ -78,10 +82,6 @@ where TOpTable : OperatorTable
         Statement.DoWhileLoop doWhile => AppendDoWhileLoop(o, doWhile),
         Statement.ForLoop @for => AppendForLoop(o, @for),
         Statement.LocalVariable local => AppendLocalVariable(o, local),
-        // Don't generate Nop statements.
-        // They serve no purpose.
-        // In addition we may get them as a result of parsing errors.
-        Statement.Nop => o,
         Statement.ProcedureCall call => AppendProcedureCall(o, call).AppendLine(";"),
         Statement.RepeatLoop repeat => AppendRepeatLoop(o, repeat),
         Statement.Return ret => AppendReturn(o, ret),
@@ -91,6 +91,7 @@ where TOpTable : OperatorTable
     };
 
     protected StringBuilder AppendDeclaration(StringBuilder o, Declaration decl) => decl switch {
+        Nop => o,
         Declaration.TypeAlias alias => AppendAliasDeclaration(o, alias),
         Declaration.Constant constant => AppendConstant(o, constant),
         Declaration.MainProgram mainProgram => AppendMainProgram(o, mainProgram),

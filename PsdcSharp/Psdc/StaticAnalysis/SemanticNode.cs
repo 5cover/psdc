@@ -65,9 +65,6 @@ public interface SemanticNode
 
     internal interface Statement : SemanticNode
     {
-        internal sealed record Nop(SemanticMetadata Meta)
-        : Statement;
-
         internal sealed record Alternative(SemanticMetadata Meta,
             Alternative.IfClause If,
             IReadOnlyList<Alternative.ElseIfClause> ElseIfs,
@@ -334,4 +331,6 @@ public interface SemanticNode
         public sealed record Xor(SemanticMetadata Meta) : BinaryOperator;
         public sealed record Subtract(SemanticMetadata Meta) : BinaryOperator;
     }
+
+    internal sealed record Nop(SemanticMetadata Meta) : Statement, Declaration;
 }
