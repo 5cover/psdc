@@ -26,7 +26,7 @@ abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<
     public abstract EvaluatedType ToAliasReference(Identifier alias);
 
     public override string ToString(string? format, IFormatProvider? fmtProvider) => Alias.Match(
-        a => $"({a}) {ToStringNoAlias(fmtProvider)}",
+        a => $"{a} ({ToStringNoAlias(fmtProvider)})",
         () => ToStringNoAlias(fmtProvider));
 
     public abstract TValue DefaultValue { get; }

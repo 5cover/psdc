@@ -1961,3 +1961,15 @@ Cause it makes things easier.
 But what about making Precedence and Associtativty available without instanciation?
 
 ## Array assignment: use memcpy for C
+
+## Fix empty initializers code gen
+
+Empty initializer = zero in C23.
+
+Is this in line with Pseudocode semantics?
+
+Well, yes. An empty initializer initializes all member to their default value.
+
+## Trailing commas
+
+Allow trailing commas in parameter lists, local variable lists, array subscripts.

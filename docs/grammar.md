@@ -1,8 +1,6 @@
 $$
 \begin{align*}
 
-&\textbf{General} \\
-
 &⟨Algorithm⟩ \to \text{programme}\ Identifier\ \text{c'est} ⟨Declaration⟩^*
 \\
 &⟨Block⟩ \to ⟨Statement⟩^*
@@ -10,16 +8,15 @@ $$
 \\\\&\textbf{Declarations} \\
 
 &⟨Declaration⟩ \to \begin{Bmatrix*}[l]
-    ⟨DeclarationTypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \\
-    ⟨DeclarationConstant⟩ \to \text{constante} ⟨Type⟩ Identifier \text{:=} ⟨Expr⟩\text{;} \\
-    ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin} \\
-    ⟨FunctionDeclaration⟩ \to ⟨FunctionSignature⟩ \text{;} \\
-    ⟨FunctionDefinition⟩ \to ⟨FunctionSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
-    ⟨ProcedureDeclaration⟩ \to ⟨Procedureignature⟩ \text{;} \\
-    ⟨ProcedureDefinition⟩ \to ⟨ProcedureSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
-    \text{début} ⟨Block⟩ \text{fin} \\
-    ⟨Nop⟩ \\
     ⟨CompilerDirective⟩ \\
+    ⟨Constant⟩ \to \text{constante} ⟨Type⟩ Identifier \text{:=} ⟨Expr⟩\text{;} \\
+    ⟨Function⟩ \to ⟨FunctionSignature⟩ \text{;} \\
+    ⟨FunctionDefinition⟩ \to ⟨FunctionSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
+    ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin} \\
+    ⟨Nop⟩ \\
+    ⟨Procedure⟩ \to ⟨Procedureignature⟩ \text{;} \\
+    ⟨ProcedureDefinition⟩ \to ⟨ProcedureSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
+    ⟨TypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \\
 \end{Bmatrix*}
 
 \\&\textbf{Statements} \\
@@ -31,26 +28,7 @@ $$
     &   ⟨Alternative.Else⟩^? \\
     &   \text{finsi} \\
     \end{split} \\
-    ⟨ProcedureCall⟩ \to ⟨Call⟩\text{;} \\
     ⟨Assignment⟩ \to ⟨Lvalue⟩\text{=}⟨Expr⟩\text{;} \\
-    ⟨ForLoop⟩ \to \begin{split}
-    &   \begin{Bmatrix*}[l]
-            \text{pour}\ Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \begin{pmatrix}\text{pas} ⟨Expr⟩\end{pmatrix}^? \\
-            \text{pour}\text{(}Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \begin{pmatrix}\text{pas} ⟨Expr⟩\end{pmatrix}^?\text{)} \\
-        \end{Bmatrix*} \\
-    &   \text{faire} ⟨Block⟩ \text{finfaire} \\
-    \end{split} \\
-    ⟨RepeatLoop⟩ \to \text{répéter} ⟨Block⟩ \text{jusqu'à} ⟨Expr⟩ \\
-    ⟨DoWhileLoop⟩ \to \text{faire} ⟨Block⟩ \text{tant\ que} ⟨Expr⟩ \\
-    ⟨WhileLoop⟩ \to \text{tant\ que} ⟨Expr⟩ \text{faire} ⟨Block⟩ \text{finfaire} \\
-    ⟨Switch⟩ \to \begin{split}
-    &   \text{selon} ⟨Expr⟩ \text{c'est} \\
-    &   ⟨Switch.Case⟩^* \\
-    &   ⟨Switch.Default⟩^? \\
-    &   \text{finselon} \\
-    \end{split} \\
-    ⟨LocalVariable⟩ \to ⟨VariableDeclaration⟩\begin{pmatrix}\text{:=}⟨Initializer⟩\end{pmatrix}^?\text{;} \\
-    ⟨Return⟩ \to \text{retourne} ⟨Expr⟩\text{;} \\
     ⟨BuiltinAssigner⟩ \to \text{assigner}\text{(}⟨Lvalue⟩\text{,}⟨Expr⟩\text{)}\text{;} \\
     ⟨BuiltinEcrire⟩ \to \text{écrire}\text{(}⟨Expr⟩\text{,}⟨Expr⟩\text{)}\text{;} \\
     ⟨BuiltinEcrireEcran⟩ \to \text{écrireÉcran}\text{(}⟨Expr⟩^{*\#}\text{)}\text{;} \\
@@ -60,11 +38,28 @@ $$
     ⟨BuiltinOuvrirAjout⟩ \to \text{ouvrirAjout}\text{(}⟨Expr⟩\text{)}\text{;} \\
     ⟨BuiltinOuvrirEcriture⟩ \to \text{ouvrirÉcriture}\text{(}⟨Expr⟩\text{)}\text{;} \\
     ⟨BuiltinOuvrirLecture⟩ \to \text{ouvrirLecture}\text{(}⟨Expr⟩\text{)}\text{;} \\
-    ⟨Nop⟩ \\
     ⟨CompilerDirective⟩\\
+    ⟨DoWhileLoop⟩ \to \text{faire} ⟨Block⟩ \text{tant\ que} ⟨Expr⟩ \\
+    ⟨ForLoop⟩ \to \begin{split}
+    &   \begin{Bmatrix*}[l]
+            \text{pour}\ Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \begin{pmatrix}\text{pas} ⟨Expr⟩\end{pmatrix}^? \\
+            \text{pour}\text{(}Identifier\ \text{de} ⟨Expr⟩ \text{à} ⟨Expr⟩ \begin{pmatrix}\text{pas} ⟨Expr⟩\end{pmatrix}^?\text{)} \\
+        \end{Bmatrix*} \\
+    &   \text{faire} ⟨Block⟩ \text{finfaire} \\
+    \end{split} \\
+    ⟨LocalVariable⟩ \to ⟨VariableDeclaration⟩\begin{pmatrix}\text{:=}⟨Initializer⟩\end{pmatrix}^?\text{;} \\
+    ⟨Nop⟩ \\
+    ⟨ProcedureCall⟩ \to ⟨Call⟩\text{;} \\
+    ⟨RepeatLoop⟩ \to \text{répéter} ⟨Block⟩ \text{jusqu'à} ⟨Expr⟩ \\
+    ⟨Return⟩ \to \text{retourne} ⟨Expr⟩\text{;} \\
+    ⟨Switch⟩ \to \begin{split}
+    &   \text{selon} ⟨Expr⟩ \text{c'est} \\
+    &   ⟨Switch.Case⟩^* \\
+    &   ⟨Switch.Default⟩^? \\
+    &   \text{finselon} \\
+    \end{split} \\
+    ⟨WhileLoop⟩ \to \text{tant\ que} ⟨Expr⟩ \text{faire} ⟨Block⟩ \text{finfaire} \\
 \end{Bmatrix*}
-\\
-⟨Nop⟩ \to \text{;}
 \\
 &⟨Alternative.If⟩ \to \text{si} ⟨Expr⟩ \text{alors} ⟨Block⟩
 \\
@@ -75,30 +70,6 @@ $$
 &⟨Switch.Case⟩ \to \text{quand} ⟨Expr⟩ \text{=>} ⟨Statement⟩^+
 \\
 &⟨Switch.Default⟩ \to \text{quand\ autre} \text{=>} ⟨Statement⟩^+
-\\
-&⟨Initializer⟩ \to \begin{Bmatrix*}[l]
-    ⟨Expr⟩\\
-    ⟨Braced⟩ \to \text{\{}
-        \begin{Bmatrix*}[l]
-            \begin{pmatrix}
-                ⟨Designator⟩^+
-                \text{:=}
-            \end{pmatrix}^?
-            ⟨Initializer⟩
-            \\
-            ⟨CompilerDirective⟩
-        \end{Bmatrix*}^{*\#}
-    \text{\}}\\
-\end{Bmatrix*}
-\\
-&⟨Designator⟩ \to \begin{Bmatrix*}[l]
-    ⟨Index⟩ \\
-    ⟨Component⟩ \\
-\end{Bmatrix*}
-\\
-&⟨Component⟩ \to \text{.}Identifier
-\\
-&⟨Index⟩ \to \text{[}⟨Expr⟩^{+\#}\text{]}
 
 \\\\&\textbf{Expressions} \\
 
@@ -242,6 +213,32 @@ $$
 &⟨FunctionSignature⟩ \to \text{fonction}\ Identifier\text{(}⟨ParameterFormal⟩^{*\#}\text{)} \text{délivre} ⟨Type⟩
 \\
 &⟨ProcedureSignature⟩ \to \text{procédure}\ Identifier\text{(}⟨ParameterFormal⟩^{*\#}\text{)}
+\\
+⟨Nop⟩ \to \text{;}
+\\
+&⟨Initializer⟩ \to \begin{Bmatrix*}[l]
+    ⟨Expr⟩\\
+    ⟨Braced⟩ \to \text{\{}
+        \begin{Bmatrix*}[l]
+            \begin{pmatrix}
+                ⟨Designator⟩^+
+                \text{:=}
+            \end{pmatrix}^?
+            ⟨Initializer⟩
+            \\
+            ⟨CompilerDirective⟩
+        \end{Bmatrix*}^{*\#}
+    \text{\}}\\
+\end{Bmatrix*}
+\\
+&⟨Designator⟩ \to \begin{Bmatrix*}[l]
+    ⟨Index⟩ \\
+    ⟨Component⟩ \\
+\end{Bmatrix*}
+\\
+&⟨Component⟩ \to \text{.}Identifier
+\\
+&⟨Index⟩ \to \text{[}⟨Expr⟩^{+\#}\text{]}
 
 \end{align*}
 $$

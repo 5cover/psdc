@@ -212,3 +212,15 @@ To simplify an item:
 What about the SourceTokens of the node we produce?
 
 Sratch that.
+
+## Symbols and semantic nodes, what's the difference
+
+**Reason**: symbols don't necessarility correspond to a single node, plus there are some naming difference. Overall it's simpler to keep them separate, even though it can make the code a little messy.
+
+They pretty much have the same properties. Should we ditch the Symbol type hierarchy and use a Symbol interface on some SemanticNodes? This would simplify things (as we won't have to create two objects with similar properties that must have the same value).
+
+## Consider using .Equals and .GetHashCode on EvaluatedType instead of SemanticsEqual
+
+**Reason** : using equatable semantics prevents us from having to define GetHashCode.
+
+This would simplify things.

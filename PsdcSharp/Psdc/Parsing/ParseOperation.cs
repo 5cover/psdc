@@ -125,7 +125,7 @@ abstract class ParseOperation
     /// <param name="end">The end token.</param>
     /// <param name="readEndToken">To read the end token.</param>
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
-    public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<ParseResult<T>> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true, bool allowTrailingSeparator = false);
+    public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<ParseResult<T>> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true, bool allowTrailingSeparator = true);
 
     /// <summary>Parse one or more nodes until an end token is encountered.</summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>
@@ -181,7 +181,7 @@ abstract class ParseOperation
     /// <param name="parse">The node parser.</param>
     /// <param name="result">Assigned to the list of parsed nodes.</param>
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
-    public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<ParseResult<T>> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true, bool allowTrailingSeparator = false);
+    public abstract ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<ParseResult<T>> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true, bool allowTrailingSeparator = true);
 
     /// <summary>Parse zero or more nodes until an end token is encountered.</summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>

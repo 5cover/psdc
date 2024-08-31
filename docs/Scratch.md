@@ -496,28 +496,16 @@ for files
 
 self-explanatory.
 
-## Trailing commas
+## SA of initialiers (Constant, LocalVariable): make sure the declared type is the same as the inferred value type
 
-Allow trailing commas in parameter lists, local variable lists, array subscripts.
+Currently, we only check that the inferred value type is assignable to the declared type. This is fine except when we retrieve the value of the symbol or semantic node and get the wrong type later on.
 
-## Fix empty initializers code gen
-
-Empty initializer = zero in C23.
-
-Is this in line with Pseudocode semantics?
-
-## Consider using .Equals and .GetHashCode on EvaluatedType instead of SemanticsEqual
-
-This would simplify things.
+Need a concrete scenario where this is a problem in order to solve it.
 
 ## Allow constants inside functions
 
 No reason not no. It's not explicitly disallowed, and it would make some things easier.
 
-## Symbols and semantic nodes, what's the difference
+Well, there is a reason. C defines would require explicit undef for scoping, this is kind of cumbersome.
 
-They pretty much have the same properties. Should we ditch the Symbol type hierarchy and use a Symbol interface on some SemanticNodes? This would simplify things (as we won't have to create two objects with similar properties that must have the same value).
-
-## SA of initialiers (Constant, LocalVariable): make sure the declared type is the same as the inferred value type
-
-Currently, we only check that the inferred value type is assignable to the declared type. This is fine except when we retrieve the value of the symbol or semantic node and get the wrong type later on.
+Low priority.

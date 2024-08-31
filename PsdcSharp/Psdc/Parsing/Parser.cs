@@ -439,7 +439,7 @@ public sealed partial class Parser
                 .Parse(out var init, Initializer)
                 .MapResult(t => new Initializer.Braced.ValuedItem(t, designators.Match(des => ReportErrors(des).SelectMany(d => d).ToArray(), () => []), init)),
             _compilerDirective),
-        Punctuation.Comma, Punctuation.RBrace, allowTrailingSeparator: true)
+        Punctuation.Comma, Punctuation.RBrace)
         .MapResult(t => new Initializer.Braced(t, ReportErrors(values)));
 
     ParseResult<IEnumerable<Designator.Array>> ArrayDesignator(IEnumerable<Token> tokens)
