@@ -1921,3 +1921,43 @@ For struct initializers, it's a bit more complicated. The target type of each it
 Just copy C <https://en.cppreference.com/w/c/language/escape>. (except ditch the \? escape sequence, it is only used with trigraphs, which we'll probably never have since we're not in the 1970s anymore)
 
 We still need to unescape strings immediately though. This is because two strings, one using raw characters, one using escape sequences: `"'"` `"\'"` should compare equal.
+
+## Formalize conversion between LengthedString
+
+What implicit and explicit conversions are allowed between LengthedStrings of different lengths?
+
+Also, what's the difference between `tableau [4] de caractère` and `chaîne(4)`? The former is accessible by index while the latter is null terminated.
+
+Current:
+
+Lengthed string is convertible to lengthed string of same length or string.
+
+Lengthed string is assignable to convertible or lengthed string of greater or equal length.
+
+These rules make sense, I believe. Length change on assignment is okay since we have an lvalue in which to put the longer string.
+
+So we stay as it is.
+
+In a dream world i would get rid of null-termination since it does more harm than good and use count-based strings instead
+
+But this would require a lot of glue code to make it work in C, right? Which isn't what we want since the primary purpose of Pseudocode is to basically be a 1 to 1 map to C, so we can't really afford to have language features that C doesn't also natively support.
+
+Well, it would definitely require a String struct, and maybe some helper functions to generate slices.
+
+## Refactor operation generation
+
+Should OperatorInfos have a way to generate operations?
+
+If this is the case, an universal approach would be to treat every operator as an unary operator, and pass other arguments as parameters when constructing it.
+
+Or, we can expect a list of arguments which size is checked against an integer (the arity).
+
+No, the appending logic should be separate. This is because we need to be able to access Associativty and Precedence on all operators, without having to instanciate anything, since those are constants.
+
+Maybe use static abstract.
+
+Cause it makes things easier.
+
+But what about making Precedence and Associtativty available without instanciation?
+
+## Array assignment: use memcpy for C

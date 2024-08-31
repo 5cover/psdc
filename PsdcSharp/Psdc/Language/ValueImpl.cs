@@ -43,6 +43,7 @@ where TUnderlying : notnull
     protected abstract TSelf Clone(ValueStatus<TUnderlying> value);
     protected abstract string ValueToString(TUnderlying value, IFormatProvider? fmtProvider);
     public override string ToString(string? format, IFormatProvider? fmtProvider) => format switch {
+        Value.FmtNoType => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider)).ValueOr(""),
         Value.FmtMin => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider)).ValueOr(Type.ToString(fmtProvider)),
         _ when string.IsNullOrEmpty(format) => Status.ComptimeValue.Match(
              v => string.Create(fmtProvider, $"{Status.GetPart()}{Type}: {ValueToString(v, fmtProvider)}"),

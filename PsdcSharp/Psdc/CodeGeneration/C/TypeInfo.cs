@@ -65,7 +65,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             CharacterType => new("char", "%c"),
             RealType real => new("float", "%g"),
             IntegerType integer => new("int", "%d"),
-            StringType => new("char const", "%s", starCount: 1),
+            StringType => new("char", "%s", starCount: 1),
             ArrayType array => CreateArrayType(array, help),
             LengthedStringType strlen => CreateLengthedString(strlen, help),
             StructureType structure => CreateStructure(structure, help),
@@ -93,7 +93,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             string lengthPlus1 = strlen.LengthConstantExpression
                 .Map(help.GenExpr.Invoke)
                 .ValueOr((strlen.Length + 1).ToString(Format.Code));
-            return new("char const", "%s", postModifier: $"[{lengthPlus1}]");
+            return new("char", "%s", postModifier: $"[{lengthPlus1}]");
         }
 
         TypeInfo CreateStructure(StructureType structure, Help help)

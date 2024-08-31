@@ -13,6 +13,7 @@ public static class CodeGenerator
 }
 
 delegate StringBuilder Appender<T>(StringBuilder o, T node);
+delegate StringBuilder Appender(StringBuilder o);
 delegate string Generator<T>(T node);
 
 abstract partial class CodeGenerator<TKwTable, TOpTable>(Messenger msger, TKwTable keywordTable, TOpTable operatorTable)
@@ -34,13 +35,12 @@ where TOpTable : OperatorTable
 
     public abstract string Generate(Algorithm algorithm);
 
-    protected abstract TypeGenerator GenerateType(Scope scope);
+    protected abstract TypeGenerator TypeGeneratorFor(Scope scope);
 
-    protected StringBuilder AppendUnaryPrefixOperation<TExpr>(StringBuilder o, OperatorInfo op, TExpr operand, Appender<TExpr> appender) where TExpr : Expression
-    {
-        o.Append(op.Code.Get(GenerateType(operand.Meta.Scope)));
-        return AppendBracketed(o, _opTable.ShouldBracketOperand(op, operand), o => appender(o, operand));
-    }
+    protected StringBuilder AppendUnaryOperation<TExpr>(StringBuilder o, OperatorInfo op, TExpr operand, Appender<TExpr> appender) where TExpr : Expression
+     => op.Append(o, TypeGeneratorFor(operand.Meta.Scope), [
+        o => AppendBracketed(o, _opTable.ShouldBracketOperand(op, operand), o => appender(o, operand))
+    ]);
 
     protected static StringBuilder AppendBracketed(StringBuilder o, bool bracket, Action<StringBuilder> appender)
     {

@@ -11,7 +11,11 @@ interface Value : IEquatable<Value>, IFormattableUsable
     /// <summary>
     /// Format string for a minimal representation.
     /// </summary>
-    public const string FmtMin = "M";
+    public const string FmtMin = "m";
+    /// <summary>
+    /// Format string for only the comptime value - no type. Returns the empty string if the value doesn't have a comptime value.
+    /// </summary>
+    public const string FmtNoType = "v";
 }
 
 interface Value<out TType, TUnderlying> : Value where TType : EvaluatedType

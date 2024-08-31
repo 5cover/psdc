@@ -521,9 +521,3 @@ They pretty much have the same properties. Should we ditch the Symbol type hiera
 ## SA of initialiers (Constant, LocalVariable): make sure the declared type is the same as the inferred value type
 
 Currently, we only check that the inferred value type is assignable to the declared type. This is fine except when we retrieve the value of the symbol or semantic node and get the wrong type later on.
-
-## Formalize conversion between LengthedString
-
-What implicit and explicit conversions are allowed between LengthedStrings of different lengths?
-
-Also what's the difference between `tableau [4] de caractère` and `chaîne(4)`?

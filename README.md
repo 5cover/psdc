@@ -103,3 +103,4 @@ Notation: bold &rarr; underway
 - [ ] Parameter names in prototypes?
 - [ ] Doxygen documentation skeleton?
 - [ ] `i++` or `++i`
+- [ ] Use count-based string functions: strncpy, strncmp...

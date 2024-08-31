@@ -1,13 +1,13 @@
-#include <stdio.h>
+/** @file
+ * @brief MemStrCpy
+ * @author raphael
+ * @date 08/31/2024
+ */
+#include <string.h>
 
-int main()
-{
-    #define S 10
-    struct { int x; int v[S]; } a = { 5 };
-    printf("%d\n", a.x);
-    for (int i = 0; i < S; ++i) {
-        printf("%d ", a.v[i]);
-    }
+int main() {
+    char *s = "chaîne", *t;
+    strcpy(t, s);
 
     return 0;
 }

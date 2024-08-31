@@ -1,12 +1,17 @@
-programme EscapeUnescape c'est
-// Test unescaping/escaping of string literals
+programme MemStrCpy c'est
+// Test array and string assignment
 
-constante chaîne S := "bonjour\r\nje m'apélle \"ludovick\"\tj'ai \u2467 ans\0. Ding \7! Dong \a!";
-
-#eval expr S
-//#assert S == "bonjour\r\nje m'apélle ludovick\tj'ai \u2467 ans\0. Ding \7! Dong \a!";
-#assert S == S
+constante chaîne(20) S := "chaîne";
+type tTab = tableau[3] de entier
+constante tTab V := {1,2,3};
 
 début
-    écrireEcran(S);
+    v, w : tTab;
+    v := V;
+    w := v;
+
+    s, t : chaîne(20);
+
+    s := S;
+    t := s;
 fin
