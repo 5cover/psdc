@@ -4,11 +4,13 @@ using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
 using Scover.Psdc.Tokenization;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Scover.Psdc;
 
 static class Program
 {
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CliOptions))] // Needed for CommandLineOptions with AOT
     static int Main(string[] args) => (int)new CommandLine.Parser(s => {
         s.HelpWriter = Console.Error;
         s.GetoptMode = true;
