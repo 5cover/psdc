@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Text;
 using Scover.Psdc.Parsing;
 
-namespace Scover.Psdc.Language;
+namespace Scover.Psdc.Pseudocode;
 
 interface Value : IEquatable<Value>, IFormattableUsable
 {

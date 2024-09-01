@@ -3,7 +3,7 @@ using System.Text;
 
 using Scover.Psdc.Parsing;
 using static Scover.Psdc.Parsing.Node;
-using Scover.Psdc.Language;
+using Scover.Psdc.Pseudocode;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 
@@ -57,9 +57,9 @@ public readonly struct Message
 
     internal static Message ErrorIndexOutOfBounds(ComptimeExpression<int> index, int length)
      => ErrorIndexOutOfBounds(index.Expression.Meta.SourceTokens, index.Value, length);
-    internal static Message ErrorFeatureComingSoon(SourceTokens tokens, string feature)
-     => new(tokens, MessageCode.FeatureComingSoon,
-        $"Language feature '{feature}' coming soon");
+    internal static Message ErrorFeatureComingSoon(SourceTokens sourceTokens, string feature)
+     => new(sourceTokens, MessageCode.FeatureComingSoon,
+        $"language feature '{feature}' not yet available");
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
         Fmt($"reassigning constant `{constant.Name}`"));

@@ -3,4 +3,4 @@
 set -eu
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-PsdcSharp/Psdc/bin/Debug/net8.0/psdc "testPrograms/$1.psc"
+PsdcSharp/Psdc/bin/Debug/net8.0/psdc c "testPrograms/$1.psc"

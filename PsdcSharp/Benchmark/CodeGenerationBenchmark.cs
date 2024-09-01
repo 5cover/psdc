@@ -1,4 +1,5 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System.Diagnostics;
+using BenchmarkDotNet.Attributes;
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Library;
 using Scover.Psdc.StaticAnalysis;
@@ -21,5 +22,8 @@ public class CodeGenerationBenchmark
 
     [Benchmark]
     public string RunC()
-     => CodeGenerator.GenerateC(p.Msger, _sast.NotNull());
+    {
+        CodeGenerator.TryGet(Language.CliOption.C, out var cg);
+        return cg.NotNull()(p.Msger, _sast.NotNull());
+    }
 }

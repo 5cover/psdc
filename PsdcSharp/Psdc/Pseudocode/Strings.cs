@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace Scover.Psdc.Language;
+namespace Scover.Psdc.Pseudocode;
 
 public enum EscapeMode
 {

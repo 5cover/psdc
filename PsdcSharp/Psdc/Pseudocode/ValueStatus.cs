@@ -1,4 +1,4 @@
-namespace Scover.Psdc.Language;
+namespace Scover.Psdc.Pseudocode;
 
 interface ValueStatus : IEquatable<ValueStatus>
 {

@@ -1,6 +1,6 @@
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
-namespace Scover.Psdc.Language;
+namespace Scover.Psdc.Pseudocode;
 
 static class ComptimeExpression
 {

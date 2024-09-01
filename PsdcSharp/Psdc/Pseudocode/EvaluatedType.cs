@@ -5,7 +5,7 @@ using System.Text;
 using Scover.Psdc.Parsing;
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
-namespace Scover.Psdc.Language;
+namespace Scover.Psdc.Pseudocode;
 
 interface InstantiableType<TValue, TUnderlying> : EvaluatedType<TValue>
 where TValue : Value

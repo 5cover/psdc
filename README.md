@@ -61,13 +61,15 @@ Notation: bold &rarr; underway
 - [x] Compiler directives
 - [x] Contextual keywords
 - [ ] `finPour` keyword (equivalent to `fin` but only for loops)
-- [ ] Escape sequences in string and character literals
+- [x] Escape sequences in string and character literals
 - [x] Case-insensitive boolean operators
 - [ ] More static analysis
 - [ ] Alternative array syntax `tableau[INDICE_DEPART..INDICE_FIN] de type;`
 - [ ] Numeroted control stuctures (`si1`, `si2`, `si3`)
 - [ ] File handling (low priority)
 - [ ] Preprocessor
+    - [x] Static assertions
+    - [x] Expression/Type probing
     - [ ] Modularity (`#include`)
     - [ ] Conditional compilation
 - [ ] Configuration
@@ -75,8 +77,6 @@ Notation: bold &rarr; underway
 - [ ] Translations : resx, fr
 - [ ] CLI (use nuget package)
     - [ ] custom header
-    - [ ] -d, --documentation: none, all, file?
-    - [ ] Global preprocessor directives
     - [ ] Formatting customization
     - [ ] documentation date: now, file?
 - [ ] Tests

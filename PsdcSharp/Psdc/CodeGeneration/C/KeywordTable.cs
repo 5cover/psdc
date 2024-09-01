@@ -1,4 +1,4 @@
-using Scover.Psdc.Language;
+using Scover.Psdc.Pseudocode;
 using Scover.Psdc.Messages;
 
 namespace Scover.Psdc.CodeGeneration.C;
@@ -17,7 +17,7 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
                 newIdent = string.Create(Format.Code, $"{ident}_{identNo++}");
             }
             msger.Report(Message.WarningTargetLanguageReservedKeyword(
-                sourceTokens, LanguageName.C, ident, newIdent));
+                sourceTokens, Language.Name.C, ident, newIdent));
             return newIdent;
         }
         return ident;

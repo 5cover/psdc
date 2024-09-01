@@ -1,6 +1,6 @@
 using Scover.Psdc.Parsing;
 
-namespace Scover.Psdc.Language;
+namespace Scover.Psdc.Pseudocode;
 
 abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<TValue> where TValue : Value
 {

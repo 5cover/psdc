@@ -1987,3 +1987,11 @@ So now procedures are just functions that return void.
 ## Feature not yet implemented error
 
 for files
+
+## CLI
+
+Target language
+
+Input file or stdin
+
+Output file or stdout

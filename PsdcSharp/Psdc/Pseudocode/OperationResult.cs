@@ -1,7 +1,7 @@
 using Scover.Psdc.Messages;
 using static Scover.Psdc.Parsing.Node;
 
-namespace Scover.Psdc.Language;
+namespace Scover.Psdc.Pseudocode;
 
 static class OperationResult
 {

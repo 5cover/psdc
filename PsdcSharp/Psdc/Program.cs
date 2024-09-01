@@ -1,3 +1,4 @@
+using static CommandLine.ParserResultExtensions;
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
@@ -8,53 +9,68 @@ namespace Scover.Psdc;
 
 static class Program
 {
-    const string StdinPlaceholder = "-";
-
-    static int Main(string[] args)
-    {
-        const bool Debug = false;
-
-        if (args.Length > 1) {
-            WriteError("usage: INPUT_FILE");
+    static int Main(string[] args) => (int)new CommandLine.Parser(s => {
+        s.HelpWriter = Console.Error;
+        s.GetoptMode = true;
+    }).ParseArguments<CliOptions>(args).MapResult(static opt => {
+        if (!CodeGenerator.TryGet(opt.TargetLanguage, out var codeGenerator)) {
+            WriteError($"unkown language: '{opt.TargetLanguage}'");
             return SysExits.Usage;
         }
 
-        string input;
+        bool outputIsFile = opt.Output != "-";
+
+        TextWriter output;
         try {
-            input = args.Length == 0 || args[0] == StdinPlaceholder
-                ? Console.In.ReadToEnd()
-                : File.ReadAllText(args[0]);
+            output = outputIsFile
+                ? new StreamWriter(opt.Output)
+                : Console.Out;
         } catch (Exception e) when (e.IsFileSystemExogenous()) {
-            WriteError(e.Message);
-            return SysExits.NoInput;
+            WriteError($"coudln't open output file: {e.Message}");
+            return SysExits.CantCreat;
         }
 
-        PrintMessenger messenger = new(Console.Error, input);
+        try {
+            string input;
+            try {
+                input = opt.Input == "-"
+                    ? Console.In.ReadToEnd()
+                    : File.ReadAllText(opt.Input);
+            } catch (Exception e) when (e.IsFileSystemExogenous()) {
+                WriteError($"couldn't read input: {e.Message}");
+                return SysExits.NoInput;
+            }
 
-        var tokens = "Tokenizing".LogOperation(Debug,
-            () => Tokenizer.Tokenize(messenger, input).ToArray());
+            PrintMessenger msger = new(Console.Error, input);
 
-        var ast = "Parsing".LogOperation(Debug,
-            () => Parser.Parse(messenger, tokens));
+            var tokens = "Tokenizing".LogOperation(opt.Verbose,
+                () => Tokenizer.Tokenize(msger, input).ToArray());
 
-        if (!ast.HasValue) {
-            return SysExits.DataErr;
+            var ast = "Parsing".LogOperation(opt.Verbose,
+                () => Parser.Parse(msger, tokens));
+
+            if (!ast.HasValue) {
+                return SysExits.DataErr;
+            }
+
+            var sast = "Analyzing".LogOperation(opt.Verbose,
+                () => StaticAnalyzer.Analyze(msger, ast.Value));
+
+            string cCode = "Generating code".LogOperation(opt.Verbose,
+                () => codeGenerator(msger, sast));
+
+            output.Write(cCode);
+
+            msger.PrintMessageList();
+
+            return SysExits.Ok;
+        } finally {
+            if (outputIsFile) {
+                output.Dispose();
+            }
         }
-
-        var sast = "Analyzing".LogOperation(Debug,
-            () => StaticAnalyzer.Analyze(messenger, ast.Value));
-
-        string cCode = "Generating code".LogOperation(Debug,
-            () => CodeGenerator.GenerateC(messenger, sast));
-
-        messenger.PrintConclusion();
-
-        Console.Error.WriteLine("Generated C: ");
-        Console.WriteLine(cCode);
-
-        return SysExits.Ok;
-    }
+    }, _ => SysExits.Usage);
 
     static void WriteError(string message)
-     => Console.Error.WriteLine($"usage: {Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "psdc")}: {message}");
+     => Console.Error.WriteLine($"{Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "psdc")}: error: {message}");
 }

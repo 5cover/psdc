@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Scover.Psdc.Messages;
 
-namespace Scover.Psdc.Language;
+namespace Scover.Psdc.Pseudocode;
 
 public sealed class MutableScope(Scope? scope) : Scope(scope)
 {

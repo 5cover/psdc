@@ -8,7 +8,9 @@ Do they check character by character or C tokens? In other words, do they depend
 
 Output a minified version of the code and run a formatter, either from C# or external process
 
-## "(Carful, my friend) (feature) is frowned upon in tests" message
+## "(Careful, my friend) (feature) is frowned upon in tests" message
+
+1/10 chance to show the "Careful, my friend" part.
 
 See Notable Additions.
 
@@ -472,6 +474,10 @@ Currently, we only check that the inferred value type is assignable to the decla
 
 Need a concrete scenario where this is a problem in order to solve it.
 
+## code formatting
+
+Sort members. Code maid. Resharper subscription.
+
 ## Configuration
 
 Ecrire (`ecrire`, `ecrireEcran`) newline control
@@ -484,13 +490,4 @@ config json file|global|`{ "ecrire-nl": vrai }`
 CLI options|global|`--config ecrire-nl:vrai`
 preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config ecrire-nl reset` &rarr; resets to inherited value
 
-config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
-
-## CLI
-
-Configure code lang (currently invariant)
-
-## code formatting
-
-Sort members. Code maid. Resharper subscription.
-
+## VScode extension

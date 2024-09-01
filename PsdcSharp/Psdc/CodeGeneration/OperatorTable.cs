@@ -1,7 +1,7 @@
-using Scover.Psdc.Language;
+using Scover.Psdc.Pseudocode;
 
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
-using static Scover.Psdc.Language.Associativity;
+using static Scover.Psdc.Pseudocode.Associativity;
 using System.Text;
 using System.Diagnostics;
 

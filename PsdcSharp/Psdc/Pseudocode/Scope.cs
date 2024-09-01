@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 
-namespace Scover.Psdc.Language;
+namespace Scover.Psdc.Pseudocode;
 
 public abstract class Scope(Scope? parent)
 {

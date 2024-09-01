@@ -1,5 +1,5 @@
-using Scover.Psdc.Language;
-using static Scover.Psdc.Language.Associativity;
+using Scover.Psdc.Pseudocode;
+using static Scover.Psdc.Pseudocode.Associativity;
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
 namespace Scover.Psdc.CodeGeneration.C;

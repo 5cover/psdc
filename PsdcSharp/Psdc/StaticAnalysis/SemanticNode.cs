@@ -1,6 +1,6 @@
 global using SemanticBlock = System.Collections.Generic.IReadOnlyList<Scover.Psdc.StaticAnalysis.SemanticNode.Statement>;
 
-using Scover.Psdc.Language;
+using Scover.Psdc.Pseudocode;
 using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.StaticAnalysis;

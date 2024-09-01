@@ -1,5 +1,5 @@
 global using Block = System.Collections.Generic.IReadOnlyList<Scover.Psdc.Parsing.Node.Statement>;
-using Scover.Psdc.Language;
+using Scover.Psdc.Pseudocode;
 
 namespace Scover.Psdc.Parsing;
 

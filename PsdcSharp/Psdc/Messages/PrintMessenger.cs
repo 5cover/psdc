@@ -11,11 +11,19 @@ public sealed class PrintMessenger(TextWriter output, string input) : Messenger
     const string Bar = " | ";
     const int MaxMultilineErrorLines = 10;
 
-    public void PrintConclusion()
-     => _output.WriteLine(string.Create(Format.Msg,
-        $"Compilation terminated ({_msgCounts[MessageSeverity.Error]} errors, {_msgCounts[MessageSeverity.Warning]} warnings, {_msgCounts[MessageSeverity.Suggestion]} suggestions)."));
+    private readonly Queue<Message> _msgs = new();
 
-    public void Report(Message message)
+    public void Report(Message message) => _msgs.Enqueue(message);
+
+    public void PrintMessageList()
+    {
+        while (_msgs.TryDequeue(out var msg)) {
+            PrintMessage(msg);
+        }
+        PrintConclusion();
+    }
+
+    void PrintMessage(Message message)
     {
         if (!_msgCounts.TryAdd(message.Severity, 1)) {
             ++_msgCounts[message.Severity];
@@ -100,6 +108,10 @@ public sealed class PrintMessenger(TextWriter output, string input) : Messenger
 
         _output.WriteLine();
     }
+
+    void PrintConclusion()
+     => _output.WriteLine(string.Create(Format.Msg,
+        $"Compilation terminated ({_msgCounts[MessageSeverity.Error]} errors, {_msgCounts[MessageSeverity.Warning]} warnings, {_msgCounts[MessageSeverity.Suggestion]} suggestions)."));
 
     void EndLine(ReadOnlySpan<char> content) => _output.WriteLine(content.TrimEnd());
 

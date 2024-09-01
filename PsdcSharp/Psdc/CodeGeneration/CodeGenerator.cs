@@ -1,5 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using Scover.Psdc.Language;
+using Scover.Psdc.Pseudocode;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
@@ -8,8 +9,17 @@ namespace Scover.Psdc.CodeGeneration;
 
 public static class CodeGenerator
 {
-    public static string GenerateC(Messenger messenger, Algorithm algorithm)
-     => new C.CodeGenerator(messenger).Generate(algorithm);
+    public static bool TryGet(string language, [NotNullWhen(true)] out Func<Messenger, Algorithm, string>? func)
+    {
+        switch (language.ToLower(Format.Code)) {
+        case Language.CliOption.C:
+            func = (m, a) => new C.CodeGenerator(m).Generate(a);
+            return true;
+        default:
+            func = null;
+            return false;
+        }
+    }
 }
 
 delegate StringBuilder Appender<T>(StringBuilder o, T node);
