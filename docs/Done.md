@@ -1983,3 +1983,7 @@ Make any expression a valid statement (like in C): expression statements.
 But now it conflicts with procedure calls? Should we make procedure calls expressions that return void? Honestly, why not. Maybe a void type could be useful for other things too.
 
 So now procedures are just functions that return void.
+
+## Feature not yet implemented error
+
+for files

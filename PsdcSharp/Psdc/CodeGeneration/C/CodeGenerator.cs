@@ -483,19 +483,25 @@ sealed partial class CodeGenerator(Messenger messenger)
     }
 
     protected override StringBuilder AppendBuiltinLire(StringBuilder o, Statement.Builtin.Lire lire)
-     => throw new NotImplementedException();
-    protected override StringBuilder AppendBuiltinEcrire(StringBuilder o, Statement.Builtin.Ecrire lire)
-     => throw new NotImplementedException();
+     => FeatureComingSoon(o, lire, "files");
+    protected override StringBuilder AppendBuiltinEcrire(StringBuilder o, Statement.Builtin.Ecrire ecrire)
+     => FeatureComingSoon(o, ecrire, "files");
     protected override StringBuilder AppendBuiltinFermer(StringBuilder o, Statement.Builtin.Fermer fermer)
-     => throw new NotImplementedException();
+     => FeatureComingSoon(o, fermer, "files");
     protected override StringBuilder AppendBuiltinOuvrirLecture(StringBuilder o, Statement.Builtin.OuvrirLecture ouvrirLecture)
-     => throw new NotImplementedException();
+     => FeatureComingSoon(o, ouvrirLecture, "files");
     protected override StringBuilder AppendBuiltinOuvrirEcriture(StringBuilder o, Statement.Builtin.OuvrirEcriture ouvrirEcriture)
-     => throw new NotImplementedException();
+     => FeatureComingSoon(o, ouvrirEcriture, "files");
     protected override StringBuilder AppendBuiltinOuvrirAjout(StringBuilder o, Statement.Builtin.OuvrirAjout ouvrirAjout)
-     => throw new NotImplementedException();
+     => FeatureComingSoon(o, ouvrirAjout, "files");
     protected override StringBuilder AppendBuiltinAssigner(StringBuilder o, Statement.Builtin.Assigner assigner)
-     => throw new NotImplementedException();
+     => FeatureComingSoon(o, assigner, "files");
+
+    StringBuilder FeatureComingSoon(StringBuilder o, SemanticNode node, string feature)
+    {
+        _msger.Report(Message.ErrorFeatureComingSoon(node.Meta.SourceTokens, "files"));
+        return o;
+    }
 
     #endregion Helpers
 

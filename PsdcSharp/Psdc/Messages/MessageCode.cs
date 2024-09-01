@@ -29,6 +29,7 @@ public enum MessageCode
     ReturnInNonFunction,
     InvalidCast,
     AssertionFailed,
+    FeatureComingSoon,
     CustomError = 999,
 
     #endregion Errors

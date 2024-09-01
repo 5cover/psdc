@@ -57,7 +57,9 @@ public readonly struct Message
 
     internal static Message ErrorIndexOutOfBounds(ComptimeExpression<int> index, int length)
      => ErrorIndexOutOfBounds(index.Expression.Meta.SourceTokens, index.Value, length);
-
+    internal static Message ErrorFeatureComingSoon(SourceTokens tokens, string feature)
+     => new(tokens, MessageCode.FeatureComingSoon,
+        $"Language feature '{feature}' coming soon");
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
         Fmt($"reassigning constant `{constant.Name}`"));

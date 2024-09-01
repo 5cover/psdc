@@ -112,7 +112,7 @@ where TOpTable : OperatorTable
     protected abstract StringBuilder AppendAlternative(StringBuilder o, Statement.Alternative alternative);
     protected abstract StringBuilder AppendAssignment(StringBuilder o, Statement.Assignment call);
     protected abstract StringBuilder AppendBuiltinAssigner(StringBuilder o, Statement.Builtin.Assigner assigner);
-    protected abstract StringBuilder AppendBuiltinEcrire(StringBuilder o, Statement.Builtin.Ecrire lire);
+    protected abstract StringBuilder AppendBuiltinEcrire(StringBuilder o, Statement.Builtin.Ecrire ecrire);
     protected abstract StringBuilder AppendBuiltinEcrireEcran(StringBuilder o, Statement.Builtin.EcrireEcran ecrireEcran);
     protected abstract StringBuilder AppendBuiltinFermer(StringBuilder o, Statement.Builtin.Fermer fermer);
     protected abstract StringBuilder AppendBuiltinLire(StringBuilder o, Statement.Builtin.Lire lire);

@@ -221,6 +221,12 @@ They pretty much have the same properties. Should we ditch the Symbol type hiera
 
 ## Consider using .Equals and .GetHashCode on EvaluatedType instead of SemanticsEqual
 
-**Reason** : using equatable semantics prevents us from having to define GetHashCode.
+**Reason**: using equatable semantics prevents us from having to define GetHashCode.
 
 This would simplify things.
+
+## Allow constants inside functions
+
+**Reason**: C defines would require explicit undef for scoping, this is kind of cumbersome.
+
+It's not explicitly disallowed, and it would make some things easier.

@@ -383,24 +383,6 @@ initializer.psc contains tests.
 
 Currently initializer static analysis is broken, but we're kind of in a rush right now. Users are unlikely to want to use initializers anyway.
 
-## Configuration
-
-Ecrire (`ecrire`, `ecrireEcran`) newline control
-
-Different ways to configure (ordered by predecence, lower value replace higher values):
-
-location|scope|syntax
--|-|-
-config json file|global|`{ "ecrire-nl": vrai }`
-CLI options|global|`--config ecrire-nl:vrai`
-preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config ecrire-nl reset` &rarr; resets to inherited value
-
-config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
-
-## CLI
-
-Configure code lang (currently invariant)
-
 ## Parsing: put LBracket in SourceTokens of ArraySubscript
 
 To get prettier error messages.
@@ -484,24 +466,31 @@ And what happens if we return a file or pass it to a function/procedure. We shou
 
 Also what happens of closing the file occurs in a if statement? How do we know for sure it's been closed? Can we analyze the truthfulness of the condition? You can push static analysis further and further to support scenarios that are unlikely to happen in real code anyway. It's difficult to implement. I won't do that.
 
-## code formatting
-
-Sort members. Code maid. Resharper subscription.
-
-## Feature not yet implemented warning
-
-for files
-
 ## SA of initialiers (Constant, LocalVariable): make sure the declared type is the same as the inferred value type
 
 Currently, we only check that the inferred value type is assignable to the declared type. This is fine except when we retrieve the value of the symbol or semantic node and get the wrong type later on.
 
 Need a concrete scenario where this is a problem in order to solve it.
 
-## Allow constants inside functions
+## Configuration
 
-No reason not no. It's not explicitly disallowed, and it would make some things easier.
+Ecrire (`ecrire`, `ecrireEcran`) newline control
 
-Well, there is a reason. C defines would require explicit undef for scoping, this is kind of cumbersome.
+Different ways to configure (ordered by predecence, lower value replace higher values):
 
-Low priority.
+location|scope|syntax
+-|-|-
+config json file|global|`{ "ecrire-nl": vrai }`
+CLI options|global|`--config ecrire-nl:vrai`
+preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config ecrire-nl reset` &rarr; resets to inherited value
+
+config names are normalized so that `écrire-nl` is equivalent to `ecrire-nl`.
+
+## CLI
+
+Configure code lang (currently invariant)
+
+## code formatting
+
+Sort members. Code maid. Resharper subscription.
+
