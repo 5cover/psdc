@@ -10,18 +10,15 @@ public interface Symbol : EquatableSemantics<Symbol>
     private const string KindTypeAlias = "type alias";
     private const string KindConstant = "constant";
     private const string KindLocalVariable = "local variable";
-    private const string KindCallable = "callable";
     private const string KindVariable = "variable";
     private const string KindSymbol = "symbol";
 
     private static readonly Lazy<Dictionary<Type, string>> symbolKinds = new(() => new() {
         [typeof(Parameter)] = KindParameter,
-        [typeof(Function)] = KindFunction,
-        [typeof(Procedure)] = KindProcedure,
+        [typeof(Function)] = $"{KindFunction} or {KindProcedure}",
         [typeof(TypeAlias)] = KindTypeAlias,
         [typeof(Constant)] = KindConstant,
         [typeof(LocalVariable)] = KindLocalVariable,
-        [typeof(Callable)] = KindCallable,
         [typeof(Variable)] = KindVariable,
         [typeof(Symbol)] = KindSymbol,
     });
@@ -37,14 +34,6 @@ public interface Symbol : EquatableSemantics<Symbol>
     {
         public virtual string Kind => KindVariable;
 
-        public abstract bool SemanticsEqual(Symbol other);
-    }
-
-    internal abstract record Callable(Identifier Name, SourceTokens SourceTokens, IReadOnlyCollection<Parameter> Parameters) : Symbol
-    {
-        public virtual string Kind => KindCallable;
-        public bool HasBeenDefined { get; private set; }
-        public void MarkAsDefined() => HasBeenDefined = true;
         public abstract bool SemanticsEqual(Symbol other);
     }
 
@@ -80,23 +69,15 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed record Procedure(Identifier Name, SourceTokens SourceTokens,
-        IReadOnlyCollection<Parameter> Parameters)
-    : Callable(Name, SourceTokens, Parameters)
-    {
-        public override string Kind => KindProcedure;
-        public override bool SemanticsEqual(Symbol other) => other is Procedure o
-         && o.Name.SemanticsEqual(Name)
-         && o.Parameters.AllSemanticsEqual(Parameters);
-    }
-
     internal sealed record Function(Identifier Name, SourceTokens SourceTokens,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType)
-    : Callable(Name, SourceTokens, Parameters)
+    : Symbol
     {
-        public override string Kind => KindFunction;
-        public override bool SemanticsEqual(Symbol other) => other is Function o
+        public string Kind => ReturnType.IsConvertibleTo(VoidType.Instance) ? KindProcedure : KindFunction;
+        public bool HasBeenDefined { get; private set; }
+        public void MarkAsDefined() => HasBeenDefined = true;
+        public bool SemanticsEqual(Symbol other) => other is Function o
          && o.Name.SemanticsEqual(Name)
          && o.Parameters.AllSemanticsEqual(Parameters)
          && o.ReturnType.SemanticsEqual(ReturnType);

@@ -53,8 +53,8 @@ public sealed partial class StaticAnalyzer
         Algorithm semanticAst = new(new(scope, root.SourceTokens), root.Title,
             root.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).WhereSome().ToArray());
 
-        foreach (var callable in scope.GetSymbols<Symbol.Callable>().Where(c => !c.HasBeenDefined)) {
-            messenger.Report(Message.ErrorCallableNotDefined(callable));
+        foreach (var callable in scope.GetSymbols<Symbol.Function>().Where(c => !c.HasBeenDefined)) {
+            messenger.Report(Message.ErrorFunctionNotDefined(callable));
         }
 
         return semanticAst;
@@ -135,8 +135,8 @@ public sealed partial class StaticAnalyzer
     static Symbol.Function MakeSymbol(FunctionSignature sig, Func<ParameterFormal, Symbol.Parameter> makeParameterSymbol)
      => new(sig.Name, sig.Meta.SourceTokens, sig.Parameters.Select(makeParameterSymbol).ToArray(), sig.ReturnType);
 
-    static Symbol.Procedure MakeSymbol(ProcedureSignature sig, Func<ParameterFormal, Symbol.Parameter> makeParameterSymbol)
-     => new(sig.Name, sig.Meta.SourceTokens, sig.Parameters.Select(makeParameterSymbol).ToArray());
+    static Symbol.Function MakeSymbol(ProcedureSignature sig, Func<ParameterFormal, Symbol.Parameter> makeParameterSymbol)
+     => new(sig.Name, sig.Meta.SourceTokens, sig.Parameters.Select(makeParameterSymbol).ToArray(), VoidType.Instance);
 
     ParameterFormal[] AnalyzeParameters(Scope scope, IEnumerable<Node.ParameterFormal> parameters)
      => parameters.Select(p => new ParameterFormal(new(scope, p.SourceTokens),
@@ -146,10 +146,10 @@ public sealed partial class StaticAnalyzer
      => parameters.Select(p => new ParameterActual(new(scope, p.SourceTokens),
             p.Mode, EvaluateExpression(scope, p.Value))).ToArray();
 
-    void AddCallableDeclarationSymbol<T>(MutableScope scope, T sub) where T : Symbol.Callable
+    void AddCallableDeclarationSymbol(MutableScope scope, Symbol.Function sub)
     {
         if (!scope.TryAdd(sub, out var existingSymbol)) {
-            if (existingSymbol is T existingSub) {
+            if (existingSymbol is Symbol.Function existingSub) {
                 if (!sub.SemanticsEqual(existingSub)) {
                     _msger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
                 }
@@ -159,11 +159,11 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    void AddCallableDefinitionSymbol<TSymbol>(MutableScope scope, TSymbol sub) where TSymbol : Symbol.Callable
+    void AddCallableDefinitionSymbol(MutableScope scope, Symbol.Function sub)
     {
         if (scope.TryAdd(sub, out var existingSymbol)) {
             sub.MarkAsDefined();
-        } else if (existingSymbol is TSymbol existingSub) {
+        } else if (existingSymbol is Symbol.Function existingSub) {
             if (existingSub.HasBeenDefined) {
                 _msger.Report(Message.ErrorRedefinedSymbol(sub, existingSub));
             } else if (sub.SemanticsEqual(existingSub)) {
@@ -194,6 +194,13 @@ public sealed partial class StaticAnalyzer
     {
         SemanticMetadata meta = new(scope, statement.SourceTokens);
         switch (statement) {
+        case Node.Statement.ExpressionStatement e: {
+            var expr = EvaluateExpression(scope, e.Expression);
+            if (!expr.Value.Type.IsConvertibleTo(VoidType.Instance)) {
+                _msger.Report(Message.SuggestionExpressionValueUnused(e.Expression));
+            }
+            return new Statement.ExpressionStatement(meta, expr);
+        }
         case Node.Nop: {
             return new Nop(meta);
         }
@@ -286,10 +293,6 @@ public sealed partial class StaticAnalyzer
 
             return new Statement.LocalVariable(meta, declaration, initializer);
         }
-        case Node.Statement.ProcedureCall s: {
-            DiagnoseCall<Symbol.Procedure>(scope, s);
-            return new Statement.ProcedureCall(meta, s.Callee, AnalyzeParameters(scope, s.Parameters));
-        }
         case Node.Statement.RepeatLoop s: {
             return new Statement.RepeatLoop(meta,
                 EvaluateExpression(scope, s.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
@@ -324,7 +327,7 @@ public sealed partial class StaticAnalyzer
                 EvaluateExpression(scope, s.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
                 AnalyzeStatements(new(scope), s.Block));
         }
-        case Node.Statement.CompilerDirective cd: {
+        case Node.CompilerDirective cd: {
             EvaluateCompilerDirective(scope, cd);
             return default;
         }
@@ -334,9 +337,9 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    Option<TSymbol> DiagnoseCall<TSymbol>(Scope scope, Node.Call call) where TSymbol : Symbol.Callable
+    Option<Symbol.Function> DiagnoseCall(Scope scope, Node.Call call)
     {
-        var callable = scope.GetSymbol<TSymbol>(call.Callee).DropError(_msger.Report);
+        var callable = scope.GetSymbol<Symbol.Function>(call.Callee).DropError(_msger.Report);
         callable.Tap(callable => {
             List<string> problems = [];
 
@@ -535,7 +538,7 @@ public sealed partial class StaticAnalyzer
         }
         case Node.Expression.FunctionCall call: {
             return new Expression.FunctionCall(meta, call.Callee, AnalyzeParameters(scope, call.Parameters),
-                adjustValue(DiagnoseCall<Symbol.Function>(scope, call)
+                adjustValue(DiagnoseCall(scope, call)
                     .Map(f => f.ReturnType)
                     .ValueOr(UnknownType.Inferred)
                     .RuntimeValue));

@@ -1,9 +1,11 @@
 programme MemStrCpy c'est
 // Test array and string assignment
 
-type tTab = tableau[3] de entier
+// Function formal parameter list
+fonction twice(entF x : entier) délivre entier c'est début
+    retourne x * 2;
+fin
 
 début
-    V : tTab := {};
-    #eval expr V;
+    twice(entE 5);
 fin

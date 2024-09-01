@@ -60,6 +60,8 @@ sealed class StructureValue(StructureType type, ValueStatus<ImmutableDictionary<
         .ToString();
 }
 
+sealed class VoidValue(VoidType type, ValueStatus value) : ValueImpl<VoidType>(type, value);
+
 sealed class UnknownValue(UnknownType type, ValueStatus value) : ValueImpl<UnknownType>(type, value);
 
 sealed class ArrayValue(ArrayType type, ValueStatus<ImmutableArray<Value>> value) : ValueImpl<ArrayValue, ArrayType, ImmutableArray<Value>>(type, value)

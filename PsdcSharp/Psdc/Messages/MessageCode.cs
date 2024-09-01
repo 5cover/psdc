@@ -45,6 +45,7 @@ public enum MessageCode
 
     #region Suggestions
 
+    ExpressionValueUnused,
     RedundantCast,
 
     CustomSuggestion = 2999,

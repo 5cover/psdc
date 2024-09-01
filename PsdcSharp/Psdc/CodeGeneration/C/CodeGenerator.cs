@@ -334,15 +334,18 @@ sealed partial class CodeGenerator(Messenger messenger)
     StringBuilder AppendIndex(StringBuilder o, Expression index)
      => AppendExpressionAlter(o.Append('['), index, _opTable.Subtract, 1, (l, r) => l - r).Append(']');
 
-    StringBuilder AppendBracketedExpression(StringBuilder o, Expression left)
-     => AppendExpression(o, left, left is not BracketedExpression);
+    StringBuilder AppendBracketedExpression(StringBuilder o, Expression expr)
+     => AppendExpression(o, expr, expr is not BracketedExpression);
 
-    StringBuilder AppendExpression(StringBuilder o, Expression left) => AppendExpression(o, left, false);
+    protected override StringBuilder AppendExpressionStatement(StringBuilder o, Statement.ExpressionStatement exprStmt)
+     => AppendExpression(Indent(o), exprStmt.Expression).AppendLine(";");
 
-    StringBuilder AppendExpression(StringBuilder o, Expression left,
+    StringBuilder AppendExpression(StringBuilder o, Expression expr) => AppendExpression(o, expr, false);
+
+    StringBuilder AppendExpression(StringBuilder o, Expression expr,
         bool bracket = false, bool convertInitToCompoundLiteral = true)
      => AppendBracketed(o, bracket, o => {
-         _ = left switch {
+         _ = expr switch {
              BracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracket),
              Expression.FunctionCall call => AppendCall(o, call),
              Expression.Literal { Value: BooleanValue } l => AppendLiteralBoolean((bool)l.UnderlyingValue),
@@ -356,7 +359,7 @@ sealed partial class CodeGenerator(Messenger messenger)
              Expression.Lvalue.VariableReference variable => AppendVariableReference(o, variable, convertInitToCompoundLiteral),
              Expression.BinaryOperation opBin => AppendOperationBinary(o, opBin),
              Expression.UnaryOperation opUn => AppendOperationUnary(o, opUn),
-             _ => throw left.ToUnmatchedException(),
+             _ => throw expr.ToUnmatchedException(),
          };
 
          StringBuilder AppendLiteralBoolean(bool b)

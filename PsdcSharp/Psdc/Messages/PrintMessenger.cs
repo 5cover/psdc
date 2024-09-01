@@ -26,7 +26,7 @@ public sealed class PrintMessenger(TextWriter output, string input) : Messenger
         Position start = input.GetPositionAt(message.InputRange.Start);
         Position end = input.GetPositionAt(message.InputRange.End);
 
-        var lineNoPadding = end.Line.DigitCount();
+        var lineNoPadding = (end.Line + 1).DigitCount();
 
         _output.WriteLine(string.Create(Format.Msg, $"{start}: {message.Severity.ToString().ToLower(Format.Msg)}: {message.Content.Get(input)}"));
 

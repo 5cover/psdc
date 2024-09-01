@@ -65,6 +65,10 @@ public interface SemanticNode
 
     internal interface Statement : SemanticNode
     {
+        internal sealed record ExpressionStatement(SemanticMetadata Meta,
+            Expression Expression)
+        : Statement;
+
         internal sealed record Alternative(SemanticMetadata Meta,
             Alternative.IfClause If,
             IReadOnlyList<Alternative.ElseIfClause> ElseIfs,

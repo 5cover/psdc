@@ -38,17 +38,18 @@ public readonly struct Message
     static FormattableString Quantity(int quantity, string singular, string plural)
      => $"{quantity} {(quantity == 1 ? singular : plural)}";
 
-    internal static Message ErrorCallParameterMismatch(SourceTokens sourceTokens,
-        Symbol.Callable callable, IReadOnlyList<string> problems)
+    internal static Message ErrorCallParameterMismatch(SourceTokens sourceTokens, Symbol.Function f, IReadOnlyList<string> problems)
      => new(sourceTokens, MessageCode.CallParameterMismatch,
-        Fmt($"call to {callable.Kind} `{callable.Name}` does not correspond to signature"),
+        Fmt($"call to {f.Kind} `{f.Name}` does not correspond to signature"),
         problems);
 
     internal static Message ErrorAssertionFailed(CompilerDirective compilerDirective, Option<string> message)
      => new(compilerDirective.SourceTokens, MessageCode.AssertionFailed,
         message.Match(ms => Fmt($"compile-time assertion failed: {ms}"),
                       () => "compile-time assertion failed"));
-
+    internal static Message SuggestionExpressionValueUnused(Expression expr)
+     => new(expr.SourceTokens, MessageCode.ExpressionValueUnused,
+        "value of expression unused");
     internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, int index, int length)
      => new(sourceTokens, MessageCode.IndexOutOfBounds,
         Fmt($"index out of bounds for array"),
@@ -79,10 +80,10 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.ExpressionHasWrongType,
         Fmt($"can't convert expression of type '{actual}' to '{expected}'"));
 
-    internal static Message ErrorCallableNotDefined(Symbol.Callable callable)
-     => new(callable.SourceTokens, MessageCode.CallableNotDefined,
-        Fmt($"{callable.Kind} `{callable.Name}` declared but not defined"),
-        [Fmt($"provide a definition for `{callable.Name}`")]);
+    internal static Message ErrorFunctionNotDefined(Symbol.Function f)
+     => new(f.SourceTokens, MessageCode.CallableNotDefined,
+        Fmt($"{f.Kind} `{f.Name}` declared but not defined"),
+        [Fmt($"provide a definition for `{f.Name}`")]);
 
     internal static Message WarningTargetLanguageReservedKeyword(SourceTokens sourceTokens, string targetLanguageName, string ident, string adjustedIdent)
      => CreateTargetLanguageFormat(sourceTokens, MessageCode.TargetLanguageReservedKeyword, targetLanguageName,

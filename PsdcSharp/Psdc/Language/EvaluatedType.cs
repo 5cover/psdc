@@ -295,6 +295,17 @@ sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, Immut
     }
 }
 
+sealed class VoidType : EvaluatedTypeImplNotInstantiable<VoidValue>
+{
+    VoidType(ValueOption<Identifier> alias) : base(alias, ValueStatus.Runtime.Instance)
+    { }
+    public static VoidType Instance { get; } = new(default);
+    public override VoidType ToAliasReference(Identifier alias) => new(alias);
+    public override bool SemanticsEqual(EvaluatedType other) => other is VoidType;
+    protected override VoidValue CreateValue(ValueStatus status) => new(this, status);
+    protected override string ToStringNoAlias(IFormatProvider? fmtProvider) => "<void>";
+}
+
 sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
 {
     private readonly string _repr;

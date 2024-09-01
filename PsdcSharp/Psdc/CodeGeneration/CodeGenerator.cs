@@ -64,10 +64,7 @@ where TOpTable : OperatorTable
     }
 
     protected StringBuilder AppendStatement(StringBuilder o, Statement stmt) => stmt switch {
-        // Don't generate Nop statements.
-        // They serve no purpose.
-        // In addition we may get them as a result of parsing errors.
-        Nop => o,
+        Nop => o, // Don't generate Nop, has no purpose, + often got as a result of parsing errors.
         Statement.Alternative alt => AppendAlternative(o, alt),
         Statement.Assignment assignment => AppendAssignment(o, assignment),
         Statement.Builtin.Assigner b => AppendBuiltinAssigner(o, b),
@@ -80,6 +77,7 @@ where TOpTable : OperatorTable
         Statement.Builtin.OuvrirEcriture b => AppendBuiltinOuvrirEcriture(o, b),
         Statement.Builtin.OuvrirLecture b => AppendBuiltinOuvrirLecture(o, b),
         Statement.DoWhileLoop doWhile => AppendDoWhileLoop(o, doWhile),
+        Statement.ExpressionStatement e => AppendExpressionStatement(o, e),
         Statement.ForLoop @for => AppendForLoop(o, @for),
         Statement.LocalVariable local => AppendLocalVariable(o, local),
         Statement.ProcedureCall call => AppendProcedureCall(o, call).AppendLine(";"),
@@ -102,6 +100,7 @@ where TOpTable : OperatorTable
         _ => throw decl.ToUnmatchedException(),
     };
 
+    protected abstract StringBuilder AppendExpressionStatement(StringBuilder o, Statement.ExpressionStatement exprStmt);
     protected abstract StringBuilder AppendAliasDeclaration(StringBuilder o, Declaration.TypeAlias alias);
     protected abstract StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant);
     protected abstract StringBuilder AppendFunctionDeclaration(StringBuilder o, Declaration.Function func);

@@ -49,7 +49,6 @@ $$
     \end{split} \\
     ⟨LocalVariable⟩ \to ⟨VariableDeclaration⟩\begin{pmatrix}\text{:=}⟨Initializer⟩\end{pmatrix}^?\text{;} \\
     ⟨Nop⟩ \\
-    ⟨ProcedureCall⟩ \to ⟨Call⟩\text{;} \\
     ⟨RepeatLoop⟩ \to \text{répéter} ⟨Block⟩ \text{jusqu'à} ⟨Expr⟩ \\
     ⟨Return⟩ \to \text{retourne} ⟨Expr⟩\text{;} \\
     ⟨Switch⟩ \to \begin{split}
@@ -59,6 +58,7 @@ $$
     &   \text{finselon} \\
     \end{split} \\
     ⟨WhileLoop⟩ \to \text{tant\ que} ⟨Expr⟩ \text{faire} ⟨Block⟩ \text{finfaire} \\
+    ⟨Expr⟩ \text{;} \\
 \end{Bmatrix*}
 \\
 &⟨Alternative.If⟩ \to \text{si} ⟨Expr⟩ \text{alors} ⟨Block⟩
@@ -152,6 +152,8 @@ $$
 \\
 &⟨TerminalRvalue⟩ \to \begin{Bmatrix*}[l]
     ⟨Bracketed⟩ \to \text{(}⟨Expr⟩\text{)} \\
+    ⟨BuiltinFdf⟩ \to \text{FdF}\text{(}⟨Expr⟩\text{)} \\
+    ⟨Call⟩ \to Identifier\text{(}⟨ParameterActual⟩^{*\#}\text{)} \\
     ⟨Literal⟩ \to \begin{Bmatrix*}[l]
         LiteralCharacter \\
         LiteralInteger \\
@@ -160,12 +162,8 @@ $$
         \text{vrai} \\
         \text{faux} \\
     \end{Bmatrix*} \\
-    ⟨Call⟩ \\
-    ⟨BuiltinFdf⟩ \to \text{FdF}\text{(}⟨Expr⟩\text{)} \\
     ⟨TerminalLvalue⟩ \\
 \end{Bmatrix*}
-\\
-&⟨Call⟩ \to Identifier\text{(}⟨ParameterActual⟩^{*\#}\text{)}
 
 \\\\&\textbf{Types} \\
 
@@ -183,9 +181,8 @@ $$
 \end{Bmatrix*}
 \\
 &⟨Component⟩ \to \begin{Bmatrix*}[l]
+    ⟨CompilerDirective⟩ \\
     ⟨VariableDeclaration⟩\text{;}
-    \\
-    ⟨CompilerDirective⟩
 \end{Bmatrix*}
 
 \\\\&\textbf{Other} \\
@@ -232,8 +229,8 @@ $$
 \end{Bmatrix*}
 \\
 &⟨Designator⟩ \to \begin{Bmatrix*}[l]
-    ⟨Index⟩ \\
     ⟨Component⟩ \\
+    ⟨Index⟩ \\
 \end{Bmatrix*}
 \\
 &⟨Component⟩ \to \text{.}Identifier

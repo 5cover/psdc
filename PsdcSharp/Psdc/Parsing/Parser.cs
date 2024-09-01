@@ -37,7 +37,7 @@ public sealed partial class Parser
         _declaration = t => ParseByTokenType(t, "declaration", declarationParsers, fallback: _compilerDirective);
 
         Dictionary<TokenType, Parser<Statement>> statementParsers = new() {
-            [Valued.Identifier] = ParserFirst(Assignment, LocalVariable, ProcedureCall),
+            [Valued.Identifier] = ParserFirst(Assignment, LocalVariable, ExpressionStatement),
             [Keyword.Do] = DoWhileLoop,
             [Keyword.For] = ForLoop,
             [Keyword.If] = Alternative,
@@ -47,7 +47,7 @@ public sealed partial class Parser
             [Keyword.While] = WhileLoop,
             [Punctuation.Semicolon] = Nop,
         };
-        _statement = t => ParseByTokenType(t, "statement", statementParsers, fallback: ParserFirst(Builtin, _compilerDirective));
+        _statement = t => ParseByTokenType(t, "statement", statementParsers, fallback: ParserFirst(Builtin, ExpressionStatement, _compilerDirective));
 
         Dictionary<TokenType, Parser<Type>> typeParsers = new() {
             [Keyword.Integer] = ParserReturn(1, t => new Type.Integer(t)),
@@ -171,6 +171,12 @@ public sealed partial class Parser
     #endregion Declarations
 
     #region Statements
+
+    ParseResult<Statement> ExpressionStatement(IEnumerable<Token> tokens)
+     => ParseOperation.Start(tokens, "expression statement")
+        .Parse(out var expr, Expression)
+        .ParseToken(Punctuation.Semicolon)
+        .MapResult(t => new Statement.ExpressionStatement(t, expr));
 
     ParseResult<Statement> Alternative(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "alternative")
@@ -323,14 +329,6 @@ public sealed partial class Parser
             .MapResult(_ => init))
         .ParseToken(Punctuation.Semicolon)
         .MapResult(t => new Statement.LocalVariable(t, declaration, init));
-
-    ParseResult<Statement> ProcedureCall(IEnumerable<Token> tokens)
-     => ParseOperation.Start(tokens, "procedure call")
-        .Parse(out var name, Identifier)
-        .ParseToken(Punctuation.LParen)
-        .ParseZeroOrMoreSeparated(out var arguments, ParameterActual, Punctuation.Comma, Punctuation.RParen)
-        .ParseToken(Punctuation.Semicolon)
-        .MapResult(t => new Statement.ProcedureCall(t, name, ReportErrors(arguments)));
 
     ParseResult<Statement> Switch(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "switch statement")

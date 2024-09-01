@@ -1973,3 +1973,13 @@ Well, yes. An empty initializer initializes all member to their default value.
 ## Trailing commas
 
 Allow trailing commas in parameter lists, local variable lists, array subscripts.
+
+## call a function as a statement
+
+self-explanatory.
+
+Make any expression a valid statement (like in C): expression statements.
+
+But now it conflicts with procedure calls? Should we make procedure calls expressions that return void? Honestly, why not. Maybe a void type could be useful for other things too.
+
+So now procedures are just functions that return void.

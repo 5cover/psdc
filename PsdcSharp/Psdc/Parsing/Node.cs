@@ -122,6 +122,12 @@ public interface Node : EquatableSemantics<Node>
 
     public interface Statement : Node
     {
+        internal sealed record ExpressionStatement(SourceTokens SourceTokens,
+            Expression Expression) : Statement
+        {
+            public bool SemanticsEqual(Node other) => other is ExpressionStatement o
+             && o.Expression.SemanticsEqual(Expression);
+        }
         internal sealed record Alternative(SourceTokens SourceTokens,
             Alternative.IfClause If,
             IReadOnlyList<Alternative.ElseIfClause> ElseIfs,
@@ -308,16 +314,6 @@ public interface Node : EquatableSemantics<Node>
              && o.End.SemanticsEqual(End)
              && o.Step.OptionSemanticsEqual(Step)
              && o.Block.AllSemanticsEqual(Block);
-        }
-
-        internal sealed record ProcedureCall(SourceTokens SourceTokens,
-            Identifier Callee,
-            IReadOnlyList<ParameterActual> Parameters)
-        : Statement, Call
-        {
-            public bool SemanticsEqual(Node other) => other is ProcedureCall o
-             && o.Callee.SemanticsEqual(Callee)
-             && o.Parameters.AllSemanticsEqual(Parameters);
         }
 
         internal sealed record RepeatLoop(SourceTokens SourceTokens,
