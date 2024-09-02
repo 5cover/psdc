@@ -510,11 +510,7 @@ public interface Node : EquatableSemantics<Node>
             : Literal<BooleanType, BooleanValue, bool>(SourceTokens, BooleanType.Instance, false);
 
             internal sealed record Character(SourceTokens SourceTokens, char Value)
-            : Literal<CharacterType, CharacterValue, char>(SourceTokens, CharacterType.Instance, Value)
-            {
-                public Character(SourceTokens SourceTokens, string valueStr)
-                : this(SourceTokens, char.Parse(valueStr)) { }
-            }
+            : Literal<CharacterType, CharacterValue, char>(SourceTokens, CharacterType.Instance, Value);
 
             internal sealed record Integer(SourceTokens SourceTokens, int Value)
             : Literal<IntegerType, IntegerValue, int>(SourceTokens, IntegerType.Instance, Value)

@@ -144,7 +144,7 @@ public sealed class PrintMessenger(
         }
         var msgColor = ConsoleColorInfo.ForMessageSeverity(msg.Severity);
         msgColor.DoInColor(() => _output.Write(
-            string.Create(Format.Msg, $"{msg.Severity.ToString().ToLower(Format.Msg)}: P{(int)msg.Code:d4}:")));
+            string.Create(Format.Msg, $"P{(int)msg.Code:d4}: {msg.Severity.ToString().ToLower(Format.Msg)}:")));
 
         _output.WriteLine($" {msg.Content.Get(_input)}");
     }

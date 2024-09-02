@@ -611,7 +611,7 @@ public sealed partial class StaticAnalyzer
                     }
 
                     return arrVal.Status.ComptimeValue.Zip(actualIndex)
-                        .Map((arr, index) => arr[index])
+                        .Map((arr, index) => arr[index - 1])
                         .ValueOr(arrVal.Type.ItemType.RuntimeValue);
                 } else {
                     _msger.Report(Message.ErrorSubscriptOfNonArray(arrSub, array.Value.Type));

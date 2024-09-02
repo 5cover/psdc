@@ -1,4 +1,5 @@
 using Scover.Psdc.Messages;
+using Scover.Psdc.Pseudocode;
 using Scover.Psdc.Tokenization;
 
 using static Scover.Psdc.Parsing.Node;
@@ -65,10 +66,17 @@ public sealed partial class Parser
         Dictionary<TokenType, Parser<Expression.Literal>> literalParsers = new() {
             [Keyword.False] = t => ParseToken(t, Keyword.False, t => new Expression.Literal.False(t)),
             [Keyword.True] = t => ParseToken(t, Keyword.True, t => new Expression.Literal.True(t)),
-            [Valued.LiteralCharacter] = t => ParseTokenValue(t, Valued.LiteralCharacter, (t, val) => new Expression.Literal.Character(t, val)),
+            [Valued.LiteralCharacter] = t => ParseTokenValue(t, Valued.LiteralCharacter, (t, val) => {
+                var unescaped = Strings.Unescape(val, EscapeMode.ForChar, Format.Code).ToString();
+                if (unescaped.Length != 1) {
+                    _msger.Report(Message.ErrorCharacterLiteralContainsMoreThanOneCharacter(t, unescaped[0]));
+                }
+                return new Expression.Literal.Character(t, unescaped[0]);
+            }),
             [Valued.LiteralInteger] = t => ParseTokenValue(t, Valued.LiteralInteger, (t, val) => new Expression.Literal.Integer(t, val)),
             [Valued.LiteralReal] = t => ParseTokenValue(t, Valued.LiteralReal, (t, val) => new Expression.Literal.Real(t, val)),
-            [Valued.LiteralString] = t => ParseTokenValue(t, Valued.LiteralString, (t, val) => new Expression.Literal.String(t, val)),
+            [Valued.LiteralString] = t => ParseTokenValue(t, Valued.LiteralString, (t, val) => new Expression.Literal.String(t,
+                Strings.Unescape(val, EscapeMode.ForString, Format.Code).ToString())),
         };
         _literal = t => ParseByTokenType(t, "literal", literalParsers);
 

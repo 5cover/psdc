@@ -3,10 +3,9 @@ using System.Text.RegularExpressions;
 
 namespace Scover.Psdc.Tokenization;
 
-sealed class RegexTokenRule(TokenType tokenType, string pattern, RegexOptions flags = RegexOptions.None, Func<string, string>? adjustValue = null) : TokenRule
+sealed class RegexTokenRule(TokenType tokenType, string pattern, RegexOptions flags = RegexOptions.None) : TokenRule
 {
     readonly Regex _pattern = new($@"\G{pattern}", flags | RegexOptions.Compiled);
-    readonly Func<string, string> _adjustValue = adjustValue ?? (s => s);
     public TokenType TokenType => tokenType;
     public ValueOption<Token> Extract(string code, int startIndex)
     {
@@ -15,7 +14,7 @@ sealed class RegexTokenRule(TokenType tokenType, string pattern, RegexOptions fl
         return match.Success
             ? new Token(
             tokenType,
-            _adjustValue(match.Groups[1].Value),
+            match.Groups[1].Value,
             match.Index,
             match.Length).Some()
             : default;

@@ -6,19 +6,25 @@ constante structure début
     x: entier;
 fin a_simple := {
     1
-}; #eval expr a_simple // x = 1
+};
+#assert a_simple.x == 1
 
-/*// Simple initializer for a structure with an integer and a character array.
+// Simple initializer for a structure with an integer and a character array.
 constante structure début
     x: entier;
     c: tableau [4] de caractère;
 fin a_simple2 := {
     2,
     { 'A', 'B', 'C', '\0' }
-}; #eval expr a_simple2 // x = 2, c = { 'A', 'B', 'C', '\0' }
+};
+#assert a_simple2.x == 2
+#assert a_simple2.c[1] == 'A'
+#assert a_simple2.c[2] == 'B'
+#assert a_simple2.c[3] == 'C'
+#assert a_simple2.c[4] == '\0'
 
 // Designated initializer for a structure with an integer and a character array.
-constante structure début
+/*constante structure début
     x: entier;
     c: tableau [4] de caractère;
 fin a_designated := {

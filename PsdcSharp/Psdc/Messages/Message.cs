@@ -119,6 +119,11 @@ public readonly struct Message
             ? Fmt($"no component named `{component}` in structure")
             : Fmt($"`{structType}` has no component named `{component}`"));
 
+    internal static Message ErrorCharacterLiteralContainsMoreThanOneCharacter(SourceTokens sourceTokens, char firstChar)
+     => new(sourceTokens, MessageCode.CharacterLiteralContainsMoreThanOneCharacter,
+        "character literal contains more than one character",
+        [Fmt($"only first character '{firstChar}' is considered")]);
+
     internal static Message ErrorUnsupportedDesignator(SourceTokens sourceTokens, EvaluatedType targetType)
      => new(sourceTokens, MessageCode.UnsupportedDesignator,
         Fmt($"unsupported designator in '{targetType}' initializer"));
@@ -213,7 +218,7 @@ public readonly struct Message
 
     internal static Message SuggestionFeatureNotOfficial(SourceTokens sourceTokens, string feature, string? alternativeSolution = null)
      => new(sourceTokens, MessageCode.FeatureNotOfficial,
-        $"{(Random.Shared.Test(.1) ? "careful, my friend... " : "")}language feature '{feature}' is not official",
+        Fmt($"{(Random.Shared.Test(.1) ? "careful, my friend... " : "")}language feature '{feature}' is not official"),
         alternativeSolution is null ? [] : [alternativeSolution]);
 
     internal static Message SuggestionFeatureNotOfficialPrimitiveInitializers(SemanticNode.Initializer init)
