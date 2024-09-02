@@ -160,6 +160,11 @@ abstract class ParseOperation
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
     public abstract ParseOperation ParseToken(TokenType type);
 
+    /// <summary>Parse a token.</summary>
+    /// <param name="type">The allowed types of the token to parse.</param>
+    /// <returns>The current <see cref="ParseOperation"/>.</returns>
+    public abstract ParseOperation ParseToken(TokenTypeSet type);
+
     /// <summary>Parse a contextual keyword, by expecting an identifier of the defined name.</summary>
     /// <param name="contextKeyword">The contextual keyword to parse.</param>
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
@@ -256,6 +261,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseOptionalToken(TokenType type) => this;
         public override ParseOperation ParseToken(TokenType type) => this;
+        public override ParseOperation ParseToken(TokenTypeSet type) => this;
 
         public override ParseOperation ParseTokenValue(out string result, TokenType type)
         {
@@ -295,13 +301,13 @@ abstract class ParseOperation
     {
         readonly string _prod = production;
 
-        ValueOption<Token> Next() => _tokens.ElementAtOrNone(_readCount);
+        ValueOption<Token> Next => _tokens.ElementAtOrNone(_readCount);
 
         ParseResult<T> CallParser<T>(Parser<T> parser) => parser(_tokens.Skip(_readCount));
 
         public override ParseOperation Switch<T>(out Branch<T> branch, IReadOnlyDictionary<TokenType, Branch<T>> cases, Branch<T>? @default)
         {
-            var token = Next();
+            var token = Next;
             if (token.HasValue && cases.TryGetValue(token.Value.Type, out branch!)) {
                 _readCount++;
                 return this;
@@ -401,7 +407,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseOptionalToken(TokenType type)
         {
-            var token = Next();
+            var token = Next;
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
             }
@@ -410,17 +416,27 @@ abstract class ParseOperation
 
         public override ParseOperation ParseToken(TokenType type)
         {
-            var token = Next();
+            var token = Next;
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 return this;
             }
-            return Fail(ParseError.ForTerminal(_prod, token, type));
+            return Fail(ParseError.ForProduction(_prod, token, type));
+        }
+
+        public override ParseOperation ParseToken(TokenTypeSet types)
+        {
+            var token = Next;
+            if (token.HasValue && types.Contains(token.Value.Type)) {
+                _readCount++;
+                return this;
+            }
+            return Fail(ParseError.ForProduction(_prod, token, types));
         }
 
         public override ParseOperation ParseContextKeyword(TokenType.ContextKeyword contextKeyword)
         {
-            var token = Next();
+            var token = Next;
             if (token.HasValue
              && token.Value.Type == TokenType.Valued.Identifier
              && contextKeyword.Names.Contains(token.Value.Value.NotNull())) {
@@ -432,7 +448,7 @@ abstract class ParseOperation
 
         public override ParseOperation ParseTokenValue(out string result, TokenType type)
         {
-            var token = Next();
+            var token = Next;
             if (token.HasValue && token.Value.Type == type) {
                 _readCount++;
                 result = token.Value.Value ?? throw new InvalidOperationException("Parsed token doesn't have a value");
@@ -440,7 +456,7 @@ abstract class ParseOperation
             }
 
             result = null!;
-            return Fail(ParseError.ForTerminal(_prod, token, type));
+            return Fail(ParseError.ForProduction(_prod, token, type));
         }
 
         public override ParseOperation ParseZeroOrMoreSeparated<T>(out IReadOnlyList<ParseResult<T>> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken, bool allowTrailingSeparator)
@@ -509,10 +525,10 @@ abstract class ParseOperation
                 error.ErroneousToken, error.ExpectedTokens, error.FailedProduction);
 
         ValueOption<bool> Peek(TokenTypeSet types)
-         => Next().Map(token => types.Contains(token.Type));
+         => Next.Map(token => types.Contains(token.Type));
 
         ValueOption<bool> Peek(TokenType type)
-         => Next().Map(token => type.Equals(token.Type));
+         => Next.Map(token => type.Equals(token.Type));
 
         void ParseWhile<T>(ICollection<ParseResult<T>> items, Parser<T> parse, Func<bool> keepGoingWhile)
         {

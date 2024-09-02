@@ -37,5 +37,10 @@ début
         finfaire
         écrireEcran("Final value: ", i);
     finsi
-    
+
+    i : entier;
+    pour i de 1 à 10 pas 5 faire
+        ;
+    finpour
+
 fin

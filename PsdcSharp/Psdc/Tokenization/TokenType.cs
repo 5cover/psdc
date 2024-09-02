@@ -108,6 +108,8 @@ public class TokenType
         public static Keyword EndIf { get; } = new("finsi");
         public static Keyword EndSwitch { get; } = new("finselon");
         public static Keyword For { get; } = new("pour");
+        public static Keyword EndFor { get; } = new("finPour",
+                                                    "finpour");
         public static Keyword If { get; } = new("si");
         public static Keyword Repeat { get; } = new("répéter",
                                                     "répeter",

@@ -20,7 +20,7 @@ public sealed record ParseError(
             expectedTokens.ToImmutableHashSet(),
             ImmutableHashSet<string>.Empty);
 
-    internal static ParseError ForTerminal(string failedProduction, Option<Token> erroneousToken, TokenType expectedToken)
+    internal static ParseError ForProduction(string failedProduction, Option<Token> erroneousToken, TokenType expectedToken)
      => new(failedProduction, erroneousToken,
             ImmutableHashSet.Create(expectedToken),
             ImmutableHashSet<string>.Empty);

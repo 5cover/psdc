@@ -60,7 +60,7 @@ Notation: bold &rarr; underway
 - [x] Brace initialization (see TD14 ex 1)
 - [x] Compiler directives
 - [x] Contextual keywords
-- [ ] `finPour` keyword (equivalent to `fin` but only for loops)
+- [x] `finPour` keyword (equivalent to `fin` but only for loops)
 - [x] Escape sequences in string and character literals
 - [x] Case-insensitive boolean operators
 - [ ] More static analysis
