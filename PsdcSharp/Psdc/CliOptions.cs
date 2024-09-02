@@ -7,7 +7,8 @@ sealed class CliOptions(
     string input,
     string output,
     bool verbose,
-    bool pedantic
+    bool pedantic,
+    MessageStyle msgStyle
 )
 {
     [Value(0, Required = true,
@@ -26,4 +27,8 @@ sealed class CliOptions(
     [Option("pedantic",
         HelpText = "Warn when using unofficial features. Guarantees correctness for tests.")]
     public bool Pedantic => pedantic;
+    [Option("msg", Default = MessageStyle.Gnu,
+        HelpText = "Style of the message list",
+        MetaValue = "vscode/gnu")]
+    public MessageStyle MsgStyle => msgStyle;
 }

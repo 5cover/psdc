@@ -14,7 +14,7 @@ typedef struct {
 } t_personne;
 typedef struct {
     float x;
-    float y;
+    float y
 } tPoint;
 
 int main() {

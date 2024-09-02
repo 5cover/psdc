@@ -103,7 +103,9 @@ public static class Extensions
         for (; success && lineNumber >= 0; --lineNumber) {
             success = lines.MoveNext();
         }
-        return success ? lines.Current : throw new ArgumentOutOfRangeException(nameof(lineNumber), "Line number is out of range");
+        return success
+            ? lines.Current
+            : throw new ArgumentOutOfRangeException(nameof(lineNumber), "Line number is out of range");
     }
 
     internal static Position GetPositionAt(this string str, Index index)

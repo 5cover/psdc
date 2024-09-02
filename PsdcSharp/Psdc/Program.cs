@@ -15,6 +15,7 @@ static class Program
     static int Main(string[] args) => (int)new CommandLine.Parser(s => {
         s.HelpWriter = Console.Error;
         s.GetoptMode = true;
+        s.CaseInsensitiveEnumValues = true;
     }).ParseArguments<CliOptions>(args).MapResult(static opt => {
         if (!CodeGenerator.TryGet(opt.TargetLanguage, out var codeGenerator)) {
             WriteError($"unkown language: '{opt.TargetLanguage}'");
@@ -44,8 +45,13 @@ static class Program
                 return SysExits.NoInput;
             }
 
-            PrintMessenger msger = new(Console.Error, input, ImmutableDictionary.Create<MessageCode, bool>()
-                .Add(MessageCode.FeatureNotOfficial, opt.Pedantic));
+            PrintMessenger msger = new(
+                Console.Error,
+                opt.Input == "-" ? "<stdin>" : opt.Input,
+                input,
+                opt.MsgStyle,
+                ImmutableDictionary.Create<MessageCode, bool>()
+                    .Add(MessageCode.FeatureNotOfficial, opt.Pedantic));
 
             var tokens = "Tokenizing".LogOperation(opt.Verbose,
                 () => Tokenizer.Tokenize(msger, input).ToArray());

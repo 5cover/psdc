@@ -4,11 +4,15 @@ namespace Scover.Psdc.Messages;
 
 public sealed class PrintMessenger(
     TextWriter output,
+    string sourceFile,
     string input,
+    MessageStyle style,
     IReadOnlyDictionary<MessageCode, bool> enabledMessages) : Messenger
 {
-    public string Input => input;
-
+    public string Input => _input;
+    readonly string _input = input;
+    readonly string _srcFile = sourceFile;
+    readonly MessageStyle _style = style;
     readonly DefaultDictionary<MessageSeverity, int> _msgCounts = new(0);
     readonly TextWriter _output = output;
     readonly IReadOnlyDictionary<MessageCode, bool> _enableMsg = enabledMessages;
@@ -39,19 +43,25 @@ public sealed class PrintMessenger(
         if (!_msgCounts.TryAdd(message.Severity, 1)) {
             ++_msgCounts[message.Severity];
         }
+
+        var (start, end) = GetPositions(message.InputRange);
         var msgColor = ConsoleColorInfo.ForMessageSeverity(message.Severity);
-        msgColor.DoInColor(() => _output.Write(string.Create(Format.Msg, $"[P{(int)message.Code:d4}] ")));
-
-        Position start = input.GetPositionAt(message.InputRange.Start);
-        Position end = input.GetPositionAt(message.InputRange.End);
-
         var lineNoPadding = (end.Line + 1).DigitCount();
 
-        _output.WriteLine(string.Create(Format.Msg, $"{start}: {message.Severity.ToString().ToLower(Format.Msg)}: {message.Content.Get(input)}"));
+        switch (_style) {
+        case MessageStyle.Gnu:
+            PrintLocationGnu(message);
+            break;
+        case MessageStyle.VsCode:
+            PrintLocationVsCode(message);
+            break;
+        default:
+            throw _style.ToUnmatchedException();
+        }
 
         // If the error spans over only 1 line, show it with carets underneath
         if (start.Line == end.Line) {
-            ReadOnlySpan<char> badLine = input.GetLine(end.Line);
+            ReadOnlySpan<char> badLine = _input.GetLine(end.Line);
 
             // Bad line
             StartLine(lineNoPadding, end.Line);
@@ -76,7 +86,7 @@ public sealed class PrintMessenger(
         else {
             StartLine(lineNoPadding, start.Line);
             {
-                ReadOnlySpan<char> badLine = input.GetLine(start.Line);
+                ReadOnlySpan<char> badLine = _input.GetLine(start.Line);
                 _output.Write(badLine[..start.Column]);
                 msgColor.SetColor();
                 EndLine(badLine[start.Column..]);
@@ -87,7 +97,7 @@ public sealed class PrintMessenger(
             var badLines = Enumerable.Range(start.Line + 1, badLineCount);
             const int MaxBadLines = MaxMultilineErrorLines - 2;
             foreach (var line in badLines.Take(MaxBadLines)) {
-                ReadOnlySpan<char> badLine = input.GetLine(line);
+                ReadOnlySpan<char> badLine = _input.GetLine(line);
                 StartLine(lineNoPadding, line);
                 msgColor.SetColor();
                 EndLine(badLine);
@@ -103,7 +113,7 @@ public sealed class PrintMessenger(
 
             StartLine(lineNoPadding, end.Line);
             {
-                ReadOnlySpan<char> badLine = input.GetLine(end.Line);
+                ReadOnlySpan<char> badLine = _input.GetLine(end.Line);
                 msgColor.SetColor();
                 _output.Write(badLine[..end.Column]);
                 Console.ResetColor();
@@ -118,6 +128,35 @@ public sealed class PrintMessenger(
         };
 
         _output.WriteLine();
+    }
+
+    (Position Start, Position End) GetPositions(Range range)
+     => (_input.GetPositionAt(range.Start), _input.GetPositionAt(range.End));
+
+    void PrintLocationGnu(Message msg)
+    {
+        var (start, end) = GetPositions(msg.InputRange);
+
+        if (start.Line == end.Line) {
+            _output.Write($"{_srcFile}:{start.Line + 1}.{start.Column + 1}-{end.Column + 1}: ");
+        } else {
+            _output.Write($"{_srcFile}:{start.Line + 1}.{start.Column + 1}-{end.Line + 1}.{end.Column + 1}: ");
+        }
+        var msgColor = ConsoleColorInfo.ForMessageSeverity(msg.Severity);
+        msgColor.DoInColor(() => _output.Write(
+            string.Create(Format.Msg, $"{msg.Severity.ToString().ToLower(Format.Msg)}:")));
+
+        _output.WriteLine($" {msg.Content.Get(_input)}");
+    }
+
+    void PrintLocationVsCode(Message msg)
+    {
+        var (start, end) = GetPositions(msg.InputRange);
+
+        var msgColor = ConsoleColorInfo.ForMessageSeverity(msg.Severity);
+        msgColor.DoInColor(() => _output.Write(string.Create(Format.Msg, $"[P{(int)msg.Code:d4}] ")));
+
+        _output.WriteLine(string.Create(Format.Msg, $"{start}: {msg.Severity.ToString().ToLower(Format.Msg)}: {msg.Content.Get(_input)}"));
     }
 
     void PrintConclusion()

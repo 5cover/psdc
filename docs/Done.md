@@ -2001,3 +2001,7 @@ Output file or stdout
 1/10 chance to show the "Careful, my friend" part.
 
 See Notable Additions.
+
+## GNU-compliant message formatting
+
+We should adhere to what's standard.

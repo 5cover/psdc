@@ -238,12 +238,6 @@ Ideas for error productions :
 - Incomplete type where complete type was expected
 - faire instead of alors / alors instead of faire
 
-## Optimization: avoid dict lookup when inferred type is known
-
-For literals
-
-Encapsulate the dic in a class which supports this.
-
 ## should we consume the failure token
 
 The following syntax error:
@@ -378,10 +372,6 @@ Currently initializer static analysis is broken, but we're kind of in a rush rig
 ## Parsing: put LBracket in SourceTokens of ArraySubscript
 
 To get prettier error messages.
-
-## GNU-compliant message formatting
-
-We should adhere to what's standard.
 
 ## File handling PSC &rarr; C
 

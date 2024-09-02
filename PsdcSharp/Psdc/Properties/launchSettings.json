@@ -2,7 +2,7 @@
     "profiles": {
         "C#: Psdc Debug": {
             "commandName": "Project",
-            "commandLineArgs": "../../testPrograms/test.psc"
+            "commandLineArgs": "c ../../testPrograms/test.psc"
         }
     }
 }
