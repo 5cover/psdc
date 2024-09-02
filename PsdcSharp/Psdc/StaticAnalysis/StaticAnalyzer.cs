@@ -403,7 +403,7 @@ public sealed partial class StaticAnalyzer
 
                     var currentPath = Option.None<InitializerPath.Array>();
 
-                    return (arrayValue, AnalyzeItems(scope, braced, (item, sdes) => {
+                    var sitems = AnalyzeItems(scope, braced, (item, sdes) => {
                         if (sdes.Length > 0) {
                             if (sdes[0] is Designator.Array first) {
                                 currentPath = EvaluateArrayPath(scope, first, sdes.AsSpan()[1..], targetArrayType)
@@ -422,14 +422,16 @@ public sealed partial class StaticAnalyzer
                     }, sitem => currentPath.Bind(p => p.SetValue(sitem.Meta.SourceTokens, arrayValue.Status.ComptimeValue.Unwrap(), sitem.Value.Value)
                                                        .DropError(_msger.Report))
                                            .Tap(v => arrayValue = v)
-                    ).ToArray());
+                    ).ToArray();
+
+                    return (arrayValue, sitems);
                 }
                 case StructureType targetStructType: {
                     var structValue = targetStructType.DefaultValue;
 
                     var currentPath = Option.None<InitializerPath.Structure>();
 
-                    return (structValue, AnalyzeItems(scope, braced, (item, sdes) => {
+                    var sitems = AnalyzeItems(scope, braced, (item, sdes) => {
                         if (sdes.Length > 0) {
                             if (sdes[0] is Designator.Structure first) {
                                 currentPath = EvaluateStructurePath(scope, first, sdes.AsSpan()[1..], targetStructType)
@@ -448,7 +450,9 @@ public sealed partial class StaticAnalyzer
                     }, sitem => currentPath.Bind(p => p.SetValue(sitem.Meta.SourceTokens, structValue.Status.ComptimeValue.Unwrap(), sitem.Value.Value)
                                            .DropError(_msger.Report))
                                 .Tap(v => structValue = v))
-                    .ToArray());
+                    .ToArray();
+
+                    return (structValue, sitems);
                 }
                 default: {
                     _msger.Report(Message.ErrorUnsupportedInitializer(initializer.SourceTokens, targetType));

@@ -32,7 +32,7 @@ début
     écrireEcran("hello");
 fin
 
-procédure incrémenter(entF/sortF n: entier) c'est début
+procédure incrémenter(entF/sortF n: entier) c'est debut
     n := n + 1;
 fin
 

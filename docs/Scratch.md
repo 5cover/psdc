@@ -344,9 +344,9 @@ Basically return a separate list for the PD-related tokens.
 
 there's no reason not no. Embrace flexibility. This may be hard to implement.
 
-They are not statements. They don't really need indentation. We could use '#' instead of '@' for familiarity with C.
+They are not statements. They don't really need indentation.
 
-## `@pragma include <expr>`, `#pragma include any`
+## `#pragma include <expr>`, `#pragma include any`
 
 Allows a file to be included X times. `<expr>` is a comptime expression that evaluates to integer (min value: 0).
 
@@ -362,12 +362,6 @@ Later directives override earlier directives, so that
 #pragma include 2
 #pragma include 3 // this directive overrides the previous
 ```
-
-## Test and fix initializer evaluation
-
-initializer.psc contains tests.
-
-Currently initializer static analysis is broken, but we're kind of in a rush right now. Users are unlikely to want to use initializers anyway.
 
 ## Parsing: put LBracket in SourceTokens of ArraySubscript
 
@@ -487,3 +481,9 @@ What about errors? I can make a messenger that saves the errors to a list and as
 Should I test all steps simultaneously or use separate tests for tokenization, parsing, static analysis and code generation?
 
 One think certain, I'm gonna need A LOT of tests.
+
+## Test and fix initializer evaluation
+
+initializer.psc contains tests.
+
+Currently initializer static analysis is broken, but we're kind of in a rush right now. Users are unlikely to want to use initializers anyway.

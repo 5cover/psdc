@@ -1,7 +1,7 @@
 programme ComptimeTest c'est
 // Tests proper evaluation of comptime expressions
 
-/*// Literals
+// Literals
 #assert (1   ) == 1
 #assert ('a' ) == 'a'
 #assert ("a" ) == "a"
@@ -226,4 +226,4 @@ constante AOS C_AOS := {
     [1] := { 7, 9 },
     [2] := { 4, 6 },
     [3] := { 1, 3 }
-};*/
+};
