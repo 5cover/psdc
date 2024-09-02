@@ -24,13 +24,18 @@ fin a_simple2 := {
 #assert a_simple2.c[4] == '\0'
 
 // Designated initializer for a structure with an integer and a character array.
-/*constante structure début
+constante structure début
     x: entier;
     c: tableau [4] de caractère;
 fin a_designated := {
     .c := { 'D', 'E', 'F', '\0' },
     .x := 3
-}; #eval expr a_designated // x = 3, c = { 'D', 'E', 'F', '\0' }
+};
+#assert a_designated.x == 3;
+#assert a_designated.c[1] == 'D'
+#assert a_designated.c[2] == 'E'
+#assert a_designated.c[3] == 'F'
+#assert a_designated.c[4] == '\0'
 
 // Initializer for a structure with multiple integers.
 constante structure début
@@ -39,7 +44,10 @@ fin b_simple := {
     4,
     5,
     6
-}; #eval expr b_simple // x = 4, y = 5, z = 6
+};
+#assert b_simple.x == 4
+#assert b_simple.y == 5
+#assert b_simple.z == 6
 
 // Designated initializer for a structure with multiple integers.
 constante structure début
@@ -48,7 +56,10 @@ fin b_designated := {
     .y := 7,
     .z := 8,
     .x := 9
-}; #eval expr b_designated // x = 9, y = 7, z = 8
+};
+#assert b_designated.x == 9
+#assert b_designated.y == 7
+#assert b_designated.z == 8
 
 // Initializer for a nested structure.
 type c_nested_t = structure début
@@ -65,10 +76,14 @@ constante c_nested_t c_nested := {
         11,
         { 12, 13 }
     }
-}; #eval expr c_nested // a = 10, b.c = 11, b.d = { 12, 13 }
+};
+#assert c_nested.a == 10
+#assert c_nested.b.c == 11;
+#assert c_nested.b.d[1] == 12;
+#assert c_nested.b.d[2] == 13;
 
 // Designated initializer for a nested structure.
-constante c_nested_t c_nested_designated := {
+/*constante c_nested_t c_nested_designated := {
     .a := 14,
     .b := {
         .d := { 15, 16 },

@@ -98,7 +98,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
 
         TypeInfo CreateStructure(StructureType structure, Help help)
         {
-            StringBuilder o = new("struct {");
+            StringBuilder o = indent.Indent(new("struct {"));
             o.AppendLine();
             indent.Increase();
             var components = structure.Components.Map.ToDictionary(kv => kv.Key,
@@ -107,7 +107,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
                 indent.Indent(o).Append(comp.Value.GenerateDeclaration(help.KwTable.Validate(help.Scope, comp.Key, help.Msger).Yield())).AppendLine(";");
             }
             indent.Decrease();
-            o.Append('}');
+            indent.Indent(o).Append('}');
             return new(o.ToString(),
                 // it's ok if there are duplicate headers, since IncludeSet.Ensure will ignore duplicates.
                 requiredHeaders: components.Values.SelectMany(type => type.RequiredHeaders));
