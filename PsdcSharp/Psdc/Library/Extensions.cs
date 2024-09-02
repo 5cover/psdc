@@ -213,6 +213,8 @@ public static class Extensions
         item = default;
         return false;
     }
+
+    public static bool Test(this Random random, double chance) => random.NextDouble() <= chance;
 }
 
 static class Function

@@ -1,11 +1,17 @@
+using System.Collections.Immutable;
+
 namespace Scover.Psdc.Messages;
 
-public sealed class PrintMessenger(TextWriter output, string input) : Messenger
+public sealed class PrintMessenger(
+    TextWriter output,
+    string input,
+    IReadOnlyDictionary<MessageCode, bool> enabledMessages) : Messenger
 {
     public string Input => input;
 
     readonly DefaultDictionary<MessageSeverity, int> _msgCounts = new(0);
     readonly TextWriter _output = output;
+    readonly IReadOnlyDictionary<MessageCode, bool> _enableMsg = enabledMessages;
 
     const string LineNoMargin = "    ";
     const string Bar = " | ";
@@ -13,7 +19,12 @@ public sealed class PrintMessenger(TextWriter output, string input) : Messenger
 
     private readonly Queue<Message> _msgs = new();
 
-    public void Report(Message message) => _msgs.Enqueue(message);
+    public void Report(Message message)
+    {
+        if (_enableMsg.GetValueOrNone(message.Code).ValueOr(true)) {
+            _msgs.Enqueue(message);
+        }
+    }
 
     public void PrintMessageList()
     {

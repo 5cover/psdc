@@ -5,6 +5,7 @@ using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
 using Scover.Psdc.Tokenization;
 using System.Diagnostics.CodeAnalysis;
+using System.Collections.Immutable;
 
 namespace Scover.Psdc;
 
@@ -43,7 +44,8 @@ static class Program
                 return SysExits.NoInput;
             }
 
-            PrintMessenger msger = new(Console.Error, input);
+            PrintMessenger msger = new(Console.Error, input, ImmutableDictionary.Create<MessageCode, bool>()
+                .Add(MessageCode.FeatureNotOfficial, opt.Pedantic));
 
             var tokens = "Tokenizing".LogOperation(opt.Verbose,
                 () => Tokenizer.Tokenize(msger, input).ToArray());

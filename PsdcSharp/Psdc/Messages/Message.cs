@@ -6,6 +6,7 @@ using static Scover.Psdc.Parsing.Node;
 using Scover.Psdc.Pseudocode;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.Messages;
 
@@ -58,7 +59,7 @@ public readonly struct Message
     internal static Message ErrorIndexOutOfBounds(ComptimeExpression<int> index, int length)
      => ErrorIndexOutOfBounds(index.Expression.Meta.SourceTokens, index.Value, length);
     internal static Message ErrorFeatureComingSoon(SourceTokens sourceTokens, string feature)
-     => new(sourceTokens, MessageCode.FeatureComingSoon,
+     => new(sourceTokens, MessageCode.FeatureNotAvailable,
         $"language feature '{feature}' not yet available");
     internal static Message ErrorConstantAssignment(Statement.Assignment assignment, Symbol.Constant constant)
      => new(assignment.SourceTokens, MessageCode.ConstantAssignment,
@@ -209,6 +210,15 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.FloatingPointEquality,
         "floating point equality may be inaccurate",
         ["consider comparing absolute difference to an epsilon value instead"]);
+
+    internal static Message SuggestionFeatureNotOfficial(SourceTokens sourceTokens, string feature, string? alternativeSolution = null)
+     => new(sourceTokens, MessageCode.FeatureNotOfficial,
+        $"{(Random.Shared.Test(.1) ? "careful, my friend... " : "")}language feature '{feature}' is not official",
+        alternativeSolution is null ? [] : [alternativeSolution]);
+
+    internal static Message SuggestionFeatureNotOfficialPrimitiveInitializers(SemanticNode.Initializer init)
+     => SuggestionFeatureNotOfficial(init.Meta.SourceTokens, "primitive initializers",
+        "consider separating the initialization from the declaration in an assignent statement");
 
     static Message CreateTargetLanguageFormat(SourceTokens sourceTokens, MessageCode code,
         string targetLanguageName, FormattableString content)

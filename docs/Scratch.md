@@ -1,18 +1,8 @@
 # Scratch area
 
-## Test suite
-
-Do they check character by character or C tokens? In other words, do they depend on formatting?
-
 ## Custom formatting
 
 Output a minified version of the code and run a formatter, either from C# or external process
-
-## "(Careful, my friend) (feature) is frowned upon in tests" message
-
-1/10 chance to show the "Careful, my friend" part.
-
-See Notable Additions.
 
 ## Errors that go token after token
 
@@ -474,10 +464,6 @@ Currently, we only check that the inferred value type is assignable to the decla
 
 Need a concrete scenario where this is a problem in order to solve it.
 
-## code formatting
-
-Sort members. Code maid. Resharper subscription.
-
 ## Configuration
 
 Ecrire (`ecrire`, `ecrireEcran`) newline control
@@ -490,4 +476,24 @@ config json file|global|`{ "ecrire-nl": vrai }`
 CLI options|global|`--config ecrire-nl:vrai`
 preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config ecrire-nl reset` &rarr; resets to inherited value
 
+## code formatting
+
+Sort members. Code maid. Resharper subscription.
+
 ## VScode extension
+
+TypeScript wrapper around the AOT binary
+
+## PubXml
+
+Strip debug symbols, optimize for size
+
+## Test suite
+
+Do they check character by character or C tokens? In other words, do they depend on formatting?
+
+What about errors? I can make a messenger that saves the errors to a list and assert on that. I should have tests that expect errors and others that don't.
+
+Should I test all steps simultaneously or use separate tests for tokenization, parsing, static analysis and code generation?
+
+One think certain, I'm gonna need A LOT of tests.

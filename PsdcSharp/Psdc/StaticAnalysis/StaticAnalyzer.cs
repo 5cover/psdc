@@ -18,6 +18,7 @@ public sealed partial class StaticAnalyzer
 
     void EvaluateCompilerDirective(Scope scope, Node.CompilerDirective compilerDirective)
     {
+        _msger.Report(Message.SuggestionFeatureNotOfficial(compilerDirective.SourceTokens, "compiler directives"));
         switch (compilerDirective) {
         case Node.CompilerDirective.Assert cd: {
             GetComptimeValue<BooleanType, bool>(BooleanType.Instance, EvaluateExpression(scope, cd.Expression))
@@ -71,6 +72,9 @@ public sealed partial class StaticAnalyzer
         case Node.Declaration.Constant constant: {
             var type = EvaluateType(scope, constant.Type);
             var init = AnalyzeInitializer(scope, constant.Value, EvaluatedType.IsAssignableTo, type);
+            if (init is Expression) {
+                _msger.Report(Message.SuggestionFeatureNotOfficialPrimitiveInitializers(init));
+            }
 
             if (init.Value.Status is not ValueStatus.Comptime) {
                 _msger.Report(Message.ErrorComptimeExpressionExpected(constant.Value.SourceTokens));
@@ -285,7 +289,14 @@ public sealed partial class StaticAnalyzer
             var declaration = new VariableDeclaration(new(scope, s.Declaration.SourceTokens),
                 s.Declaration.Names,
                 type);
-            var initializer = s.Value.Map(i => AnalyzeInitializer(scope, i, EvaluatedType.IsAssignableTo, type));
+            var initializer = s.Value.Map(i => {
+                var init = AnalyzeInitializer(scope, i, EvaluatedType.IsAssignableTo, type);
+                if (init is Expression) {
+                    _msger.Report(Message.SuggestionFeatureNotOfficialPrimitiveInitializers(init));
+                }
+                return init;
+
+            });
 
             foreach (var name in declaration.Names) {
                 scope.AddOrError(_msger, new Symbol.LocalVariable(name, s.SourceTokens, type, initializer.Map(i => i.Value)));
@@ -665,12 +676,22 @@ public sealed partial class StaticAnalyzer
     internal UnaryOperator AnalyzeOperator(Scope scope, Node.UnaryOperator unOp)
     {
         SemanticMetadata meta = new(scope, unOp.SourceTokens);
-        return unOp switch {
-            Node.UnaryOperator.Cast op => new UnaryOperator.Cast(meta, EvaluateType(scope, op.Target)),
-            Node.UnaryOperator.Minus => new UnaryOperator.Minus(meta),
-            Node.UnaryOperator.Not => new UnaryOperator.Not(meta),
-            Node.UnaryOperator.Plus => new UnaryOperator.Plus(meta),
-            _ => throw unOp.ToUnmatchedException(),
+        switch (unOp) {
+        case Node.UnaryOperator.Cast op: {
+            _msger.Report(Message.SuggestionFeatureNotOfficial(op.SourceTokens, "type casts"));
+            return new UnaryOperator.Cast(meta, EvaluateType(scope, op.Target));
+        }
+        case Node.UnaryOperator.Minus: {
+            return new UnaryOperator.Minus(meta);
+        }
+        case Node.UnaryOperator.Not: {
+            return new UnaryOperator.Not(meta);
+        }
+        case Node.UnaryOperator.Plus: {
+            return new UnaryOperator.Plus(meta);
+        }
+        default:
+            throw unOp.ToUnmatchedException();
         };
     }
 

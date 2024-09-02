@@ -29,7 +29,7 @@ public enum MessageCode
     ReturnInNonFunction,
     InvalidCast,
     AssertionFailed,
-    FeatureComingSoon,
+    FeatureNotAvailable,
     CustomError = 999,
 
     #endregion Errors
@@ -48,7 +48,7 @@ public enum MessageCode
 
     ExpressionValueUnused,
     RedundantCast,
-
+    FeatureNotOfficial,
     CustomSuggestion = 2999,
 
     #endregion Suggestions

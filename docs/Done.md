@@ -1995,3 +1995,9 @@ Target language
 Input file or stdin
 
 Output file or stdout
+
+## "(Careful, my friend) (feature) is frowned upon in tests" message
+
+1/10 chance to show the "Careful, my friend" part.
+
+See Notable Additions.

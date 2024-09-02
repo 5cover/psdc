@@ -6,7 +6,8 @@ sealed class CliOptions(
     string targetLanguage,
     string input,
     string output,
-    bool verbose
+    bool verbose,
+    bool pedantic
 )
 {
     [Value(0, Required = true,
@@ -22,4 +23,7 @@ sealed class CliOptions(
     [Option('v', "verbose",
         HelpText = "Verbose output")]
     public bool Verbose => verbose;
+    [Option("pedantic",
+        HelpText = "Warn when using unofficial features. Guarantees correctness for tests.")]
+    public bool Pedantic => pedantic;
 }
