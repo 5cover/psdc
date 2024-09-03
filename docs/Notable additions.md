@@ -14,7 +14,7 @@ Sometimes it is necessary to convert values from one type to another. This can b
 
 Directives (lines starting with `#`) are used for configuration, comptime introspection, and modularity.
 
-## Primitive initializers
+## Scalar initializers
 
 Initialiers for primitive types (any type except structure or arrays) are supported.
 

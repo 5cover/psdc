@@ -1,5 +1,67 @@
 # Scratch area
 
+## Make scalar initializers affect deepest subobject
+
+```psc
+type d_example = structure début
+    addr : structure début
+        port : entier;
+    fin;
+    in_u : structure début
+        a8 : tableau[4] de entier;
+        a16 : tableau[2] de entier;
+    fin;
+fin
+
+constante d_example e_ex := {
+    80, // 80 initializes ex.addr.port
+    127, // 127 initializes ex.in_u.a8[0]
+    0, // 0 initializes ex.in_u.a8[1]
+    0, // 0 initializes ex.in_u.a8[2]
+    1 // 1 initializes ex.in_u.a8[3]
+};
+
+#assert e_ex.addr.port == 80
+#assert e_ex.in_u.a8[1] == 127
+#assert e_ex.in_u.a8[2] == 0
+#assert e_ex.in_u.a8[3] == 0
+#assert e_ex.in_u.a8[4] == 1
+#assert e_ex.in_u.a16[1] == 0
+#assert e_ex.in_u.a16[2] == 0
+```
+
+I assume we need to change SetValue.
+
+If the needle isn't of the right type, try to set the rest? I guess that could work.
+
+Try to set the rest and return the new evaluated path.
+
+If the type is correct (so usual logic applied), we just return the current path.
+
+Soo.. Question 1: who's in charge of checking if the type is valid?
+
+Either in SetValueFirst or an abstract method. probably an abstract method would be better as we won't have to change the return type of setvaluefirst.
+
+Turns out an abstract propert is better. okay.
+
+2: how is the current path affected?
+
+Soo.. The basic idea is that we need to go deeper setting the value, based on the current path.
+
+Simple example:
+
+```c
+typedef struct { struct { int b,c; } a; int d; } S
+
+// Instead of expecting 5 to be a `struct { int b,c; }`, we set the `b` member of `a` to 5.
+S s1 = { 5 };
+
+// Same as earlier for 5.
+// The current path is set to .a.c;
+// 6 sets .a.c and not .d
+S s2 = { 5, 6 };
+```
+
 ## Custom formatting
 
 Output a minified version of the code and run a formatter, either from C# or external process
@@ -460,6 +522,8 @@ config json file|global|`{ "ecrire-nl": vrai }`
 CLI options|global|`--config ecrire-nl:vrai`
 preprocessor directives|current file|`#config ecrire-nl := (expr)`<br>`#config ecrire-nl reset` &rarr; resets to inherited value
 
+Disable floating point equality warning in initializers.psc
+
 ## code formatting
 
 Sort members. Code maid. Resharper subscription.
@@ -482,8 +546,11 @@ Should I test all steps simultaneously or use separate tests for tokenization, p
 
 One think certain, I'm gonna need A LOT of tests.
 
-## Test and fix initializer evaluation
+## Improve formatting of composite values
 
-initializer.psc contains tests.
+Array and structure values can be formatted to quite lengthy strings.
 
-Currently initializer static analysis is broken, but we're kind of in a rush right now. Users are unlikely to want to use initializers anyway.
+Solutions:
+
+- Use only the alais name when available
+- For sturct and arrays, split the value across multiple lines.

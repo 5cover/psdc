@@ -73,7 +73,7 @@ public sealed partial class StaticAnalyzer
             var type = EvaluateType(scope, constant.Type);
             var init = AnalyzeInitializer(scope, constant.Value, EvaluatedType.IsAssignableTo, type);
             if (init is Expression) {
-                _msger.Report(Message.SuggestionFeatureNotOfficialPrimitiveInitializers(init));
+                _msger.Report(Message.SuggestionFeatureNotOfficialScalarInitializers(init));
             }
 
             if (init.Value.Status is not ValueStatus.Comptime) {
@@ -292,7 +292,7 @@ public sealed partial class StaticAnalyzer
             var initializer = s.Value.Map(i => {
                 var init = AnalyzeInitializer(scope, i, EvaluatedType.IsAssignableTo, type);
                 if (init is Expression) {
-                    _msger.Report(Message.SuggestionFeatureNotOfficialPrimitiveInitializers(init));
+                    _msger.Report(Message.SuggestionFeatureNotOfficialScalarInitializers(init));
                 }
                 return init;
 
@@ -419,9 +419,12 @@ public sealed partial class StaticAnalyzer
                         }
 
                         return currentPath.Map(p => p.Type.ItemType);
-                    }, sitem => currentPath.Bind(p => p.SetValue(sitem.Meta.SourceTokens, arrayValue.Status.ComptimeValue.Unwrap(), sitem.Value.Value)
-                                                       .DropError(_msger.Report))
-                                           .Tap(v => arrayValue = v)
+                    }, sitem => currentPath.Bind(p => p.SetValue(
+                                sitem.Meta.SourceTokens,
+                                arrayValue.Status.ComptimeValue.Unwrap(),
+                                sitem.Value.Value)
+                            .DropError(_msger.Report))
+                        .Tap(v => arrayValue = v)
                     ).ToArray();
 
                     return (arrayValue, sitems);

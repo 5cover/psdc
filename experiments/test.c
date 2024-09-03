@@ -1,9 +1,13 @@
-int main() {
-    int a[5];
-    int i;
+#include <stdio.h>
 
-    for (i = 0; i <= 5; ++i) {
-        a[i] = 0;
-        // &a[5] == &i
-    }
+typedef struct {
+    int a;
+    struct { int c; } b;
+    struct { struct { int f; } e; } d;
+} S;
+
+
+int main() {
+    S s = { 1, 2, 3 };
+    printf("%d %d %d\n", s.a, s.b.c, s.d.e.f);
 }

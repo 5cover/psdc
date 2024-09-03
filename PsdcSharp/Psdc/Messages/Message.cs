@@ -221,8 +221,8 @@ public readonly struct Message
         Fmt($"{(Random.Shared.Test(.1) ? "careful, my friend... " : "")}language feature '{feature}' is not official"),
         alternativeSolution is null ? [] : [alternativeSolution]);
 
-    internal static Message SuggestionFeatureNotOfficialPrimitiveInitializers(SemanticNode.Initializer init)
-     => SuggestionFeatureNotOfficial(init.Meta.SourceTokens, "primitive initializers",
+    internal static Message SuggestionFeatureNotOfficialScalarInitializers(SemanticNode.Initializer init)
+     => SuggestionFeatureNotOfficial(init.Meta.SourceTokens, "scalar initializers",
         "consider separating the initialization from the declaration in an assignent statement");
 
     static Message CreateTargetLanguageFormat(SourceTokens sourceTokens, MessageCode code,

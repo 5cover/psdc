@@ -2005,3 +2005,9 @@ See Notable Additions.
 ## GNU-compliant message formatting
 
 We should adhere to what's standard.
+
+## Test and fix initializer evaluation
+
+initializer.psc contains tests.
+
+Currently initializer static analysis is broken, but we're kind of in a rush right now. Users are unlikely to want to use initializers anyway.

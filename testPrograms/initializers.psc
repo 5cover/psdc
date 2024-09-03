@@ -8,7 +8,13 @@ constante structure début
     c: tableau [4] de caractère;
 fin a_u  := {
     1
-}; #eval expr a_u  // x = 1, c = { '\0', '\0', '\0', '\0' }
+};
+#assert a_u.x == 1
+#assert a_u.c[1] == '\0'
+#assert a_u.c[2] == '\0'
+#assert a_u.c[3] == '\0'
+#assert a_u.c[4] == '\0'
+
 constante structure début
     x: entier;
     c: tableau [4] de caractère;
@@ -16,7 +22,12 @@ fin a_u2 := {
     .c := {
         'A'
     }
-}; #eval expr a_u2 // x = 0, c = { 'A', '\0', '\0', '\0' }
+};
+#assert a_u2.x == 0
+#assert a_u2.c[1] == 'A'
+#assert a_u2.c[2] == '\0'
+#assert a_u2.c[3] == '\0'
+#assert a_u2.c[4] == '\0'
 
 // When initializing a struct, the first initializer in the list initializes the first declared member (unless a designator is specified), and all subsequent initializers without designators initialize the struct members declared after the one initialized by the previous expression.
 
@@ -25,7 +36,10 @@ constante structure début
 fin b_p := {
     1.2,
     1.3
-}; #eval expr b_p // p.x=1.2, p.y=1.3, p.z=0.0;
+};
+#assert b_p.x == 1.2;
+#assert b_p.y == 1.3;
+#assert b_p.z == 0;
 
 type b_div_t = structure
     début quot,rem: entier;
@@ -33,7 +47,9 @@ fin
 constante b_div_t b_answer := {
     .quot := 2,
     .rem := -1
-}; #eval expr b_answer
+};
+#assert b_answer.quot == 2
+#assert b_answer.rem == -1
 
 // A designator causes the following initializer to initialize the struct member described by the designator. Initialization then continues forward in order of declaration, beginning with the next element declared after the one described by the designator.
 
@@ -46,7 +62,13 @@ fin c_z := {
     .sec:=30,
     15,
     17
-}; #eval expr c_z // initializes z to {30,15,17,31,12,2014}
+};
+#assert c_z.sec == 30
+#assert c_z.min == 15
+#assert c_z.hour == 17
+#assert c_z.day == 31
+#assert c_z.mon == 12
+#assert c_z.year == 2014
 
 // It's an error to provide more initializers than members.
 
@@ -54,7 +76,9 @@ fin c_z := {
 
 // If the nested initializer begins with an opening brace, the entire nested initializer up to its closing brace initializes the corresponding member object. Each left opening brace establishes a new current object. The members of the current object are initialized in their natural order, unless designators are used: array elements in subscript order, struct members in declaration order, only the first declared member of any union. The subobjects within the current object that are not explicitly initialized by the closing brace are empty-initialized. 
 
-type d_example = structure début
+// NOT YET IMPLEMENTED
+
+/*type d_example = structure début
     addr : structure début
         port : entier;
     fin;
@@ -76,9 +100,18 @@ constante d_example d_ex := { // start of initializer list for struct example
             1
         } 
     }
-}; #eval expr d_ex
+};
+#assert d_ex.addr.port == 80
+#assert d_ex.in_u.a8[1] == 127
+#assert d_ex.in_u.a8[2] == 0
+#assert d_ex.in_u.a8[3] == 0
+#assert d_ex.in_u.a8[4] == 1
+#assert d_ex.in_u.a16[1] == 0
+#assert d_ex.in_u.a16[2] == 0
 
 // If the nested initializer does not begin with an opening brace, only enough initializers from the list are taken to account for the elements or members of the member array, struct or union; any remaining initializers are left to initialize the next struct member: 
+
+// In other words: undesignated scalar initializers mutate the corresponding value in the deepest sub-object.
 
 constante d_example e_ex := {
     80, // 80 initializes ex.addr.port
@@ -86,7 +119,15 @@ constante d_example e_ex := {
     0, // 0 initializes ex.in_u.a8[1]
     0, // 0 initializes ex.in_u.a8[2]
     1 // 1 initializes ex.in_u.a8[3]
-}; #eval expr e_ex
+};
+
+#assert e_ex.addr.port == 80
+#assert e_ex.in_u.a8[1] == 127
+#assert e_ex.in_u.a8[2] == 0
+#assert e_ex.in_u.a8[3] == 0
+#assert e_ex.in_u.a8[4] == 1
+#assert e_ex.in_u.a16[1] == 0
+#assert e_ex.in_u.a16[2] == 0
 
 // When designators are nested, the designators for the members follow the designators for the enclosing structs/unions/arrays. Within any nested bracketed initializer list, the outermost designator refers to the current object and selects the subobject to be initialized within the current object only. 
 
@@ -200,4 +241,4 @@ fin l_s := {
 constante structure début
 fin m_s := {
 }; #eval expr m_s // Error: struct cannot be empty
-
+/**/
