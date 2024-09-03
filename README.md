@@ -75,7 +75,7 @@ Notation: bold &rarr; underway
 - [ ] Configuration
 - [x] [GNU](https://www.gnu.org/prep/standards/standards.html#Errors)-compliant message formatting
 - [ ] Translations : resx, fr
-- [ ] CLI (use nuget package)
+- [x] CLI (use nuget package)
     - [ ] custom header
     - [ ] Formatting customization
     - [ ] documentation date: now, file?

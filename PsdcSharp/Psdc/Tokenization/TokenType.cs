@@ -12,12 +12,11 @@ public class TokenType
         public IEnumerable<T> Rules { get; }
     }
 
-    static string GetRepr(string repr, bool isStaticCode) => isStaticCode ? repr : $"`{repr}`";
     protected static IEnumerable<T> GetRules<T>(TokenType self, IEnumerable<Func<TokenType, T>> rules) => rules.Select(r => r(self));
 
     private readonly string _repr;
 
-    TokenType(string repr, bool isStaticCode) => _repr = GetRepr(repr, isStaticCode);
+    TokenType(string repr, bool isCode) => _repr = isCode ? $"'{repr}'" : repr;
 
     public static TokenType Eof { get; } = new("end of file", false);
 

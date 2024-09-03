@@ -528,10 +528,6 @@ Disable floating point equality warning in initializers.psc
 
 Sort members. Code maid. Resharper subscription.
 
-## VScode extension
-
-TypeScript wrapper around the AOT binary
-
 ## PubXml
 
 Strip debug symbols, optimize for size
@@ -545,3 +541,25 @@ What about errors? I can make a messenger that saves the errors to a list and as
 Should I test all steps simultaneously or use separate tests for tokenization, parsing, static analysis and code generation?
 
 One think certain, I'm gonna need A LOT of tests.
+
+## VScode extension
+
+TypeScript wrapper around the AOT binary
+
+### Features
+
+#### Psdc wrapper
+
+- Compile current file
+- Call with arbitrary arguments
+- configuration in settings
+
+#### Language server
+
+- Syntax highlighting
+- Error list
+- Autocompletion
+
+#### Debugger
+
+- F5 Debug
