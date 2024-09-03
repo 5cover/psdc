@@ -59,17 +59,15 @@ static class Program
             var ast = "Parsing".LogOperation(opt.Verbose,
                 () => Parser.Parse(msger, tokens));
 
-            if (!ast.HasValue) {
-                return SysExits.DataErr;
+            if (ast.HasValue) {
+                var sast = "Analyzing".LogOperation(opt.Verbose,
+                    () => StaticAnalyzer.Analyze(msger, ast.Value));
+
+                string cCode = "Generating code".LogOperation(opt.Verbose,
+                    () => codeGenerator(msger, sast));
+
+                output.Write(cCode);
             }
-
-            var sast = "Analyzing".LogOperation(opt.Verbose,
-                () => StaticAnalyzer.Analyze(msger, ast.Value));
-
-            string cCode = "Generating code".LogOperation(opt.Verbose,
-                () => codeGenerator(msger, sast));
-
-            output.Write(cCode);
 
             msger.PrintMessageList();
 
