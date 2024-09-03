@@ -2011,3 +2011,16 @@ We should adhere to what's standard.
 initializer.psc contains tests.
 
 Currently initializer static analysis is broken, but we're kind of in a rush right now. Users are unlikely to want to use initializers anyway.
+
+## Improve formatting of composite values
+
+Array and structure values can be formatted to quite lengthy strings.
+
+Solutions:
+
+- Use only the alais name when available
+- For sturct and arrays, split the value across multiple lines.
+
+## Structure values: improve formatting by iterating over list of members
+
+Currently we iterate over an ImmutableDictionary. This means the order is undefined. Which can lead to inconsistent results. Fix this by

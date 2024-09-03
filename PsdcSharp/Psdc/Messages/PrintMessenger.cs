@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-
 namespace Scover.Psdc.Messages;
 
 public sealed class PrintMessenger(

@@ -330,6 +330,7 @@ constante g_very_complex_t g_very_complex_trailing_comma := {
 #assert g_very_complex_trailing_comma.b.d.e == 75
 #assert g_very_complex_trailing_comma.b.d.f[1] == 76
 #assert g_very_complex_trailing_comma.b.d.f[2] == 77
+#eval expr g_very_complex_trailing_comma
 
 // Empty initializer for a structure.
 constante structure début

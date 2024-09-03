@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Library;
 using Scover.Psdc.StaticAnalysis;

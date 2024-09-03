@@ -33,7 +33,7 @@ where TOpTable : OperatorTable
     protected static Generator<T> ToGenerator<T>(Appender<T> appender)
      => node => appender(new(), node).ToString();
 
-    protected readonly Indentation _indent = new();
+    protected readonly Indentation _indent = new(4);
     protected readonly Messenger _msger = msger;
     protected readonly TKwTable _kwTable = keywordTable;
     protected readonly TOpTable _opTable = operatorTable;

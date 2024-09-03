@@ -1,3 +1,5 @@
+using Scover.Psdc.CodeGeneration;
+
 namespace Scover.Psdc.Pseudocode;
 
 file static class ValueStatusExtensions
@@ -25,6 +27,7 @@ where TType : EvaluatedType
         _ when string.IsNullOrEmpty(format) => string.Create(fmtProvider, $"{Status.GetPart()}{Type}"),
         _ => throw new FormatException($"Unsupported format: '{format}'")
     };
+    public string ToString(string? format, IFormatProvider? fmtProvider, Indentation indent) => ToString(format, fmtProvider);
 }
 
 abstract class ValueImpl<TSelf, TType, TUnderlying>(TType type, ValueStatus<TUnderlying> status) : FormattableUsableImpl, Value<TType, TUnderlying>
@@ -41,12 +44,13 @@ where TUnderlying : notnull
      && o.Status.Equals(Status);
     public TSelf Map(Func<TUnderlying, TUnderlying> transform) => Clone(Status.Map(transform));
     protected abstract TSelf Clone(ValueStatus<TUnderlying> value);
-    protected abstract string ValueToString(TUnderlying value, IFormatProvider? fmtProvider);
-    public override string ToString(string? format, IFormatProvider? fmtProvider) => format switch {
-        Value.FmtNoType => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider)).ValueOr(""),
-        Value.FmtMin => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider)).ValueOr(Type.ToString(fmtProvider)),
+    protected abstract string ValueToString(TUnderlying value, IFormatProvider? fmtProvider, Indentation indent);
+    public override string ToString(string? format, IFormatProvider? fmtProvider) => ToString(format, fmtProvider, new(2));
+    public string ToString(string? format, IFormatProvider? fmtProvider, Indentation indent) => format switch {
+        Value.FmtNoType => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider, indent)).ValueOr(""),
+        Value.FmtMin => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider, indent)).ValueOr(Type.ToString(fmtProvider)),
         _ when string.IsNullOrEmpty(format) => Status.ComptimeValue.Match(
-             v => string.Create(fmtProvider, $"{Status.GetPart()}{Type}: {ValueToString(v, fmtProvider)}"),
+             v => string.Create(fmtProvider, $"{Status.GetPart()}{Type}: {ValueToString(v, fmtProvider, indent)}"),
             () => string.Create(fmtProvider, $"{Status.GetPart()}{Type}")),
         _ => throw new FormatException($"Unsupported format: '{format}'")
     };

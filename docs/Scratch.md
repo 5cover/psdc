@@ -545,12 +545,3 @@ What about errors? I can make a messenger that saves the errors to a list and as
 Should I test all steps simultaneously or use separate tests for tokenization, parsing, static analysis and code generation?
 
 One think certain, I'm gonna need A LOT of tests.
-
-## Improve formatting of composite values
-
-Array and structure values can be formatted to quite lengthy strings.
-
-Solutions:
-
-- Use only the alais name when available
-- For sturct and arrays, split the value across multiple lines.

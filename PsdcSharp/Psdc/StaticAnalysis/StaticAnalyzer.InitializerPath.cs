@@ -29,7 +29,7 @@ public sealed partial class StaticAnalyzer
         : EvaluatePath(scope, rest, componentType).Map(restPath => new InitializerPath.Structure(new(first.Component), restPath, targetType));
 
     ValueOption<InitializerPath.Array, Message> EvaluateArrayPath(Scope scope, Designator.Array first, ReadOnlySpan<Designator> rest, ArrayType targetType)
-     => first.Index.Value.SomeIndexes(targetType.Length.Value) is { HasValue: true } i
+     => first.Index.Value.SomeIndexes(targetType.Length.Value, 1) is { HasValue: true } i
         ? EvaluatePath(scope, rest, targetType.ItemType).Map(restPath => new InitializerPath.Array(new(i.Value), restPath, targetType))
         : Message.ErrorIndexOutOfBounds(first.Index, targetType.Length.Value);
 
@@ -94,17 +94,17 @@ public sealed partial class StaticAnalyzer
             protected override ValueOption<DesignatorInfo.Array, Message> AdvanceFirst(SourceTokens context)
              => (First.Index + 1).Indexes(Type.Length.Value)
                 ? new DesignatorInfo.Array(First.Index + 1)
-                : Message.ErrorIndexOutOfBounds(context, First.Index + 1, Type.Length.Value);
+                : Message.ErrorIndexOutOfBounds(context, First.Index + 2, Type.Length.Value);
             protected override Option<ImmutableArray<Value>, Message> SetValueFirst(SourceTokens context, ImmutableArray<Value> haystack, ValueTransform transform)
              => haystack.ElementAtOrNone(First.Index)
-                .OrWithError(Message.ErrorIndexOutOfBounds(context, First.Index, haystack.Length))
+                .OrWithError(Message.ErrorIndexOutOfBounds(context, First.Index + 1, haystack.Length))
                 .Bind(transform)
                 .Map(inner => haystack.SetItem(First.Index, inner));
             protected override Array WithFirst(DesignatorInfo.Array first) => this with { First = first };
             protected override Array WithRest(ValueOption<InitializerPath> rest) => this with { Rest = rest };
         }
         public sealed record Structure(DesignatorInfo.Structure First, ValueOption<InitializerPath> Rest, StructureType Type)
-        : Impl<Structure, DesignatorInfo.Structure, StructureType, StructureValue, ImmutableDictionary<Identifier, Value>>(First, Rest, Type)
+        : Impl<Structure, DesignatorInfo.Structure, StructureType, StructureValue, ImmutableOrderedMap<Identifier, Value>>(First, Rest, Type)
         {
             public static ValueOption<Structure, Message> OfFirstObject(StructureType type, SourceTokens context)
              => type.Components.List.FirstOrNone().Map(comp => new Structure(new(comp.Key), default, type))
@@ -117,8 +117,8 @@ public sealed partial class StaticAnalyzer
                 ? new DesignatorInfo.Structure(c.Key)
                 : Message.ErrorExcessElementInInitializer(context);
 
-            protected override Option<ImmutableDictionary<Identifier, Value>, Message> SetValueFirst(SourceTokens context, ImmutableDictionary<Identifier, Value> haystack, ValueTransform transform)
-             => haystack.GetValueOrNone(First.Component)
+            protected override Option<ImmutableOrderedMap<Identifier, Value>, Message> SetValueFirst(SourceTokens context, ImmutableOrderedMap<Identifier, Value> haystack, ValueTransform transform)
+             => haystack.Map.GetValueOrNone(First.Component)
                 .OrWithError(Message.ErrorStructureComponentDoesntExist(First.Component, Type))
                 .Bind(transform)
                 .Map(inner => haystack.SetItem(First.Component, inner));

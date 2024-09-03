@@ -638,7 +638,7 @@ public sealed partial class StaticAnalyzer
                     _msger.Report(Message.ErrorStructureComponentDoesntExist(compAccess.ComponentName, structVal.Type));
                 } else {
                     return structVal.Status.ComptimeValue
-                        .Map(s => s[compAccess.ComponentName])
+                        .Map(s => s.Map[compAccess.ComponentName])
                         .ValueOr(componentType.RuntimeValue);
                 }
                 return UnknownType.Inferred.InvalidValue;
@@ -758,16 +758,13 @@ public sealed partial class StaticAnalyzer
 
     StructureType EvaluateStructureType(Scope scope, Node.Type.Structure structure)
     {
-        Dictionary<Identifier, EvaluatedType> componentsMap = [];
-        List<KeyValuePair<Identifier, EvaluatedType>> componentsList = [];
+        var components = ImmutableOrderedMap<Identifier, EvaluatedType>.Empty;
         foreach (var c in structure.Components) {
             switch (c) {
             case Node.VariableDeclaration comp: {
                 foreach (var name in comp.Names) {
                     var type = EvaluateType(scope, comp.Type);
-                    if (componentsMap.TryAdd(name, type)) {
-                        componentsList.Add(new(name, type));
-                    } else {
+                    if (!components.TryAdd(name, type, out components)) {
                         _msger.Report(Message.ErrorStructureDuplicateComponent(comp.SourceTokens, name));
                     }
                 }
@@ -781,7 +778,7 @@ public sealed partial class StaticAnalyzer
                 throw c.ToUnmatchedException();
             }
         }
-        return new StructureType(new(componentsMap, componentsList));
+        return new StructureType(components);
     }
 
     delegate bool TypeComparer(EvaluatedType actual, EvaluatedType expected);

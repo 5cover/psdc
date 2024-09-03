@@ -54,7 +54,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
     static string AddSpaceBefore(string? str) => str is null ? "" : string.Concat(" ", str);
 
     public static TypeInfo Create(EvaluatedType type, Help help)
-     => Create(type, new(), help);
+     => Create(type, new(4), help);
 
     static TypeInfo Create(EvaluatedType type, Indentation indent, Help help)
     {

@@ -254,29 +254,29 @@ sealed class StringType : EvaluatedTypeImplInstantiable<StringValue, string>
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider) => "chaîne";
 }
 
-sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, ImmutableDictionary<Identifier, Value>>
+sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, ImmutableOrderedMap<Identifier, Value>>
 {
     const int MaxComponentsInRepresentation = 3;
-    public StructureType(OrderedMap<Identifier, EvaluatedType> components, ValueOption<Identifier> alias = default)
-     : base(alias, CreateDefaultValue(components.Map))
+    public StructureType(ImmutableOrderedMap<Identifier, EvaluatedType> components, ValueOption<Identifier> alias = default)
+     : base(alias, CreateDefaultValue(components))
      => Components = components;
 
-    public OrderedMap<Identifier, EvaluatedType> Components { get; }
+    public ImmutableOrderedMap<Identifier, EvaluatedType> Components { get; }
     public override StructureType ToAliasReference(Identifier alias) => new(Components, alias);
 
     public override bool SemanticsEqual(EvaluatedType other) => other is StructureType o
      && o.Components.Map.Keys.AllSemanticsEqual(Components.Map.Keys)
      && o.Components.Map.Values.AllSemanticsEqual(Components.Map.Values);
 
-    public ImmutableDictionary<Identifier, Value> CreateDefaultValue() => CreateDefaultValue(Components.Map);
+    public ImmutableOrderedMap<Identifier, Value> CreateDefaultValue() => CreateDefaultValue(Components);
 
-    public static ImmutableDictionary<Identifier, Value> CreateDefaultValue(IReadOnlyDictionary<Identifier, EvaluatedType> components)
-     => components.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.DefaultValue);
+    public static ImmutableOrderedMap<Identifier, Value> CreateDefaultValue(ImmutableOrderedMap<Identifier, EvaluatedType> components)
+     => new(components.List.Select(kvp => KeyValuePair.Create(kvp.Key, kvp.Value.DefaultValue)).ToImmutableList());
 
-    protected override StructureValue CreateValue(ValueStatus<ImmutableDictionary<Identifier, Value>> status)
+    protected override StructureValue CreateValue(ValueStatus<ImmutableOrderedMap<Identifier, Value>> status)
     {
         Debug.Assert(status.ComptimeValue is not { HasValue: true } v
-                  || Components.Map.Keys.ToHashSet().SetEquals(v.Value.Keys), "Provided value and struture has different components");
+                  || Components.Map.Keys.ToHashSet().SetEquals(v.Value.Map.Keys), "Provided value and struture has different components");
         return new(this, status);
     }
 

@@ -1,6 +1,5 @@
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
-using Scover.Psdc.Library;
 using Scover.Psdc.Messages;
 
 static class Program
