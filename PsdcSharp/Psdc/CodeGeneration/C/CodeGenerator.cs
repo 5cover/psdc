@@ -348,7 +348,7 @@ sealed partial class CodeGenerator(Messenger messenger)
          _ = expr switch {
              BracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracket),
              Expression.FunctionCall call => AppendCall(o, call),
-             Expression.Literal { Value: BooleanValue } l => AppendLiteralBoolean((bool)l.UnderlyingValue),
+             Expression.Literal { Value: BooleanValue, UnderlyingValue: bool v } => AppendLiteralBoolean(v),
              // We're using the Pseudocode syntax for escaping string literals since it is the same as C's (except for \? which we can ignore, no one uses trigraphs)
              Expression.Literal { Value: CharacterValue v } => o.Append(v.ToString(Value.FmtNoType, Format.Code)),
              Expression.Literal { Value: StringValue v } => o.Append(v.ToString(Value.FmtNoType, Format.Code)),

@@ -3,7 +3,8 @@ programme Accents c'est
 début
     écrireÉcran("normal");
     ecrireEcran("no accent");
-    ëcrireÈcran("different accents");
+    écrireEcran("no accent");
+    //ëcrireÈcran("different accents"); // invalid
 
     // Non-overlapping identifiers
     e : entier;
