@@ -183,7 +183,7 @@ public readonly struct Message
         Fmt($"unsupported operand types for {opBin.Operator.Representation}: '{leftType}' and '{rightType}'"));
     internal static Message ErrorInvalidCast(SourceTokens sourceTokens, EvaluatedType sourceType, EvaluatedType targetType)
      => new(sourceTokens, MessageCode.InvalidCast,
-        Fmt($"Invalid cast: there is no explicit conversion from '{sourceType}' to '{targetType}'."));
+        Fmt($"Invalid cast: there is no implicit or explicit conversion from '{sourceType}' to '{targetType}'."));
     internal static Message ErrorUnsupportedOperation(Expression.UnaryOperation opUn, EvaluatedType operandType)
      => new(opUn.SourceTokens, MessageCode.UnsupportedOperation,
         Fmt($"unsupported operand type for {opUn.Operator.Representation}: '{operandType}'"));

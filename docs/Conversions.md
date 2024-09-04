@@ -10,6 +10,7 @@ Legend:
 ```mermaid
 flowchart LR
 booléen -.faux &rarr; 0<br>vrai &rarr; 1.-> entier
+entier -.0 &rarr; faux<br>&ne;0 &rarr; vrai.-> booléen
 caractère -.impl-defined.-> entier
 entier -.impl-defined.-> caractère
 chaîneN["chaîne(<var>N</var>)"] --> chaîne

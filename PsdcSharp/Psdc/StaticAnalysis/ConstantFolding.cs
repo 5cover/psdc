@@ -49,12 +49,13 @@ static class ConstantFolding
             return OperationResult.OkUnary(operand, (opUn, operandType) => Message.SuggestionRedundantCast(opUn.SourceTokens, operandType, targetType));
         }
         // Explicit conversions
-        return (targetType, operand) switch {
-            (IntegerType it, RealValue rv) => Operate(it, rv.Status, r => (int)r),
+        return (operand, targetType) switch {
+            (RealValue rv, IntegerType it) => Operate(it, rv.Status, r => (int)r),
             // we don't know what encoding is used in the target language, so the value is runtime-known.
-            (IntegerType it, CharacterValue) => OperationResult.OkUnary(it.RuntimeValue),
-            (CharacterType ct, IntegerValue) => OperationResult.OkUnary(ct.RuntimeValue),
-            (IntegerType it, BooleanValue bv) => Operate(it, bv.Status, b => b ? 1 : 0),
+            (CharacterValue, IntegerType it) => OperationResult.OkUnary(it.RuntimeValue),
+            (IntegerValue, CharacterType ct) => OperationResult.OkUnary(ct.RuntimeValue),
+            (BooleanValue bv, IntegerType it) => Operate(it, bv.Status, b => b ? 1 : 0),
+            (IntegerValue iv, BooleanType bt) => Operate(bt, iv.Status, i => i != 0),
             _ => (UnaryOperationMessage)((opUn, operandType) => Message.ErrorInvalidCast(opUn.SourceTokens, operandType, targetType))
         };
     }

@@ -12,7 +12,8 @@ public static class SemanticNodeExtensions
     /// <param name="expr">The expression.</param>
     /// <returns>The inverse of <paramref name="expr"/>. If <param name="expr"> is not a boolean expression, a simple NOT logical operation is created.</returns>
     internal static Expression Invert(this Expression expr) => expr switch {
-        Expression.Literal { Value: BooleanValue b } l => new Expression.Literal(Meta(expr), !b.Status.ComptimeValue.Unwrap(), b.Invert()),
+        Expression.Literal { Value: BooleanValue v } l => new Expression.Literal(Meta(expr),
+            v.Status.ComptimeValue.Match(v => !v, () => l.UnderlyingValue), v.Invert()),
         Expression.Bracketed e => new Expression.Bracketed(Meta(expr), e.ContainedExpression.Invert(), e.Value.Invert()),
         Expression.UnaryOperation uo when uo.Operator is UnaryOperator.Not => uo.Operand,
         Expression.BinaryOperation bo when bo.Invert() is { HasValue: true } bov => bov.Value,

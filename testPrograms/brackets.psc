@@ -1,7 +1,11 @@
 programme Brackets c'est
 // Support for non-standard brackets in control structures
 // This is a parser test
+
+constante entier MAX := 10;
+
 début
+    i : entier;
     // for loop
     pour (i de 1 à MAX pas 5) faire
     finfaire
@@ -20,23 +24,23 @@ début
     finsi
 
     // while
-    tant que 1 faire
+    tant que (booléen)1 faire
     finfaire
 
-    tant que (1) faire
+    tant que ((booléen)1) faire
     finfaire
 
     // do..while
     faire
-    tant que 1
+    tant que (booléen)1
 
     faire
-    tant que (1)
+    tant que ((booléen)1)
 
     // repeat
     répéter
-    jusqu'à (1)
+    jusqu'à ((booléen)1)
 
     répéter
-    jusqu'à 1
+    jusqu'à (booléen)1
 fin
