@@ -24,6 +24,7 @@ début
     i := (entier)b;     // explicit: booléen -> entier
     i := (entier)vrai;  // explicit: booléen -> entier
     i := (entier)faux;  // explicit: booléen -> entier
+    b := (booléen)5e;  // explicit: entier -> booléen
 fin
 
 procédure print(entF s : chaîne) c'est
