@@ -46,3 +46,21 @@
 | ParsingBenchmark        | Run    | 293.11 μs | 4.016 μs | 3.354 μs | 38.0859 |  156.2 KB |
 | StaticAnalysisBenchmark | Run    |  30.78 μs | 0.223 μs | 0.186 μs |  3.7231 |  15.25 KB |
 | TokenizationBenchmark   | Run    | 127.91 μs | 1.298 μs | 1.214 μs |  3.4180 |  14.29 KB |
+
+## 3/09: sudoku.psc: BenchmarkMessenger
+
+| Type                    | Method | Mean      | Error     | StdDev   | Gen0     | Gen1   | Allocated |
+|------------------------ |------- |----------:|----------:|---------:|---------:|-------:|----------:|
+| CodeGenerationBenchmark | RunC   |  55.88 μs |  0.469 μs | 0.416 μs |   7.3853 |      - |  30.38 KB |
+| ParsingBenchmark        | Run    | 935.41 μs | 10.014 μs | 9.367 μs | 138.6719 | 2.9297 | 568.34 KB |
+| StaticAnalysisBenchmark | Run    |  55.48 μs |  0.516 μs | 0.431 μs |   6.9580 | 2.2583 |  34.08 KB |
+| TokenizationBenchmark   | Run    | 290.26 μs |  1.349 μs | 1.196 μs |   8.7891 |      - |  37.64 KB |
+
+## 3/09: loop.psc: BenchmarkMessenger
+
+| Type                    | Method | Mean      | Error    | StdDev   | Gen0     | Gen1   | Allocated |
+|------------------------ |------- |----------:|---------:|---------:|---------:|-------:|----------:|
+| CodeGenerationBenchmark | RunC   |  56.39 μs | 0.313 μs | 0.293 μs |   7.6294 |      - |  31.17 KB |
+| ParsingBenchmark        | Run    | 742.50 μs | 4.079 μs | 3.815 μs | 113.2813 | 1.9531 | 462.69 KB |
+| StaticAnalysisBenchmark | Run    |  26.88 μs | 0.179 μs | 0.159 μs |   5.5847 |      - |  22.88 KB |
+| TokenizationBenchmark   | Run    | 286.14 μs | 2.782 μs | 2.602 μs |   8.3008 |      - |  35.85 KB |

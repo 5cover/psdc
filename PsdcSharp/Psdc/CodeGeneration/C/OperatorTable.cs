@@ -27,9 +27,9 @@ sealed class OperatorTable : CodeGeneration.OperatorTable
     public override OperatorInfo Xor { get; } = new(LeftToRight, 9, 2, Infix('^'));
     public override OperatorInfo Cast(EvaluatedType target) => new(RightToLeft, 2, 1,
         (o, typeGen, p) => p[0](o.Append(Format.Code, $"({typeGen(target)})")));
-    public override OperatorInfo UnaryMinus { get; } = new(RightToLeft, 2, 2, Prefix('-'));
-    public override OperatorInfo Not { get; } = new(RightToLeft, 2, 2, Prefix('!'));
-    public override OperatorInfo UnaryPlus { get; } = new(RightToLeft, 2, 2, Prefix('+'));
+    public override OperatorInfo UnaryMinus { get; } = new(RightToLeft, 2, 1, Prefix('-'));
+    public override OperatorInfo Not { get; } = new(RightToLeft, 2, 1, Prefix('!'));
+    public override OperatorInfo UnaryPlus { get; } = new(RightToLeft, 2, 1, Prefix('+'));
 
     public override OperatorInfo ArraySubscript { get; } = new(LeftToRight, 1, 2,
         (o, _, p) => p[1](p[0](o).Append('[')).Append(']'));
