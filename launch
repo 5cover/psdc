@@ -3,4 +3,16 @@
 set -eu
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-PsdcSharp/Psdc/bin/Debug/net8.0/psdc c "testPrograms/$1.psc"
+if [[ $# -eq 1 ]]; then
+    file=$1
+    dir='Debug/net8.0'
+elif [[ $# -eq 2 ]]; then
+    file=$1
+    dir=$2
+else
+    echo "Usage: $0 FILE [DLL_DIR_FROM_BIN]" >&2
+    exit
+fi
+
+
+dotnet exec "PsdcSharp/Psdc/bin/$dir/psdc.dll" c "testPrograms/$file.psc"

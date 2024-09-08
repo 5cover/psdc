@@ -528,10 +528,6 @@ Disable floating point equality warning in initializers.psc
 
 Sort members. Code maid. Resharper subscription.
 
-## PubXml
-
-Strip debug symbols, optimize for size
-
 ## Test suite
 
 Do they check character by character or C tokens? In other words, do they depend on formatting?
@@ -541,3 +537,5 @@ What about errors? I can make a messenger that saves the errors to a list and as
 Should I test all steps simultaneously or use separate tests for tokenization, parsing, static analysis and code generation?
 
 One thing certain, I'm gonna need A LOT of tests.
+
+Something I could do is maybe write the standard and then infer a test suite that tests everything the standard says.

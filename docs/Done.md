@@ -2018,9 +2018,13 @@ Array and structure values can be formatted to quite lengthy strings.
 
 Solutions:
 
-- Use only the alais name when available
+- Use only the alias name when available
 - For sturct and arrays, split the value across multiple lines.
 
 ## Structure values: improve formatting by iterating over list of members
 
 Currently we iterate over an ImmutableDictionary. This means the order is undefined. Which can lead to inconsistent results. Fix this by
+
+## PubXml
+
+Strip debug symbols, optimize for size

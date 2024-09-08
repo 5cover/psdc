@@ -1,15 +1,43 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://schemas.microsoft.com/developer/msbuild/2003 https://raw.githubusercontent.com/dotnet/msbuild/main/src/MSBuild/MSBuild/Microsoft.Build.Core.xsd" Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>psdc</AssemblyName>
+    <Authors>Scover</Authors>
+    <Company>$(Authors)</Company>
+    <Copyright>© 2024 Scover</Copyright>
+    <Description>Lannion IUT Pseudocode transpiler.</Description>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsAotCompatible>true</IsAotCompatible>
     <LangVersion>12</LangVersion>
+    <NeutralLanguage>en-US</NeutralLanguage>
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
-    <PublishAot>true</PublishAot>
     <RootNamespace>Scover.Psdc</RootNamespace>
     <TargetFramework>net8.0</TargetFramework>
+    <Version>1.0.0</Version>
+    <WarningLevel>5</WarningLevel>
+  </PropertyGroup>
+
+  <!-- Output options -->
+  <PropertyGroup>
+    <IncludeSourceRevisionInInformationalVersion>False</IncludeSourceRevisionInInformationalVersion>
+    <PublishAot>true</PublishAot>
+    <PublishCompression>true</PublishCompression>
+    <PublishProtocol>FileSystem</PublishProtocol>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>true</PublishTrimmed>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>True</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
