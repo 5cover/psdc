@@ -74,7 +74,6 @@ where TOpTable : OperatorTable
     }
 
     protected StringBuilder AppendStatement(StringBuilder o, Statement stmt) => stmt switch {
-        Expression.Call call => AppendCallStatement(o, call).AppendLine(";"),
         Nop => o, // Don't generate Nop, has no purpose, + often got as a result of parsing errors.
         Statement.Alternative alt => AppendAlternative(o, alt),
         Statement.Assignment assignment => AppendAssignment(o, assignment),
@@ -128,7 +127,6 @@ where TOpTable : OperatorTable
     protected abstract StringBuilder AppendDoWhileLoop(StringBuilder o, Statement.DoWhileLoop doWhileLoop);
     protected abstract StringBuilder AppendForLoop(StringBuilder o, Statement.ForLoop forLoop);
     protected abstract StringBuilder AppendLocalVariable(StringBuilder o, Statement.LocalVariable local);
-    protected abstract StringBuilder AppendCallStatement(StringBuilder o, Expression.Call call);
     protected abstract StringBuilder AppendRepeatLoop(StringBuilder o, Statement.RepeatLoop repeatLoop);
     protected abstract StringBuilder AppendReturn(StringBuilder o, Statement.Return call);
     protected abstract StringBuilder AppendSwitch(StringBuilder o, Statement.Switch @switch);

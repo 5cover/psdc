@@ -567,7 +567,3 @@ They also said stuff amounting to:
 
 > Thou shall only return once, as thy code must exclude jump statements, as to benefit from the joys of structured programming.<br>
 (*Vialat, S2.01*)
-
-## Switch case blocks
-
-If a variable is declared inside a switch case or if the related configuration says to, enclose it in an anonymous block. This is a both a way to avoid namespace pollution in other cases and a style preference.

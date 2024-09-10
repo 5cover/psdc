@@ -237,7 +237,7 @@ public interface SemanticNode
             Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters,
             Value Value)
-        : Expression, Statement;
+        : Expression;
 
         internal sealed record Bracketed(SemanticMetadata Meta,
             Expression ContainedExpression,

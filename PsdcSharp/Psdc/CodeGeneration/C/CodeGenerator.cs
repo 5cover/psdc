@@ -305,9 +305,6 @@ sealed partial class CodeGenerator(Messenger messenger)
         return AppendBlock(o.Append(' '), whileLoop.Block).AppendLine();
     }
 
-    protected override StringBuilder AppendCallStatement(StringBuilder o, Expression.Call call)
-     => AppendCall(Indent(o), call);
-
     #endregion Statements
 
     #region Expressions
