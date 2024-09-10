@@ -67,7 +67,8 @@ sealed partial class CodeGenerator(Messenger messenger)
     {
         SetGroup(o, Group.Main);
         Indent(o).Append("int main() ");
-        return AppendBlock(o, mainProgram.Block, o => Indent(o.AppendLine()).AppendLine("return 0;"))
+        _includes.Ensure(IncludeSet.StdLib); // for EXIT_SUCCESS
+        return AppendBlock(o, mainProgram.Block, o => Indent(o.AppendLine()).AppendLine("return EXIT_SUCCESS;"))
             .AppendLine();
     }
 

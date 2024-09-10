@@ -555,15 +555,3 @@ Maybe not a full-blow standard, but a set of tutorials for each feature? Like a 
 ## Put test programs up to code
 
 And test with them.
-
-## EXIT_SUCCESS
-
-Up to the IUT's standard of formal dogmatism.
-
-> Thou shall not use 0, but EXIT_SUCCESS, in the same way thou would use NULL instead of 0.<br>
-(*Porhiel, S1.01*)
-
-They also said stuff amounting to:
-
-> Thou shall only return once, as thy code must exclude jump statements, as to benefit from the joys of structured programming.<br>
-(*Vialat, S2.01*)

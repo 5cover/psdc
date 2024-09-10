@@ -2063,3 +2063,15 @@ Remove this distinction between function and procedures at definition/delcaratio
 ## Bitwise operators
 
 XOR, NOT, AND, OR - make them apply on integers as well.
+
+## EXIT_SUCCESS
+
+Up to the IUT's standard of formal dogmatism.
+
+> Thou shall not use 0, but EXIT_SUCCESS, in the same way thou would use NULL instead of 0.<br>
+(*Porhiel, S1.01*)
+
+They also said stuff amounting to:
+
+> Thou shall only return once, as thy code must exclude jump statements, as to benefit from the joys of structured programming.<br>
+(*Vialat, S2.01*)

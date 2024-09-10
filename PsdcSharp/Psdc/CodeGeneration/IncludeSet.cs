@@ -17,7 +17,7 @@ sealed class IncludeSet
             return o;
         }
 
-        foreach (string header in _headers) {
+        foreach (string header in _headers.Order()) {
             o.AppendLine(Format.Code, $"#include {header}");
         }
         return o;
