@@ -15,7 +15,7 @@ Given any Pseudocode program (valid or invalid), Psdc produces an equivalent pro
 <q>Equivalent</q> here is defined as:
 
 - **Equivalence in validity**: a valid Pseudocode program transpiles to a valid program in the target language. An invalid program (with compiler errors) may be invalid in the target language.
-- **Equivalence in behavior**: a valid Pseudocode program exerts the expected behavior in the target language. Since Pseudocode programs can't be executed, the expected behavior of a program is determined by the  Standard (yet to be written).
+- **Equivalence in behavior**: a valid Pseudocode program exerts the expected behavior in the target language. Since Pseudocode programs can't be executed, the expected behavior of a program is determined by the Standard (yet to be written).
 - **Equivalence in semantics**: a Pseudocode program and its transpiled counterpart must be semantically equivalent. This implies:
     - same identifiers (except where target language keywords are used)
     - same declaration order (as possible considering the rules of the target language)
@@ -82,12 +82,13 @@ Notation: bold &rarr; underway
     - [ ] custom header
     - [ ] Formatting customization
     - [ ] documentation date: now, file?
+- [ ] **Language standard**
 - [ ] Tests
     - [ ] Errors
     - [ ] Valid code
 - [ ] Documentation
     - [ ] CLI
-    - [ ] Language standard
+    - [ ] Language tutorials
 - [ ] Initial release
 - [ ] Sample "real" program
 - [ ] Self-hosting (rewrite in Pseudocode)

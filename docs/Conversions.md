@@ -1,11 +1,6 @@
 # Conversions
 
-This is a graph of the allowed implicit and explicit conversions between types.
-
-Legend:
-
-- Solid link: implicit conversion
-- Dotted link: explicit conversion (with cast syntax)
+This is a graph of the allowed conversions between types.
 
 ```mermaid
 flowchart LR
@@ -14,13 +9,22 @@ entier -.0 &rarr; faux<br>&ne;0 &rarr; vrai.-> booléen
 caractère -.impl-defined.-> entier
 entier -.impl-defined.-> caractère
 chaîneN["chaîne(<var>N</var>)"] --> chaîne
+chaîneN ==Larger string (<var>n</var> > 0)==> chaîneN2["chaîne(<var>N</var> + <var>n</var>) "]
 entier --> réel
-réel -.rounded towards zero.->entier
+réel -.round towards zero .->entier
 nomFichierLog
 arrays["<em>any array</em>"]
 structures["<em>any structure</em>"]
 ```
 
-When the result of a conversion is **impl-defined**, it means it depends on the rules of the target language.
+Link shape|Conversion kind
+-|-
+Solid|implicit
+Dotted|explicit (with cast syntax)
+Thick|assigment only
 
-When the result of a conversion isn't mentioned, identity is assumed.
+---
+
+When a conversion is **impl-defined**, the result depends on the rules of the target language.
+
+When a conversion's result isn't specified, identity is assumed.

@@ -1,44 +1,34 @@
-/*
-Algorithme programme principal Sudoku
-*/
-programme Sudoku c'est
+programme Casts c'est
+// A demonstration of implicit and explicit casts.
 
-// Un jeu de Sudoku
-constante entier N := 3;
-constante entier NB_FICHIERS_GRILLES := 10;
-constante entier LONGUEUR_MAX_COMMANDE := 64;
-constante entier COTE_GRILLE := N * N;
-
-type t_grilleEntier = tableau[COTE_GRILLE, COTE_GRILLE] de entier;
+procédure print(entF s : chaîne); // to test for incomplete type
 
 début
-    grilleJeu : t_grilleEntier;
-    ligneCurseur, colonneCurseur : entier;
-    partieAbandonnée : booléen;
-    commandeRéussie : booléen;
-    commande : chaîne(LONGUEUR_MAX_COMMANDE);
+    b : booléen := vrai;
+    c : caractère := 'A';
+    i : entier := 5;
+    r : réel := 3.14;
+    ls : chaîne(20) := "Hello friend";
 
-    partieAbandonnée := faux;
-    ligneCurseur := 1;
-    colonneCurseur := 1;
+    
+    print(entE ls);         // implicit: chaine(20) -> chaîne
+    print(entE (chaîne)ls); // implicit: chaine(20) -> chaîne (redundant)
+    print(entE "abcd");     // implicit: chaine(4) -> chaîne
+    r := i;                 // implicit: entier -> réel
+    r := 4;                 // implicit: entier -> réel
+    i := (entier)r;         // explicit: réel -> entier
+    i := (entier)3.14;      // explicit: réel -> entier
+    c := (caractère)i;      // explicit: entier -> caractère
+    c := (caractère)65;     // explicit: entier -> caractère
+    i := (entier)c;         // explicit: caractère -> entier
+    i := (entier)'A';       // explicit: caractère -> entier
+    i := (entier)b;         // explicit: booléen -> entier
+    i := (entier)vrai;      // explicit: booléen -> entier
+    i := (entier)faux;      // explicit: booléen -> entier
+    b := (booléen)5;        // explicit: entier -> booléen
+fin
 
-    chargerGrille(entE entierAléatoire(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
-
-    // Boucle principale du jeu
-    faire
-        écrireGrille(entE grilleJeu);
-        faire
-            commande := entréeCommande();
-            commandeRéussie := exécuterCommande(entE commande,
-                                                entE/sortE grilleJeu,
-                                                entE/sortE ligneCurseur,
-                                                entE/sortE colonneCurseur,
-                                                sortE partieAbandonnée);
-        tant que (NON commandeRéussie)
-    tant que (NON partieAbandonnée ET NON estGrilleComplète(entE grilleJeu))
-
-    // La partie n'a pas été abandonnée, elle s'est donc terminée par une victoire
-    si (NON partieAbandonnée) alors
-        écrireEcran("Bravo, vous avez gagné !");
-    finsi
+procédure print(entF s : chaîne) c'est
+début
+    écrireEcran(s);
 fin

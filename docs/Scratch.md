@@ -542,6 +542,20 @@ One thing certain, I'm gonna need A LOT of tests.
 
 Something I could do is maybe write the standard and then infer a test suite that tests everything the standard says.
 
+## Pseudocode standard
+
+Having a standard is kind of the opposite from the pseudocode philosophy, which are semantics above correctness. But I think it's a good way to prepare for the test suite.
+
+Since we can just test each affirmation the Standard makes and BOOM! We're testing exhaustively.
+
+Also it's kinda cool.
+
+Maybe not a full-blow standard, but a set of tutorials for each feature? Like a wiki? Let's do it.
+
+## Put test programs up to code
+
+And test with them.
+
 ## EXIT_SUCCESS
 
 Up to the IUT's standard of formal dogmatism.
@@ -567,11 +581,3 @@ And reals to?? Maybe.
 ## Early return
 
 Forgot to add that;
-
-## fix File unmatched exceptions
-
-test: file.psc
-
-## fix double redundant cast warning
-
-test: cast.psc

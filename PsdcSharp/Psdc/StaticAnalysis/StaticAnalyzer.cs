@@ -348,41 +348,6 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    Option<Symbol.Function> DiagnoseCall(Scope scope, Node.Call call)
-    {
-        var callable = scope.GetSymbol<Symbol.Function>(call.Callee).DropError(_msger.Report);
-        callable.Tap(callable => {
-            List<string> problems = [];
-
-            if (call.Parameters.Count != callable.Parameters.Count) {
-                problems.Add(Message.ProblemWrongNumberOfArguments(
-                    callable.Parameters.Count, call.Parameters.Count));
-            }
-
-            foreach (var (actual, formal) in call.Parameters.Zip(callable.Parameters)) {
-                if (actual.Mode != formal.Mode) {
-                    problems.Add(Message.ProblemWrongArgumentMode(formal.Name,
-                        formal.Mode.RepresentationActual, actual.Mode.RepresentationActual));
-                }
-
-                var actualType = EvaluateExpression(scope, actual.Value).Value.Type;
-                if (!actualType.IsConvertibleTo(formal.Type)) {
-                    problems.Add(Message.ProblemWrongArgumentType(formal.Name, formal.Type, actualType));
-                }
-            }
-
-            if (problems.Count > 0) {
-                _msger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
-            }
-        }, none: () => {
-            // If the callable symbol wasn't found, still analyze the parameter expressions.
-            foreach (var actual in call.Parameters) {
-                EvaluateExpression(scope, actual.Value);
-            }
-        });
-        return callable;
-    }
-
     Initializer AnalyzeInitializer(Scope scope, Node.Initializer initializer, TypeComparer typeComparer, EvaluatedType targetType)
     {
         SemanticMetadata meta = new(scope, initializer.SourceTokens);
@@ -555,8 +520,40 @@ public sealed partial class StaticAnalyzer
             return new Expression.UnaryOperation(meta, AnalyzeOperator(scope, opUn.Operator), operand, adjustValue(result.Value));
         }
         case Node.Expression.FunctionCall call: {
-            return new Expression.FunctionCall(meta, call.Callee, AnalyzeParameters(scope, call.Parameters),
-                adjustValue(DiagnoseCall(scope, call)
+            var parameters = AnalyzeParameters(scope, call.Parameters);
+
+            var callable = scope.GetSymbol<Symbol.Function>(call.Callee).DropError(_msger.Report).Tap(callable => {
+                List<string> problems = [];
+
+                if (call.Parameters.Count != callable.Parameters.Count) {
+                    problems.Add(Message.ProblemWrongNumberOfArguments(
+                        callable.Parameters.Count, call.Parameters.Count));
+                }
+
+                foreach (var (actual, formal) in parameters.Zip(callable.Parameters)) {
+                    if (actual.Mode != formal.Mode) {
+                        problems.Add(Message.ProblemWrongArgumentMode(formal.Name,
+                            formal.Mode.RepresentationActual, actual.Mode.RepresentationActual));
+                    }
+
+                    var actualType = actual.Value.Value.Type;
+                    if (!actualType.IsConvertibleTo(formal.Type)) {
+                        problems.Add(Message.ProblemWrongArgumentType(formal.Name, formal.Type, actualType));
+                    }
+                }
+
+                if (problems.Count > 0) {
+                    _msger.Report(Message.ErrorCallParameterMismatch(call.SourceTokens, callable, problems));
+                }
+            }, none: () => {
+                // If the callable symbol wasn't found, still analyze the parameter expressions.
+                foreach (var actual in call.Parameters) {
+                    EvaluateExpression(scope, actual.Value);
+                }
+            });
+
+            return new Expression.FunctionCall(meta, call.Callee, parameters,
+                adjustValue(callable
                     .Map(f => f.ReturnType)
                     .ValueOr(UnknownType.Inferred)
                     .RuntimeValue));

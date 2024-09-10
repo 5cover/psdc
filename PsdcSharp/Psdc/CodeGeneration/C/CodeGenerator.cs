@@ -359,6 +359,7 @@ sealed partial class CodeGenerator(Messenger messenger)
              Expression.Lvalue.VariableReference variable => AppendVariableReference(o, variable, convertInitToCompoundLiteral),
              Expression.BinaryOperation opBin => AppendOperationBinary(o, opBin),
              Expression.UnaryOperation opUn => AppendOperationUnary(o, opUn),
+             Expression.BuiltinFdf fdf => AppendBuiltinFdf(o, fdf),
              _ => throw expr.ToUnmatchedException(),
          };
 
@@ -496,6 +497,8 @@ sealed partial class CodeGenerator(Messenger messenger)
      => FeatureComingSoon(o, ouvrirAjout, "files");
     protected override StringBuilder AppendBuiltinAssigner(StringBuilder o, Statement.Builtin.Assigner assigner)
      => FeatureComingSoon(o, assigner, "files");
+    StringBuilder AppendBuiltinFdf(StringBuilder o, Expression.BuiltinFdf fdf)
+     => FeatureComingSoon(o, fdf, "files");
 
     StringBuilder FeatureComingSoon(StringBuilder o, SemanticNode node, string feature)
     {

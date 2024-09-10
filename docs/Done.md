@@ -1815,7 +1815,7 @@ Reuse the examples from C.
 
 Our objective: produce the final value of the object, and report any semantic error.
 
-### Implementation
+### Mutildimensional array implementation
 
 - Create the value.
 - Analyze the designator to figure out the path. If there's no designator, compute the natural order path (from the last path)
@@ -2028,3 +2028,11 @@ Currently we iterate over an ImmutableDictionary. This means the order is undefi
 ## PubXml
 
 Strip debug symbols, optimize for size
+
+## fix double redundant cast warning
+
+test: cast.psc
+
+## fix File unmatched exceptions
+
+test: file.psc
