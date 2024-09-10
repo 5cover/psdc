@@ -15,7 +15,7 @@ public interface Symbol : EquatableSemantics<Symbol>
 
     private static readonly Lazy<Dictionary<Type, string>> symbolKinds = new(() => new() {
         [typeof(Parameter)] = KindParameter,
-        [typeof(Function)] = $"{KindFunction} or {KindProcedure}",
+        [typeof(Callable)] = $"{KindFunction} or {KindProcedure}",
         [typeof(TypeAlias)] = KindTypeAlias,
         [typeof(Constant)] = KindConstant,
         [typeof(LocalVariable)] = KindLocalVariable,
@@ -69,15 +69,15 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed record Function(Identifier Name, SourceTokens SourceTokens,
+    internal sealed record Callable(Identifier Name, SourceTokens SourceTokens,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType)
     : Symbol
     {
-        public string Kind => ReturnType.IsConvertibleTo(VoidType.Instance) ? KindProcedure : KindFunction;
+        public string Kind => ReturnType is VoidType ? KindProcedure : KindFunction;
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
-        public bool SemanticsEqual(Symbol other) => other is Function o
+        public bool SemanticsEqual(Symbol other) => other is Callable o
          && o.Name.SemanticsEqual(Name)
          && o.Parameters.AllSemanticsEqual(Parameters)
          && o.ReturnType.SemanticsEqual(ReturnType);

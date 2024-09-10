@@ -186,12 +186,12 @@ partial class Parser
             .ParseToken(Punctuation.RParen)
         .MapResult(t => new UnaryOperator.Cast(t, target)));
 
-    ParseResult<Expression.FunctionCall> FunctionCall(IEnumerable<Token> tokens)
-     => ParseOperation.Start(tokens, "function call")
+    ParseResult<Expression.Call> Call(IEnumerable<Token> tokens)
+     => ParseOperation.Start(tokens, "call")
         .Parse(out var name, Identifier)
         .ParseToken(Punctuation.LParen)
         .ParseZeroOrMoreSeparated(out var parameters, ParameterActual, Punctuation.Comma, Punctuation.RParen)
-    .MapResult(t => new Expression.FunctionCall(t, name, ReportErrors(parameters)));
+    .MapResult(t => new Expression.Call(t, name, ReportErrors(parameters)));
 
     ParseResult<Expression.Lvalue> ParseLvalue(IEnumerable<Token> tokens)
      => ParserFirst(ParserBinaryAtLeast1<Expression, Expression.Lvalue>("lvalue", TerminalRvalue, new() {
@@ -208,7 +208,7 @@ partial class Parser
     ParseResult<Expression> TerminalRvalue(IEnumerable<Token> tokens)
      => ParserFirst(
             _literal,
-            FunctionCall,
+            Call,
             TerminalLvalue,
             Bracketed,
             BuiltinFdf)(tokens);

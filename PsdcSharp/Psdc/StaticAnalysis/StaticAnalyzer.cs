@@ -17,7 +17,7 @@ public sealed partial class StaticAnalyzer
     readonly Messenger _msger;
 
     MainProgramStatus _mainProgramStatus;
-    ValueOption<Symbol.Function> _currentCallable;
+    ValueOption<Symbol.Callable> _currentCallable;
 
     StaticAnalyzer(Messenger messenger) => _msger = messenger;
 
@@ -59,8 +59,8 @@ public sealed partial class StaticAnalyzer
         Algorithm semanticAst = new(new(scope, root.SourceTokens), root.Title,
             root.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).WhereSome().ToArray());
 
-        foreach (var callable in scope.GetSymbols<Symbol.Function>().Where(c => !c.HasBeenDefined)) {
-            messenger.Report(Message.ErrorFunctionNotDefined(callable));
+        foreach (var callable in scope.GetSymbols<Symbol.Callable>().Where(c => !c.HasBeenDefined)) {
+            messenger.Report(Message.ErrorCallableNotDefined(callable));
         }
 
         return semanticAst;
@@ -92,7 +92,7 @@ public sealed partial class StaticAnalyzer
         case Node.Declaration.Function d: {
             var sig = AnalyzeSignature(scope, d.Signature);
             AddCallableDeclarationSymbol(scope, MakeSymbol(sig, DeclareParameter));
-            return new Declaration.Function(meta, sig);
+            return new Declaration.Callable(meta, sig);
         }
         case Node.Declaration.FunctionDefinition d: {
             MutableScope funcScope = new(scope);
@@ -102,7 +102,7 @@ public sealed partial class StaticAnalyzer
             AddCallableDefinitionSymbol(scope, f);
 
             _currentCallable = f;
-            var sFuncDef = new Declaration.FunctionDefinition(meta, sig, AnalyzeStatements(funcScope, d.Block));
+            var sFuncDef = new Declaration.CallableDefinition(meta, sig, AnalyzeStatements(funcScope, d.Block));
             _currentCallable = default;
 
             return sFuncDef;
@@ -119,7 +119,7 @@ public sealed partial class StaticAnalyzer
         case Node.Declaration.Procedure d: {
             var sig = AnalyzeSignature(scope, d.Signature);
             AddCallableDeclarationSymbol(scope, MakeSymbol(sig, DeclareParameter));
-            return new Declaration.Procedure(meta, sig);
+            return new Declaration.Callable(meta, sig);
         }
         case Node.Declaration.ProcedureDefinition d: {
             MutableScope procScope = new(scope);
@@ -127,7 +127,7 @@ public sealed partial class StaticAnalyzer
             var p = MakeSymbol(sig, DefineParameter(inScope: procScope));
             AddCallableDefinitionSymbol(scope, p);
             _currentCallable = p;
-            Declaration.ProcedureDefinition sProcDef = new(meta, sig, AnalyzeStatements(procScope, d.Block));
+            Declaration.CallableDefinition sProcDef = new(meta, sig, AnalyzeStatements(procScope, d.Block));
             _currentCallable = default;
             return sProcDef;
         }
@@ -145,17 +145,14 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    FunctionSignature AnalyzeSignature(Scope scope, Node.FunctionSignature sig) => new(new(scope, sig.SourceTokens),
+    CallableSignature AnalyzeSignature(Scope scope, Node.FunctionSignature sig) => new(new(scope, sig.SourceTokens),
         sig.Name, AnalyzeParameters(scope, sig.Parameters), EvaluateType(scope, sig.ReturnType));
 
-    ProcedureSignature AnalyzeSignature(Scope scope, Node.ProcedureSignature sig) => new(new(scope, sig.SourceTokens),
-        sig.Name, AnalyzeParameters(scope, sig.Parameters));
+    CallableSignature AnalyzeSignature(Scope scope, Node.ProcedureSignature sig) => new(new(scope, sig.SourceTokens),
+        sig.Name, AnalyzeParameters(scope, sig.Parameters), VoidType.Instance);
 
-    static Symbol.Function MakeSymbol(FunctionSignature sig, Func<ParameterFormal, Symbol.Parameter> makeParameterSymbol)
+    static Symbol.Callable MakeSymbol(CallableSignature sig, Func<ParameterFormal, Symbol.Parameter> makeParameterSymbol)
      => new(sig.Name, sig.Meta.SourceTokens, sig.Parameters.Select(makeParameterSymbol).ToArray(), sig.ReturnType);
-
-    static Symbol.Function MakeSymbol(ProcedureSignature sig, Func<ParameterFormal, Symbol.Parameter> makeParameterSymbol)
-     => new(sig.Name, sig.Meta.SourceTokens, sig.Parameters.Select(makeParameterSymbol).ToArray(), VoidType.Instance);
 
     ParameterFormal[] AnalyzeParameters(Scope scope, IEnumerable<Node.ParameterFormal> parameters)
      => parameters.Select(p => new ParameterFormal(new(scope, p.SourceTokens),
@@ -165,10 +162,10 @@ public sealed partial class StaticAnalyzer
      => parameters.Select(p => new ParameterActual(new(scope, p.SourceTokens),
             p.Mode, EvaluateExpression(scope, p.Value))).ToArray();
 
-    void AddCallableDeclarationSymbol(MutableScope scope, Symbol.Function sub)
+    void AddCallableDeclarationSymbol(MutableScope scope, Symbol.Callable sub)
     {
         if (!scope.TryAdd(sub, out var existingSymbol)) {
-            if (existingSymbol is Symbol.Function existingSub) {
+            if (existingSymbol is Symbol.Callable existingSub) {
                 if (!sub.SemanticsEqual(existingSub)) {
                     _msger.Report(Message.ErrorSignatureMismatch(sub, existingSub));
                 }
@@ -178,11 +175,11 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    void AddCallableDefinitionSymbol(MutableScope scope, Symbol.Function sub)
+    void AddCallableDefinitionSymbol(MutableScope scope, Symbol.Callable sub)
     {
         if (scope.TryAdd(sub, out var existingSymbol)) {
             sub.MarkAsDefined();
-        } else if (existingSymbol is Symbol.Function existingSub) {
+        } else if (existingSymbol is Symbol.Callable existingSub) {
             if (existingSub.HasBeenDefined) {
                 _msger.Report(Message.ErrorRedefinedSymbol(sub, existingSub));
             } else if (sub.SemanticsEqual(existingSub)) {
@@ -540,10 +537,10 @@ public sealed partial class StaticAnalyzer
 
             return new Expression.UnaryOperation(meta, AnalyzeOperator(scope, opUn.Operator), operand, adjustValue(result.Value));
         }
-        case Node.Expression.FunctionCall call: {
+        case Node.Expression.Call call: {
             var parameters = AnalyzeParameters(scope, call.Parameters);
 
-            var callable = scope.GetSymbol<Symbol.Function>(call.Callee).DropError(_msger.Report).Tap(callable => {
+            var callable = scope.GetSymbol<Symbol.Callable>(call.Callee).DropError(_msger.Report).Tap(callable => {
                 List<string> problems = [];
 
                 if (call.Parameters.Count != callable.Parameters.Count) {
@@ -573,7 +570,7 @@ public sealed partial class StaticAnalyzer
                 }
             });
 
-            return new Expression.FunctionCall(meta, call.Callee, parameters,
+            return new Expression.Call(meta, call.Callee, parameters,
                 adjustValue(callable
                     .Map(f => f.ReturnType)
                     .ValueOr(UnknownType.Inferred)

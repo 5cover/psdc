@@ -2047,3 +2047,7 @@ Static analysis for
 - not expect to return a value from a procedure
 
 (implemented by checking comptability of return type)
+
+## Rename semantic functions and procedures to Callable
+
+Remove this distinction between function and procedures at definition/delcaration time. It's confusing. Procedures become functions with a void return type. Functions are called callables do distinguish from actual functions.

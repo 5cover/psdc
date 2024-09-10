@@ -578,6 +578,4 @@ XOR, NOT, AND, OR - make them apply on integers as well.
 
 And reals to?? Maybe.
 
-## Rename semantic functions to Callable
-
-Remove this distinction between function and procedures at definition/delcaration time. It's confusing.
+## Allow empty program

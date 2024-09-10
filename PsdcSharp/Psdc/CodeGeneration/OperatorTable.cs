@@ -41,7 +41,7 @@ abstract class OperatorTable
 {
     public virtual int GetPrecedence(Expression expr)
      => expr switch {
-         Expression.FunctionCall or Expression.BuiltinFdf => FunctionCall.Precedence,
+         Expression.Call or Expression.BuiltinFdf => FunctionCall.Precedence,
          Expression.BinaryOperation opBin => Get(opBin.Operator).Precedence,
          Expression.UnaryOperation opUn => Get(opUn.Operator).Precedence,
          Expression.Lvalue.ArraySubscript => ArraySubscript.Precedence,

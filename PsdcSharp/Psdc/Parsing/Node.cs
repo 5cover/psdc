@@ -7,12 +7,6 @@ public interface Node : EquatableSemantics<Node>
 {
     SourceTokens SourceTokens { get; }
 
-    internal interface Call : Node
-    {
-        public Identifier Callee { get; }
-        public IReadOnlyList<ParameterActual> Parameters { get; }
-    }
-
     internal interface BracketedExpression : Expression
     {
         public Expression ContainedExpression { get; }
@@ -457,12 +451,12 @@ public interface Node : EquatableSemantics<Node>
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
         }
 
-        internal sealed record FunctionCall(SourceTokens SourceTokens,
+        internal sealed record Call(SourceTokens SourceTokens,
             Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters)
-        : Expression, Call
+        : Expression
         {
-            public bool SemanticsEqual(Node other) => other is FunctionCall o
+            public bool SemanticsEqual(Node other) => other is Call o
              && o.Callee.SemanticsEqual(Callee)
              && o.Parameters.AllSemanticsEqual(Parameters);
         }

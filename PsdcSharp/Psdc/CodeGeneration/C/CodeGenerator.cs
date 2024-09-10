@@ -51,16 +51,16 @@ sealed partial class CodeGenerator(Messenger messenger)
             $"#define {name} {body.Replace(Environment.NewLine, '\\' + Environment.NewLine)}");
     }
 
-    protected override StringBuilder AppendFunctionDeclaration(StringBuilder o, Declaration.Function func)
-     => AppendFunctionSignature(SetGroup(o, Group.Prototypes), func.Signature).AppendLine(";");
+    protected override StringBuilder AppendCallableDeclaration(StringBuilder o, Declaration.Callable callable)
+     => AppendCallableSignature(SetGroup(o, Group.Prototypes), callable.Signature).AppendLine(";");
 
-    protected override StringBuilder AppendFunctionDefinition(StringBuilder o, Declaration.FunctionDefinition func)
+    protected override StringBuilder AppendCallableDefinition(StringBuilder o, Declaration.CallableDefinition def)
     {
-        AppendFunctionSignature(o.AppendLine(), func.Signature);
-        return AppendBlock(o.Append(' '), func.Block).AppendLine();
+        AppendCallableSignature(o.AppendLine(), def.Signature);
+        return AppendBlock(o.Append(' '), def.Block).AppendLine();
     }
 
-    StringBuilder AppendFunctionSignature(StringBuilder o, FunctionSignature sig)
+    StringBuilder AppendCallableSignature(StringBuilder o, CallableSignature sig)
      => AppendSignature(o, CreateTypeInfo(sig.Meta.Scope, sig.ReturnType).ToString(), sig.Name, sig.Meta.Scope, sig.Parameters);
 
     protected override StringBuilder AppendMainProgram(StringBuilder o, Declaration.MainProgram mainProgram)
@@ -70,18 +70,6 @@ sealed partial class CodeGenerator(Messenger messenger)
         return AppendBlock(o, mainProgram.Block, o => Indent(o.AppendLine()).AppendLine("return 0;"))
             .AppendLine();
     }
-
-    protected override StringBuilder AppendProcedureDeclaration(StringBuilder o, Declaration.Procedure proc)
-     => AppendProcedureSignature(SetGroup(o, Group.Prototypes), proc.Signature).AppendLine(";");
-
-    protected override StringBuilder AppendProcedureDefinition(StringBuilder o, Declaration.ProcedureDefinition procDef)
-    {
-        AppendProcedureSignature(o.AppendLine(), procDef.Signature);
-        return AppendBlock(o.Append(' '), procDef.Block).AppendLine();
-    }
-
-    StringBuilder AppendProcedureSignature(StringBuilder o, ProcedureSignature sig)
-     => AppendSignature(o, "void", sig.Name, sig.Meta.Scope, sig.Parameters);
 
     StringBuilder AppendSignature(StringBuilder o, string cReturnType, Identifier name, Scope scope, IEnumerable<ParameterFormal> parameters)
     {
@@ -317,7 +305,7 @@ sealed partial class CodeGenerator(Messenger messenger)
         return AppendBlock(o.Append(' '), whileLoop.Block).AppendLine();
     }
 
-    protected override StringBuilder AppendProcedureCall(StringBuilder o, Statement.ProcedureCall call)
+    protected override StringBuilder AppendCallStatement(StringBuilder o, Expression.Call call)
      => AppendCall(Indent(o), call);
 
     #endregion Statements
@@ -347,7 +335,7 @@ sealed partial class CodeGenerator(Messenger messenger)
      => AppendBracketed(o, bracket, o => {
          _ = expr switch {
              BracketedExpression b => AppendExpression(o, b.ContainedExpression, !bracket),
-             Expression.FunctionCall call => AppendCall(o, call),
+             Expression.Call call => AppendCall(o, call),
              Expression.Literal { Value: BooleanValue, UnderlyingValue: bool v } => AppendLiteralBoolean(v),
              // We're using the Pseudocode syntax for escaping string literals since it is the same as C's (except for \? which we can ignore, no one uses trigraphs)
              Expression.Literal { Value: CharacterValue v } => o.Append(v.ToString(Value.FmtNoType, Format.Code)),
@@ -418,7 +406,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     #region Helpers
 
-    StringBuilder AppendCall(StringBuilder o, Call call)
+    StringBuilder AppendCall(StringBuilder o, Expression.Call call)
     {
         const string ParameterSeparator = ", ";
 

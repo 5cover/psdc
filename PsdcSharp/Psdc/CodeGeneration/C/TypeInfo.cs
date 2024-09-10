@@ -69,6 +69,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             ArrayType array => CreateArrayType(array, help),
             LengthedStringType strlen => CreateLengthedString(strlen, help),
             StructureType structure => CreateStructure(structure, help),
+            VoidType @void => new("void"),
             _ => throw type.ToUnmatchedException(),
         };
 

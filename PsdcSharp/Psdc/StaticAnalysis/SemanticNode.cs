@@ -11,12 +11,6 @@ public interface SemanticNode
 {
     SemanticMetadata Meta { get; }
 
-    internal interface Call : SemanticNode
-    {
-        public Identifier Callee { get; }
-        public IReadOnlyList<ParameterActual> Parameters { get; }
-    }
-
     internal interface BracketedExpression : Expression
     {
         public Expression ContainedExpression { get; }
@@ -44,21 +38,12 @@ public interface SemanticNode
             Initializer Value)
         : Declaration;
 
-        internal sealed record Procedure(SemanticMetadata Meta,
-            ProcedureSignature Signature)
+        internal sealed record Callable(SemanticMetadata Meta,
+            CallableSignature Signature)
         : Declaration;
 
-        internal sealed record ProcedureDefinition(SemanticMetadata Meta,
-            ProcedureSignature Signature,
-            SemanticBlock Block)
-        : Declaration;
-
-        internal sealed record Function(SemanticMetadata Meta,
-            FunctionSignature Signature)
-        : Declaration;
-
-        internal sealed record FunctionDefinition(SemanticMetadata Meta,
-            FunctionSignature Signature,
+        internal sealed record CallableDefinition(SemanticMetadata Meta,
+            CallableSignature Signature,
             SemanticBlock Block)
         : Declaration;
     }
@@ -166,11 +151,6 @@ public interface SemanticNode
             SemanticBlock Block)
         : Statement;
 
-        internal sealed record ProcedureCall(SemanticMetadata Meta,
-            Identifier Callee,
-            IReadOnlyList<ParameterActual> Parameters)
-        : Statement, Call;
-
         internal sealed record RepeatLoop(SemanticMetadata Meta,
             Expression Condition,
             SemanticBlock Block)
@@ -253,11 +233,11 @@ public interface SemanticNode
             Value Value)
         : Expression;
 
-        internal sealed record FunctionCall(SemanticMetadata Meta,
+        internal sealed record Call(SemanticMetadata Meta,
             Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters,
             Value Value)
-        : Expression, Call;
+        : Expression, Statement;
 
         internal sealed record Bracketed(SemanticMetadata Meta,
             Expression ContainedExpression,
@@ -296,12 +276,7 @@ public interface SemanticNode
                 IReadOnlyList<Identifier> Names,
                 EvaluatedType Type) : SemanticNode;
 
-    internal sealed record ProcedureSignature(SemanticMetadata Meta,
-        Identifier Name,
-        IReadOnlyList<ParameterFormal> Parameters)
-    : SemanticNode;
-
-    internal sealed record FunctionSignature(SemanticMetadata Meta,
+    internal sealed record CallableSignature(SemanticMetadata Meta,
         Identifier Name,
         IReadOnlyList<ParameterFormal> Parameters,
         EvaluatedType ReturnType)

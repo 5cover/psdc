@@ -74,6 +74,7 @@ where TOpTable : OperatorTable
     }
 
     protected StringBuilder AppendStatement(StringBuilder o, Statement stmt) => stmt switch {
+        Expression.Call call => AppendCallStatement(o, call).AppendLine(";"),
         Nop => o, // Don't generate Nop, has no purpose, + often got as a result of parsing errors.
         Statement.Alternative alt => AppendAlternative(o, alt),
         Statement.Assignment assignment => AppendAssignment(o, assignment),
@@ -90,7 +91,6 @@ where TOpTable : OperatorTable
         Statement.ExpressionStatement e => AppendExpressionStatement(o, e),
         Statement.ForLoop @for => AppendForLoop(o, @for),
         Statement.LocalVariable local => AppendLocalVariable(o, local),
-        Statement.ProcedureCall call => AppendProcedureCall(o, call).AppendLine(";"),
         Statement.RepeatLoop repeat => AppendRepeatLoop(o, repeat),
         Statement.Return ret => AppendReturn(o, ret),
         Statement.Switch @switch => AppendSwitch(o, @switch),
@@ -100,25 +100,20 @@ where TOpTable : OperatorTable
 
     protected StringBuilder AppendDeclaration(StringBuilder o, Declaration decl) => decl switch {
         Nop => o,
-        Declaration.TypeAlias alias => AppendAliasDeclaration(o, alias),
+        Declaration.Callable callable => AppendCallableDeclaration(o, callable),
+        Declaration.CallableDefinition def => AppendCallableDefinition(o, def),
         Declaration.Constant constant => AppendConstant(o, constant),
         Declaration.MainProgram mainProgram => AppendMainProgram(o, mainProgram),
-        Declaration.Function func => AppendFunctionDeclaration(o, func),
-        Declaration.Procedure proc => AppendProcedureDeclaration(o, proc),
-        Declaration.FunctionDefinition funcDef => AppendFunctionDefinition(o, funcDef),
-        Declaration.ProcedureDefinition procDef => AppendProcedureDefinition(o, procDef),
+        Declaration.TypeAlias alias => AppendAliasDeclaration(o, alias),
         _ => throw decl.ToUnmatchedException(),
     };
 
     protected abstract StringBuilder AppendExpressionStatement(StringBuilder o, Statement.ExpressionStatement exprStmt);
     protected abstract StringBuilder AppendAliasDeclaration(StringBuilder o, Declaration.TypeAlias alias);
     protected abstract StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant);
-    protected abstract StringBuilder AppendFunctionDeclaration(StringBuilder o, Declaration.Function func);
-    protected abstract StringBuilder AppendFunctionDefinition(StringBuilder o, Declaration.FunctionDefinition funcDef);
     protected abstract StringBuilder AppendMainProgram(StringBuilder o, Declaration.MainProgram mainProgram);
-    protected abstract StringBuilder AppendProcedureDeclaration(StringBuilder o, Declaration.Procedure proc);
-    protected abstract StringBuilder AppendProcedureDefinition(StringBuilder o, Declaration.ProcedureDefinition procDef);
-
+    protected abstract StringBuilder AppendCallableDeclaration(StringBuilder o, Declaration.Callable callable);
+    protected abstract StringBuilder AppendCallableDefinition(StringBuilder o, Declaration.CallableDefinition def);
     protected abstract StringBuilder AppendAlternative(StringBuilder o, Statement.Alternative alternative);
     protected abstract StringBuilder AppendAssignment(StringBuilder o, Statement.Assignment call);
     protected abstract StringBuilder AppendBuiltinAssigner(StringBuilder o, Statement.Builtin.Assigner assigner);
@@ -133,7 +128,7 @@ where TOpTable : OperatorTable
     protected abstract StringBuilder AppendDoWhileLoop(StringBuilder o, Statement.DoWhileLoop doWhileLoop);
     protected abstract StringBuilder AppendForLoop(StringBuilder o, Statement.ForLoop forLoop);
     protected abstract StringBuilder AppendLocalVariable(StringBuilder o, Statement.LocalVariable local);
-    protected abstract StringBuilder AppendProcedureCall(StringBuilder o, Statement.ProcedureCall call);
+    protected abstract StringBuilder AppendCallStatement(StringBuilder o, Expression.Call call);
     protected abstract StringBuilder AppendRepeatLoop(StringBuilder o, Statement.RepeatLoop repeatLoop);
     protected abstract StringBuilder AppendReturn(StringBuilder o, Statement.Return call);
     protected abstract StringBuilder AppendSwitch(StringBuilder o, Statement.Switch @switch);

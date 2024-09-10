@@ -39,7 +39,7 @@ public readonly struct Message
     static FormattableString Quantity(int quantity, string singular, string plural)
      => $"{quantity} {(quantity == 1 ? singular : plural)}";
 
-    internal static Message ErrorCallParameterMismatch(SourceTokens sourceTokens, Symbol.Function f, IReadOnlyList<string> problems)
+    internal static Message ErrorCallParameterMismatch(SourceTokens sourceTokens, Symbol.Callable f, IReadOnlyList<string> problems)
      => new(sourceTokens, MessageCode.CallParameterMismatch,
         Fmt($"call to {f.Kind} `{f.Name}` does not correspond to signature"),
         problems);
@@ -83,7 +83,7 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.ExpressionHasWrongType,
         Fmt($"can't convert expression of type '{actual}' to '{expected}'"));
 
-    internal static Message ErrorFunctionNotDefined(Symbol.Function f)
+    internal static Message ErrorCallableNotDefined(Symbol.Callable f)
      => new(f.SourceTokens, MessageCode.CallableNotDefined,
         Fmt($"{f.Kind} `{f.Name}` declared but not defined"),
         [Fmt($"provide a definition for `{f.Name}`")]);
