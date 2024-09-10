@@ -22,7 +22,7 @@ static class Program
         s.CaseInsensitiveEnumValues = true;
     }).ParseArguments<CliOptions>(args).MapResult(static opt => {
         if (!CodeGenerator.TryGet(opt.TargetLanguage, out var codeGenerator)) {
-            WriteError($"unkown language: '{opt.TargetLanguage}'");
+            WriteError($"unknown language: '{opt.TargetLanguage}'");
             return SysExits.Usage;
         }
 
