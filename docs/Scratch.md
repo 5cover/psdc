@@ -577,5 +577,3 @@ If a variable is declared inside a switch case or if the related configuration s
 XOR, NOT, AND, OR - make them apply on integers as well.
 
 And reals to?? Maybe.
-
-## Allow empty program

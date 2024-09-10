@@ -2,7 +2,7 @@ using Scover.Psdc.Messages;
 
 namespace Scover.Psdc.Library;
 
-readonly record struct ConsoleColorInfo(ValueOption<ConsoleColor> Foreground, ValueOption<ConsoleColor> Background)
+readonly record struct ConsoleColors(ValueOption<ConsoleColor> Foreground, ValueOption<ConsoleColor> Background = default)
 {
     public void DoInColor(Action action)
     {
@@ -17,7 +17,7 @@ readonly record struct ConsoleColorInfo(ValueOption<ConsoleColor> Foreground, Va
         Background.Map(bg => Console.BackgroundColor = bg);
     }
 
-    public static ConsoleColorInfo ForMessageSeverity(MessageSeverity msgSeverity) => msgSeverity switch {
+    public static ConsoleColors ForMessageSeverity(MessageSeverity msgSeverity) => msgSeverity switch {
         MessageSeverity.Error => new(ConsoleColor.Red, default),
         MessageSeverity.Warning => new(ConsoleColor.Yellow, default),
         MessageSeverity.Suggestion => new(ConsoleColor.Blue, default),

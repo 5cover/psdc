@@ -9,7 +9,7 @@ namespace Scover.Psdc.CodeGeneration;
 
 public static class CodeGenerator
 {
-    public static bool TryGet(string language, [NotNullWhen(true)] out Func<Messenger, Algorithm, string>? func)
+    public static bool TryGet(string language, [NotNullWhen(true)] out Func<Messenger, StaticAnalysis.SemanticNode.Program, string>? func)
     {
         switch (language.ToLower(Format.Code)) {
         case Language.CliOption.C:
@@ -43,7 +43,7 @@ where TOpTable : OperatorTable
     protected string ValidateIdentifier(Scope scope, SourceTokens sourceTokens, string ident)
      => _kwTable.Validate(scope, sourceTokens, ident, _msger);
 
-    public abstract string Generate(Algorithm algorithm);
+    public abstract string Generate(StaticAnalysis.SemanticNode.Program program);
 
     protected abstract TypeGenerator TypeGeneratorFor(Scope scope);
 

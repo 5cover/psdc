@@ -11,9 +11,13 @@ namespace Scover.Psdc;
 
 static class Program
 {
+    const int ExitCompilationFailed = 1;
+
+    static readonly TextWriter msgOutput = Console.Error;
+
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CliOptions))] // Needed for CommandLineOptions with AOT
-    static int Main(string[] args) => (int)new CommandLine.Parser(s => {
-        s.HelpWriter = Console.Error;
+    static int Main(string[] args) => new CommandLine.Parser(s => {
+        s.HelpWriter = msgOutput;
         s.GetoptMode = true;
         s.CaseInsensitiveEnumValues = true;
     }).ParseArguments<CliOptions>(args).MapResult(static opt => {
@@ -22,11 +26,11 @@ static class Program
             return SysExits.Usage;
         }
 
-        bool outputIsFile = opt.Output != "-";
+        bool outputIsRegFile = opt.Output != CliOptions.StdStreamPlaceholder;
 
         TextWriter output;
         try {
-            output = outputIsFile
+            output = outputIsRegFile
                 ? new StreamWriter(opt.Output)
                 : Console.Out;
         } catch (Exception e) when (e.IsFileSystemExogenous()) {
@@ -37,7 +41,7 @@ static class Program
         try {
             string input;
             try {
-                input = opt.Input == "-"
+                input = opt.Input == CliOptions.StdStreamPlaceholder
                     ? Console.In.ReadToEnd()
                     : File.ReadAllText(opt.Input);
             } catch (Exception e) when (e.IsFileSystemExogenous()) {
@@ -46,8 +50,8 @@ static class Program
             }
 
             PrintMessenger msger = new(
-                Console.Error,
-                opt.Input == "-" ? "<stdin>" : opt.Input,
+                msgOutput,
+                opt.Input == CliOptions.StdStreamPlaceholder ? "<stdin>" : opt.Input,
                 input,
                 opt.MsgStyle,
                 ImmutableDictionary.Create<MessageCode, bool>()
@@ -71,14 +75,42 @@ static class Program
 
             msger.PrintMessageList();
 
-            return SysExits.Ok;
+            return Conclude(msger);
         } finally {
-            if (outputIsFile) {
+            if (outputIsRegFile) {
                 output.Dispose();
             }
         }
     }, _ => SysExits.Usage);
 
     static void WriteError(string message)
-     => Console.Error.WriteLine($"{Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "psdc")}: error: {message}");
+     => msgOutput.WriteLine($"{Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "psdc")}: error: {message}");
+
+    static int Conclude(PrintMessenger msger)
+    {
+        msgOutput.Write("Compilation ");
+
+        int exitCode;
+        if (msger.GetMessageCount(MessageSeverity.Error) == 0) {
+            exitCode = SysExits.Ok;
+            new ConsoleColors(ConsoleColor.Green).DoInColor(() => msgOutput.Write("succeeded"));
+        } else {
+            exitCode = ExitCompilationFailed;
+            new ConsoleColors(ConsoleColor.Red).DoInColor(() => msgOutput.Write("failed"));
+        }
+
+        msgOutput.WriteLine(string.Create(Format.Msg, $" ({Quantity(
+        msger.GetMessageCount(MessageSeverity.Error), "error")}, {Quantity(
+        msger.GetMessageCount(MessageSeverity.Warning), "warning")}, {Quantity(
+        msger.GetMessageCount(MessageSeverity.Suggestion), "suggestion")})."));
+
+        return exitCode;
+    }
+
+    static string Quantity(int amount, string singular, string plural)
+     => string.Create(Format.Msg, $"{amount} {(amount == 1 ? singular : plural)}");
+
+    static string Quantity(int amount, string singular)
+     => Quantity(amount, singular, singular + "s");
 }
+

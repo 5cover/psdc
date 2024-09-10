@@ -3,7 +3,9 @@
 $$
 \begin{align*}
 
-&⟨Algorithm⟩ \to \text{programme}\ Identifier\ \text{c'est} ⟨Declaration⟩^*
+&⟨Algorithm⟩ \to ⟨Program⟩^?
+\\
+&⟨Program⟩ \to \text{programme}\ Identifier\ \text{c'est} ⟨Declaration⟩^*
 \\
 &⟨Block⟩ \to ⟨Statement⟩^*
 

@@ -88,28 +88,28 @@ public sealed partial class Parser
     }
 
     // Parsing starts here with the "Algorithm" production rule
-    public static ParseResult<Algorithm> Parse(Messenger messenger, IEnumerable<Token> tokens)
+    public static ValueOption<Node.Program> Parse(Messenger messenger, IEnumerable<Token> tokens)
     {
         Parser p = new(messenger);
+        var program = p.Program(tokens);
 
-        var algorithm = p.Algorithm(tokens);
-
-        if (!algorithm.HasValue) {
-            messenger.Report(Message.ErrorSyntax(algorithm.SourceTokens, algorithm.Error));
+        // Don't report an error the errenous token is EOF (which means the tokens stream was empty)
+        if (!program.HasValue && program.Error.ErroneousToken.Map(t => t.Type != Eof).ValueOr(true)) {
+            messenger.Report(Message.ErrorSyntax(program.SourceTokens, program.Error));
         }
 
-        return algorithm;
+        return program.DropError();
     }
 
-    ParseResult<Algorithm> Algorithm(IEnumerable<Token> tokens)
-     => ParseOperation.Start(tokens, "algorithm")
+    ParseResult<Node.Program> Program(IEnumerable<Token> tokens)
+     => ParseOperation.Start(tokens, "program")
         .ParseZeroOrMoreUntilToken(out var leadingDirectives, _compilerDirective, Set.Of<TokenType>(Keyword.Program))
         .ParseToken(Keyword.Program)
         .Parse(out var name, Identifier)
         .ParseToken(Keyword.Is)
         .ParseZeroOrMoreUntilToken(out var declarations, _declaration,
         Set.Of(Eof))
-        .MapResult(t => new Algorithm(t, ReportErrors(leadingDirectives), name, ReportErrors(declarations)));
+        .MapResult(t => new Node.Program(t, ReportErrors(leadingDirectives), name, ReportErrors(declarations)));
 
     #region Declarations
 

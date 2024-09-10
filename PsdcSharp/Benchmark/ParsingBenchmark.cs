@@ -1,4 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
+using Scover.Psdc.Library;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.Tokenization;
 
@@ -14,6 +15,6 @@ public class ParsingBenchmark
     public void Setup() => _tokens = new TokenizationBenchmark().Run();
 
     [Benchmark]
-    public ParseResult<Node.Algorithm> Run()
+    public ValueOption<Node.Program> Run()
      => Parser.Parse(p.Msger, _tokens);
 }

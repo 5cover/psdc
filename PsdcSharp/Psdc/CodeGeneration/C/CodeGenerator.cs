@@ -14,15 +14,15 @@ sealed partial class CodeGenerator(Messenger messenger)
     readonly IncludeSet _includes = new();
     Group _currentGroup = Group.None;
 
-    public override string Generate(Algorithm algorithm)
+    public override string Generate(SemanticNode.Program program)
     {
         StringBuilder o = new();
 
-        foreach (var decl in algorithm.Declarations) {
+        foreach (var decl in program.Declarations) {
             AppendDeclaration(o, decl);
         }
 
-        return _includes.AppendIncludeSection(AppendFileHeader(new(), algorithm))
+        return _includes.AppendIncludeSection(AppendFileHeader(new(), program))
             .Append(o).ToString();
     }
 
@@ -426,9 +426,9 @@ sealed partial class CodeGenerator(Messenger messenger)
         return o.Append(')');
     }
 
-    static StringBuilder AppendFileHeader(StringBuilder o, Algorithm algorithm) => o.AppendLine(Format.Code, $"""
+    static StringBuilder AppendFileHeader(StringBuilder o, SemanticNode.Program program) => o.AppendLine(Format.Code, $"""
         /** @file
-         * @brief {algorithm.Title}
+         * @brief {program.Title}
          * @author {Environment.UserName}
          * @date {DateOnly.FromDateTime(DateTime.Now)}
          */

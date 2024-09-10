@@ -2051,3 +2051,11 @@ Static analysis for
 ## Rename semantic functions and procedures to Callable
 
 Remove this distinction between function and procedures at definition/delcaration time. It's confusing. Procedures become functions with a void return type. Functions are called callables do distinguish from actual functions.
+
+## Allow empty file
+
+## Return code
+
+1 on compilation failed
+
+0 on compilation ok

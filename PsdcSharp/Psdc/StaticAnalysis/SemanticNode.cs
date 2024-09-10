@@ -16,7 +16,7 @@ public interface SemanticNode
         public Expression ContainedExpression { get; }
     }
 
-    public sealed record Algorithm(SemanticMetadata Meta,
+    public sealed record Program(SemanticMetadata Meta,
         Identifier Title,
         IReadOnlyList<Declaration> Declarations)
     : SemanticNode;

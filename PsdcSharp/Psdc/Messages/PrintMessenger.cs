@@ -15,25 +15,31 @@ public sealed class PrintMessenger(
     readonly TextWriter _output = output;
     readonly IReadOnlyDictionary<MessageCode, bool> _enableMsg = enabledMessages;
 
+    /// <summary>
+    /// Get the amount of messages of a given severity.
+    /// </summary>
+    /// <param name="severity">The severity of the messages to count.</param>
+    /// <returns>The amount of messages of the given severity that have been reported.</returns>
+    public int GetMessageCount(MessageSeverity severity) => _msgCounts[severity];
+
     const string LineNoMargin = "    ";
     const string Bar = " | ";
     const int MaxMultilineErrorLines = 10;
 
-    private readonly Queue<Message> _msgs = new();
+    private readonly List<Message> _msgs = [];
 
     public void Report(Message message)
     {
         if (_enableMsg.GetValueOrNone(message.Code).ValueOr(true)) {
-            _msgs.Enqueue(message);
+            _msgs.Add(message);
         }
     }
 
     public void PrintMessageList()
     {
-        while (_msgs.TryDequeue(out var msg)) {
+        foreach (var msg in _msgs) {
             PrintMessage(msg);
         }
-        PrintConclusion();
     }
 
     void PrintMessage(Message message)
@@ -43,7 +49,7 @@ public sealed class PrintMessenger(
         }
 
         var (start, end) = GetPositions(message.InputRange);
-        var msgColor = ConsoleColorInfo.ForMessageSeverity(message.Severity);
+        var msgColor = ConsoleColors.ForMessageSeverity(message.Severity);
         var lineNoPadding = (end.Line + 1).DigitCount();
 
         switch (_style) {
@@ -140,7 +146,7 @@ public sealed class PrintMessenger(
         } else {
             _output.Write($"{_srcFile}:{start.Line + 1}.{start.Column + 1}-{end.Line + 1}.{end.Column + 1}: ");
         }
-        var msgColor = ConsoleColorInfo.ForMessageSeverity(msg.Severity);
+        var msgColor = ConsoleColors.ForMessageSeverity(msg.Severity);
         msgColor.DoInColor(() => _output.Write(
             string.Create(Format.Msg, $"P{(int)msg.Code:d4}: {msg.Severity.ToString().ToLower(Format.Msg)}:")));
 
@@ -151,15 +157,11 @@ public sealed class PrintMessenger(
     {
         var (start, end) = GetPositions(msg.InputRange);
 
-        var msgColor = ConsoleColorInfo.ForMessageSeverity(msg.Severity);
+        var msgColor = ConsoleColors.ForMessageSeverity(msg.Severity);
         msgColor.DoInColor(() => _output.Write(string.Create(Format.Msg, $"[P{(int)msg.Code:d4}] ")));
 
         _output.WriteLine(string.Create(Format.Msg, $"{start}: {msg.Severity.ToString().ToLower(Format.Msg)}: {msg.Content.Get(_input)}"));
     }
-
-    void PrintConclusion()
-     => _output.WriteLine(string.Create(Format.Msg,
-        $"Compilation terminated ({_msgCounts[MessageSeverity.Error]} errors, {_msgCounts[MessageSeverity.Warning]} warnings, {_msgCounts[MessageSeverity.Suggestion]} suggestions)."));
 
     void EndLine(ReadOnlySpan<char> content) => _output.WriteLine(content.TrimEnd());
 

@@ -1,21 +1,21 @@
 namespace Scover.Psdc;
 
-enum SysExits
+static class SysExits
 {
-    Ok = 0,
-    Usage = 64,
-    DataErr = 65,
-    NoInput = 66,
-    NoUser = 67,
-    NoHost = 68,
-    Unavailable = 69,
-    Software = 70,
-    OsErr = 71,
-    OsFile = 72,
-    CantCreat = 73,
-    IoErr = 74,
-    TempFail = 75,
-    Protocol = 76,
-    NoPerm = 77,
-    Config = 78,
+    public const int Ok = 0;
+    public const int Usage = 64;
+    public const int DataErr = 65;
+    public const int NoInput = 66;
+    public const int NoUser = 67;
+    public const int NoHost = 68;
+    public const int Unavailable = 69;
+    public const int Software = 70;
+    public const int OsErr = 71;
+    public const int OsFile = 72;
+    public const int CantCreat = 73;
+    public const int IoErr = 74;
+    public const int TempFail = 75;
+    public const int Protocol = 76;
+    public const int NoPerm = 77;
+    public const int Config = 78;
 }

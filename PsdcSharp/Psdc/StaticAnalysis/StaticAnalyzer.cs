@@ -50,13 +50,13 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    public static Algorithm Analyze(Messenger messenger, Node.Algorithm root)
+    public static SemanticNode.Program Analyze(Messenger messenger, Node.Program root)
     {
         StaticAnalyzer a = new(messenger);
 
         MutableScope scope = new(null);
 
-        Algorithm semanticAst = new(new(scope, root.SourceTokens), root.Title,
+        SemanticNode.Program semanticAst = new(new(scope, root.SourceTokens), root.Title,
             root.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).WhereSome().ToArray());
 
         foreach (var callable in scope.GetSymbols<Symbol.Callable>().Where(c => !c.HasBeenDefined)) {

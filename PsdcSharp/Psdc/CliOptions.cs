@@ -11,15 +11,16 @@ sealed class CliOptions(
     MessageStyle msgStyle
 )
 {
+    public const string StdStreamPlaceholder = "-";
     [Value(0, Required = true,
         HelpText = "Target language to compile to. More coming soon.",
         MetaValue = $"{Language.CliOption.C}")]
     public string TargetLanguage => targetLanguage;
-    [Value(1, Default = "-",
-        HelpText = "Input file containing Pseudocode. When '-', read from standard input.")]
+    [Value(1, Default = StdStreamPlaceholder,
+        HelpText = $"Input file containing Pseudocode. When '{StdStreamPlaceholder}', read from standard input.")]
     public string Input => input;
-    [Option('o', "output", Default = "-",
-        HelpText = "Output file. When '-' or unspecified, write to standard output.")]
+    [Option('o', "output", Default = StdStreamPlaceholder,
+        HelpText = $"Output file. When '{StdStreamPlaceholder}' or unspecified, write to standard output.")]
     public string Output => output;
     [Option('v', "verbose",
         HelpText = "Verbose output")]

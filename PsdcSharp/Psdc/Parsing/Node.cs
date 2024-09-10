@@ -34,12 +34,12 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    public sealed record Algorithm(SourceTokens SourceTokens,
+    public sealed record Program(SourceTokens SourceTokens,
         IReadOnlyList<CompilerDirective> LeadingDirectives,
         Identifier Title,
         IReadOnlyList<Declaration> Declarations) : Node
     {
-        public bool SemanticsEqual(Node other) => other is Algorithm o
+        public bool SemanticsEqual(Node other) => other is Program o
          && o.LeadingDirectives.AllSemanticsEqual(LeadingDirectives)
          && o.Title.SemanticsEqual(Title)
          && o.Declarations.AllSemanticsEqual(Declarations);
