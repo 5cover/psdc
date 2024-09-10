@@ -3,6 +3,7 @@ using Scover.Psdc.Messages;
 using static Scover.Psdc.Parsing.Node;
 using static Scover.Psdc.Parsing.Node.UnaryOperator;
 using static Scover.Psdc.Parsing.Node.BinaryOperator;
+using System.Numerics;
 
 namespace Scover.Psdc.StaticAnalysis;
 
@@ -31,11 +32,20 @@ static class ConstantFolding
 
     internal static OperationResult<UnaryOperationMessage> EvaluateOperation(this StaticAnalyzer sa, Scope scope, UnaryOperator op, Value operand) => (op, operand) switch {
         (_, UnknownValue) => OperationResult.OkUnary(operand),
+
+        // Arithmetic
         (Minus, IntegerValue x) => Operate(x.Type, x.Status, (int x) => -x),
         (Minus, RealValue x) => Operate(x.Type, x.Status, x => -x),
-        (Not, BooleanValue x) => Operate(x.Type, x.Status, x => !x),
         (Plus, IntegerValue x) => OperationResult.OkUnary(x),
         (Plus, RealValue x) => OperationResult.OkUnary(x),
+
+        // Bitwise
+        (Not, IntegerValue x) => Operate(x.Type, x.Status, (int x) => ~x),
+
+        // Logical
+        (Not, BooleanValue x) => Operate(x.Type, x.Status, x => !x),
+
+        // Other
         (Cast c, _) => sa.EvaluateCast(scope, c, operand),
 
         _ => (UnaryOperationMessage)Message.ErrorUnsupportedOperation,
@@ -50,12 +60,11 @@ static class ConstantFolding
         }
         // Explicit conversions
         return (operand, targetType) switch {
-            (RealValue rv, IntegerType it) => Operate(it, rv.Status, r => (int)r),
-            // we don't know what encoding is used in the target language, so the value is runtime-known.
-            (CharacterValue, IntegerType it) => OperationResult.OkUnary(it.RuntimeValue),
-            (IntegerValue, CharacterType ct) => OperationResult.OkUnary(ct.RuntimeValue),
             (BooleanValue bv, IntegerType it) => Operate(it, bv.Status, b => b ? 1 : 0),
+            (CharacterValue, IntegerType it) => OperationResult.OkUnary(it.RuntimeValue), // runtime since target language encoding is unknown
             (IntegerValue iv, BooleanType bt) => Operate(bt, iv.Status, i => i != 0),
+            (IntegerValue, CharacterType ct) => OperationResult.OkUnary(ct.RuntimeValue), // runtime since target language encoding is unknown
+            (RealValue rv, IntegerType it) => Operate(it, rv.Status, r => (int)r),
             _ => (UnaryOperationMessage)((opUn, operandType) => Message.ErrorInvalidCast(opUn.SourceTokens, operandType, targetType))
         };
     }
@@ -112,8 +121,12 @@ static class ConstantFolding
         (Subtract, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l - r),
         (Subtract, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l - r),
 
-        // Boolean
+        // Bitwise
+        (And, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l & r),
+        (Or, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l | r),
+        (Xor, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l ^ r),
 
+        // Logical
         (And, BooleanValue l, BooleanValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l && r),
         (Or, BooleanValue l, BooleanValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l || r),
         (Xor, BooleanValue l, BooleanValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l ^ r),

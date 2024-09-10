@@ -376,14 +376,14 @@ sealed partial class CodeGenerator(Messenger messenger)
          && opBin.Right.Value.Type.IsConvertibleTo(StringType.Instance)
          && IsStringComparisonOperator(opBin.Operator)) {
             _includes.Ensure(IncludeSet.String);
-            return _opTable.Get(opBin.Operator).Append(o, TypeGeneratorFor(opBin.Meta.Scope), [
+            return _opTable.Get(opBin).Append(o, TypeGeneratorFor(opBin.Meta.Scope), [
                 o => AppendExpression(AppendExpression(o.Append("strcmp("), opBin.Left).Append(", "), opBin.Right).Append(')'),
                 o => o.Append('0')
             ]);
         }
 
         var (bracketLeft, bracketRight) = _opTable.ShouldBracketBinary(opBin);
-        return _opTable.Get(opBin.Operator).Append(o, TypeGeneratorFor(opBin.Meta.Scope), [
+        return _opTable.Get(opBin).Append(o, TypeGeneratorFor(opBin.Meta.Scope), [
             o => AppendExpression(o, opBin.Left, bracketLeft),
             o => AppendExpression(o, opBin.Right, bracketRight)
         ]);
@@ -398,7 +398,7 @@ sealed partial class CodeGenerator(Messenger messenger)
         or BinaryOperator.NotEqual;
 
     StringBuilder AppendOperationUnary(StringBuilder o, Expression.UnaryOperation opUn)
-     => _opTable.Get(opUn.Operator).Append(o, TypeGeneratorFor(opUn.Meta.Scope), [
+     => _opTable.Get(opUn).Append(o, TypeGeneratorFor(opUn.Meta.Scope), [
         o => AppendExpression(o, opUn.Operand, _opTable.ShouldBracketUnary(opUn))
     ]);
 
@@ -413,8 +413,7 @@ sealed partial class CodeGenerator(Messenger messenger)
         o.Append(Format.Code, $"{ValidateIdentifier(call.Meta.Scope, call.Callee)}(");
         foreach (var param in call.Parameters) {
             if (C.RequiresPointer(param.Mode) && !C.IsPointerParameter(param.Value)) {
-                AppendUnaryOperation(o, _opTable.AddressOf, param.Value,
-                                           AppendExpression);
+                AppendUnaryOperation(o, _opTable.AddressOf, param.Value, AppendExpression);
             } else {
                 AppendExpression(o, param.Value);
             }

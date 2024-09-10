@@ -571,9 +571,3 @@ They also said stuff amounting to:
 ## Switch case blocks
 
 If a variable is declared inside a switch case or if the related configuration says to, enclose it in an anonymous block. This is a both a way to avoid namespace pollution in other cases and a style preference.
-
-## Binary logical operators
-
-XOR, NOT, AND, OR - make them apply on integers as well.
-
-And reals to?? Maybe.

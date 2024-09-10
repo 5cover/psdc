@@ -42,8 +42,8 @@ abstract class OperatorTable
     public virtual int GetPrecedence(Expression expr)
      => expr switch {
          Expression.Call or Expression.BuiltinFdf => FunctionCall.Precedence,
-         Expression.BinaryOperation opBin => Get(opBin.Operator).Precedence,
-         Expression.UnaryOperation opUn => Get(opUn.Operator).Precedence,
+         Expression.BinaryOperation opBin => Get(opBin).Precedence,
+         Expression.UnaryOperation opUn => Get(opUn).Precedence,
          Expression.Lvalue.ArraySubscript => ArraySubscript.Precedence,
          Expression.Lvalue.ComponentAccess => ComponentAccess.Precedence,
          Expression.Lvalue.VariableReference or Expression.Literal or BracketedExpression => int.MinValue,
@@ -59,10 +59,10 @@ abstract class OperatorTable
          => ShouldBracketBinary(
             GetPrecedence(opBin.Left),
             GetPrecedence(opBin.Right),
-            Get(opBin.Operator));
+            Get(opBin.Operator, opBin.Left.Value.Type, opBin.Right.Value.Type));
 
     public bool ShouldBracketUnary(Expression.UnaryOperation opUn)
-     => ShouldBracketOperand(Get(opUn.Operator), opUn.Operand);
+     => ShouldBracketOperand(Get(opUn.Operator, opUn.Operand.Value.Type), opUn.Operand);
 
     /// <summary>
     /// Should an component access operation's structure operand be bracketed?
@@ -94,54 +94,30 @@ abstract class OperatorTable
     /// <returns><paramref name="operand"/> should be bracketed when used as an operand of an <paramref name="op"/> operation.</returns>
     public bool ShouldBracketOperand(OperatorInfo op, Expression operand) => GetPrecedence(operand) > op.Precedence;
 
-    public OperatorInfo Get(BinaryOperator op) => op switch {
-        BinaryOperator.Add => Add,
-        BinaryOperator.And => And,
-        BinaryOperator.Divide => Divide,
-        BinaryOperator.Equal => Equal,
-        BinaryOperator.GreaterThan => GreaterThan,
-        BinaryOperator.GreaterThanOrEqual => GreaterThanOrEqual,
-        BinaryOperator.LessThan => LessThan,
-        BinaryOperator.LessThanOrEqual => LessThanOrEqual,
-        BinaryOperator.Mod => Mod,
-        BinaryOperator.Multiply => Multiply,
-        BinaryOperator.NotEqual => NotEqual,
-        BinaryOperator.Or => Or,
-        BinaryOperator.Subtract => Subtract,
-        BinaryOperator.Xor => Xor,
-        _ => throw op.ToUnmatchedException(),
-    };
+    public OperatorInfo Get(Expression.BinaryOperation opBin) => Get(opBin.Operator, opBin.Left.Value.Type, opBin.Right.Value.Type);
+    public OperatorInfo Get(Expression.UnaryOperation opUn) => Get(opUn.Operator, opUn.Operand.Value.Type);
+    protected abstract OperatorInfo Get(BinaryOperator op, EvaluatedType leftType, EvaluatedType rightType);
+    protected abstract OperatorInfo Get(UnaryOperator op, EvaluatedType operandType);
 
-    public OperatorInfo Get(UnaryOperator op) => op switch {
-        UnaryOperator.Cast c => Cast(c.Target),
-        UnaryOperator.Minus => UnaryMinus,
-        UnaryOperator.Plus => UnaryPlus,
-        UnaryOperator.Not => Not,
-        _ => throw op.ToUnmatchedException(),
-    };
-
+    public abstract OperatorInfo Add { get; }
     public abstract OperatorInfo And { get; }
+    public abstract OperatorInfo ArraySubscript { get; }
+    public abstract OperatorInfo Cast(EvaluatedType target);
+    public abstract OperatorInfo ComponentAccess { get; }
     public abstract OperatorInfo Divide { get; }
     public abstract OperatorInfo Equal { get; }
+    public abstract OperatorInfo FunctionCall { get; }
     public abstract OperatorInfo GreaterThan { get; }
     public abstract OperatorInfo GreaterThanOrEqual { get; }
     public abstract OperatorInfo LessThan { get; }
     public abstract OperatorInfo LessThanOrEqual { get; }
-    public abstract OperatorInfo Subtract { get; }
     public abstract OperatorInfo Mod { get; }
     public abstract OperatorInfo Multiply { get; }
+    public abstract OperatorInfo Not { get; }
     public abstract OperatorInfo NotEqual { get; }
     public abstract OperatorInfo Or { get; }
-    public abstract OperatorInfo Add { get; }
-    public abstract OperatorInfo Xor { get; }
-
-    public abstract OperatorInfo ArraySubscript { get; }
-    public abstract OperatorInfo ComponentAccess { get; }
-    public abstract OperatorInfo FunctionCall { get; }
-
-    public abstract OperatorInfo Cast(EvaluatedType target);
+    public abstract OperatorInfo Subtract { get; }
     public abstract OperatorInfo UnaryMinus { get; }
-    public abstract OperatorInfo Not { get; }
     public abstract OperatorInfo UnaryPlus { get; }
 
     protected static OperatorInfoAppender Infix(string @operator) => (o, _, p) => {

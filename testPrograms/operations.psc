@@ -51,6 +51,12 @@ début
     r := +r;
     r := -r;
 
+    // bitwise operations
+    i := non i;
+    i := i et i;
+    i := i ou i;
+    i := i xor i;
+
     // implicit conversions
     r := i + r;
     proc(entE s, entE s);

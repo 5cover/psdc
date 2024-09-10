@@ -2059,3 +2059,7 @@ Remove this distinction between function and procedures at definition/delcaratio
 1 on compilation failed
 
 0 on compilation ok
+
+## Bitwise operators
+
+XOR, NOT, AND, OR - make them apply on integers as well.
