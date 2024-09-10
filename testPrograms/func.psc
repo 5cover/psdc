@@ -6,6 +6,7 @@ fonction pow(entF x: réel, entF i: entier) délivre réel;
 procédure printNTimes(entF str: chaine, entF n: entier);
 
 procédure swap(entF/sortF p1 : entier, entF/sortF p2 : entier);
+procédure swap_fast(entF/sortF p1 : entier, entF/sortF p2 : entier);
 
 fonction pow(entF x: réel, entF i: entier) délivre réel c'est début
     res : entier;
@@ -35,6 +36,17 @@ fin
 procédure incrémenter(entF/sortF n: entier) c'est debut
     n := n + 1;
 fin
+
+procédure swap_fast(entF/sortF p1 : entier, entF/sortF p2 : entier) c'est
+début
+    si p1 == p2 alors
+        retourne;
+    fin
+    p1 := p2 XOR p1; // XOR the values and store the result in p1
+    p2 := p1 XOR p2; // XOR the values and store the result in p2
+    p1 := p2 XOR p1; // XOR the values and store the result in p1
+fin
+
 
 procédure swap(entF/sortF p1 : entier, entF/sortF p2 : entier) c'est
 début

@@ -508,7 +508,9 @@ Also what happens of closing the file occurs in a if statement? How do we know f
 
 Currently, we only check that the inferred value type is assignable to the declared type. This is fine except when we retrieve the value of the symbol or semantic node and get the wrong type later on.
 
-Need a concrete scenario where this is a problem in order to solve it.
+~~Need a concrete scenario where this is a problem in order to solve it.~~
+
+See error in compound_literals.psc.
 
 ## Configuration
 
@@ -539,3 +541,37 @@ Should I test all steps simultaneously or use separate tests for tokenization, p
 One thing certain, I'm gonna need A LOT of tests.
 
 Something I could do is maybe write the standard and then infer a test suite that tests everything the standard says.
+
+## EXIT_SUCCESS
+
+Up to the IUT's standard of formal dogmatism.
+
+> Thou shall not use 0, but EXIT_SUCCESS, in the same way thou would use NULL instead of 0.<br>
+(*Porhiel, S1.01*)
+
+They also said stuff amounting to:
+
+> Thou shall only return once, as thy code must exclude jump statements, as to benefit from the joys of structured programming.<br>
+(*Vialat, S2.01*)
+
+## Switch case blocks
+
+If a variable is declared inside a switch case or if the related configuration says to, enclose it in an anonymous block. This is a both a way to avoid namespace pollution in other cases and a style preference.
+
+## Binary logical operators
+
+XOR, NOT, AND, OR - make them apply on integers as well.
+
+And reals to?? Maybe.
+
+## Early return
+
+Forgot to add that;
+
+## fix File unmatched exceptions
+
+test: file.psc
+
+## fix double redundant cast warning
+
+test: cast.psc

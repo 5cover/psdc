@@ -49,3 +49,9 @@ Only keep the active member. "void" members have the`null` value:
 ## Preprocessor representation
 
 todo
+
+## C-specific
+
+todo
+
+Add blocks to switch cases: always, when multiple statements, only when variable

@@ -191,13 +191,11 @@ constante tArrInt C_ARR_INT_ONLY_DES := { [3] := 3, [2] := 2, [1] := 1 };
 #eval expr C_ARR_INT
 #eval expr C_ARR_INT_SOME_DES
 #eval expr C_ARR_INT_ONLY_DES
-*/
 constante tableau[3,3] de entier C_MATRIX
     := {{ 7, 8, 9 },
         { 4, 5, 6 },
         { 1, 2, 3 }};
 
-/*
 // Structure constant
 type tPoint = structure début x, y : réel; fin;
 constante tPoint C_POINT := { 3.14, 14.3 };
@@ -219,7 +217,6 @@ constante SOA C_SOA := {
               { 1, 2, 3 }}
 };
 #eval expr C_SOA
-/*
 // Array of Structures
 type AOS = tableau[3] de tPoint;
 constante AOS C_AOS := {
