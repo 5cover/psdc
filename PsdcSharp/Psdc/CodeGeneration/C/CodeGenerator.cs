@@ -244,8 +244,8 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     protected override StringBuilder AppendReturn(StringBuilder o, Statement.Return ret)
     {
-        Indent(o).Append("return ");
-        AppendExpression(o, ret.Value);
+        Indent(o).Append("return");
+        ret.Value.Tap(rv => AppendExpression(o.Append(' '), rv));
         return o.AppendLine(";");
     }
 

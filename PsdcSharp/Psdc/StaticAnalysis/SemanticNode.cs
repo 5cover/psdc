@@ -177,7 +177,7 @@ public interface SemanticNode
         : Statement;
 
         internal sealed record Return(SemanticMetadata Meta,
-            Expression Value)
+            Option<Expression> Value)
         : Statement;
 
         internal sealed record LocalVariable(SemanticMetadata Meta,

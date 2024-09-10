@@ -578,6 +578,6 @@ XOR, NOT, AND, OR - make them apply on integers as well.
 
 And reals to?? Maybe.
 
-## Early return
+## Rename semantic functions to Callable
 
-Forgot to add that;
+Remove this distinction between function and procedures at definition/delcaration time. It's confusing.

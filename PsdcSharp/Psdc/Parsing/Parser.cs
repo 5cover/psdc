@@ -327,7 +327,7 @@ public sealed partial class Parser
     ParseResult<Statement> Return(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "return statement")
         .ParseToken(Keyword.Return)
-        .Parse(out var returnValue, Expression)
+        .ParseOptional(out var returnValue, Expression)
         .ParseToken(Punctuation.Semicolon)
         .MapResult(t => new Statement.Return(t, returnValue));
 

@@ -2036,3 +2036,14 @@ test: cast.psc
 ## fix File unmatched exceptions
 
 test: file.psc
+
+## Early return from functions, procedures and main program
+
+Forgot to add that;
+
+Static analysis for
+
+- expect to return a value from a function
+- not expect to return a value from a procedure
+
+(implemented by checking comptability of return type)

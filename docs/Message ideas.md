@@ -23,15 +23,16 @@
 - Reassignment of constant
 - Output parameter never assigned
 - Value of output parameter is undefined here
-
-- `lire[Clavier]`, `ecrire[Ecran]` to/of an expression of a type for which it doesn't make sense to do so (`nomFichierLog`). We won't define custom IO logic that C doesn't natively support, it would be up to the user to do so.
-- Assignment types incompatible
-- Unary expression unsupported operation for type A
-- Binary expression unsupported operation for types A, B
+- ~~`lire[Clavier]`, `ecrire[Ecran]` to/of an expression of a type for which it doesn't make sense to do so (`nomFichierLog`). We won't define custom IO logic that C doesn't natively support, it would be up to the user to do so.~~
+- ~~Assignment types incompatible~~
+- ~~Unary expression unsupported operation for type A~~
+- ~~Binary expression unsupported operation for types A, B~~
+- ~~Array index out of range~~
 - Reading unassigned variable
-- Array index out of range
-- Array dimensions mismatch (between array subscript and declaration)
 - for loop variant type doesn't support addition
+- ~~Expected a value for return in function~~
+- ~~No value was expected for return in procedure/mainprogram~~
+- ~~Wrong type for return value in function~~
 
 ## Warnings
 
@@ -47,9 +48,6 @@ Warning : when the code may not work because you're doing something valid but hi
 
 - Unreachable code (statements after return)
 - Missing return from function
-- Expected a value for return in function
-- No value was expected for return in procedure/mainprogram
-- Wrong type for return value in function
 
 ## Suggestions
 

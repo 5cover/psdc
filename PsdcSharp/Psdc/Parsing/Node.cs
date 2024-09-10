@@ -327,11 +327,11 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record Return(SourceTokens SourceTokens,
-            Expression Value)
+            Option<Expression> Value)
         : Statement
         {
             public bool SemanticsEqual(Node other) => other is Return o
-             && o.Value.SemanticsEqual(Value);
+             && o.Value.OptionSemanticsEqual(Value);
         }
 
         internal sealed record LocalVariable(SourceTokens SourceTokens,

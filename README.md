@@ -96,6 +96,7 @@ Notation: bold &rarr; underway
     - [ ] Debugger
     - [ ] Language server
     - [ ] Better syntax highlighter
+- [ ] access to argc and argv
 
 ### C output configuration
 

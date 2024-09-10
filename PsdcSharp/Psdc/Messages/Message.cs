@@ -92,10 +92,12 @@ public readonly struct Message
      => CreateTargetLanguageFormat(sourceTokens, MessageCode.TargetLanguageReservedKeyword, targetLanguageName,
         $"identifier `{ident}` is a reserved {targetLanguageName} keyword, renamed to `{adjustedIdent}`");
 
-    internal static Message ErrorReturnInNonFunction(SourceTokens sourceTokens)
-     => new(sourceTokens, MessageCode.ReturnInNonFunction,
-        "return in something not a function");
-
+    internal static Message ErrorReturnInNonReturnable(SourceTokens sourceTokens)
+     => new(sourceTokens, MessageCode.ReturnInNonReturnable,
+        "return in something not a function, a procedure or a main program");
+    internal static Message ErrorReturnExpectsValue(SourceTokens sourceTokens, EvaluatedType targetType)
+     => new(sourceTokens, MessageCode.ReturnExpectsValue,
+        Fmt($"return here requires a value of type '{targetType}'"));
     internal static Message ErrorRedefinedMainProgram(Declaration.MainProgram mainProgram)
      => new(mainProgram.SourceTokens, MessageCode.RedefinedMainProgram,
         "more than one main program");

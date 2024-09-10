@@ -27,10 +27,11 @@ public enum MessageCode
     UnsupportedInitializer,
     UnsupportedDesignator,
     TargetLanguageError,
-    ReturnInNonFunction,
+    ReturnInNonReturnable,
     InvalidCast,
     AssertionFailed,
     FeatureNotAvailable,
+    ReturnExpectsValue,
     CustomError = 999,
 
     #endregion Errors

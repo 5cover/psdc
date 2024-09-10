@@ -9,10 +9,15 @@ namespace Scover.Psdc.StaticAnalysis;
 
 public sealed partial class StaticAnalyzer
 {
+    private enum MainProgramStatus {
+        NotYet,
+        Inside,
+        Seen,
+    }
     readonly Messenger _msger;
 
-    bool _seenMainProgram;
-    ValueOption<FunctionSignature> _currentFunction;
+    MainProgramStatus _mainProgramStatus;
+    ValueOption<Symbol.Function> _currentCallable;
 
     StaticAnalyzer(Messenger messenger) => _msger = messenger;
 
@@ -92,18 +97,24 @@ public sealed partial class StaticAnalyzer
         case Node.Declaration.FunctionDefinition d: {
             MutableScope funcScope = new(scope);
             var sig = AnalyzeSignature(scope, d.Signature);
-            AddCallableDefinitionSymbol(scope, MakeSymbol(sig, DefineParameter(inScope: funcScope)));
-            _currentFunction = sig;
+
+            var f = MakeSymbol(sig, DefineParameter(inScope: funcScope));
+            AddCallableDefinitionSymbol(scope, f);
+
+            _currentCallable = f;
             var sFuncDef = new Declaration.FunctionDefinition(meta, sig, AnalyzeStatements(funcScope, d.Block));
-            _currentFunction = default;
+            _currentCallable = default;
+
             return sFuncDef;
         }
         case Node.Declaration.MainProgram d: {
-            if (_seenMainProgram) {
+            if (_mainProgramStatus is not MainProgramStatus.NotYet) {
                 _msger.Report(Message.ErrorRedefinedMainProgram(d));
             }
-            _seenMainProgram = true;
-            return new Declaration.MainProgram(meta, AnalyzeStatements(new(scope), d.Block));
+            _mainProgramStatus = MainProgramStatus.Inside;
+            Declaration.MainProgram mp = new(meta, AnalyzeStatements(new(scope), d.Block));
+            _mainProgramStatus = MainProgramStatus.Seen;
+            return mp;
         }
         case Node.Declaration.Procedure d: {
             var sig = AnalyzeSignature(scope, d.Signature);
@@ -113,8 +124,12 @@ public sealed partial class StaticAnalyzer
         case Node.Declaration.ProcedureDefinition d: {
             MutableScope procScope = new(scope);
             var sig = AnalyzeSignature(scope, d.Signature);
-            AddCallableDefinitionSymbol(scope, MakeSymbol(sig, DefineParameter(inScope: procScope)));
-            return new Declaration.ProcedureDefinition(meta, sig, AnalyzeStatements(procScope, d.Block));
+            var p = MakeSymbol(sig, DefineParameter(inScope: procScope));
+            AddCallableDefinitionSymbol(scope, p);
+            _currentCallable = p;
+            Declaration.ProcedureDefinition sProcDef = new(meta, sig, AnalyzeStatements(procScope, d.Block));
+            _currentCallable = default;
+            return sProcDef;
         }
         case Node.Declaration.TypeAlias d: {
             var type = EvaluateType(scope, d.Type);
@@ -310,12 +325,24 @@ public sealed partial class StaticAnalyzer
                 AnalyzeStatements(new(scope), s.Block));
         }
         case Node.Statement.Return s: {
-            return new Statement.Return(meta, _currentFunction.Match(
-                func => EvaluateExpression(scope, s.Value, EvaluatedType.IsConvertibleTo, func.ReturnType),
+            return new Statement.Return(meta, _currentCallable.Match(
+                func => EvaluateTypedValue(func.ReturnType),
                 () => {
-                    _msger.Report(Message.ErrorReturnInNonFunction(s.SourceTokens));
-                    return EvaluateExpression(scope, s.Value);
+                    if (_mainProgramStatus is MainProgramStatus.Inside) {
+                        return EvaluateTypedValue(IntegerType.Instance);
+                    } else {
+                        _msger.Report(Message.ErrorReturnInNonReturnable(s.SourceTokens));
+                        return s.Value.Map(v => EvaluateExpression(scope, v));
+                    }
                 }));
+            
+            Option<Expression> EvaluateTypedValue(EvaluatedType expectedType) => s.Value
+                .Map(v => EvaluateExpression(scope, v, EvaluatedType.IsConvertibleTo, expectedType))
+                .Tap(none: () => {
+                    if (!expectedType.IsConvertibleTo(VoidType.Instance)) {
+                        _msger.Report(Message.ErrorReturnExpectsValue(s.SourceTokens, expectedType));
+                    }
+                });
         }
         case Node.Statement.Switch s: {
             var expr = EvaluateExpression(scope, s.Expression);
@@ -477,13 +504,7 @@ public sealed partial class StaticAnalyzer
      => new(new(scope, designator.SourceTokens), designator.Component);
 
     Expression EvaluateExpression(Scope scope, Node.Expression expr, TypeComparer typeComparer, EvaluatedType targetType)
-     => EvaluateExpression(scope, expr, v => {
-         if (typeComparer(v.Type, targetType)) {
-             return v;
-         }
-         _msger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, targetType, v.Type));
-         return targetType.InvalidValue;
-     });
+     => EvaluateExpression(scope, expr, v => CheckType(expr.SourceTokens, typeComparer, targetType, v));
 
     Expression EvaluateExpression(Scope scope, Node.Expression expr, Func<Value, Value>? adjustValue = null)
     {
@@ -572,13 +593,7 @@ public sealed partial class StaticAnalyzer
     }
 
     Expression.Lvalue EvaluateLvalue(Scope scope, Node.Expression.Lvalue expr, TypeComparer typeComparer, EvaluatedType targetType)
-     => EvaluateLvalue(scope, expr, v => {
-         if (typeComparer(v.Type, targetType)) {
-             return v;
-         }
-         _msger.Report(Message.ErrorExpressionHasWrongType(expr.SourceTokens, targetType, v.Type));
-         return targetType.InvalidValue;
-     });
+     => EvaluateLvalue(scope, expr, v => CheckType(expr.SourceTokens, typeComparer, targetType, v));
 
     Expression.Lvalue EvaluateLvalue(Scope scope, Node.Expression.Lvalue lvalue, Func<Value, Value>? adjustValue = null)
     {
@@ -677,7 +692,16 @@ public sealed partial class StaticAnalyzer
         };
     }
 
-    internal UnaryOperator AnalyzeOperator(Scope scope, Node.UnaryOperator unOp)
+    Value CheckType(SourceTokens context, TypeComparer typeComparer, EvaluatedType targetType, Value value)
+    {
+        if (typeComparer(value.Type, targetType)) {
+            return value;
+        }
+        _msger.Report(Message.ErrorExpressionHasWrongType(context, targetType, value.Type));
+        return targetType.InvalidValue;
+    }
+
+    UnaryOperator AnalyzeOperator(Scope scope, Node.UnaryOperator unOp)
     {
         SemanticMetadata meta = new(scope, unOp.SourceTokens);
         switch (unOp) {

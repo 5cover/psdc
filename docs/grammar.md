@@ -1,3 +1,5 @@
+# Lannion IUT Pseudocode grammar (LaTaX)
+
 $$
 \begin{align*}
 
@@ -50,7 +52,7 @@ $$
     ⟨LocalVariable⟩ \to ⟨VariableDeclaration⟩\begin{pmatrix}\text{:=}⟨Initializer⟩\end{pmatrix}^?\text{;} \\
     ⟨Nop⟩ \\
     ⟨RepeatLoop⟩ \to \text{répéter} ⟨Block⟩ \text{jusqu'à} ⟨Expr⟩ \\
-    ⟨Return⟩ \to \text{retourne} ⟨Expr⟩\text{;} \\
+    ⟨Return⟩ \to \text{retourne} ⟨Expr⟩^?\text{;} \\
     ⟨Switch⟩ \to \begin{split}
     &   \text{selon} ⟨Expr⟩ \text{c'est} \\
     &   ⟨Switch.Case⟩^* \\

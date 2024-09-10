@@ -41,7 +41,7 @@ procédure swap_fast(entF/sortF p1 : entier, entF/sortF p2 : entier) c'est
 début
     si p1 == p2 alors
         retourne;
-    fin
+    finsi
     p1 := p2 XOR p1; // XOR the values and store the result in p1
     p2 := p1 XOR p2; // XOR the values and store the result in p2
     p1 := p2 XOR p1; // XOR the values and store the result in p1
