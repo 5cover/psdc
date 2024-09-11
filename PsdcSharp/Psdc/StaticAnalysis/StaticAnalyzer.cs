@@ -694,7 +694,9 @@ public sealed partial class StaticAnalyzer
         if (typeComparer(value.Type, targetType)) {
             return value;
         }
-        _msger.Report(Message.ErrorExpressionHasWrongType(context, targetType, value.Type));
+        if (targetType is not UnknownType && value.Type is not UnknownType) {
+            _msger.Report(Message.ErrorExpressionHasWrongType(context, targetType, value.Type));
+        }
         return targetType.InvalidValue;
     }
 

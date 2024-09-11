@@ -12,7 +12,7 @@ constante entier MAX := 100;
 procédure remplirTableau(sortF tab : tableau[MAX] de entier, entF nbElt : entier) c'est
 début
     i : entier;
-    pour i de 1 à nbElt pas 1 faire
+    pour i de 1 à nbElt pas 1 fairedon
         écrireEcran("Entrer la valeur ", i, " : ");
         lireClavier(tab[i]);
     finfaire

@@ -14,6 +14,7 @@ début
     remplirTableau(sortE tab, entE 3);
 
     écrireEcran("Valeurs du tableau : ");
+    i : entier;
     pour (i de 1 à MAX pas 1) faire
         écrireEcran("[", i, "] = ", tab[i]);
     finfaire
