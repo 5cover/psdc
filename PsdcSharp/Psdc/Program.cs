@@ -73,6 +73,8 @@ static class Program
                 output.Write(cCode);
             }
 
+            msgOutput.WriteLine();
+
             msger.PrintMessageList();
 
             return Conclude(msger);

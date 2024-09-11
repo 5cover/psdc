@@ -427,8 +427,9 @@ sealed partial class CodeGenerator(Messenger messenger)
         /** @file
          * @brief {program.Title}
          * @author {Environment.UserName}
-         * @date {DateOnly.FromDateTime(DateTime.Now)}
+         * @date {DateOnly.FromDateTime(DateTime.Now).ToString(Format.Date)}
          */
+
         """);
 
     TypeInfo CreateTypeInfo(Scope scope, EvaluatedType type)

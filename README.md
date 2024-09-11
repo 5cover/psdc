@@ -109,3 +109,6 @@ Notation: bold &rarr; underway
 - [ ] Doxygen documentation skeleton?
 - [ ] `i++` or `++i`
 - [ ] Use count-based string functions: strncpy, strncmp...
+- [ ] use `puts` instead of `printf` where possible
+- [ ] anonymous block in switch cases: always, when multiple statements, never
+- [ ] anonymous block in switch default: always, when multiple statements, never

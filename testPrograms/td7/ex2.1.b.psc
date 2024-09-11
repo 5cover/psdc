@@ -9,7 +9,7 @@ programme tableaux c'est
 
 constante entier MAX := 100;
 
-procédure remplirTableau(sortF tab : tableau[] de entier, entF nbElt : entier) c'est
+procédure remplirTableau(sortF tab : tableau[MAX] de entier, entF nbElt : entier) c'est
 début
     i : entier;
     pour i de 1 à nbElt pas 1 faire

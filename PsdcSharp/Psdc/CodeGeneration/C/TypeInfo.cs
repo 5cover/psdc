@@ -61,7 +61,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
         TypeInfo typeInfo = type switch {
             UnknownType u => new(help.KwTable.Validate(help.Scope, u.SourceTokens, u.ToString(Format.Code), help.Msger)),
             FileType => new("FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield()),
-            BooleanType => new("bool", requiredHeaders: IncludeSet.StdBool.Yield()),
+            BooleanType => new("bool", "%hhu", requiredHeaders: IncludeSet.StdBool.Yield()),
             CharacterType => new("char", "%c"),
             RealType real => new("float", "%g"),
             IntegerType integer => new("int", "%d"),

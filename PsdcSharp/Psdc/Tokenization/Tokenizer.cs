@@ -62,7 +62,6 @@ public sealed class Tokenizer
         t.ReportAnyUnknownToken(ref invalidStart, index);
 
         yield return new Token(Eof, null, index, 0);
-
     }
 
     void ReportAnyUnknownToken(ref int invalidStart, int index)
