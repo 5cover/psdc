@@ -60,9 +60,6 @@ sealed partial class CodeGenerator(Messenger messenger)
         return AppendBlock(o.Append(' '), def.Block).AppendLine();
     }
 
-    StringBuilder AppendCallableSignature(StringBuilder o, CallableSignature sig)
-     => AppendSignature(o, CreateTypeInfo(sig.Meta.Scope, sig.ReturnType).ToString(), sig.Name, sig.Meta.Scope, sig.Parameters);
-
     protected override StringBuilder AppendMainProgram(StringBuilder o, Declaration.MainProgram mainProgram)
     {
         SetGroup(o, Group.Main);
@@ -72,11 +69,11 @@ sealed partial class CodeGenerator(Messenger messenger)
             .AppendLine();
     }
 
-    StringBuilder AppendSignature(StringBuilder o, string cReturnType, Identifier name, Scope scope, IEnumerable<ParameterFormal> parameters)
+    StringBuilder AppendCallableSignature(StringBuilder o, CallableSignature sig)
     {
-        o.Append(Format.Code, $"{cReturnType} {ValidateIdentifier(scope, name)}(");
-        if (parameters.Any()) {
-            o.AppendJoin(", ", parameters.Select(GenerateParameter));
+        o.Append(Format.Code, $"{CreateTypeInfo(sig.Meta.Scope, sig.ReturnType)} {ValidateIdentifier(sig.Meta.Scope, sig.Name)}(");
+        if (sig.Parameters.Count != 0) {
+            o.AppendJoin(", ", sig.Parameters.Select(GenerateParameter));
         } else {
             o.Append("void");
         }
@@ -89,7 +86,7 @@ sealed partial class CodeGenerator(Messenger messenger)
     {
         StringBuilder o = new();
         var type = CreateTypeInfo(param.Meta.Scope, param.Type);
-        if (C.RequiresPointer(param.Mode)) {
+        if (C.RequiresPointer(param.Mode, param.Type)) {
             type = type.ToPointer(1);
         }
 
@@ -410,7 +407,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
         o.Append(Format.Code, $"{ValidateIdentifier(call.Meta.Scope, call.Callee)}(");
         foreach (var param in call.Parameters) {
-            if (C.RequiresPointer(param.Mode) && !C.IsPointerParameter(param.Value)) {
+            if (C.RequiresPointer(param.Mode, param.Value.Value.Type) && !C.IsPointerParameter(param.Value)) {
                 AppendUnaryOperation(o, _opTable.AddressOf, param.Value, AppendExpression);
             } else {
                 AppendExpression(o, param.Value);

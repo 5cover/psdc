@@ -2075,3 +2075,27 @@ They also said stuff amounting to:
 
 > Thou shall only return once, as thy code must exclude jump statements, as to benefit from the joys of structured programming.<br>
 (*Vialat, S2.01*)
+
+## C optimization: don't indirect array pass-by-ref parameters
+
+There no need for:
+
+```c
+void remplirTableau(int *tab[MAX]) {
+    int i;
+    for (i = 1; i <= MAX; i++) {
+        printf("%d ", (*tab)[i]);
+    }
+}
+```
+
+Rather, do:
+
+```c
+void remplirTableau(int tab[MAX]) {
+    int i;
+    for (i = 1; i <= MAX; i++) {
+        printf("%d ", tab[i]);
+    }
+}
+```
