@@ -80,44 +80,38 @@ fin
 
 Let's translate it to C:
 
-<style>
-.red {
-  color: #f14c4c;
-}
-</style>
-
 <pre>
 <code>$ psdc c sudoku.psc -o sudoku.c</code>
 <samp>
-testPrograms/sudoku.psc:25.24-39: <span class="red">P0002: error:</span> undefined function or procedure `entierAléatoire`
-    25 |     chargerGrille(entE <span class="red">entierAléatoire</span>(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
-       |                        <span class="red">^^^^^^^^^^^^^^^</span>
+testPrograms/sudoku.psc:25.24-39: <span style="color: #f14c4c">P0002: error:</span> undefined function or procedure `entierAléatoire`
+    25 |     chargerGrille(entE <span style="color: #f14c4c">entierAléatoire</span>(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
+       |                        <span style="color: #f14c4c">^^^^^^^^^^^^^^^</span>
 
-testPrograms/sudoku.psc:25.5-18: <span class="red">P0002: error:</span> undefined function or procedure `chargerGrille`
-    25 |     <span class="red">chargerGrille</span>(entE <span class="red">entierAléatoire</span>(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
-       |     <span class="red">^^^^^^^^^^^^^</span>
+testPrograms/sudoku.psc:25.5-18: <span style="color: #f14c4c">P0002: error:</span> undefined function or procedure `chargerGrille`
+    25 |     <span style="color: #f14c4c">chargerGrille</span>(entE <span style="color: #f14c4c">entierAléatoire</span>(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
+       |     <span style="color: #f14c4c">^^^^^^^^^^^^^</span>
 
-testPrograms/sudoku.psc:25.24-39: <span class="red">P0002: error:</span> undefined function or procedure `entierAléatoire`
-    25 |     chargerGrille(entE <span class="red">entierAléatoire</span>(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
-       |                        <span class="red">^^^^^^^^^^^^^^^</span>
+testPrograms/sudoku.psc:25.24-39: <span style="color: #f14c4c">P0002: error:</span> undefined function or procedure `entierAléatoire`
+    25 |     chargerGrille(entE <span style="color: #f14c4c">entierAléatoire</span>(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
+       |                        <span style="color: #f14c4c">^^^^^^^^^^^^^^^</span>
 
-testPrograms/sudoku.psc:38.43-60: <span class="red">P0002: error:</span> undefined function or procedure `estGrilleComplète`
-    38 |     tant que (NON partieAbandonnée ET NON <span class="red">estGrilleComplète</span>(entE grilleJeu))
-       |                                           <span class="red">^^^^^^^^^^^^^^^^^</span>
+testPrograms/sudoku.psc:38.43-60: <span style="color: #f14c4c">P0002: error:</span> undefined function or procedure `estGrilleComplète`
+    38 |     tant que (NON partieAbandonnée ET NON <span style="color: #f14c4c">estGrilleComplète</span>(entE grilleJeu))
+       |                                           <span style="color: #f14c4c">^^^^^^^^^^^^^^^^^</span>
 
-testPrograms/sudoku.psc:29.9-21: <span class="red">P0002: error:</span> undefined function or procedure `écrireGrille`
-    29 |         <span class="red">écrireGrille</span>(entE grilleJeu);
-       |         <span class="red">^^^^^^^^^^^^</span>
+testPrograms/sudoku.psc:29.9-21: <span style="color: #f14c4c">P0002: error:</span> undefined function or procedure `écrireGrille`
+    29 |         <span style="color: #f14c4c">écrireGrille</span>(entE grilleJeu);
+       |         <span style="color: #f14c4c">^^^^^^^^^^^^</span>
 
-testPrograms/sudoku.psc:31.25-39: <span class="red">P0002: error:</span> undefined function or procedure `entréeCommande`
-    31 |             commande := <span class="red">entréeCommande</span>();
-       |                         <span class="red">^^^^^^^^^^^^^^</span>
+testPrograms/sudoku.psc:31.25-39: <span style="color: #f14c4c">P0002: error:</span> undefined function or procedure `entréeCommande`
+    31 |             commande := <span style="color: #f14c4c">entréeCommande</span>();
+       |                         <span style="color: #f14c4c">^^^^^^^^^^^^^^</span>
 
-testPrograms/sudoku.psc:32.32-48: <span class="red">P0002: error:</span> undefined function or procedure `exécuterCommande`
-    32 |             commandeRéussie := <span class="red">exécuterCommande</span>(entE commande,
-       |                                <span class="red">^^^^^^^^^^^^^^^^</span>
+testPrograms/sudoku.psc:32.32-48: <span style="color: #f14c4c">P0002: error:</span> undefined function or procedure `exécuterCommande`
+    32 |             commandeRéussie := <span style="color: #f14c4c">exécuterCommande</span>(entE commande,
+       |                                <span style="color: #f14c4c">^^^^^^^^^^^^^^^^</span>
 
-Compilation <span class="red">failed</span> (7 errors, 0 warnings, 0 suggestions).
+Compilation <span style="color: #f14c4c">failed</span> (7 errors, 0 warnings, 0 suggestions).
 </samp></pre>
 
 Oops. Looks like we got some errors. Psdc detected that the functions and procedures called aren't defined.
