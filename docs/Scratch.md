@@ -528,7 +528,9 @@ Disable floating point equality warning in initializers.psc
 
 ## code formatting
 
-Sort members. Code maid. Resharper subscription.
+Sort members in code maid.
+
+## Esolang wiki page
 
 ## Test suite
 
@@ -555,3 +557,41 @@ Maybe not a full-blow standard, but a set of tutorials for each feature? Like a 
 ## Put test programs up to code
 
 And test with them.
+
+## When passing arrays of known size to functions: use const array size
+
+```c
+void f(int [const static 10]);
+
+
+int main() {
+    int a[10];
+    f(a);
+}
+
+void f(int arr[const static 10]) {
+}
+```
+
+[More information about this little-known C feature](https://hamberg.no/erlend/posts/2013-02-18-static-array-indices.html)
+
+## Array of unknown size
+
+Should we error when it is used as a local variable or struct component? Not, it's allowed.
+
+The `[]` syntax is equivalent to `*` in parameters, that's the only place where it can be used. In local variables it is invalid and in structure components it means something else (flexible array member).
+
+```psc
+a : tableau[] de entier;
+
+procédure f(entF a : tableau[] de entier) c'est début fin
+```
+
+```c
+int *a;
+
+void f(int a[const]) {
+}
+```
+
+Make sized array implicitly convertible to unsized array.

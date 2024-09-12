@@ -1,13 +1,12 @@
 #include <stdio.h>
 
-typedef struct {
-    int a;
-    struct { int c; } b;
-    struct { struct { int f; } e; } d;
-} S;
-
+void f(int [const]);
 
 int main() {
-    S s = { 1, 2, 3 };
-    printf("%d %d %d\n", s.a, s.b.c, s.d.e.f);
+    int a[10];
+    f(a);
+}
+
+void f(int arr[const]) {
+    arr[5] = 5;
 }
