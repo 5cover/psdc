@@ -1,4 +1,4 @@
-# PSDC (WIP)
+# Psdc
 
 IUT de Lannion Pseudocode compiler (transpiler).
 
