@@ -73,10 +73,11 @@ sealed class OperatorTable : CodeGeneration.OperatorTable
             UnaryOperator.Cast c => Cast(c.Target),
             UnaryOperator.Minus => UnaryMinus,
             UnaryOperator.Plus => UnaryPlus,
-            UnaryOperator.Not => UseBitwise() ? BitwiseNot : Not,
+            UnaryOperator.Not => UseLogic() ? Not : BitwiseNot,
             _ => throw op.ToUnmatchedException(),
         };
 
-        bool UseBitwise() => operandType.IsConvertibleTo(IntegerType.Instance);
+        // Use logic if the type is unknown.
+        bool UseLogic() => operandType.IsConvertibleTo(BooleanType.Instance);
     }
 }

@@ -23,6 +23,154 @@ Given any Pseudocode program (valid or invalid), Psdc produces an equivalent pro
 
 More information in [Philosophy](docs/Philosophy.md).
 
+## Example
+
+### 1. Input Pseudocode
+
+My pitiful program for S1.01 ([sudoku.psc](testPrograms/sudoku.psc))
+
+```psc
+/*
+Algorithme programme principal Sudoku
+*/
+programme Sudoku c'est
+
+// Un jeu de Sudoku
+constante entier N := 3;
+constante entier NB_FICHIERS_GRILLES := 10;
+constante entier LONGUEUR_MAX_COMMANDE := 64;
+constante entier COTE_GRILLE := N * N;
+
+type t_grilleEntier = tableau[COTE_GRILLE, COTE_GRILLE] de entier;
+
+début
+    grilleJeu : t_grilleEntier;
+    ligneCurseur, colonneCurseur : entier;
+    partieAbandonnée : booléen;
+    commandeRéussie : booléen;
+    commande : chaîne(LONGUEUR_MAX_COMMANDE);
+
+    partieAbandonnée := faux;
+    ligneCurseur := 1;
+    colonneCurseur := 1;
+
+    chargerGrille(entE entierAléatoire(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
+
+    // Boucle principale du jeu
+    faire
+        écrireGrille(entE grilleJeu);
+        faire
+            commande := entréeCommande();
+            commandeRéussie := exécuterCommande(entE commande,
+                                                entE/sortE grilleJeu,
+                                                entE/sortE ligneCurseur,
+                                                entE/sortE colonneCurseur,
+                                                sortE partieAbandonnée);
+        tant que (NON commandeRéussie)
+    tant que (NON partieAbandonnée ET NON estGrilleComplète(entE grilleJeu))
+
+    // La partie n'a pas été abandonnée, elle s'est donc terminée par une victoire
+    si (NON partieAbandonnée) alors
+        écrireEcran("Bravo, vous avez gagné !");
+    finsi
+fin
+```
+
+### 2. Psdc invocation
+
+Let's translate it to C:
+
+<style>
+.red {
+  color: #f14c4c;
+}
+</style>
+
+<pre>
+<code>$ psdc c sudoku.psc -o sudoku.c</code>
+<samp>
+testPrograms/sudoku.psc:25.24-39: <span class="red">P0002: error:</span> undefined function or procedure `entierAléatoire`
+    25 |     chargerGrille(entE <span class="red">entierAléatoire</span>(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
+       |                        <span class="red">^^^^^^^^^^^^^^^</span>
+
+testPrograms/sudoku.psc:25.5-18: <span class="red">P0002: error:</span> undefined function or procedure `chargerGrille`
+    25 |     <span class="red">chargerGrille</span>(entE <span class="red">entierAléatoire</span>(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
+       |     <span class="red">^^^^^^^^^^^^^</span>
+
+testPrograms/sudoku.psc:25.24-39: <span class="red">P0002: error:</span> undefined function or procedure `entierAléatoire`
+    25 |     chargerGrille(entE <span class="red">entierAléatoire</span>(entE 1, entE NB_FICHIERS_GRILLES), sortE grilleJeu);
+       |                        <span class="red">^^^^^^^^^^^^^^^</span>
+
+testPrograms/sudoku.psc:38.43-60: <span class="red">P0002: error:</span> undefined function or procedure `estGrilleComplète`
+    38 |     tant que (NON partieAbandonnée ET NON <span class="red">estGrilleComplète</span>(entE grilleJeu))
+       |                                           <span class="red">^^^^^^^^^^^^^^^^^</span>
+
+testPrograms/sudoku.psc:29.9-21: <span class="red">P0002: error:</span> undefined function or procedure `écrireGrille`
+    29 |         <span class="red">écrireGrille</span>(entE grilleJeu);
+       |         <span class="red">^^^^^^^^^^^^</span>
+
+testPrograms/sudoku.psc:31.25-39: <span class="red">P0002: error:</span> undefined function or procedure `entréeCommande`
+    31 |             commande := <span class="red">entréeCommande</span>();
+       |                         <span class="red">^^^^^^^^^^^^^^</span>
+
+testPrograms/sudoku.psc:32.32-48: <span class="red">P0002: error:</span> undefined function or procedure `exécuterCommande`
+    32 |             commandeRéussie := <span class="red">exécuterCommande</span>(entE commande,
+       |                                <span class="red">^^^^^^^^^^^^^^^^</span>
+
+Compilation <span class="red">failed</span> (7 errors, 0 warnings, 0 suggestions).
+</samp></pre>
+
+Oops. Looks like we got some errors. Psdc detected that the functions and procedures called aren't defined.
+
+That doesn't prevent it from giving us meaningful output, though.
+
+### 3. C output
+
+```c
+/** @file
+ * @brief Sudoku
+ * @author raphael
+ * @date 12/09/2024
+ */
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define N 3
+#define NB_FICHIERS_GRILLES 10
+#define LONGUEUR_MAX_COMMANDE 64
+#define COTE_GRILLE (N * N)
+
+typedef int t_grilleEntier[COTE_GRILLE][COTE_GRILLE];
+
+int main() {
+    t_grilleEntier grilleJeu;
+    int ligneCurseur, colonneCurseur;
+    bool partieAbandonnée;
+    bool commandeRéussie;
+    char commande[LONGUEUR_MAX_COMMANDE];
+    partieAbandonnée = false;
+    ligneCurseur = 1;
+    colonneCurseur = 1;
+    chargerGrille(entierAléatoire(1, NB_FICHIERS_GRILLES), grilleJeu);
+    do {
+        écrireGrille(grilleJeu);
+        do {
+            commande = entréeCommande();
+            commandeRéussie = exécuterCommande(commande, grilleJeu, &ligneCurseur, &colonneCurseur, &partieAbandonnée);
+        } while (!commandeRéussie);
+    } while (!partieAbandonnée && !estGrilleComplète(grilleJeu));
+    if (!partieAbandonnée) {
+        printf("Bravo, vous avez gagné !\n");
+    }
+
+    return EXIT_SUCCESS;
+}
+```
+
+And there you have it. Automated translation between Pseudocode and C.
+
 ## Roadmap
 
 ### Target languages
