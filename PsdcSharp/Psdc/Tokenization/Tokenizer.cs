@@ -17,8 +17,7 @@ public sealed class Tokenizer
         GetRules(new Ruled<TokenRule>[] { CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter })
         // Maximum munch
         .Concat(GetRules(Keyword.Instances).OrderByDescending(r => r.Expected.Length))
-        .Concat(Enumerable.Concat(GetRules(Punctuation.Instances), GetRules(Operator.Instances))
-                .OrderByDescending(r => r.Expected.Length))
+        .Concat(GetRules(Punctuation.Instances).OrderByDescending(r => r.Expected.Length))
         // Identifiers after keywords and punctuation/operators (just to be sure that they won't be lexed as identifiers)
         .Concat(Identifier.Rules)
         .ToArray();

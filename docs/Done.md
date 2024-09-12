@@ -252,10 +252,10 @@ actually we didn't need it, we need **Symbol Equality** (which need Node.Express
 Static analysis that will perform the following before code generation (so code generation needs no matchsome)
 
 - create Symbols and register errors
-    - redefined symbol
-    - undefined symbol
+  - redefined symbol
+  - undefined symbol
 - replace the Node.Type(s) in the AST by TypeInfo(s) and register errors
-    - can't infer expression type
+  - can't infer expression type
 
 Returns:
 
@@ -338,48 +338,48 @@ Yes we will allow more than one prototype.
 But we will have to compare them, make sure they're all the same
 
 - Upon encountering a declaration (prototype)
-    - Try to add a function symbol
-    - If it already exists, compare it to the existing one
-    - If they're different, cause error
-    - If they're the same, do nothing
+  - Try to add a function symbol
+  - If it already exists, compare it to the existing one
+  - If they're different, cause error
+  - If they're the same, do nothing
 - Upon encountering a definition
-    - Add a function symbol
-    - If it exists already, it can mean either
-        - there was a prototye before
-        - redefinition of a prototype-less function
+  - Add a function symbol
+  - If it exists already, it can mean either
+    - there was a prototye before
+    - redefinition of a prototype-less function
 
 **problem** : we can't differenciate bewteen those 2 cases
 
 We need a FunctionPrototype symbol.
 
 - Upon encountering a declaration (prototype)
-    - Try to add a FunctionPrototype symbol
-    - If it already exists, compare it to the existing one
-        - If they're different, cause error
-        - If they're the same, do nothing
+  - Try to add a FunctionPrototype symbol
+  - If it already exists, compare it to the existing one
+    - If they're different, cause error
+    - If they're the same, do nothing
 - Upon encountering a definition
-    - If a FunctionPrototype symbol of the same name exists
-        - If they're different, cause error
-        - If they're the same, do nothing
-    - Add a Function symbol and error if it exists already
+  - If a FunctionPrototype symbol of the same name exists
+    - If they're different, cause error
+    - If they're the same, do nothing
+  - Add a Function symbol and error if it exists already
 
 **problem** : actually this wouldn't work either because we would be limited to 1 FunctionPrototype per name
 
 We need to make Symbol.Function mutable by adding a boolean value, HasBeenDefined
 
 - Upon encountering a declaration (prototype)
-    - Try to add a Function
-    - If already exists compare it to the existing one
-        - If they're different, cause error
+  - Try to add a Function
+  - If already exists compare it to the existing one
+    - If they're different, cause error
 - Upon encountering a definition
-    - Try to add a Function
-    - If added
-        - call MarkAsDefined
-    - If exists
-        - If HasBeenDefined
-            - cause error, redefinition
-        - Else
-            - call MarkAsDefined
+  - Try to add a Function
+  - If added
+    - call MarkAsDefined
+  - If exists
+    - If HasBeenDefined
+      - cause error, redefinition
+    - Else
+      - call MarkAsDefined
 
 ## Scopes
 
@@ -502,10 +502,10 @@ I'm having trouble organizing the formal grammar. I have to put these below `Exp
 - fdf
 - literal
 - lvalue
-    - bracketed lvalue
-    - array subscript
-    - component access
-    - identifier
+  - bracketed lvalue
+  - array subscript
+  - component access
+  - identifier
 
 But there's a catch : array subscript and component access start with any expression, so they will recurse infinitely if they can parse themselves.
 
@@ -791,11 +791,11 @@ We need to bracket like this : `((5 - 4) - 3) - 2`
 When generating a binary operation, surround in brackets :
 
 - left operand
-    - when its precedence is > mine
-    - or when its precedence = mine and my associativity is RTL and psdc associativity is LTR
+  - when its precedence is > mine
+  - or when its precedence = mine and my associativity is RTL and psdc associativity is LTR
 - right operand
-    - when its precedence is > mine
-    - or when its precedence = mine and my associativity is LTR and psdc associativity is RTL
+  - when its precedence is > mine
+  - or when its precedence = mine and my associativity is LTR and psdc associativity is RTL
 
 Unary operations : bracket when my operand's precedence is > mine
 
@@ -1490,7 +1490,7 @@ But this wouldn't sove the more fundamental issue at hand; that we don't have al
 I see 2 solutions that may overlap each other
 
 - Replace the current AST structure by a DOM with extensible properties given by Static analyzer. Maybe use a state to keep track of which step the AST is in (Parsed, Analyzed)
-    - Scope property in every node
+  - Scope property in every node
 - Make a new AST structure with properties specific to static analysis (replace types by EvaluatedTypes, Scope property)
 
 Basically, stop using lookup table and make the AST more self-contained.
@@ -1725,27 +1725,27 @@ Tests (increasing complexity):
 
 - Literal
 - Operations (combine multiple operations that yield a constant result)
-    - Addition
-    - Substraction
-    - Division
-    - Mod
-    - Cast from real
-    - Cast from bool
-        - vrai
-        - faux
-        - Not
-        - Or
-        - And
-        - Xor
+  - Addition
+  - Substraction
+  - Division
+  - Mod
+  - Cast from real
+  - Cast from bool
+    - vrai
+    - faux
+    - Not
+    - Or
+    - And
+    - Xor
 - Scalar constant
 - Array constant
-    - no designators
-    - with designators
-    - only designators
+  - no designators
+  - with designators
+  - only designators
 - Structure constant
-    - no designators
-    - with designators
-    - only designators
+  - no designators
+  - with designators
+  - only designators
 - Structure > Array constant
 - Array > Structure constant
 
@@ -1873,7 +1873,7 @@ Okay, based on this what we need is:
 
 - Recursion. As underlying values are immutable, modification requires assignment.
 - Special handling of the last designator (since it's the one that sets the value instead of fetching a subobject)
-    - Really? Can't we just return the value to set?
+  - Really? Can't we just return the value to set?
 
 Imagine we have initializer value `[5][6] = 3`:
 
@@ -1882,9 +1882,9 @@ function Path.ComputeValue(object haystack, )
 Passes the object, the designator and the needle value (3)
 
 - On `[5]`: passes the 5th subobject (ImmutableArray of Value), the remaining designators (1), the needle value (3)
-    - On `[6]`: passes the 6th subobject (ImmutableArray of Value), the remaining designators (0), the needle value (3)
-        - Notices the empty remaining designators are empty: returns the needle value
-    - Returns the subobject with the 6th value set to the return value of above
+  - On `[6]`: passes the 6th subobject (ImmutableArray of Value), the remaining designators (0), the needle value (3)
+    - Notices the empty remaining designators are empty: returns the needle value
+  - Returns the subobject with the 6th value set to the return value of above
 - Returns the object with the 5th value set to the return value of above
 
 Assigns the currentObject to the return value of above.

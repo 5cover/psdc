@@ -82,7 +82,7 @@ public sealed partial class Parser
 
         Dictionary<TokenType, Parser<IEnumerable<Designator>>> designatorParsers = new() {
             [Punctuation.LBracket] = ArrayDesignator,
-            [Operator.Dot] = StructureDesignator,
+            [Punctuation.Dot] = StructureDesignator,
         };
         _designator = t => ParseByTokenType(t, "designator", designatorParsers);
     }
@@ -117,7 +117,7 @@ public sealed partial class Parser
      => ParseOperation.Start(tokens, "type alias")
         .ParseToken(Keyword.Type)
         .Parse(out var name, Identifier)
-        .ParseToken(Operator.Equal)
+        .ParseToken(Punctuation.Equal)
         .Parse(out var type, _type)
         .MapResult(t => new Declaration.TypeAlias(t, name, type));
 
@@ -126,7 +126,7 @@ public sealed partial class Parser
         .ParseToken(Keyword.Constant)
         .Parse(out var type, _type)
         .Parse(out var name, Identifier)
-        .ParseToken(Operator.ColonEqual)
+        .ParseToken(Punctuation.ColonEqual)
         .Parse(out var value, Initializer)
         .ParseToken(Punctuation.Semicolon)
         .MapResult(t => new Declaration.Constant(t, type, name, value));
@@ -218,7 +218,7 @@ public sealed partial class Parser
     ParseResult<Statement> Assignment(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "assignment")
         .Parse(out var target, ParseLvalue)
-        .ParseToken(Operator.ColonEqual)
+        .ParseToken(Punctuation.ColonEqual)
         .Parse(out var value, Expression)
         .ParseToken(Punctuation.Semicolon)
         .MapResult(t => new Statement.Assignment(t, target, value));
@@ -335,7 +335,7 @@ public sealed partial class Parser
      => ParseOperation.Start(tokens, "local variable declaration")
         .Parse(out var declaration, t => VariableDeclaration(t, "local variable declaration"))
         .ParseOptional(out var init, t => ParseOperation.Start(t, "local variable initializer")
-            .ParseToken(Operator.ColonEqual)
+            .ParseToken(Punctuation.ColonEqual)
             .Parse(out var init, Initializer)
             .MapResult(_ => init))
         .ParseToken(Punctuation.Semicolon)
@@ -442,8 +442,8 @@ public sealed partial class Parser
         .ParseZeroOrMoreSeparated(out var values, ParserFirst<Initializer.Braced.Item>((tokens)
              => ParseOperation.Start(tokens, "braced initializer item")
                 .ParseOptional(out var designators, t => ParseOperation.Start(t, "designators")
-                    .ParseZeroOrMoreUntilToken(out var des, _designator, Set.Of<TokenType>(Operator.ColonEqual))
-                    .ParseToken(Operator.ColonEqual)
+                    .ParseZeroOrMoreUntilToken(out var des, _designator, Set.Of<TokenType>(Punctuation.ColonEqual))
+                    .ParseToken(Punctuation.ColonEqual)
                     .MapResult(_ => des))
                 .Parse(out var init, Initializer)
                 .MapResult(t => new Initializer.Braced.ValuedItem(t, designators.Match(des => ReportErrors(des).SelectMany(d => d).ToArray(), () => []), init)),
@@ -459,7 +459,7 @@ public sealed partial class Parser
 
     ParseResult<IEnumerable<Designator.Structure>> StructureDesignator(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "structure designator")
-        .ParseToken(Operator.Dot)
+        .ParseToken(Punctuation.Dot)
         .Parse(out var component, Identifier)
         .MapResult(t => new Designator.Structure(t, component).Yield());
 

@@ -101,13 +101,17 @@ public class TokenType
 
         public static Keyword Do { get; } = new("faire");
         public static Keyword Else { get; } = new("sinon");
-        public static Keyword ElseIf { get; } = new("sinonsi");
-        public static Keyword EndDo { get; } = new("finfaire");
-        public static Keyword EndIf { get; } = new("finsi");
-        public static Keyword EndSwitch { get; } = new("finselon");
+        public static Keyword ElseIf { get; } = new("sinonsi",
+                                                    "sinonSi");
+        public static Keyword EndDo { get; } = new("finfaire",
+                                                   "finFaire");
+        public static Keyword EndIf { get; } = new("finsi",
+                                                   "finSi");
+        public static Keyword EndSwitch { get; } = new("finselon",
+                                                       "finSelon");
         public static Keyword For { get; } = new("pour");
-        public static Keyword EndFor { get; } = new("finPour",
-                                                    "finpour");
+        public static Keyword EndFor { get; } = new("finpour",
+                                                    "finPour");
         public static Keyword If { get; } = new("si");
         public static Keyword Repeat { get; } = new("répéter",
                                                     "répeter",
@@ -133,54 +137,18 @@ public class TokenType
         public static Keyword SortF { get; } = new("sortF");
 
         #endregion Parameters
-    }
 
-    internal sealed class Operator : TokenType, Ruled<StringTokenRule>
-    {
-        static readonly List<Operator> instances = [];
+        #region Logical operators
+        public static Keyword And { get; } = new("ET",
+                                                  "et");
+        public static Keyword Not { get; } = new("NON",
+                                                  "non");
+        public static Keyword Or { get; } = new("OU",
+                                                 "ou");
+        public static Keyword Xor { get; } = new("XOR",
+                                                  "xor");
 
-        public IEnumerable<StringTokenRule> Rules { get; }
-
-        Operator(string code, StringComparison comparison = StringComparison.Ordinal) : base(code, true)
-        {
-            instances.Add(this);
-            Rules = GetRules(this, [t => new StringTokenRule(t, code, comparison)]);
-        }
-
-        public static IReadOnlyCollection<Operator> Instances => instances;
-        public static Operator ColonEqual { get; } = new(":=");
-        public static Operator Dot { get; } = new(".");
-        public static Operator Equal { get; } = new("=");
-
-        #region Arithmetic
-
-        public static Operator Plus { get; } = new("+");
-        public static Operator Divide { get; } = new("/");
-        public static Operator Mod { get; } = new("%");
-        public static Operator Times { get; } = new("*");
-        public static Operator Minus { get; } = new("-");
-
-        #endregion Arithmetic
-
-        #region Logical
-
-        public static Operator And { get; } = new("ET", StringComparison.OrdinalIgnoreCase);
-        public static Operator Not { get; } = new("NON", StringComparison.OrdinalIgnoreCase);
-        public static Operator Or { get; } = new("OU", StringComparison.OrdinalIgnoreCase);
-        public static Operator Xor { get; } = new("XOR", StringComparison.OrdinalIgnoreCase);
-
-        #endregion Logical
-
-        #region Comparison
-
-        public static Operator DoubleEqual { get; } = new("==");
-        public static Operator GreaterThan { get; } = new(">");
-        public static Operator GreaterThanOrEqual { get; } = new(">=");
-        public static Operator LessThan { get; } = new("<");
-        public static Operator LessThanOrEqual { get; } = new("<=");
-        public static Operator NotEqual { get; } = new("!=");
-
-        #endregion Comparison
+        #endregion Logical opetators
     }
 
     internal sealed class Punctuation : TokenType, Ruled<StringTokenRule>
@@ -207,6 +175,35 @@ public class TokenType
         public static Punctuation RParen { get; } = new(")");
         public static Punctuation Semicolon { get; } = new(";");
         public static Punctuation NumberSign { get; } = new("#");
+
+        #region Operators
+
+        public static Punctuation ColonEqual { get; } = new(":=");
+        public static Punctuation Dot { get; } = new(".");
+        public static Punctuation Equal { get; } = new("=");
+
+        #region Arithmetic
+
+        public static Punctuation Plus { get; } = new("+");
+        public static Punctuation Divide { get; } = new("/");
+        public static Punctuation Mod { get; } = new("%");
+        public static Punctuation Times { get; } = new("*");
+        public static Punctuation Minus { get; } = new("-");
+
+        #endregion Arithmetic
+
+        #region Comparison
+
+        public static Punctuation DoubleEqual { get; } = new("==");
+        public static Punctuation GreaterThan { get; } = new(">");
+        public static Punctuation GreaterThanOrEqual { get; } = new(">=");
+        public static Punctuation LessThan { get; } = new("<");
+        public static Punctuation LessThanOrEqual { get; } = new("<=");
+        public static Punctuation NotEqual { get; } = new("!=");
+
+        #endregion Comparison
+
+        #endregion Operators
     }
 
     internal sealed class Valued : TokenType, Ruled<RegexTokenRule>

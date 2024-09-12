@@ -11,32 +11,32 @@ partial class Parser
 {
     static readonly Dictionary<TokenType, Func<SourceTokens, BinaryOperator>>
         operatorsOr = new() {
-            [Operator.Or] = t => new BinaryOperator.Or(t),
+            [Keyword.Or] = t => new BinaryOperator.Or(t),
         },
         operatorsAnd = new() {
-            [Operator.And] = t => new BinaryOperator.And(t),
+            [Keyword.And] = t => new BinaryOperator.And(t),
         },
         operatorsXor = new() {
-            [Operator.Xor] = t => new BinaryOperator.Xor(t),
+            [Keyword.Xor] = t => new BinaryOperator.Xor(t),
         },
         operatorsEquality = new() {
-            [Operator.DoubleEqual] = t => new BinaryOperator.Equal(t),
-            [Operator.NotEqual] = t => new BinaryOperator.NotEqual(t),
+            [Punctuation.DoubleEqual] = t => new BinaryOperator.Equal(t),
+            [Punctuation.NotEqual] = t => new BinaryOperator.NotEqual(t),
         },
         operatorsComparison = new() {
-            [Operator.LessThan] = t => new BinaryOperator.LessThan(t),
-            [Operator.LessThanOrEqual] = t => new BinaryOperator.LessThanOrEqual(t),
-            [Operator.GreaterThan] = t => new BinaryOperator.GreaterThan(t),
-            [Operator.GreaterThanOrEqual] = t => new BinaryOperator.GreaterThanOrEqual(t),
+            [Punctuation.LessThan] = t => new BinaryOperator.LessThan(t),
+            [Punctuation.LessThanOrEqual] = t => new BinaryOperator.LessThanOrEqual(t),
+            [Punctuation.GreaterThan] = t => new BinaryOperator.GreaterThan(t),
+            [Punctuation.GreaterThanOrEqual] = t => new BinaryOperator.GreaterThanOrEqual(t),
         },
         operatorsAddSub = new() {
-            [Operator.Plus] = t => new BinaryOperator.Add(t),
-            [Operator.Minus] = t => new BinaryOperator.Subtract(t),
+            [Punctuation.Plus] = t => new BinaryOperator.Add(t),
+            [Punctuation.Minus] = t => new BinaryOperator.Subtract(t),
         },
         operatorsMulDivMod = new() {
-            [Operator.Times] = t => new BinaryOperator.Multiply(t),
-            [Operator.Divide] = t => new BinaryOperator.Divide(t),
-            [Operator.Mod] = t => new BinaryOperator.Mod(t),
+            [Punctuation.Times] = t => new BinaryOperator.Multiply(t),
+            [Punctuation.Divide] = t => new BinaryOperator.Divide(t),
+            [Punctuation.Mod] = t => new BinaryOperator.Mod(t),
         };
 
     readonly Parser<Expression.Literal> _literal;
@@ -55,7 +55,7 @@ partial class Parser
         ParserUnaryOperation(
         ParserBinary(TerminalRvalue, new() {
             [Punctuation.LBracket] = ArraySubscriptRight,
-            [Operator.Dot] = ComponentAccessRight,
+            [Punctuation.Dot] = ComponentAccessRight,
         }))))))))))(tokens);
 
     static Parser<T> ParserBinary<T>(
@@ -177,9 +177,9 @@ partial class Parser
 
     Parser<UnaryOperator>? _parseUnaryOperator;
     Parser<UnaryOperator> ParseUnaryOperator => _parseUnaryOperator ??= ParserFirst<UnaryOperator>(
-        t => ParseToken(t, Operator.Minus, t => new UnaryOperator.Minus(t)),
-        t => ParseToken(t, Operator.Not, t => new UnaryOperator.Not(t)),
-        t => ParseToken(t, Operator.Plus, t => new UnaryOperator.Plus(t)),
+        t => ParseToken(t, Punctuation.Minus, t => new UnaryOperator.Minus(t)),
+        t => ParseToken(t, Keyword.Not, t => new UnaryOperator.Not(t)),
+        t => ParseToken(t, Punctuation.Plus, t => new UnaryOperator.Plus(t)),
         t => ParseOperation.Start(t, "cast operator")
             .ParseToken(Punctuation.LParen)
             .Parse(out var target, _type)
@@ -196,7 +196,7 @@ partial class Parser
     ParseResult<Expression.Lvalue> ParseLvalue(IEnumerable<Token> tokens)
      => ParserFirst(ParserBinaryAtLeast1<Expression, Expression.Lvalue>("lvalue", TerminalRvalue, new() {
          [Punctuation.LBracket] = ArraySubscriptRight,
-         [Operator.Dot] = ComponentAccessRight,
+         [Punctuation.Dot] = ComponentAccessRight,
      }), TerminalLvalue)(tokens);
 
     ParseResult<Expression.Lvalue> TerminalLvalue(IEnumerable<Token> tokens)

@@ -346,10 +346,10 @@ Simply add some graph-building logic in the NodeImpl constructor.
 
 - Check if file arguments to file builtins are files
 - Check for loop start, step and end
-    - start must be assignable to variant
-    - variant and step must support operator '+'
-    - variant and end must support operator '<'
-    - so I need a way to query which operators are supported between 2 types. Oh no.
+  - start must be assignable to variant
+  - variant and step must support operator '+'
+  - variant and end must support operator '<'
+  - so I need a way to query which operators are supported between 2 types. Oh no.
 
 - Check the type and const-ness of each case
 - Check if condition is a boolean in alternatives and loops
