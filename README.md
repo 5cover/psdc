@@ -239,6 +239,7 @@ Notation: bold &rarr; underway
   - [ ] Language server
   - [ ] Better syntax highlighter
 - [ ] access to argc and argv
+- [ ] translate comments
 
 ### C output configuration
 
