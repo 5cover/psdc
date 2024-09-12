@@ -25,9 +25,9 @@ More information in [Philosophy](docs/Philosophy.md).
 
 ## Example
 
-### 1. Input Pseudocode
+### 1. Input Pseudocode ([sudoku.psc](testPrograms/sudoku.psc))
 
-My pitiful program for S1.01 ([sudoku.psc](testPrograms/sudoku.psc))
+My pitiful program for S1.01
 
 ```psc
 /*
@@ -118,7 +118,7 @@ Oops. Looks like we got some errors. Psdc detected that the functions and proced
 
 That doesn't prevent it from giving us meaningful output, though.
 
-### 3. C output
+### 3. C output (sudoku.c)
 
 ```c
 /** @file
