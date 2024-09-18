@@ -24,7 +24,7 @@ public sealed partial class StaticAnalyzer
 
     void EvaluateCompilerDirective(Scope scope, Node.CompilerDirective compilerDirective)
     {
-        _msger.Report(Message.SuggestionFeatureNotOfficial(compilerDirective.SourceTokens, "compiler directives"));
+        _msger.Report(Message.HintFeatureNotOfficial(compilerDirective.SourceTokens, "compiler directives"));
         switch (compilerDirective) {
         case Node.CompilerDirective.Assert cd: {
             GetComptimeValue<BooleanType, bool>(BooleanType.Instance, EvaluateExpression(scope, cd.Expression))
@@ -79,7 +79,7 @@ public sealed partial class StaticAnalyzer
             var type = EvaluateType(scope, constant.Type);
             var init = AnalyzeInitializer(scope, constant.Value, EvaluatedType.IsAssignableTo, type);
             if (init is Expression) {
-                _msger.Report(Message.SuggestionFeatureNotOfficialScalarInitializers(init));
+                _msger.Report(Message.HintFeatureNotOfficialScalarInitializers(init));
             }
 
             if (init.Value.Status is not ValueStatus.Comptime) {
@@ -214,7 +214,7 @@ public sealed partial class StaticAnalyzer
         case Node.Statement.ExpressionStatement e: {
             var expr = EvaluateExpression(scope, e.Expression);
             if (!expr.Value.Type.IsConvertibleTo(VoidType.Instance)) {
-                _msger.Report(Message.SuggestionExpressionValueUnused(e.Expression));
+                _msger.Report(Message.HintExpressionValueUnused(e.Expression));
             }
             return new Statement.ExpressionStatement(meta, expr);
         }
@@ -305,7 +305,7 @@ public sealed partial class StaticAnalyzer
             var initializer = s.Value.Map(i => {
                 var init = AnalyzeInitializer(scope, i, EvaluatedType.IsAssignableTo, type);
                 if (init is Expression) {
-                    _msger.Report(Message.SuggestionFeatureNotOfficialScalarInitializers(init));
+                    _msger.Report(Message.HintFeatureNotOfficialScalarInitializers(init));
                 }
                 return init;
 
@@ -706,7 +706,7 @@ public sealed partial class StaticAnalyzer
         SemanticMetadata meta = new(scope, unOp.SourceTokens);
         switch (unOp) {
         case Node.UnaryOperator.Cast op: {
-            _msger.Report(Message.SuggestionFeatureNotOfficial(op.SourceTokens, "type casts"));
+            _msger.Report(Message.HintFeatureNotOfficial(op.SourceTokens, "type casts"));
             return new UnaryOperator.Cast(meta, EvaluateType(scope, op.Target));
         }
         case Node.UnaryOperator.Minus: {

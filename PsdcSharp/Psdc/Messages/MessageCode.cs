@@ -46,14 +46,14 @@ public enum MessageCode
 
     #endregion Warnings
 
-    #region Suggestions
+    #region Hints
 
     ExpressionValueUnused,
     RedundantCast,
     FeatureNotOfficial,
-    CustomSuggestion = 2999,
+    CustomHint = 2999,
 
-    #endregion Suggestions
+    #endregion Hint
 
     #region Debug
 

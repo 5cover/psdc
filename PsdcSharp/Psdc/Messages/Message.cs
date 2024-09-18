@@ -48,7 +48,7 @@ public readonly struct Message
      => new(compilerDirective.SourceTokens, MessageCode.AssertionFailed,
         message.Match(ms => Fmt($"compile-time assertion failed: {ms}"),
                       () => "compile-time assertion failed"));
-    internal static Message SuggestionExpressionValueUnused(Expression expr)
+    internal static Message HintExpressionValueUnused(Expression expr)
      => new(expr.SourceTokens, MessageCode.ExpressionValueUnused,
         "value of expression unused");
     internal static Message ErrorIndexOutOfBounds(SourceTokens sourceTokens, int index, int length)
@@ -189,7 +189,7 @@ public readonly struct Message
     internal static Message ErrorUnsupportedOperation(Expression.UnaryOperation opUn, EvaluatedType operandType)
      => new(opUn.SourceTokens, MessageCode.UnsupportedOperation,
         Fmt($"unsupported operand type for {opUn.Operator.Representation}: '{operandType}'"));
-    internal static Message SuggestionRedundantCast(SourceTokens sourceTokens, EvaluatedType sourceType, EvaluatedType targetType)
+    internal static Message HintRedundantCast(SourceTokens sourceTokens, EvaluatedType sourceType, EvaluatedType targetType)
      => new(sourceTokens, MessageCode.RedundantCast,
         Fmt($"Rendundant cast from '{sourceType}' to '{targetType}': an implicit conversion exists"));
     internal static Message ErrrorComponentAccessOfNonStruct(Expression.Lvalue.ComponentAccess compAccess, EvaluatedType actualStructType)
@@ -218,13 +218,13 @@ public readonly struct Message
         "floating point equality may be inaccurate",
         ["consider comparing absolute difference to an epsilon value instead"]);
 
-    internal static Message SuggestionFeatureNotOfficial(SourceTokens sourceTokens, string feature, string? alternativeSolution = null)
+    internal static Message HintFeatureNotOfficial(SourceTokens sourceTokens, string feature, string? alternativeSolution = null)
      => new(sourceTokens, MessageCode.FeatureNotOfficial,
         Fmt($"{(Random.Shared.Test(.1) ? "careful, my friend... " : "")}language feature '{feature}' is not official"),
         alternativeSolution is null ? [] : [alternativeSolution]);
 
-    internal static Message SuggestionFeatureNotOfficialScalarInitializers(SemanticNode.Initializer init)
-     => SuggestionFeatureNotOfficial(init.Meta.SourceTokens, "scalar initializers",
+    internal static Message HintFeatureNotOfficialScalarInitializers(SemanticNode.Initializer init)
+     => HintFeatureNotOfficial(init.Meta.SourceTokens, "scalar initializers",
         "consider separating the initialization from the declaration in an assignent statement");
 
     static Message CreateTargetLanguageFormat(SourceTokens sourceTokens, MessageCode code,

@@ -56,7 +56,7 @@ static class ConstantFolding
         EvaluatedType targetType = sa.EvaluateType(scope, cast.Target);
         // Implicit conversions
         if (operand.Type.IsConvertibleTo(targetType)) {
-            return OperationResult.OkUnary(operand, (opUn, operandType) => Message.SuggestionRedundantCast(opUn.SourceTokens, operandType, targetType));
+            return OperationResult.OkUnary(operand, (opUn, operandType) => Message.HintRedundantCast(opUn.SourceTokens, operandType, targetType));
         }
         // Explicit conversions
         return (operand, targetType) switch {

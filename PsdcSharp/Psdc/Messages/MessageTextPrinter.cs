@@ -41,7 +41,7 @@ public sealed class MessageTextPrinter(
         _output.WriteLine(string.Create(Format.Msg, $" ({msgCount
         (MessageSeverity.Error).ToQuantity("error")}, {msgCount
         (MessageSeverity.Warning).ToQuantity("warning")}, {msgCount
-        (MessageSeverity.Suggestion).ToQuantity("suggestion")})."));
+        (MessageSeverity.Hint).ToQuantity("hint")})."));
     }
 
     void PrintMessage(Message message)

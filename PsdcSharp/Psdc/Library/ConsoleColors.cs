@@ -20,7 +20,7 @@ readonly record struct ConsoleColors(ValueOption<ConsoleColor> Foreground, Value
     public static ConsoleColors ForMessageSeverity(MessageSeverity msgSeverity) => msgSeverity switch {
         MessageSeverity.Error => new(ConsoleColor.Red, default),
         MessageSeverity.Warning => new(ConsoleColor.Yellow, default),
-        MessageSeverity.Suggestion => new(ConsoleColor.Blue, default),
+        MessageSeverity.Hint => new(ConsoleColor.Blue, default),
         MessageSeverity.Debug => new(ConsoleColor.Green, default),
         _ => throw msgSeverity.ToUnmatchedException(),
     };
