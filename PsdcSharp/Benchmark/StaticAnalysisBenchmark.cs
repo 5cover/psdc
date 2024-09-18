@@ -21,5 +21,5 @@ public class StaticAnalysisBenchmark
 
     [Benchmark]
     public SemanticNode.Program Run()
-     => StaticAnalyzer.Analyze(p.Msger, _ast);
+     => StaticAnalyzer.Analyze(p.Msger, p.Input, _ast);
 }

@@ -30,6 +30,6 @@ sealed class CliOptions(
     public bool Pedantic => pedantic;
     [Option("msg", Default = MessageStyle.Gnu,
         HelpText = "Style of the message list",
-        MetaValue = "vscode/gnu")]
+        MetaValue = "vscode/gnu/json")]
     public MessageStyle MsgStyle => msgStyle;
 }

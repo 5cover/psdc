@@ -10,5 +10,5 @@ public class TokenizationBenchmark
     [Benchmark]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822", Justification = "benchmark")]
     public Token[] Run()
-     => Tokenizer.Tokenize(p.Msger, p.Code).ToArray();
+     => Tokenizer.Tokenize(p.Msger, p.Input).ToArray();
 }

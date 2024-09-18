@@ -49,13 +49,7 @@ static class Program
                 return SysExits.NoInput;
             }
 
-            PrintMessenger msger = new(
-                msgOutput,
-                opt.Input == CliOptions.StdStreamPlaceholder ? "<stdin>" : opt.Input,
-                input,
-                opt.MsgStyle,
-                ImmutableDictionary.Create<MessageCode, bool>()
-                    .Add(MessageCode.FeatureNotOfficial, opt.Pedantic));
+            FilterMessenger msger = new(code => opt.Pedantic || code is not MessageCode.FeatureNotOfficial);
 
             var tokens = "Tokenizing".LogOperation(opt.Verbose,
                 () => Tokenizer.Tokenize(msger, input).ToArray());
@@ -65,7 +59,7 @@ static class Program
 
             if (ast.HasValue) {
                 var sast = "Analyzing".LogOperation(opt.Verbose,
-                    () => StaticAnalyzer.Analyze(msger, ast.Value));
+                    () => StaticAnalyzer.Analyze(msger, input, ast.Value));
 
                 string cCode = "Generating code".LogOperation(opt.Verbose,
                     () => codeGenerator(msger, sast));
@@ -75,9 +69,23 @@ static class Program
 
             msgOutput.WriteLine();
 
-            msger.PrintMessageList();
+            MessagePrinter msgPrinter = opt.MsgStyle switch {
+                MessageStyle.Gnu => CreateMessagePrinter(MessageTextPrinter.Style.Gnu),
+                MessageStyle.VSCode => CreateMessagePrinter(MessageTextPrinter.Style.VSCode),
+                MessageStyle.Json => new MessageJsonPrinter(msgOutput, input),
+                _ => throw opt.MsgStyle.ToUnmatchedException(),
+            };
 
-            return Conclude(msger);
+            msgPrinter.PrintMessageList(msger.Messages);
+            msgPrinter.Conclude(msger.GetMessageCount);
+            return msger.GetMessageCount(MessageSeverity.Error) == 0 ? SysExits.Ok : ExitCompilationFailed;
+
+            MessageTextPrinter CreateMessagePrinter(MessageTextPrinter.Style style) => new(
+                msgOutput,
+                opt.Input == CliOptions.StdStreamPlaceholder ? "<stdin>" : opt.Input,
+                input,
+                style);
+
         } finally {
             if (outputIsRegFile) {
                 output.Dispose();
@@ -87,32 +95,5 @@ static class Program
 
     static void WriteError(string message)
      => msgOutput.WriteLine($"{Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "psdc")}: error: {message}");
-
-    static int Conclude(PrintMessenger msger)
-    {
-        msgOutput.Write("Compilation ");
-
-        int exitCode;
-        if (msger.GetMessageCount(MessageSeverity.Error) == 0) {
-            exitCode = SysExits.Ok;
-            new ConsoleColors(ConsoleColor.Green).DoInColor(() => msgOutput.Write("succeeded"));
-        } else {
-            exitCode = ExitCompilationFailed;
-            new ConsoleColors(ConsoleColor.Red).DoInColor(() => msgOutput.Write("failed"));
-        }
-
-        msgOutput.WriteLine(string.Create(Format.Msg, $" ({Quantity(
-        msger.GetMessageCount(MessageSeverity.Error), "error")}, {Quantity(
-        msger.GetMessageCount(MessageSeverity.Warning), "warning")}, {Quantity(
-        msger.GetMessageCount(MessageSeverity.Suggestion), "suggestion")})."));
-
-        return exitCode;
-    }
-
-    static string Quantity(int amount, string singular, string plural)
-     => string.Create(Format.Msg, $"{amount} {(amount == 1 ? singular : plural)}");
-
-    static string Quantity(int amount, string singular)
-     => Quantity(amount, singular, singular + "s");
 }
 

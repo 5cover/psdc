@@ -1,6 +1,6 @@
 namespace Scover.Psdc.Library;
 
-readonly record struct Position(int Line, int Column) : IFormattableUsable
+public readonly record struct Position(int Line, int Column) : IFormattableUsable
 {
     public string ToString(string? format, IFormatProvider? fmtProvider)
      => string.Create(fmtProvider, $"L {Line + 1}, col {Column + 1}");

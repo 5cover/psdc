@@ -17,8 +17,7 @@ public interface Messenger
         }
     }
 
-    /// <summary>
-    /// Get the input code.
-    /// </summary>
-    public string Input { get; }
+    public int GetMessageCount(MessageSeverity severity);
+
+    public IEnumerable<Message> Messages { get; }
 }

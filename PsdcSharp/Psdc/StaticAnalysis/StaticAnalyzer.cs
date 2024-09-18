@@ -15,11 +15,12 @@ public sealed partial class StaticAnalyzer
         Seen,
     }
     readonly Messenger _msger;
+    readonly string _input;
 
     MainProgramStatus _mainProgramStatus;
     ValueOption<Symbol.Callable> _currentCallable;
 
-    StaticAnalyzer(Messenger messenger) => _msger = messenger;
+    StaticAnalyzer(Messenger messenger, string input) => (_msger, _input) = (messenger, input);
 
     void EvaluateCompilerDirective(Scope scope, Node.CompilerDirective compilerDirective)
     {
@@ -50,9 +51,9 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    public static SemanticNode.Program Analyze(Messenger messenger, Node.Program root)
+    public static SemanticNode.Program Analyze(Messenger messenger, string input, Node.Program root)
     {
-        StaticAnalyzer a = new(messenger);
+        StaticAnalyzer a = new(messenger, input);
 
         MutableScope scope = new(null);
 
@@ -726,7 +727,7 @@ public sealed partial class StaticAnalyzer
         Node.Type.AliasReference alias
          => scope.GetSymbol<Symbol.TypeAlias>(alias.Name).DropError(_msger.Report)
                 .Map(aliasType => aliasType.Type.ToAliasReference(alias.Name))
-            .ValueOr(UnknownType.Declared(_msger.Input, type)),
+            .ValueOr(UnknownType.Declared(_input, type)),
         Node.Type.Array array => EvaluateArrayType(scope, array),
         Node.Type.Boolean => BooleanType.Instance,
         Node.Type.Character => CharacterType.Instance,
@@ -743,7 +744,7 @@ public sealed partial class StaticAnalyzer
      => GetComptimeExpression<IntegerType, int>(IntegerType.Instance, scope, str.Length)
         .DropError(_msger.Report)
         .Map(LengthedStringType.Create)
-        .ValueOr<EvaluatedType>(UnknownType.Declared(_msger.Input, str));
+        .ValueOr<EvaluatedType>(UnknownType.Declared(_input, str));
 
     EvaluatedType EvaluateArrayType(Scope scope, Node.Type.Array array)
      => array.Dimensions.Select(d => GetComptimeExpression<IntegerType, int>(IntegerType.Instance, scope, d)).Sequence()
@@ -757,7 +758,7 @@ public sealed partial class StaticAnalyzer
             }
             return type;
         })
-        .ValueOr(UnknownType.Declared(_msger.Input, array));
+        .ValueOr(UnknownType.Declared(_input, array));
 
     static ValueOption<TUnderlying, Message> GetComptimeValue<TType, TUnderlying>(TType expectedType, Expression expr)
     where TType : EvaluatedType

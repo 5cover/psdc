@@ -217,6 +217,15 @@ public static class Extensions
     }
 
     public static bool Test(this Random random, double chance) => random.NextDouble() <= chance;
+
+    public static string ToQuantity(this int amount, string singular, string plural)
+     => string.Create(Format.Msg, $"{amount} {(amount == 1 ? singular : plural)}");
+
+    public static string ToQuantity(this int amount, string singular)
+     => amount.ToQuantity(singular, singular + "s");
+
+    public static (Position Start, Position End) Apply(this Range range, string str)
+    => (str.GetPositionAt(range.Start), str.GetPositionAt(range.End));
 }
 
 static class Function

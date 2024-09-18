@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
+using Scover.Psdc.Benchmark;
 using Scover.Psdc.Messages;
 
 static class Program
@@ -27,11 +28,11 @@ static class Program
         get {
             var filename = Environment.GetEnvironmentVariable(EnvNameFilename)
                 ?? throw new InvalidOperationException("Filename env var not set");
-            var code = File.ReadAllText(filename);
+            var input = File.ReadAllText(filename);
 
-            return new(code, new BenchmarkMessenger(filename, code, default));
+            return new(input, IgnoreMessenger.Instance);
         }
     }
 }
 
-readonly record struct Parameters(string Code, Messenger Msger);
+readonly record struct Parameters(string Input, Messenger Msger);

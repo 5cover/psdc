@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Scover.Psdc.Library;
 
-public class DefaultDictionary<TKey, TValue>(TValue defaultValue) : IDictionary<TKey, TValue> where TKey : notnull
+public class DefaultDictionary<TKey, TValue>(TValue defaultValue) : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> where TKey : notnull
 {
     readonly Dictionary<TKey, TValue> _dic = [];
 
@@ -16,6 +16,9 @@ public class DefaultDictionary<TKey, TValue>(TValue defaultValue) : IDictionary<
     public int Count => _dic.Count;
 
     bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly => ((ICollection<KeyValuePair<TKey, TValue>>)_dic).IsReadOnly;
+
+    IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => _dic.Keys;
+    IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => _dic.Values;
 
     public TValue this[TKey key] {
         get => TryGetValue(key, out var t) ? t : DefaultValue;

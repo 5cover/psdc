@@ -2,9 +2,13 @@ using Scover.Psdc.Messages;
 
 namespace Scover.Psdc.Benchmark;
 
-sealed class IgnoreMessenger(string input) : Messenger
+sealed class IgnoreMessenger : Messenger
 {
-    public string Input { get; } = input;
+    private IgnoreMessenger() {}
+    public static IgnoreMessenger Instance { get; } = new();
+    public IEnumerable<Message> Messages => [];
+
+    public int GetMessageCount(MessageSeverity severity) => 0;
 
     public void Report(Message message)
     {
