@@ -15,4 +15,4 @@ else
 fi
 
 
-dotnet exec "PsdcSharp/Psdc/bin/$dir/psdc.dll" c "testPrograms/$file.psc" --msg=json
+dotnet exec "PsdcSharp/Psdc/bin/$dir/psdc.dll" c "testPrograms/$file.psc"
