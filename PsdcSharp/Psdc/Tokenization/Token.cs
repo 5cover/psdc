@@ -1,8 +1,9 @@
 namespace Scover.Psdc.Tokenization;
 
-public sealed record Token(TokenType Type, string? Value, int StartIndex, int Length)
+public readonly record struct Lexeme(TokenType Type, string? Value, FixedRange CodePosition);
+
+public readonly record struct Token(TokenType Type, string? Value, FixedRange Position)
 {
-    public Range InputRange => StartIndex..(StartIndex + Length);
     public override string ToString()
      => $"{Type} {(Value is null ? "" : $"`{Value}`")}";
 }

@@ -15,10 +15,7 @@ public class SourceTokens : IEnumerable<Token>
         _tokens = tokens.Take(count);
         _inputRange = count == 0
             ? new(Range.EndAt(Index.Start))
-            : new(() => {
-                var lastSourceToken = _tokens.Last();
-                return _tokens.First().StartIndex..(lastSourceToken.StartIndex + lastSourceToken.Length);
-            });
+            : new(() => _tokens.First().Position.Start.._tokens.Last().Position.End);
     }
 
     public static SourceTokens Empty { get; } = new([], 0);

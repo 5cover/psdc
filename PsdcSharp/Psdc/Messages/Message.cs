@@ -158,7 +158,7 @@ public readonly struct Message
         error.ErroneousToken.Tap(t => msgContent.Append(Format.Msg, $", got {t}"));
 
         return new(error.ErroneousToken
-            .Map(t => t.InputRange)
+            .Map(t => (Range)t.Position)
             .ValueOr(sourceTokens.InputRange),
             MessageCode.SyntaxError, msgContent.ToString());
     }

@@ -2103,3 +2103,7 @@ void remplirTableau(int tab[MAX]) {
 ## Avoid error messages involving unknown type
 
 Avoid cascading error when an unknown type is detected.
+
+## universal line continuation syntax
+
+Like in C

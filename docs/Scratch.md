@@ -624,4 +624,6 @@ Implementation : remove `_` chars from the string when constructing an integer l
 
 Concretely : support the `!` directive, which is a noop and discards the rest of the line
 
-## Line continuation character in string literals
+## fix quand autre
+
+allow more whitespace

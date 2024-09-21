@@ -22,64 +22,96 @@ public sealed class Tokenizer
         .Concat(Identifier.Rules)
         .ToArray();
 
-    Tokenizer(Messenger msger, string code) => (_msger, _code) = (msger, code);
+    Tokenizer(Messenger msger, string input)
+    {
+        _msger = msger;
+        (_code, _lineContIndexes) = PreprocessLineContinuations(input);
+    }
 
     readonly Messenger _msger;
+    readonly List<int> _lineContIndexes;
     readonly string _code;
+    const int NA_INDEX = -1;
 
-    const int NA = -1;
-
-    public static IEnumerable<Token> Tokenize(Messenger messenger, string code)
+    public static IEnumerable<Token> Tokenize(Messenger messenger, string input)
     {
-        Tokenizer t = new(messenger, code);
+        Tokenizer t = new(messenger, input);
 
-        int index = 0;
-        int invalidStart = NA;
+        int i = 0;
+        int iInvalidStart = NA_INDEX;
 
-        while (index < t._code.Length) {
-            if (char.IsWhiteSpace(t._code[index])) {
-                t.ReportAnyUnknownToken(ref invalidStart, index);
-                ++index;
+        while (i < t._code.Length) {
+            if (char.IsWhiteSpace(t._code[i])) {
+                t.ReportInvalidToken(ref iInvalidStart, i);
+                ++i;
                 continue;
             }
 
-            var token = t.ReadToken(ref index);
+            var lexeme = t.Lex(ref i);
 
-            if (token.HasValue) {
-                t.ReportAnyUnknownToken(ref invalidStart, index);
-                if (!ignoredTokens.Contains(token.Value.Type)) {
-                    yield return token.Value;
+            if (lexeme.HasValue) {
+                t.ReportInvalidToken(ref iInvalidStart, i);
+                if (!ignoredTokens.Contains(lexeme.Value.Type)) {
+                    yield return new Token(lexeme.Value.Type, lexeme.Value.Value, t.GetInputRange(lexeme.Value.CodePosition));
                 }
             } else {
-                if (invalidStart == NA) {
-                    invalidStart = index;
+                if (iInvalidStart == NA_INDEX) {
+                    iInvalidStart = i;
                 }
-                index++;
+                i++;
             }
         }
 
-        t.ReportAnyUnknownToken(ref invalidStart, index);
+        t.ReportInvalidToken(ref iInvalidStart, i);
 
-        yield return new Token(Eof, null, index, 0);
+        yield return new Token(Eof, null, t.GetInputRange(i, 0));
     }
 
-    void ReportAnyUnknownToken(ref int invalidStart, int index)
+    void ReportInvalidToken(ref int iInvalidStart, int index)
     {
-        if (invalidStart != NA) {
-            _msger.Report(Message.ErrorUnknownToken(invalidStart..index));
-            invalidStart = NA;
+        if (iInvalidStart != NA_INDEX) {
+            _msger.Report(Message.ErrorUnknownToken(GetInputRange(iInvalidStart, index - iInvalidStart)));
+            iInvalidStart = NA_INDEX;
         }
     }
 
-    ValueOption<Token> ReadToken(ref int offset)
+    ValueOption<Lexeme> Lex(ref int offset)
     {
         foreach (var rule in rules) {
             var token = rule.Extract(_code, offset);
             if (token.HasValue) {
-                offset += token.Value.Length;
+                offset += token.Value.CodePosition.Length;
                 return token;
             }
         }
         return default;
     }
+
+    static (string, List<int>) PreprocessLineContinuations(string input)
+    {
+        if (input.Length == 0) {
+            return ("", []);
+        }
+
+        var preprocessedCode = new char[input.Length];
+        List<int> lineContinuationsIndexes = [];
+
+        int i = 0;
+        for (int j = 0; j < input.Length; ++j) {
+            if (input[j] == '\\' && j + 1 < input.Length && input[j + 1] == '\n') {
+                lineContinuationsIndexes.Add(j++);
+            } else {
+                preprocessedCode[i++] = input[j];
+            }
+        }
+        return (new(preprocessedCode.AsSpan()[..i]), lineContinuationsIndexes);
+    }
+
+    const int LineContLen = 2;
+
+    FixedRange GetInputRange(FixedRange range) => GetInputRange(range.Start, range.Length);
+    FixedRange GetInputRange(int start, int length) => new(
+        start + LineContLen * _lineContIndexes.Count(lco => lco < start),
+        length == 0 ? 0 : length + LineContLen * _lineContIndexes.Count(lco => lco > start && lco < start + length)
+    );
 }

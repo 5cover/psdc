@@ -1,0 +1,12 @@
+#!/bin/env bash
+
+set -eu
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 FILE" >&2
+    exit
+fi
+
+
+PsdcSharp/Psdc/bin/publish/psdc c "testPrograms/$1.psc"

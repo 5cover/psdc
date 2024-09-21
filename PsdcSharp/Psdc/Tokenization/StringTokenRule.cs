@@ -7,8 +7,8 @@ sealed class StringTokenRule(TokenType tokenType, string expected, StringCompari
     public TokenType TokenType => tokenType;
     public string Expected => expected;
 
-    public ValueOption<Token> Extract(string input, int startIndex)
+    public ValueOption<Lexeme> Extract(string input, int startIndex)
      => input.AsSpan()[startIndex..].StartsWith(Expected, _comparison)
-            ? new Token(tokenType, null, startIndex, Expected.Length).Some()
+            ? new Lexeme(tokenType, null, new(startIndex, Expected.Length)).Some()
             : default;
 }

@@ -8,5 +8,5 @@ interface TokenRule
     /// <param name="input">The string to tokenize.</param>
     /// <param name="startIndex">The index at which the token must start.</param>
     /// <returns>An option wrapping the token that could be extracted.</returns>
-    ValueOption<Token> Extract(string input, int startIndex);
+    ValueOption<Lexeme> Extract(string input, int startIndex);
 }

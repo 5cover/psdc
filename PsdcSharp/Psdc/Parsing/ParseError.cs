@@ -36,9 +36,9 @@ public sealed record ParseError(
 
     internal ParseError CombineWith(ParseError other)
      => ErroneousToken.HasValue && other.ErroneousToken.HasValue
-            ? ErroneousToken.Value.StartIndex > other.ErroneousToken.Value.StartIndex
+            ? ErroneousToken.Value.Position.Start > other.ErroneousToken.Value.Position.Start
                 ? this
-            : ErroneousToken.Value.StartIndex < other.ErroneousToken.Value.StartIndex
+            : ErroneousToken.Value.Position.Start < other.ErroneousToken.Value.Position.Start
                 ? other
             : (other with {
                 ExpectedTokens = ExpectedTokens.Union(other.ExpectedTokens),
