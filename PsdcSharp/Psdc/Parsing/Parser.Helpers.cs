@@ -10,7 +10,7 @@ partial class Parser
         var firstToken = tokens.FirstOrNone();
         return firstToken.HasValue && map.TryGetValue(firstToken.Value.Type, out var t)
             ? ParseResult.Ok(new(tokens, 1), t)
-            : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.ForProduction(production, firstToken, map.Keys));
+            : ParseResult.Fail<T>(SourceTokens.Empty, ParseError.ForProduction(production, firstToken, map.Keys.ToImmutableHashSet()));
     }
 
     static Parser<T> ParserReturn<T>(int tokenCount, Func<SourceTokens, T> makeNode) where T : Node
@@ -27,7 +27,7 @@ partial class Parser
             : fallback?.Invoke(tokens).MapError(Error().CombineWith)
                 ?? ParseResult.Fail<T>(SourceTokens.Empty, Error());
 
-        ParseError Error() => ParseError.ForProduction(production, keyToken, parserMap.Keys);
+        ParseError Error() => ParseError.ForProduction(production, keyToken, parserMap.Keys.ToImmutableHashSet());
     }
 
     static ParseResult<T> ParseByIdentifierValue<T>(IEnumerable<Token> tokens, string production, Dictionary<string, Parser<T>> parserMap, int index = 0, Parser<T>? fallback = null)

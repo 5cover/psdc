@@ -241,20 +241,27 @@ sealed partial class CodeGenerator(Messenger messenger)
         AppendBracketedExpression(o, @switch.Expression).AppendLine(" {");
 
         foreach (var @case in @switch.Cases) {
-            Indent(o).Append("case ");
-            AppendExpression(o, @case.Value).AppendLine(":");
-            _indent.Increase();
-            AppendStatements(o, @case.Block);
-            Indent(o).AppendLine("break;");
-            _indent.Decrease();
-        }
+            switch (@case) {
+            case Statement.Switch.Case.OfValue c: {
+                Indent(o).Append("case ");
+                AppendExpression(o, c.Value).AppendLine(":");
+                break;
+            }
+            case Statement.Switch.Case.Default d: {
+                Indent(o).AppendLine("default:");
+                break;
+            }
+            default:
+                throw @case.ToUnmatchedException();
+            }
 
-        @switch.Default.Tap(@default => {
-            Indent(o).AppendLine("default:");
-            _indent.Increase();
-            AppendStatements(o, @default.Block);
-            _indent.Decrease();
-        });
+            if (@case.Block.Count != 0) {
+                _indent.Increase();
+                AppendStatements(o, @case.Block);
+                Indent(o).AppendLine("break;");
+                _indent.Decrease();
+            }
+        }
 
         return Indent(o).AppendLine("}");
     }

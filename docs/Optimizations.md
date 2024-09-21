@@ -53,3 +53,11 @@ Avoids creating a string when it already exists inside the input code. Might req
 ### Tokenizer: use the char array from `PreprocessLineContinuations` instead of creating a string from it
 
 Means everything else has to be `ReadOnlySpan<char>`-ready. (see above).
+
+## Dumb Ruled array
+
+Instead of being "smart", *i.e.* separating token types into spearated classes and constructing the tokenrule array at runtime, make it a compite-time operation. Maybe using another program run during compilation? Or a source generator?
+
+Because this operation could be determined at compile-time, it's just that C# doesn't have syntax for it.
+
+But at the same time i want to keep the classes, it makes things clearer. I don't to improve performance at the cost of making the code obscure.

@@ -57,8 +57,10 @@ $$
     ⟨Return⟩ \to \text{retourne} ⟨Expr⟩^?\text{;} \\
     ⟨Switch⟩ \to \begin{split}
     &   \text{selon} ⟨Expr⟩ \text{c'est} \\
-    &   ⟨Switch.Case⟩^* \\
-    &   ⟨Switch.Default⟩^? \\
+    &   \begin{Bmatrix*}[l]
+            \text{quand} ⟨Expr⟩ \text{=>} ⟨Statement⟩^* \\
+            \text{quand\ autre} \text{=>} ⟨Statement⟩^* \\
+        \end{Bmatrix*}^+ \\
     &   \text{finselon} \\
     \end{split} \\
     ⟨WhileLoop⟩ \to \text{tant\ que} ⟨Expr⟩ \text{faire} ⟨Block⟩ \text{finfaire} \\
@@ -70,10 +72,6 @@ $$
 &⟨Alternative.ElseIf⟩ \to \text{sinonsi} ⟨Expr⟩ \text{alors} ⟨Block⟩
 \\
 &⟨Alternative.Else⟩ \to \text{sinon} ⟨Block⟩
-\\
-&⟨Switch.Case⟩ \to \text{quand} ⟨Expr⟩ \text{=>} ⟨Statement⟩^+
-\\
-&⟨Switch.Default⟩ \to \text{quand\ autre} \text{=>} ⟨Statement⟩^+
 
 \\\\&\textbf{Expressions} \\
 

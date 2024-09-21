@@ -347,24 +347,19 @@ public sealed partial class Parser
         .Parse(out var expression, Expression)
         .ParseToken(Keyword.Is)
 
-        .ParseZeroOrMoreUntilToken(out var cases, t => ParseOperation.Start(t, "switch case")
+        .ParseOneOrMoreUntilToken(out var cases, t => ParseOperation.Start(t, "switch case")
             .ParseToken(Keyword.When)
             .Parse(out var when, Expression)
             .ParseToken(Punctuation.Arrow)
             .ParseZeroOrMoreUntilToken(out var block, _statement,
-            Set.Of<TokenType>(Keyword.When, Keyword.WhenOther))
-            .MapResult(t => new Statement.Switch.Case(t, when, ReportErrors(block))),
-        Set.Of<TokenType>(Keyword.WhenOther, Keyword.EndSwitch))
-
-        .ParseOptional(out var @default, t => ParseOperation.Start(t, "switch default case")
-            .ParseToken(Keyword.WhenOther)
-            .ParseToken(Punctuation.Arrow)
-            .ParseZeroOrMoreUntilToken(out var block, _statement,
-            Set.Of<TokenType>(Keyword.EndSwitch))
-            .MapResult(t => new Statement.Switch.DefaultCase(t, ReportErrors(block))))
+            Set.Of<TokenType>(Keyword.When, Keyword.EndSwitch))
+            .MapResult<Statement.Switch.Case>(t => when is Expression.Lvalue.VariableReference { Name.Value: "autre" }
+                ? new Statement.Switch.Case.Default(t, ReportErrors(block))
+                : new Statement.Switch.Case.OfValue(t, when, ReportErrors(block))),
+        Set.Of<TokenType>(Keyword.EndSwitch))
 
         .ParseToken(Keyword.EndSwitch)
-        .MapResult(t => new Statement.Switch(t, expression, ReportErrors(cases), @default));
+        .MapResult(t => new Statement.Switch(t, expression, ReportErrors(cases)));
 
     ParseResult<Statement> WhileLoop(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "while loop")

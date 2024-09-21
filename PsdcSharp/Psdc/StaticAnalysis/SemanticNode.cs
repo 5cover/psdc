@@ -77,18 +77,22 @@ public interface SemanticNode
 
         internal sealed record Switch(SemanticMetadata Meta,
             Expression Expression,
-            IReadOnlyList<Switch.Case> Cases,
-            Option<Switch.DefaultCase> Default)
+            IReadOnlyList<Switch.Case> Cases)
         : Statement
         {
-            internal sealed record Case(SemanticMetadata Meta,
+            internal interface Case : SemanticNode
+            {
+                SemanticBlock Block { get; }
+
+                internal sealed record OfValue(SemanticMetadata Meta,
                 Expression Value,
                 SemanticBlock Block)
-            : SemanticNode;
+                : Case;
 
-            internal sealed record DefaultCase(SemanticMetadata Meta,
-                SemanticBlock Block)
-            : SemanticNode;
+                internal sealed record Default(SemanticMetadata Meta,
+                    SemanticBlock Block)
+                : Case;
+            }
         }
 
         internal sealed record Assignment(SemanticMetadata Meta,

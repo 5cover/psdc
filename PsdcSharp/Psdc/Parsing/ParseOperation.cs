@@ -1,8 +1,9 @@
+using System.Collections.Immutable;
 using Scover.Psdc.Tokenization;
 
 namespace Scover.Psdc.Parsing;
 
-using TokenTypeSet = IReadOnlySet<TokenType>;
+using TokenTypeSet = IImmutableSet<TokenType>;
 
 /// <summary>
 /// A branch in a parsing operation to parse a specific type of node.
@@ -316,7 +317,7 @@ abstract class ParseOperation
                 return this;
             }
             branch = default!;
-            return Fail(ParseError.ForProduction(_prod, token, cases.Keys));
+            return Fail(ParseError.ForProduction(_prod, token, cases.Keys.ToImmutableHashSet()));
         }
 
         public override ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch)

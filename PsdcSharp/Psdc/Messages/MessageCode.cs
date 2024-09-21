@@ -32,6 +32,7 @@ public enum MessageCode
     AssertionFailed,
     FeatureNotAvailable,
     ReturnExpectsValue,
+    SwitchDefaultIsNotLast,
     CustomError = 999,
 
     #endregion Errors

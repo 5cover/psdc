@@ -55,7 +55,10 @@ public readonly struct Message
      => new(sourceTokens, MessageCode.IndexOutOfBounds,
         Fmt($"index out of bounds for array"),
         [Fmt($"indexed at {index}, length is {length}")]);
-
+    internal static Message ErrorSwitchDefaultIsNotLast(SourceTokens sourceTokens)
+     => new(sourceTokens, MessageCode.SwitchDefaultIsNotLast,
+        "default not last in switch; all cases below are unreachable",
+        ["move the default case to the end of the switch statement"]);
     internal static Message ErrorIndexOutOfBounds(ComptimeExpression<int> index, int length)
      => ErrorIndexOutOfBounds(index.Expression.Meta.SourceTokens, index.Value, length);
     internal static Message ErrorFeatureComingSoon(SourceTokens sourceTokens, string feature)

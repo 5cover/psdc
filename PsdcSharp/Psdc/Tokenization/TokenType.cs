@@ -122,7 +122,6 @@ public class TokenType
         public static Keyword Until { get; } = new("jusqu'à",
                                                    "jusqu'a");
         public static Keyword When { get; } = new("quand");
-        public static Keyword WhenOther { get; } = new("quand autre");
         public static Keyword While { get; } = new("tant que");
 
         #endregion Control structures
@@ -242,5 +241,6 @@ public class TokenType
         public static ContextKeyword From { get; } = new(["de"]);
         public static ContextKeyword Step { get; } = new(["pas"]);
         public static ContextKeyword To { get; } = new(["à", "a"]);
+        public static ContextKeyword Other { get; } = new(["autre"]);
     }
 }

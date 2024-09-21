@@ -10,14 +10,14 @@ public sealed record ParseError(
     IImmutableSet<TokenType> ExpectedTokens,
     IImmutableSet<string> ExpectedProductions)
 {
-    internal static ParseError ForProduction(string failedProduction, Option<Token> erroneousToken, IEnumerable<TokenType> expectedTokens, string expectedProduction)
+    internal static ParseError ForProduction(string failedProduction, Option<Token> erroneousToken, IImmutableSet<TokenType> expectedTokens, string expectedProduction)
      => new(failedProduction, erroneousToken,
-            expectedTokens.ToImmutableHashSet(),
+            expectedTokens,
             ImmutableHashSet.Create(expectedProduction));
 
-    internal static ParseError ForProduction(string failedProduction, Option<Token> erroneousToken, IEnumerable<TokenType> expectedTokens)
+    internal static ParseError ForProduction(string failedProduction, Option<Token> erroneousToken, IImmutableSet<TokenType> expectedTokens)
      => new(failedProduction, erroneousToken,
-            expectedTokens.ToImmutableHashSet(),
+            expectedTokens,
             ImmutableHashSet<string>.Empty);
 
     internal static ParseError ForProduction(string failedProduction, Option<Token> erroneousToken, TokenType expectedToken)

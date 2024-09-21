@@ -2107,3 +2107,11 @@ Avoid cascading error when an unknown type is detected.
 ## universal line continuation syntax
 
 Like in C
+
+## switch case fall-thru
+
+if a switch case has no statements, it is considered a fall-thru and no break is generated.
+
+## fix quand autre
+
+allow more whitespace

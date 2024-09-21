@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Scover.Psdc.Tokenization;
@@ -91,7 +92,7 @@ partial class Parser
          }
          if (!TryGetRightParser(out var rightParse, rightParsers, tokens, count)) {
              return ParseResult.Fail<TRight>(leftSeed.SourceTokens,
-                ParseError.ForProduction(production, tokens.ElementAtOrNone(count), rightParsers.Keys));
+                ParseError.ForProduction(production, tokens.ElementAtOrNone(count), rightParsers.Keys.ToImmutableHashSet()));
          }
 
          ParseResult<TRight> result;

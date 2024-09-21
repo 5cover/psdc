@@ -48,6 +48,7 @@ début
                 quand 0 => écrireEcran("Ton âge est nul");
                 quand 45 + 18 - 0 * 1 => écrireEcran("t sacrément vieux");
                 quand autre => écrireEcran("je sais même pas koi dire °_°");
+                quand autre => écrireEcran("je sais même pas koi dire °_°");
             finselon
             écrireEcran(" an");
         quand 0 => écrireEcran("Ton âge est nul");

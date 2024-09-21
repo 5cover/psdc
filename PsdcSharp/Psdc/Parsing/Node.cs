@@ -165,31 +165,33 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record Switch(SourceTokens SourceTokens,
             Expression Expression,
-            IReadOnlyList<Switch.Case> Cases,
-            Option<Switch.DefaultCase> Default)
+            IReadOnlyList<Switch.Case> Cases)
         : Statement
         {
             public bool SemanticsEqual(Node other) => other is Switch o
                  && o.Expression.SemanticsEqual(Expression)
-                 && o.Cases.AllSemanticsEqual(Cases)
-                 && o.Default.OptionSemanticsEqual(Default);
+                 && o.Cases.AllSemanticsEqual(Cases);
 
-            internal sealed record Case(SourceTokens SourceTokens,
-                Expression Value,
-                Block Block)
-            : Node
+            internal interface Case : Node
             {
-                public bool SemanticsEqual(Node other) => other is Case o
-                 && o.Value.SemanticsEqual(Value)
-                 && o.Block.AllSemanticsEqual(Block);
-            }
+                public Block Block { get; }
+                internal record OfValue(SourceTokens SourceTokens,
+                    Expression Value,
+                    Block Block)
+                : Case
+                {
+                    public bool SemanticsEqual(Node other) => other is OfValue o
+                     && o.Value.SemanticsEqual(Value)
+                     && o.Block.AllSemanticsEqual(Block);
+                }
 
-            internal sealed record DefaultCase(SourceTokens SourceTokens,
-                Block Block)
-            : Node
-            {
-                public bool SemanticsEqual(Node other) => other is DefaultCase o
-                 && o.Block.AllSemanticsEqual(Block);
+                internal sealed record Default(SourceTokens SourceTokens,
+                    Block Block)
+                : Case
+                {
+                    public bool SemanticsEqual(Node other) => other is Default o
+                     && o.Block.AllSemanticsEqual(Block);
+                }
             }
         }
 

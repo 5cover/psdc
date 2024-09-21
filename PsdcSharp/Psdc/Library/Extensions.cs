@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -246,5 +247,5 @@ static class Function
 
 static class Set
 {
-    internal static HashSet<T> Of<T>(params T[] items) => [.. items];
+    internal static ImmutableHashSet<T> Of<T>(params T[] items) => [.. items];
 }

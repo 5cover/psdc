@@ -9,7 +9,8 @@ namespace Scover.Psdc.StaticAnalysis;
 
 public sealed partial class StaticAnalyzer
 {
-    private enum MainProgramStatus {
+    private enum MainProgramStatus
+    {
         NotYet,
         Inside,
         Seen,
@@ -337,7 +338,7 @@ public sealed partial class StaticAnalyzer
                         return s.Value.Map(v => EvaluateExpression(scope, v));
                     }
                 }));
-            
+
             Option<Expression> EvaluateTypedValue(EvaluatedType expectedType) => s.Value
                 .Map(v => EvaluateExpression(scope, v, EvaluatedType.IsConvertibleTo, expectedType))
                 .Tap(none: () => {
@@ -353,14 +354,26 @@ public sealed partial class StaticAnalyzer
             }
             return new Statement.Switch(meta,
                 expr,
-                s.Cases.Select(c => {
-                    var caseExpr = EvaluateExpression(scope, c.Value, EvaluatedType.IsConvertibleTo, expr.Value.Type);
-                    if (caseExpr.Value.Status is not ValueStatus.Comptime) {
-                        _msger.Report(Message.ErrorComptimeExpressionExpected(c.Value.SourceTokens));
+                s.Cases.Select((@case, i) => {
+                    switch (@case) {
+                    case Node.Statement.Switch.Case.OfValue c: {
+                        var caseExpr = EvaluateExpression(scope, c.Value, EvaluatedType.IsConvertibleTo, expr.Value.Type);
+                        if (caseExpr.Value.Status is not ValueStatus.Comptime) {
+                            _msger.Report(Message.ErrorComptimeExpressionExpected(c.Value.SourceTokens));
+                        }
+                        return (Statement.Switch.Case)new Statement.Switch.Case.OfValue(new(scope, c.SourceTokens), caseExpr, AnalyzeStatements(scope, c.Block));
                     }
-                    return new Statement.Switch.Case(new(scope, c.SourceTokens), caseExpr, AnalyzeStatements(scope, c.Block));
-                }).ToArray(),
-                s.Default.Map(d => new Statement.Switch.DefaultCase(new(scope, d.SourceTokens), AnalyzeStatements(scope, d.Block))));
+                    case Node.Statement.Switch.Case.Default d: {
+                        if (i != s.Cases.Count - 1) {
+                            _msger.Report(Message.ErrorSwitchDefaultIsNotLast(d.SourceTokens));
+                        }
+                        return new Statement.Switch.Case.Default(new(scope, d.SourceTokens), AnalyzeStatements(scope, d.Block));
+                    }
+                    default: {
+                        throw @case.ToUnmatchedException();
+                    }
+                    }
+                }).ToArray());
         }
         case Node.Statement.WhileLoop s: {
             return new Statement.WhileLoop(meta,

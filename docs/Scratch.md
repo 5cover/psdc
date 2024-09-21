@@ -623,7 +623,3 @@ Implementation : remove `_` chars from the string when constructing an integer l
 ## Shebang support
 
 Concretely : support the `!` directive, which is a noop and discards the rest of the line
-
-## fix quand autre
-
-allow more whitespace
