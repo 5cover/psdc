@@ -595,3 +595,33 @@ void f(int a[const]) {
 ```
 
 Make sized array implicitly convertible to unsized array.
+
+## Exponent notation real literal
+
+C-like.
+
+## Hexadecimal, binary, octal integer literals
+
+0x, 0b and 0 prefixes specifically.
+
+C-like.
+
+## Number separator char
+
+Something like `_` to use as a thousand separator (or anything else) to make large number literals more redable
+
+```psc
+123456789
+```
+
+```psc
+123_456_789
+```
+
+Implementation : remove `_` chars from the string when constructing an integer literal node
+
+## Shebang support
+
+Concretely : support the `!` directive, which is a noop and discards the rest of the line
+
+## Line continuation character in string literals

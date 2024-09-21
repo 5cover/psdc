@@ -51,14 +51,18 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    public static SemanticNode.Program Analyze(Messenger messenger, string input, Node.Program root)
+    public static SemanticNode.Program Analyze(Messenger messenger, string input, Node.Program ast)
     {
         StaticAnalyzer a = new(messenger, input);
 
         MutableScope scope = new(null);
 
-        SemanticNode.Program semanticAst = new(new(scope, root.SourceTokens), root.Title,
-            root.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).WhereSome().ToArray());
+        foreach (var directive in ast.LeadingDirectives) {
+            a.EvaluateCompilerDirective(scope, directive);
+        }
+
+        SemanticNode.Program semanticAst = new(new(scope, ast.SourceTokens), ast.Title,
+            ast.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).WhereSome().ToArray());
 
         foreach (var callable in scope.GetSymbols<Symbol.Callable>().Where(c => !c.HasBeenDefined)) {
             messenger.Report(Message.ErrorCallableNotDefined(callable));

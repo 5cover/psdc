@@ -9,11 +9,12 @@
  */
 #include <assert.h>
 #include <stdbool.h>
-#include <stdio.h>
+#  include   <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define ARRAYSIZE(arr) (sizeof(arr) / sizeof(arr[0]))
+#define ARRAYSIZE(arr) (sizeof(arr)\
+/ sizeof(arr[0]))
 
 #define let const
 

@@ -186,7 +186,7 @@ $$
 \\
 &⟨Component⟩ \to \begin{Bmatrix*}[l]
     ⟨CompilerDirective⟩ \\
-    ⟨VariableDeclaration⟩\text{;}
+    ⟨VariableDeclaration⟩\text{;} \\
 \end{Bmatrix*}
 
 \\\\&\textbf{Other} \\
@@ -215,7 +215,7 @@ $$
 \\
 &⟨ProcedureSignature⟩ \to \text{procédure}\ Identifier\text{(}⟨ParameterFormal⟩^{*\#}\text{)}
 \\
-⟨Nop⟩ \to \text{;}
+&⟨Nop⟩ \to \text{;}
 \\
 &⟨Initializer⟩ \to \begin{Bmatrix*}[l]
     ⟨Expr⟩\\
@@ -225,9 +225,8 @@ $$
                 ⟨Designator⟩^+
                 \text{:=}
             \end{pmatrix}^?
-            ⟨Initializer⟩
-            \\
-            ⟨CompilerDirective⟩
+            ⟨Initializer⟩ \\
+            ⟨CompilerDirective⟩ \\
         \end{Bmatrix*}^{*\#}
     \text{\}}\\
 \end{Bmatrix*}
