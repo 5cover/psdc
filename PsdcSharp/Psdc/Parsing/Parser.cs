@@ -272,6 +272,7 @@ public sealed partial class Parser
         .ParseToken(Keyword.Do)
         .ParseZeroOrMoreUntilToken(out var block, _statement, Set.Of<TokenType>(Keyword.While))
         .ParseToken(Keyword.While)
+        .ParseContextKeyword(ContextKeyword.That)
         .Parse(out var condition, Expression)
         .MapResult(t => new Statement.DoWhileLoop(t, condition, ReportErrors(block)));
 
@@ -364,6 +365,7 @@ public sealed partial class Parser
     ParseResult<Statement> WhileLoop(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "while loop")
         .ParseToken(Keyword.While)
+        .ParseContextKeyword(ContextKeyword.That)
         .Parse(out var condition, Expression)
         .ParseToken(Keyword.Do)
         .ParseZeroOrMoreUntilToken(out var block, _statement, Set.Of<TokenType>(Keyword.EndDo))

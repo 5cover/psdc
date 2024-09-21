@@ -2115,3 +2115,7 @@ if a switch case has no statements, it is considered a fall-thru and no break is
 ## fix quand autre
 
 allow more whitespace
+
+## fix tant que
+
+allow more whitespace
