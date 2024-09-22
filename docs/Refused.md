@@ -12,12 +12,12 @@ Instead of using compiler directives, keep the `#` syntax.
 
 - Parse them as compiler directives (CDs) using a separate token chanel and a new parser class
 - Somehow able them to be evaluated in the SA, in the context of regular AST nodes. I see solutions for this:
-    - Somehow put CDs in the regular AST: nope
-    - Put them in a list that is passed alongside the AST (no need for a tree since they are sequential). Compare the source tokens of each AST node to progress gradually through the list of CDs, and evaluate them when we move down one: nope
-    - Same as above, but somehow keep a context so we don't have to compare the SourceTokens of every analyzed AST node to locate the CD: ok
-        - Maybe keep a reference, in the CD, to the last non-CD token parsed. Then if the SourceTokens of the node contain this token:
-            - if this token is the last token of the node, then it the CD comes after the node, so evaluate it after the node.
-            - otherwise, it is inside the node, so evaluate it before
+  - Somehow put CDs in the regular AST: nope
+  - Put them in a list that is passed alongside the AST (no need for a tree since they are sequential). Compare the source tokens of each AST node to progress gradually through the list of CDs, and evaluate them when we move down one: nope
+  - Same as above, but somehow keep a context so we don't have to compare the SourceTokens of every analyzed AST node to locate the CD: ok
+    - Maybe keep a reference, in the CD, to the last non-CD token parsed. Then if the SourceTokens of the node contain this token:
+      - if this token is the last token of the node, then it the CD comes after the node, so evaluate it after the node.
+      - otherwise, it is inside the node, so evaluate it before
 
 Having to do all these checks in the SA is kind of making things complex. We should simplify this.
 
@@ -230,3 +230,11 @@ This would simplify things.
 **Reason**: C defines would require explicit undef for scoping, this is kind of cumbersome.
 
 It's not explicitly disallowed, and it would make some things easier.
+
+## Make a negative integer literal
+
+**Reason**: redundant. causes a tokenization ambiguity with substraction.
+
+Currently, we parse it to an unary minus operation on an integer literal. This works, except when collapsing the value in alter.
+
+Add syntax for a negative integer literal.

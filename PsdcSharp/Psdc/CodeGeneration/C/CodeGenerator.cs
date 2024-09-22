@@ -453,11 +453,18 @@ sealed partial class CodeGenerator(Messenger messenger)
         T right,
         Func<T, T, T>? collapseLiterals = null) where T : notnull
         // Collapse literals
-     => collapseLiterals is not null && left is Expression.Literal { UnderlyingValue: T leftVal }
-        ? o.Append(collapseLiterals(leftVal, right).ToStringFmt(Format.Code))
+     => collapseLiterals is not null && GetExpressionObviousValue(left) is { HasValue: true } v
+        ? o.Append(collapseLiterals((T)v.Value, right).ToStringFmt(Format.Code))
         : @operator.Append(o, TypeGeneratorFor(left.Meta.Scope), [
             o => AppendExpression(o, left, _opTable.ShouldBracketOperand(@operator, left)),
             o => o.Append(right.ToStringFmt(Format.Code))]);
+
+    static ValueOption<object> GetExpressionObviousValue(Expression expr)
+     => expr is Expression.Literal
+             or Expression.UnaryOperation { Operator: UnaryOperator.Plus or UnaryOperator.Minus }
+     && expr.Value.Status.ComptimeValue is { HasValue: true } v
+        ? v
+        : default;
 
     protected override TypeGenerator TypeGeneratorFor(Scope scope)
      => type => CreateTypeInfo(scope, type);
