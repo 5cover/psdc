@@ -20,7 +20,7 @@ $$
     ⟨Nop⟩ \\
     ⟨Procedure⟩ \to ⟨Procedureignature⟩ \text{;} \\
     ⟨ProcedureDefinition⟩ \to ⟨ProcedureSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
-    ⟨TypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \\
+    ⟨TypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \text{;} \\
 \end{Bmatrix*}
 
 \\&\textbf{Statements} \\

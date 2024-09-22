@@ -75,7 +75,7 @@ type c_nested_t = structure début
         c: entier;
         d: tableau [2] de entier;
     fin;
-fin
+fin;
 
 constante c_nested_t c_nested := {
     10,
@@ -106,7 +106,7 @@ constante c_nested_t c_nested_designated := {
 type d_array_t = structure début
     x: entier;
     y: tableau [2] de entier;
-fin
+fin;
 
 constante tableau [2] de d_array_t d_array := {
     {
@@ -153,7 +153,7 @@ type e_complex_t = structure début
             f: tableau [2] de entier;
         fin;
     fin;
-fin
+fin;
 
 constante e_complex_t e_complex := {
     30,
@@ -197,7 +197,7 @@ type f_nested_array_t = structure début
         c: entier;
         d: tableau [2] de entier;
     fin;
-fin
+fin;
 
 constante tableau [2] de f_nested_array_t f_nested_array := {
     {
@@ -260,7 +260,7 @@ type g_very_complex_t = structure début
             f: tableau [2] de entier;
         fin;
     fin;
-fin
+fin;
 
 constante g_very_complex_t g_very_complex := {
     .a := 58,
@@ -286,7 +286,7 @@ type h_very_nested_array_t = structure début
         c: entier;
         d: tableau [2] de entier;
     fin;
-fin
+fin;
 
 constante tableau [2] de h_very_nested_array_t h_very_nested_array := {
     [1] := {

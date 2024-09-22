@@ -119,6 +119,7 @@ public sealed partial class Parser
         .Parse(out var name, Identifier)
         .ParseToken(Punctuation.Equal)
         .Parse(out var type, _type)
+        .ParseToken(Punctuation.Semicolon)
         .MapResult(t => new Declaration.TypeAlias(t, name, type));
 
     ParseResult<Declaration.Constant> Constant(IEnumerable<Token> tokens)

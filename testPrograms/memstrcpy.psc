@@ -2,7 +2,7 @@ programme MemStrCpy c'est
 // Test array and string assignment
 
 constante chaîne(20) S := "chaîne";
-type tTab = tableau[3] de entier
+type tTab = tableau[3] de entier;
 constante tTab V := {1,2,3};
 
 début

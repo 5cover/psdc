@@ -43,7 +43,7 @@ fin b_p := {
 
 type b_div_t = structure
     début quot,rem: entier;
-fin
+fin;
 constante b_div_t b_answer := {
     .quot := 2,
     .rem := -1
@@ -86,7 +86,7 @@ fin c_z := {
         a8 : tableau[4] de entier;
         a16 : tableau[2] de entier;
     fin;
-fin
+fin;
 
 constante d_example d_ex := { // start of initializer list for struct example
     { // start of initializer list for ex.addr
@@ -168,12 +168,12 @@ fin g_s := {
 type h_T = structure début
     k, l : entier;
     a : tableau[2] de entier;
-fin
+fin;
 
 type h_S = structure début
     i : entier;
     t : T;
-fin
+fin;
 
 constante h_T h_x := {
     .l := 43,
@@ -196,7 +196,7 @@ constante h_S h_l := {
 type i_fred = structure début
     s: tableau[4] de caractère;
     n: entier;
-fin
+fin;
 
 constante tableau[1]
 de i_fred i_x := {
