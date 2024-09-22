@@ -184,8 +184,6 @@ And there you have it. Automated translation between Pseudocode and C.
 
 ### Language features
 
-Notation: bold &rarr; underway
-
 - [x] Formal grammar
 - [x] Alternatives
 - [x] Loops
@@ -229,7 +227,7 @@ Notation: bold &rarr; underway
   - [ ] Errors
   - [ ] Valid code
 - [ ] Documentation
-  - [ ] CLI
+  - [x] CLI
   - [ ] Language tutorials
 - [ ] Initial release
 - [ ] Sample "real" program
@@ -237,9 +235,9 @@ Notation: bold &rarr; underway
 - [ ] VSCode tooling
   - [ ] Debugger
   - [ ] Language server
-  - [ ] Better syntax highlighter
+  - [x] Better syntax highlighter
 - [ ] access to argc and argv
-- [ ] translate comments
+- [ ] transpile comments
 
 ### C output configuration
 
@@ -255,3 +253,4 @@ Notation: bold &rarr; underway
 - [ ] use `puts` instead of `printf` where possible
 - [ ] anonymous block in switch cases: always, when multiple statements, never
 - [ ] anonymous block in switch default: always, when multiple statements, never
+- [ ] Doxygen keyword char : `\` or `@`
