@@ -72,7 +72,7 @@ public readonly struct Message
         Fmt($"evaluated value: {value}"));
     internal static Message DebugEvaluateType(SourceTokens sourceTokens, EvaluatedType type)
      => new(sourceTokens, MessageCode.EvaluateType,
-        Fmt($"evaluated type: {type}"));
+        Fmt($"evaluated type: {type:f}"));
     internal static Message ErrorUnsupportedInitializer(SourceTokens sourceTokens, EvaluatedType initializerTargetType)
      => new(sourceTokens, MessageCode.UnsupportedInitializer,
         Fmt($"unsupported initializer for type `{initializerTargetType}`"));

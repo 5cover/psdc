@@ -49,7 +49,7 @@ where TUnderlying : notnull
     public string ToString(string? format, IFormatProvider? fmtProvider, Indentation indent) => format switch {
         Value.FmtNoType => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider, indent)).ValueOr(""),
         Value.FmtMin => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider, indent)).ValueOr(Type.ToString(fmtProvider)),
-        _ when string.IsNullOrEmpty(format) => Status.ComptimeValue.Match(
+        "" or null => Status.ComptimeValue.Match(
              v => string.Create(fmtProvider, $"{Status.GetPart()}{Type}: {ValueToString(v, fmtProvider, indent)}"),
             () => string.Create(fmtProvider, $"{Status.GetPart()}{Type}")),
         _ => throw new FormatException($"Unsupported format: '{format}'")

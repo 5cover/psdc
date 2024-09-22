@@ -4,7 +4,6 @@ namespace Scover.Psdc.Pseudocode;
 
 abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<TValue> where TValue : Value
 {
-
     protected EvaluatedTypeImpl(Option<Identifier> alias) => Alias = alias;
     public Option<Identifier> Alias { get; }
 
@@ -25,8 +24,14 @@ abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<
 
     public abstract EvaluatedType ToAliasReference(Identifier alias);
 
+    public const string FmtFull = "f";
+
     public override string ToString(string? format, IFormatProvider? fmtProvider) => Alias.Match(
-        a => a.ToString(),
+        a => format switch {
+            FmtFull => $"{ToStringNoAlias(fmtProvider)} ({a})",
+            "" or null => a.ToString(),
+            _ => throw new FormatException($"Unsupported format: '{format}'"),
+        },
         () => ToStringNoAlias(fmtProvider));
 
     public abstract TValue DefaultValue { get; }
