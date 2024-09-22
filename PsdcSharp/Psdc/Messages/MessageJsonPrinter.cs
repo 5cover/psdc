@@ -32,7 +32,7 @@ public sealed class MessageJsonPrinter(TextWriter output, string input) : Messag
     private void PrintMessage(Message msg)
     {
         var (start, end) = msg.InputRange.Apply(_input);
-        _output.Write(string.Create(CultureInfo.InvariantCulture, @$"{{""code"":{msg.Code:d},""content"":""{JsonStr(msg.Content.Get(_input))}"",""start"":{FormatPosition(start)},""end"":{FormatPosition(end)},""severity"":""{(int)msg.Severity}"",""advice"":["));
+        _output.Write(string.Create(CultureInfo.InvariantCulture, @$"{{""code"":{msg.Code:d},""content"":""{JsonStr(msg.Content.Get(_input))}"",""start"":{FormatPosition(start)},""end"":{FormatPosition(end)},""severity"":{(int)msg.Severity},""advice"":["));
         bool notFirst = false;
         foreach (var adv in msg.AdvicePieces) {
             if (notFirst) {
