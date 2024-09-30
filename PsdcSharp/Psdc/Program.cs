@@ -34,7 +34,7 @@ static class Program
                 ? new StreamWriter(opt.Output)
                 : Console.Out;
         } catch (Exception e) when (e.IsFileSystemExogenous()) {
-            WriteError($"coudln't open output file: {e.Message}");
+            WriteError($"couldn't open output file: {e.Message}");
             return SysExits.CantCreat;
         }
 

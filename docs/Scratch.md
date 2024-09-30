@@ -532,18 +532,6 @@ Sort members in code maid.
 
 ## Esolang wiki page
 
-## Test suite
-
-Do they check character by character or C tokens? In other words, do they depend on formatting?
-
-What about errors? I can make a messenger that saves the errors to a list and assert on that. I should have tests that expect errors and others that don't.
-
-Should I test all steps simultaneously or use separate tests for tokenization, parsing, static analysis and code generation?
-
-One thing certain, I'm gonna need A LOT of tests.
-
-Something I could do is maybe write the standard and then infer a test suite that tests everything the standard says.
-
 ## Pseudocode standard
 
 Having a standard is kind of the opposite from the pseudocode philosophy, which are semantics above correctness. But I think it's a good way to prepare for the test suite.
@@ -623,3 +611,17 @@ Implementation : remove `_` chars from the string when constructing an integer l
 ## Shebang support
 
 Concretely : support the `!` directive, which is a noop and discards the rest of the line
+
+## Test suite
+
+Do they check character by character or C tokens? In other words, do they depend on formatting?
+
+What about errors? I can make a messenger that saves the errors to a list and assert on that. I should have tests that expect errors and others that don't.
+
+Should I test all steps simultaneously or use separate tests for tokenization, parsing, static analysis and code generation?
+
+One thing certain, I'm gonna need A LOT of tests.
+
+Something I could do is maybe write the standard and then infer a test suite that tests everything the standard says.
+
+Maybe reuse the C compiler test suite? Since the language is pretty close to C, I can manually translate the test programs and build from there.
