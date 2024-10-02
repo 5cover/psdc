@@ -1,0 +1,121 @@
+name: Release Psdc
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Trigger on tag push, e.g., v1.0.0
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - id: create_release
+      name: Create release
+      uses: softprops/action-gh-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        draft: true
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+  build-windows:
+    needs: release
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@main
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@main
+      with:
+        dotnet-version: '8'
+
+    - name: Publish
+      run: dotnet publish PsdcSharp/Psdc/Psdc.csproj -v n -c Release -r win-x64 --self-contained
+
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.release.outputs.upload_url }}
+        asset_path: bin/Release/net8.0/win-x64/publish/Psdc.exe
+        asset_name: Psdc-windows.exe
+        asset_content_type: application/x-dosexec
+  build:
+    needs: release
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@main
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@main
+      with:
+        dotnet-version: '8'
+
+    - name: Publish
+      run: dotnet publish PsdcSharp/Psdc/Psdc.csproj-v n -c Release -r win-x64 --self-contained -o publish
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.release.outputs.upload_url }}
+        asset_path: publish/psdc.exe
+        asset_name: psdc-win-x64.exe
+        asset_content_type: application/x-dosexec
+  build-linux:
+    needs: release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@main
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@main
+      with:
+        dotnet-version: '8'
+
+    - name: Publish
+      run: dotnet publish PsdcSharp/Psdc/Psdc.csproj -v n -c Release -r linux-x64 --self-contained -o publish
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.release.outputs.upload_url }}
+        asset_path: publish/psdc
+        asset_name: psdc-linux-x64
+        asset_content_type: application/x-pie-executable
+  build-osx:
+    needs: release
+    runs-on: osx-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@main
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@main
+      with:
+        dotnet-version: '8'
+
+    - name: Publish
+      run: dotnet publish PsdcSharp/Psdc/Psdc.csproj -v n -c Release -r osx-x64 --self-contained -o publish
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.release.outputs.upload_url }}
+        asset_path: publish/psdc
+        asset_name: psdc-osx-x64
+        asset_content_type: application/x-macbinary
