@@ -15,11 +15,11 @@ $$
     ⟨CompilerDirective⟩ \\
     ⟨Constant⟩ \to \text{constante} ⟨Type⟩ Identifier \text{:=} ⟨Expr⟩\text{;} \\
     ⟨Function⟩ \to ⟨FunctionSignature⟩ \text{;} \\
-    ⟨FunctionDefinition⟩ \to ⟨FunctionSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
+    ⟨FunctionDefinition⟩ \to ⟨FunctionSignature⟩ \text{c'est}^?\ \text{début} ⟨Block⟩ \text{fin} \\
     ⟨MainProgram⟩ \to \text{début} ⟨Block⟩ \text{fin} \\
     ⟨Nop⟩ \\
     ⟨Procedure⟩ \to ⟨Procedureignature⟩ \text{;} \\
-    ⟨ProcedureDefinition⟩ \to ⟨ProcedureSignature⟩ \text{c'est\ début} ⟨Block⟩ \text{fin} \\
+    ⟨ProcedureDefinition⟩ \to ⟨ProcedureSignature⟩ \text{c'est}^?\ \text{début} ⟨Block⟩ \text{fin} \\
     ⟨TypeAlias⟩ \to \text{type}\ Identifier \text{=} ⟨Type⟩ \text{;} \\
 \end{Bmatrix*}
 
