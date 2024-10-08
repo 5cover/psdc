@@ -8,7 +8,7 @@ procédure printNTimes(entF str: chaine, entF n: entier);
 procédure swap(entF/sortF p1 : entier, entF/sortF p2 : entier);
 procédure swap_fast(entF/sortF p1 : entier, entF/sortF p2 : entier);
 
-fonction pow(entF x: réel, entF i: entier) délivre réel c'est début
+fonction pow(entF x: réel, entF i: entier) délivre réel début
     res : entier;
     res := 1;
 
@@ -20,7 +20,7 @@ fonction pow(entF x: réel, entF i: entier) délivre réel c'est début
     retourne res;
 fin
 
-procédure printNTimes(entF str: chaine, entF n: entier) c'est début
+procédure printNTimes(entF str: chaine, entF n: entier) début
     i : entier;
     j : entier;
     pour i de 0 à n faire

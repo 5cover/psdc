@@ -1,0 +1,78 @@
+name: Release Psdc
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Trigger on tag push, e.g., v1.0.0
+permissions:
+  contents: write
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@main
+ 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@main
+      with:
+        dotnet-version: '8'
+
+    - name: Publish
+      run: dotnet publish PsdcSharp/Psdc/Psdc.csproj -v n -c Release -r win-x64 -o publish -p:AssemblyName=psdc-win-x64
+
+    - name: Create release
+      uses: softprops/action-gh-release@master
+      with:
+        body: '# ${{ github.ref_name }}'
+        draft: true
+        files: publish/psdc-win-x64.exe
+        tag_name: ${{ github.ref_name }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@main
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@main
+      with:
+        dotnet-version: '8'
+
+    - name: Publish
+      run: dotnet publish PsdcSharp/Psdc/Psdc.csproj -v n -c Release -r linux-x64 -o publish -p:AssemblyName=psdc-linux-x64
+
+    - name: Create release
+      uses: softprops/action-gh-release@master
+      with:
+        body: '# ${{ github.ref_name }}'
+        draft: true
+        files: publish/psdc-linux-x64
+        tag_name: ${{ github.ref_name }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+  build-osx:
+    runs-on: osx-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@main
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@main
+      with:
+        dotnet-version: '8'
+
+    - name: Publish
+      run: dotnet publish PsdcSharp/Psdc/Psdc.csproj -v n -c Release -r osx-x64 -o publish -p:AssemblyName=psdc-osx-x64
+
+    - name: Create release
+      uses: softprops/action-gh-release@master
+      with:
+        body: '# ${{ github.ref_name }}'
+        draft: true
+        files: publish/psdc-osx-x64
+        tag_name: ${{ github.ref_name }}
+        token: ${{ secrets.GITHUB_TOKEN }}

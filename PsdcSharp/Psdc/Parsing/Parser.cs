@@ -143,8 +143,12 @@ public sealed partial class Parser
         .Get(out var signature, t => new FunctionSignature(t, name, ReportErrors(parameters), returnType))
         .Switch<Declaration>(out var branch, new() {
             [Punctuation.Semicolon] = o => (o, t => new Declaration.Function(t, signature)),
-            [Keyword.Is] = o
-             => (o.ParseToken(Keyword.Begin)
+            [Keyword.Is] = o => (o
+                .ParseToken(Keyword.Begin)
+                .ParseZeroOrMoreUntilToken(out var block, _statement, Set.Of<TokenType>(Keyword.End))
+                .ParseToken(Keyword.End),
+                t => new Declaration.FunctionDefinition(t, signature, ReportErrors(block))),
+            [Keyword.Begin] = o => (o
                 .ParseZeroOrMoreUntilToken(out var block, _statement, Set.Of<TokenType>(Keyword.End))
                 .ParseToken(Keyword.End),
                 t => new Declaration.FunctionDefinition(t, signature, ReportErrors(block))),
@@ -168,11 +172,15 @@ public sealed partial class Parser
         .Get(out var signature, t => new ProcedureSignature(t, name, ReportErrors(parameters)))
         .Switch<Declaration>(out var branch, new() {
             [Punctuation.Semicolon] = o => (o, t => new Declaration.Procedure(t, signature)),
-            [Keyword.Is] = o
-             => (o.ParseToken(Keyword.Begin)
+            [Keyword.Is] = o => (o
+                .ParseToken(Keyword.Begin)
                 .ParseZeroOrMoreUntilToken(out var block, _statement, Set.Of<TokenType>(Keyword.End))
                 .ParseToken(Keyword.End),
-                t => new Declaration.ProcedureDefinition(t, signature, ReportErrors(block)))
+                t => new Declaration.ProcedureDefinition(t, signature, ReportErrors(block))),
+            [Keyword.Begin] = o => (o
+                .ParseZeroOrMoreUntilToken(out var block, _statement, Set.Of<TokenType>(Keyword.End))
+                .ParseToken(Keyword.End),
+                t => new Declaration.ProcedureDefinition(t, signature, ReportErrors(block))),
         })
         .Fork(out var result, branch)
         .MapResult(result);
