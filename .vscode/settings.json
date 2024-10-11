@@ -5,7 +5,10 @@
             "allowed_elements": [
                 "pre",
                 "code",
-                "samp"
+                "samp",
+                "span",
+                "br",
+                "q"
             ]
         }
     }

@@ -976,8 +976,6 @@ Example : boolean negation :
 val.Map<Boolean>(val => val switch {
     Boolean x => new Boolean(!x.Value),
 })
-
-
 ```
 
 This Type property... its causing problems.
@@ -1039,10 +1037,6 @@ static OperationResult Operate(BinaryOperator op, Value left, Value right) => (o
 ```
 
 Maybe we could combine the types of the left and right operands before switching? That way we wouldn't need inheritance.
-
-```cs
-
-```
 
 The core problem is : we have an operand and operands as Values. We want to compute the result of whichever operation the tuple (operator, operand type...) represents, in value and in type.
 

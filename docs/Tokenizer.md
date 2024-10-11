@@ -192,27 +192,27 @@ We could make such regexes for :
 
 - function signature `fonction\s+\((entF|sortF|entF/sortF
 )*\)`
+  - name
+  - parameters
+    - mode
     - name
-    - parameters
-        - mode
-        - name
-        - type
-    - return type
+    - type
+  - return type
 - procedure signature
+  - name
+  - parameters
+    - mode
     - name
-    - parameters
-        - mode
-        - name
-        - type
+    - type
 - variable declaration
-    - name
-    - type
+  - name
+  - type
 - constant declaration
-    - type
-    - name
-    - value
+  - type
+  - name
+  - value
 - Program declaration
-    - name
+  - name
 
 Other composed like si, pour, function call, not really as they take expressions
 

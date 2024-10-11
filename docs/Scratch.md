@@ -1,5 +1,9 @@
 # Scratch area
 
+## Enforce function purity
+
+It would be nice if we could enforce function purity with a "pure" keyword that restricts the function to only use its formal parameters and return value, and forbids calling impure functions.
+
 ## Make scalar initializers affect deepest subobject
 
 ```psc
