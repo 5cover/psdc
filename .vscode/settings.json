@@ -1,0 +1,12 @@
+{
+    "markdown.extension.toc.slugifyMode": "github",
+    "markdownlint.config": {
+        "MD033": {
+            "allowed_elements": [
+                "pre",
+                "code",
+                "samp"
+            ]
+        }
+    }
+}
