@@ -21,7 +21,7 @@ Given any Pseudocode program (valid or invalid), Psdc produces an equivalent pro
   - same declaration order (as possible considering the rules of the target language)
 - **Equivalence in representation**: the generated code should be human-readable and easily modifiable, with a clear correspondence between the input pseudocode and the output code.
 
-More information in [Philosophy](docs/Philosophy.md).
+More information in [The Zen of Pseudocode](<https://github.com/5cover/psdc/wiki/The Zen of Pseudocode>).
 
 ## Example
 

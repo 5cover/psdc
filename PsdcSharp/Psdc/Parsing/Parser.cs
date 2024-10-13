@@ -67,7 +67,7 @@ public sealed partial class Parser
             [Keyword.False] = t => ParseToken(t, Keyword.False, t => new Expression.Literal.False(t)),
             [Keyword.True] = t => ParseToken(t, Keyword.True, t => new Expression.Literal.True(t)),
             [Valued.LiteralCharacter] = t => ParseTokenValue(t, Valued.LiteralCharacter, (t, val) => {
-                var unescaped = Strings.Unescape(val, EscapeMode.ForChar, Format.Code).ToString();
+                var unescaped = Strings.Unescape(val, Format.Code).ToString();
                 if (unescaped.Length != 1) {
                     _msger.Report(Message.ErrorCharacterLiteralContainsMoreThanOneCharacter(t, unescaped[0]));
                 }
@@ -76,7 +76,7 @@ public sealed partial class Parser
             [Valued.LiteralInteger] = t => ParseTokenValue(t, Valued.LiteralInteger, (t, val) => new Expression.Literal.Integer(t, val)),
             [Valued.LiteralReal] = t => ParseTokenValue(t, Valued.LiteralReal, (t, val) => new Expression.Literal.Real(t, val)),
             [Valued.LiteralString] = t => ParseTokenValue(t, Valued.LiteralString, (t, val) => new Expression.Literal.String(t,
-                Strings.Unescape(val, EscapeMode.ForString, Format.Code).ToString())),
+                Strings.Unescape(val, Format.Code).ToString())),
         };
         _literal = t => ParseByTokenType(t, "literal", literalParsers);
 

@@ -3,12 +3,6 @@ using System.Text;
 
 namespace Scover.Psdc.Pseudocode;
 
-public enum EscapeMode
-{
-    ForString,
-    ForChar
-};
-
 static class Strings
 {
     const int LengthU32 = 8;
@@ -22,7 +16,7 @@ static class Strings
     const int OffsetU32 = 2;
     const int OffsetSimple = 2;
 
-    public static StringBuilder Escape(ReadOnlySpan<char> input, EscapeMode mode, IFormatProvider? fmtProvider = null)
+    public static StringBuilder Escape(ReadOnlySpan<char> input, IFormatProvider? fmtProvider = null)
     {
         StringBuilder o = new();
 
@@ -30,10 +24,10 @@ static class Strings
 
         foreach (var c in input) {
             switch (c) {
-            case '\'' when mode is EscapeMode.ForChar:
+            case '\'':
                 o.Append("\\'");
                 break;
-            case '\"' when mode is EscapeMode.ForString:
+            case '\"':
                 o.Append("\\\"");
                 break;
             case '\\':
@@ -60,6 +54,9 @@ static class Strings
             case '\v':
                 o.Append("\\v");
                 break;
+            case '\x1b':
+                o.Append("\\e");
+                break;
             case char when char.IsControl(c):
                 // If c can be represented in 3 octal chars
                 if (c < 8 * 8 * 8) {
@@ -77,7 +74,7 @@ static class Strings
         return o;
     }
 
-    public static StringBuilder Unescape(ReadOnlySpan<char> input, EscapeMode mode, IFormatProvider? fmtProvider = null)
+    public static StringBuilder Unescape(ReadOnlySpan<char> input, IFormatProvider? fmtProvider = null)
     {
         StringBuilder o = new();
         int i = 0;
@@ -85,11 +82,11 @@ static class Strings
         while (i < input.Length) {
             if (i + 1 < input.Length && input[i] == '\\') {
                 switch (input[i + 1]) {
-                case '\'' when mode is EscapeMode.ForChar:
+                case '\'':
                     o.Append('\'');
                     i += OffsetSimple;
                     break;
-                case '\"' when mode is EscapeMode.ForString:
+                case '\"':
                     o.Append('\"');
                     i += OffsetSimple;
                     break;
@@ -123,6 +120,10 @@ static class Strings
                     break;
                 case 'v':
                     o.Append('\v');
+                    i += OffsetSimple;
+                    break;
+                case 'e':
+                    o.Append('\x1b');
                     i += OffsetSimple;
                     break;
                 case char c when GetOctalDigitValue(c) is { HasValue: true } firstDigit: {

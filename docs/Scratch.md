@@ -612,9 +612,13 @@ Something like `_` to use as a thousand separator (or anything else) to make lar
 
 Implementation : remove `_` chars from the string when constructing an integer literal node
 
+## String literal concatenation
+
+Like C, consecutive string literals are concatenated.
+
 ## Shebang support
 
-Concretely : support the `!` directive, which is a noop and discards the rest of the line
+Concretely: support the `!` directive, which is a noop and discards the rest of the line
 
 ## Test suite
 

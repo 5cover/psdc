@@ -50,7 +50,7 @@ sealed class StringValueImpl(StringType type, ValueStatus<string> value) : Value
 {
     protected override StringValueImpl Clone(ValueStatus<string> value) => new(Type, value);
     protected override string ValueToString(string value, IFormatProvider? fmtProvider, Indentation indent)
-     => $"\"{Strings.Escape(value, EscapeMode.ForString, fmtProvider)}\"";
+     => $"\"{Strings.Escape(value, fmtProvider)}\"";
 }
 
 sealed class StructureValue(StructureType type, ValueStatus<ImmutableOrderedMap<Identifier, Value>> value) : ValueImpl<StructureValue, StructureType, ImmutableOrderedMap<Identifier, Value>>(type, value)
@@ -101,7 +101,7 @@ sealed class CharacterValue(CharacterType type, ValueStatus<char> value) : Value
 {
     protected override CharacterValue Clone(ValueStatus<char> value) => new(Type, value);
     protected override string ValueToString(char value, IFormatProvider? fmtProvider, Indentation indent)
-     => $"'{Strings.Escape(value.ToString(fmtProvider), EscapeMode.ForChar, fmtProvider)}'";
+     => $"'{Strings.Escape(value.ToString(fmtProvider), fmtProvider)}'";
 }
 
 sealed class FileValue(FileType type, ValueStatus value) : ValueImpl<FileType>(type, value);
@@ -113,5 +113,5 @@ sealed class LengthedStringValue(LengthedStringType type, ValueStatus<string> va
 
     protected override LengthedStringValue Clone(ValueStatus<string> value) => new(Type, value);
     protected override string ValueToString(string value, IFormatProvider? fmtProvider, Indentation indent)
-     => $"\"{Strings.Escape(value, EscapeMode.ForString, fmtProvider)}\"";
+     => $"\"{Strings.Escape(value, fmtProvider)}\"";
 }
