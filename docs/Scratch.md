@@ -633,3 +633,19 @@ One thing certain, I'm gonna need A LOT of tests.
 Something I could do is maybe write the standard and then infer a test suite that tests everything the standard says.
 
 Maybe reuse the C compiler test suite? Since the language is pretty close to C, I can manually translate the test programs and build from there.
+
+## fix program and main programm
+
+soo reuine the program declaration and the main program
+
+```psc
+programm A c'est début
+
+fin
+```
+
+this is the whole programme.
+
+and there can be stuff around it
+
+no more lasting until the end of the file part.
