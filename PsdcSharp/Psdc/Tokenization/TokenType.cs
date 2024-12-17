@@ -222,7 +222,7 @@ public class TokenType
         public static Valued CommentSingleline { get; } = new("singleline comment", "//(.*)$", RegexOptions.Multiline);
         public static Valued Identifier { get; } = new("identifier", @"([\p{L}_][\p{L}_0-9]*)");
         public static Valued LiteralCharacter { get; } = new("character literal", @"'((?:\\?.)*?)'");
-        public static Valued LiteralInteger { get; } = new("integer literal", @"(\d+)");
+        public static Valued LiteralInteger { get; } = new("integer literal", @"([1-9]\d*)");
         public static Valued LiteralReal { get; } = new("real literal", @"(\d*\.\d+)");
         public static Valued LiteralString { get; } = new("string literal", @"""((?:\\?.)*?)""");
 
