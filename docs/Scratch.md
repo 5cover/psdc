@@ -634,6 +634,18 @@ Something I could do is maybe write the standard and then infer a test suite tha
 
 Maybe reuse the C compiler test suite? Since the language is pretty close to C, I can manually translate the test programs and build from there.
 
+## main program return
+
+like c, optional, defaults to 0. corresponds to the exit code of the program.
+
+## anonymous block
+
+```psc
+début
+    // instructions…
+fin
+```
+
 ## fix program and main programm
 
 soo reuine the program declaration and the main program

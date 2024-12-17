@@ -38,16 +38,9 @@
 
 Warning : when the code may not work because you're doing something valid but highly unusual/unsupported that is undoubtedly wrong.
 
-- Using file after close
-- Reading to write-only file
-- Writing to read-only file
-- Using file before open
-- File never closed
-- File closed twice
-- Unopened file closed
-
 - Unreachable code (statements after return)
 - Missing return from function
+- use of undefined value
 
 ## Suggestions
 
@@ -60,6 +53,8 @@ Suggestion : style and formatting guidelines, code quality fixes, harmless mista
   - others camelCase
 
 - useless assignment (`1 := 1`)
+
+- multiple returns in function
 
 ## Specific to the target language
 
