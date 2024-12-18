@@ -661,3 +661,7 @@ this is the whole programme.
 and there can be stuff around it
 
 no more lasting until the end of the file part.
+
+## truly case insensitive bool operators
+
+instead of all majs all mins
