@@ -233,7 +233,7 @@ It's not explicitly disallowed, and it would make some things easier.
 
 ## Make a negative integer literal
 
-**Reason**: redundant. causes a tokenization ambiguity with substraction.
+**Reason**: redundant. causes a lexing ambiguity with substraction.
 
 Currently, we parse it to an unary minus operation on an integer literal. This works, except when collapsing the value in alter.
 

@@ -439,7 +439,7 @@ Fix : add a stirng property, `ProductionName` to `ParseError` and use it in `Err
 
 Create an `Identifier` class that abstracts a string but with restrictions (`[\p{L}_][\p{L}0-9_]*`)
 
-The point would be to prevent invalid identifiers. But we already check in the tokenizer. So what's the point?
+The point would be to prevent invalid identifiers. But we already check in the lexer. So what's the point?
 
 Semantically, it would able us to tell if an indentifier is expected instead of any string.
 
@@ -1627,7 +1627,7 @@ We could:
 
 Directives are compile-time instructions that are evaluated in the static analyzer. They may be translated to the target lanugage (see C's `static_assert`), but they do not affect the machine code output of the target language compilation.
 
-Some directives don't require static analysis: `#include`, `#config` (will be implemented later, handled specially in the Tokenizer).
+Some directives don't require static analysis: `#include`, `#config` (will be implemented later, handled specially in the Lexer).
 
 Other stuff, like compiler log, static asserts, require static analysis. However, we will still use a hash prefix, because it makes little sense to use a different syntax from the user's perspective.
 
@@ -1665,7 +1665,7 @@ No need to call it `#static_assert` (like in C) since the `#` already indicates 
 - TokenType for `#`
 - Parse contextual keywords (assert, type) by requring an identifier with a specific name specified in TokenType.
 
-What about preprocessing? `#include` has to be handled at the tokenizer level. We can later check for the `#` token in the tokenizer and call a parser for preprocessor directives. If it fails to parse, we emit the token to the regular parser.
+What about preprocessing? `#include` has to be handled at the lexer level. We can later check for the `#` token in the lexer and call a parser for preprocessor directives. If it fails to parse, we emit the token to the regular parser.
 
 ## Contextual keywords
 

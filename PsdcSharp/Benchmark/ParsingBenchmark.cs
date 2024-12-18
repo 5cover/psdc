@@ -1,7 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using Scover.Psdc.Library;
 using Scover.Psdc.Parsing;
-using Scover.Psdc.Tokenization;
+using Scover.Psdc.Lexing;
 
 namespace Scover.Psdc.Benchmark;
 
@@ -12,7 +12,7 @@ public class ParsingBenchmark
     Token[] _tokens = null!;
 
     [GlobalSetup]
-    public void Setup() => _tokens = new TokenizationBenchmark().Run();
+    public void Setup() => _tokens = new LexingBenchmark().Run();
 
     [Benchmark]
     public ValueOption<Node.Program> Run()

@@ -364,9 +364,9 @@ Simply add some graph-building logic in the NodeImpl constructor.
 
 Since a PD can be located anywher in the program, it cannot be parsed as part of the normal syntax, unless we want to make the grammar extremely messy.
 
-The Tokenizer recognizes and interprets them, but does not produce tokens. Instead, it does something special.
+The Lexer recognizes and interprets them, but does not produce tokens. Instead, it does something special.
 
-Each PD is not it's own token type. Rather, there's a general token type which values to the PD name. Encountered in Tokenizer, we evaluate it. If unknown name, raise an error. May have to create Parse class for the more complex ones. If they require parsing expressions. See if we can reuse existing code.
+Each PD is not it's own token type. Rather, there's a general token type which values to the PD name. Encountered in Lexer, we evaluate it. If unknown name, raise an error. May have to create Parse class for the more complex ones. If they require parsing expressions. See if we can reuse existing code.
 
 ### `#config <name: ident> := <value: expr>`
 
@@ -626,7 +626,7 @@ Do they check character by character or C tokens? In other words, do they depend
 
 What about errors? I can make a messenger that saves the errors to a list and assert on that. I should have tests that expect errors and others that don't.
 
-Should I test all steps simultaneously or use separate tests for tokenization, parsing, static analysis and code generation?
+Should I test all steps simultaneously or use separate tests for lexing, parsing, static analysis and code generation?
 
 One thing certain, I'm gonna need A LOT of tests.
 

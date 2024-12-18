@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace Scover.Psdc.Tokenization;
+namespace Scover.Psdc.Lexing;
 
 sealed class RegexTokenRule(TokenType tokenType, string pattern, RegexOptions flags = RegexOptions.None) : TokenRule
 {

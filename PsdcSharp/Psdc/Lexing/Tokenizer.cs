@@ -1,11 +1,11 @@
 using Scover.Psdc.Messages;
 
-using static Scover.Psdc.Tokenization.TokenType;
-using static Scover.Psdc.Tokenization.TokenType.Valued;
+using static Scover.Psdc.Lexing.TokenType;
+using static Scover.Psdc.Lexing.TokenType.Valued;
 
-namespace Scover.Psdc.Tokenization;
+namespace Scover.Psdc.Lexing;
 
-public sealed class Tokenizer
+public sealed class Lexer
 {
     static IEnumerable<T> GetRules<T>(IEnumerable<Ruled<T>> ruled) where T : TokenRule => ruled.SelectMany(r => r.Rules);
     static IEnumerable<TokenRule> GetRules(IEnumerable<Ruled<TokenRule>> ruled) => ruled.SelectMany(r => r.Rules);
@@ -22,7 +22,7 @@ public sealed class Tokenizer
         .Concat(Identifier.Rules)
         .ToArray();
 
-    Tokenizer(Messenger msger, string input)
+    Lexer(Messenger msger, string input)
     {
         _msger = msger;
         (_code, _lineContIndexes) = PreprocessLineContinuations(input);
@@ -35,7 +35,7 @@ public sealed class Tokenizer
 
     public static IEnumerable<Token> Tokenize(Messenger messenger, string input)
     {
-        Tokenizer t = new(messenger, input);
+        Lexer t = new(messenger, input);
 
         int i = 0;
         int iInvalidStart = NA_INDEX;

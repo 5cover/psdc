@@ -1,4 +1,4 @@
-namespace Scover.Psdc.Tokenization;
+namespace Scover.Psdc.Lexing;
 
 public readonly record struct Lexeme(TokenType Type, string? Value, FixedRange CodePosition);
 

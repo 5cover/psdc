@@ -1,4 +1,4 @@
-namespace Scover.Psdc.Tokenization;
+namespace Scover.Psdc.Lexing;
 
 interface TokenRule
 {

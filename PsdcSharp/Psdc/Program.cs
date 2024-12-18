@@ -3,7 +3,7 @@ using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
-using Scover.Psdc.Tokenization;
+using Scover.Psdc.Lexing;
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Immutable;
 
@@ -52,7 +52,7 @@ static class Program
             FilterMessenger msger = new(code => opt.Pedantic || code is not MessageCode.FeatureNotOfficial);
 
             var tokens = "Tokenizing".LogOperation(opt.Verbose,
-                () => Tokenizer.Tokenize(msger, input).ToArray());
+                () => Lexer.Tokenize(msger, input).ToArray());
 
             var ast = "Parsing".LogOperation(opt.Verbose,
                 () => Parser.Parse(msger, tokens));

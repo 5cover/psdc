@@ -1,9 +1,9 @@
 using Scover.Psdc.Messages;
 using Scover.Psdc.Pseudocode;
-using Scover.Psdc.Tokenization;
+using Scover.Psdc.Lexing;
 
 using static Scover.Psdc.Parsing.Node;
-using static Scover.Psdc.Tokenization.TokenType;
+using static Scover.Psdc.Lexing.TokenType;
 
 using Type = Scover.Psdc.Parsing.Node.Type;
 

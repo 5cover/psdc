@@ -1,10 +1,10 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Scover.Psdc.Tokenization;
+using Scover.Psdc.Lexing;
 
 using static Scover.Psdc.Parsing.Node;
-using static Scover.Psdc.Tokenization.TokenType;
+using static Scover.Psdc.Lexing.TokenType;
 
 namespace Scover.Psdc.Parsing;
 

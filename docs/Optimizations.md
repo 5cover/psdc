@@ -4,7 +4,7 @@
 
 Added in .NET 7, basically RegexOptions.Compiled but even faster.
 
-**Affects**: Tokenization
+**Affects**: Lexing
 
 **Implementation**: Accept a Regex instance in RegexTokenRule instead of the pattern, use the RegexGenerator source generator.
 
@@ -38,9 +38,9 @@ I wonder if we'd get better performance by converting the payload manually?
 
 This avoids the declaration and instanciation of a class.
 
-## Tokenization: use `ReadonlySpan<char>`
+## Lexing: use `ReadonlySpan<char>`
 
-**Affects**: Tokenization
+**Affects**: Lexing
 
 ### Token rules: parse `ReadonlySpan<char>`
 
@@ -50,7 +50,7 @@ Requires a refactor of RegexTokenRule since EnumerateMatches can't handle groups
 
 Avoids creating a string when it already exists inside the input code. Might require global access the the input. I don't see why that would be a problem. Not sure i'll need it though.
 
-### Tokenizer: use the char array from `PreprocessLineContinuations` instead of creating a string from it
+### Lexer: use the char array from `PreprocessLineContinuations` instead of creating a string from it
 
 Means everything else has to be `ReadOnlySpan<char>`-ready. (see above).
 

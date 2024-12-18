@@ -1,4 +1,4 @@
-namespace Scover.Psdc.Tokenization;
+namespace Scover.Psdc.Lexing;
 
 sealed class StringTokenRule(TokenType tokenType, string expected, StringComparison comparison) : TokenRule
 {

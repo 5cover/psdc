@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Scover.Psdc.Tokenization;
+using Scover.Psdc.Lexing;
 
 namespace Scover.Psdc.Parsing;
 
