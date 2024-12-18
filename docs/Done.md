@@ -2107,3 +2107,7 @@ allow more whitespace
 ## fix tant que
 
 allow more whitespace
+
+## truly case insensitive bool operators
+
+instead of all majs all mins

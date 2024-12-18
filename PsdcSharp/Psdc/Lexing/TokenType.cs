@@ -34,6 +34,12 @@ public class TokenType
             Rules = GetRules(this, words.Prepend(mainWord).Select(w => (Func<TokenType, WordTokenRule>)(t => new(t, w, StringComparison.Ordinal))));
         }
 
+        Keyword(string mainWord, StringComparison stringComparison) : base(mainWord, true)
+        {
+            instances.Add(this);
+            Rules = GetRules(this, ((Func<TokenType, WordTokenRule>)(t => new(t, mainWord, stringComparison))).Yield());
+        }
+
         public static IReadOnlyCollection<Keyword> Instances => instances;
         public static Keyword Begin { get; } = new("début",
                                                    "debut");
@@ -138,14 +144,10 @@ public class TokenType
         #endregion Parameters
 
         #region Logical operators
-        public static Keyword And { get; } = new("ET",
-                                                  "et");
-        public static Keyword Not { get; } = new("NON",
-                                                  "non");
-        public static Keyword Or { get; } = new("OU",
-                                                 "ou");
-        public static Keyword Xor { get; } = new("XOR",
-                                                  "xor");
+        public static Keyword And { get; } = new("et", StringComparison.OrdinalIgnoreCase);
+        public static Keyword Not { get; } = new("non", StringComparison.OrdinalIgnoreCase);
+        public static Keyword Or { get; } = new("ou", StringComparison.OrdinalIgnoreCase);
+        public static Keyword Xor { get; } = new("xor", StringComparison.OrdinalIgnoreCase);
 
         #endregion Logical opetators
     }
