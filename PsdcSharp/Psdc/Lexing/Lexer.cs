@@ -25,11 +25,11 @@ public sealed class Lexer
     Lexer(Messenger msger, string input)
     {
         _msger = msger;
-        (_code, _lineContIndexes) = PreprocessLineContinuations(input);
+        (_code, _sortedlineContinutationIndexes) = PreprocessLineContinuations(input);
     }
 
     readonly Messenger _msger;
-    readonly List<int> _lineContIndexes;
+    readonly List<int> _sortedlineContinutationIndexes;
     readonly string _code;
     const int NA_INDEX = -1;
 
@@ -42,8 +42,7 @@ public sealed class Lexer
 
         while (i < t._code.Length) {
             if (char.IsWhiteSpace(t._code[i])) {
-                t.ReportInvalidToken(ref iInvalidStart, i);
-                ++i;
+                t.ReportInvalidToken(ref iInvalidStart, i++);
                 continue;
             }
 
@@ -52,7 +51,11 @@ public sealed class Lexer
             if (lexeme.HasValue) {
                 t.ReportInvalidToken(ref iInvalidStart, i);
                 if (!ignoredTokens.Contains(lexeme.Value.Type)) {
-                    yield return new Token(lexeme.Value.Type, lexeme.Value.Value, t.GetInputRange(lexeme.Value.CodePosition));
+                    yield return new Token(
+                        lexeme.Value.Type,
+                        lexeme.Value.Value,
+                        t.GetInputRange(lexeme.Value.CodePosition)
+                    );
                 }
             } else {
                 if (iInvalidStart == NA_INDEX) {
@@ -94,24 +97,28 @@ public sealed class Lexer
         }
 
         var preprocessedCode = new char[input.Length];
-        List<int> lineContinuationsIndexes = [];
+        List<int> sortedLineContinuationsIndexes = [];
 
         int i = 0;
         for (int j = 0; j < input.Length; ++j) {
             if (input[j] == '\\' && j + 1 < input.Length && input[j + 1] == '\n') {
-                lineContinuationsIndexes.Add(j++);
+                sortedLineContinuationsIndexes.Add(j++);
             } else {
                 preprocessedCode[i++] = input[j];
             }
         }
-        return (new(preprocessedCode.AsSpan()[..i]), lineContinuationsIndexes);
+        return (new(preprocessedCode.AsSpan()[..i]), sortedLineContinuationsIndexes);
     }
 
-    const int LineContLen = 2;
-
     FixedRange GetInputRange(FixedRange range) => GetInputRange(range.Start, range.Length);
-    FixedRange GetInputRange(int start, int length) => new(
-        start + LineContLen * _lineContIndexes.Count(lco => lco < start),
-        length == 0 ? 0 : length + LineContLen * _lineContIndexes.Count(lco => lco > start && lco < start + length)
-    );
+    FixedRange GetInputRange(int start, int length)
+    {
+        const int LineContinuationLen = 2;
+        return new(
+            start + LineContinuationLen
+                * _sortedlineContinutationIndexes.Count(lco => lco < start),
+            length == 0 ? 0 : length + LineContinuationLen
+                * _sortedlineContinutationIndexes.Count(lco => lco > start && lco < start + length)
+        );
+    }
 }
