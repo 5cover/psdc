@@ -33,7 +33,7 @@ public sealed class Lexer
     readonly string _code;
     const int NA_INDEX = -1;
 
-    public static IEnumerable<Token> Tokenize(Messenger messenger, string input)
+    public static IEnumerable<Token> Lex(Messenger messenger, string input)
     {
         Lexer t = new(messenger, input);
 

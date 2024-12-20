@@ -51,7 +51,7 @@ static class Program
             FilterMessenger msger = new(code => opt.Pedantic || code is not MessageCode.FeatureNotOfficial);
 
             var tokens = "Tokenizing".LogOperation(opt.Verbose,
-                () => Lexer.Tokenize(msger, input).ToArray());
+                () => Lexer.Lex(msger, input).ToArray());
 
             var ast = "Parsing".LogOperation(opt.Verbose,
                 () => Parser.Parse(msger, tokens));
