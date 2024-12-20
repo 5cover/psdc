@@ -7,7 +7,7 @@ sealed class WordTokenRule(TokenType tokenType, string word, StringComparison co
     public string Expected => _stringRule.Expected;
     public TokenType TokenType => tokenType;
 
-    public ValueOption<Lexeme> Extract(string code, int startIndex)
+    public ValueOption<Token> Extract(string code, int startIndex)
     {
         int indexAfter = startIndex + Expected.Length;
         return indexAfter > code.Length || indexAfter < code.Length && TokenType.Valued.IsIdentifierChar(code[indexAfter])

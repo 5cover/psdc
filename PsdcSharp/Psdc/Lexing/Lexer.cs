@@ -46,16 +46,12 @@ public sealed class Lexer
                 continue;
             }
 
-            var lexeme = t.Lex(ref i);
+            var Token = t.Lex(ref i);
 
-            if (lexeme.HasValue) {
+            if (Token.HasValue) {
                 t.ReportInvalidToken(ref iInvalidStart, i);
-                if (!ignoredTokens.Contains(lexeme.Value.Type)) {
-                    yield return new Token(
-                        lexeme.Value.Type,
-                        lexeme.Value.Value,
-                        t.GetInputRange(lexeme.Value.CodePosition)
-                    );
+                if (!ignoredTokens.Contains(Token.Value.Type)) {
+                    yield return Token.Value with { Position = t.GetInputRange(Token.Value.Position.Start, Token.Value.Position.End) };
                 }
             } else {
                 if (iInvalidStart == NA_INDEX) {
@@ -78,12 +74,12 @@ public sealed class Lexer
         }
     }
 
-    ValueOption<Lexeme> Lex(ref int offset)
+    ValueOption<Token> Lex(ref int offset)
     {
         foreach (var rule in rules) {
             var token = rule.Extract(_code, offset);
             if (token.HasValue) {
-                offset += token.Value.CodePosition.Length;
+                offset += token.Value.Position.Length;
                 return token;
             }
         }
@@ -110,7 +106,6 @@ public sealed class Lexer
         return (new(preprocessedCode.AsSpan()[..i]), sortedLineContinuationsIndexes);
     }
 
-    FixedRange GetInputRange(FixedRange range) => GetInputRange(range.Start, range.Length);
     FixedRange GetInputRange(int start, int length)
     {
         const int LineContinuationLen = 2;
