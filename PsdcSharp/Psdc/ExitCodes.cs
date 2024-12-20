@@ -1,6 +1,6 @@
 namespace Scover.Psdc;
 
-static class SysExits
+static class SysExit
 {
     public const int Ok = 0;
     public const int Usage = 64;
@@ -19,3 +19,11 @@ static class SysExits
     public const int NoPerm = 77;
     public const int Config = 78;
 }
+
+static class AppExit
+{
+    public const int FailedWithErrors = 1;
+    public const int FailedWithWarnings = 2;
+    public const int FailedWithHints = 3;
+}
+

@@ -661,3 +661,11 @@ this is the whole programme.
 and there can be stuff around it
 
 no more lasting until the end of the file part.
+
+## rewrite Da Parser
+
+Get rid of parse operation.
+
+KISS. Like In crafting interpreters..
+
+Also get rid of semantic nodes. All this duplication is ugly. See how Crafting Interpeters does it.

@@ -11,7 +11,6 @@ namespace Scover.Psdc;
 
 static class Program
 {
-    const int ExitCompilationFailed = 1;
 
     static readonly TextWriter msgOutput = Console.Error;
 
@@ -23,7 +22,7 @@ static class Program
     }).ParseArguments<CliOptions>(args).MapResult(static opt => {
         if (!CodeGenerator.TryGet(opt.TargetLanguage, out var codeGenerator)) {
             WriteError($"unknown language: '{opt.TargetLanguage}'");
-            return SysExits.Usage;
+            return SysExit.Usage;
         }
 
         bool outputIsRegFile = opt.Output != CliOptions.StdStreamPlaceholder;
@@ -35,7 +34,7 @@ static class Program
                 : Console.Out;
         } catch (Exception e) when (e.IsFileSystemExogenous()) {
             WriteError($"couldn't open output file: {e.Message}");
-            return SysExits.CantCreat;
+            return SysExit.CantCreat;
         }
 
         try {
@@ -46,7 +45,7 @@ static class Program
                     : File.ReadAllText(opt.Input);
             } catch (Exception e) when (e.IsFileSystemExogenous()) {
                 WriteError($"couldn't read input: {e.Message}");
-                return SysExits.NoInput;
+                return SysExit.NoInput;
             }
 
             FilterMessenger msger = new(code => opt.Pedantic || code is not MessageCode.FeatureNotOfficial);
@@ -78,7 +77,10 @@ static class Program
 
             msgPrinter.PrintMessageList(msger.Messages);
             msgPrinter.Conclude(msger.GetMessageCount);
-            return msger.GetMessageCount(MessageSeverity.Error) == 0 ? SysExits.Ok : ExitCompilationFailed;
+            return msger.GetMessageCount(MessageSeverity.Error) != 0 ? AppExit.FailedWithErrors
+                : msger.GetMessageCount(MessageSeverity.Warning) != 0 ? AppExit.FailedWithWarnings
+                : msger.GetMessageCount(MessageSeverity.Hint) != 0 ? AppExit.FailedWithHints
+                : SysExit.Ok;
 
             MessageTextPrinter CreateMessagePrinter(MessageTextPrinter.Style style) => new(
                 msgOutput,
@@ -91,7 +93,7 @@ static class Program
                 output.Dispose();
             }
         }
-    }, _ => SysExits.Usage);
+    }, _ => SysExit.Usage);
 
     static void WriteError(string message)
      => msgOutput.WriteLine($"{Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "psdc")}: error: {message}");
