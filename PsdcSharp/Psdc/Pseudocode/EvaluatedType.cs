@@ -144,7 +144,7 @@ sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArra
         : ItemType;
 
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider)
-     => string.Create(fmtProvider, $"tableau [{string.Join(", ", Dimensions)}] de {InnermostItemType}");
+     => string.Create(fmtProvider, $"tableau({InnermostItemType})[{string.Join("][", Dimensions)}]");
 }
 
 sealed class BooleanType : EvaluatedTypeImplInstantiable<BooleanValue, bool>

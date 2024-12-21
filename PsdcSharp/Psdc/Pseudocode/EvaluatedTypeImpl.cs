@@ -28,7 +28,7 @@ abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<
 
     public override string ToString(string? format, IFormatProvider? fmtProvider) => Alias.Match(
         a => format switch {
-            FmtFull => $"{ToStringNoAlias(fmtProvider)} ({a})",
+            FmtFull => $"'{a}' {{aka '{ToStringNoAlias(fmtProvider)}'}}",
             "" or null => a.ToString(),
             _ => throw new FormatException($"Unsupported format: '{format}'"),
         },

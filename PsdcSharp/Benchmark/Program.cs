@@ -7,12 +7,11 @@ static class Program
 {
     static void Main(string[] args)
     {
-        if (args.Length < 1) {
+        if (args.Length != 1) {
             Console.Error.WriteLine($"usage: {Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "benchmark")} INPUT_FILE");
             return;
         }
-
-        var filename = Path.GetFullPath(args[0]);
+        var filename = Path.GetFullPath(args[1]);
         Console.WriteLine($"Benchmarking {filename}");
 
         Environment.SetEnvironmentVariable(EnvNameFilename, filename);

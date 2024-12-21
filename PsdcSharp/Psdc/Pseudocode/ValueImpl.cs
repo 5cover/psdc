@@ -5,7 +5,7 @@ namespace Scover.Psdc.Pseudocode;
 file static class ValueStatusExtensions
 {
     public static string GetPart(this ValueStatus valueStatus) => valueStatus switch {
-        ValueStatus.Comptime => "",
+        ValueStatus.Comptime => "comptime ",
         ValueStatus.Garbage => "garbage ",
         ValueStatus.Invalid => "invalid ",
         ValueStatus.Runtime => "runtime ",
@@ -24,7 +24,7 @@ where TType : EvaluatedType
      && o.Status.Equals(Status);
     public override string ToString(string? format, IFormatProvider? fmtProvider) => format switch {
         Value.FmtMin => Type.ToString(fmtProvider),
-        _ when string.IsNullOrEmpty(format) => string.Create(fmtProvider, $"{Status.GetPart()}{Type}"),
+        _ when string.IsNullOrEmpty(format) => string.Create(fmtProvider, $"{Status.GetPart()}'{Type}'"),
         _ => throw new FormatException($"Unsupported format: '{format}'")
     };
     public string ToString(string? format, IFormatProvider? fmtProvider, Indentation indent) => ToString(format, fmtProvider);
@@ -50,8 +50,8 @@ where TUnderlying : notnull
         Value.FmtNoType => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider, indent)).ValueOr(""),
         Value.FmtMin => Status.ComptimeValue.Map(v => ValueToString(v, fmtProvider, indent)).ValueOr(Type.ToString(fmtProvider)),
         "" or null => Status.ComptimeValue.Match(
-             v => string.Create(fmtProvider, $"{Status.GetPart()}{Type}: {ValueToString(v, fmtProvider, indent)}"),
-            () => string.Create(fmtProvider, $"{Status.GetPart()}{Type}")),
+             v => string.Create(fmtProvider, $"{Status.GetPart()}'{Type}' : {ValueToString(v, fmtProvider, indent)}"),
+            () => string.Create(fmtProvider, $"{Status.GetPart()}'{Type}'")),
         _ => throw new FormatException($"Unsupported format: '{format}'")
     };
 }

@@ -10,7 +10,7 @@ constante entier TEN := 10;
 
 type A = structure début
     i: entier;
-//#eval expr "im in a struct"
+#eval expr "im in a struct"
 fin;
 
 //#eval expr "im at da top lvl"
