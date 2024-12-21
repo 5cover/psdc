@@ -1,8 +1,26 @@
 # Scratch area
 
+## Self-host
+
+Write a Pseudocode &rarr; C compiler in Pseudocode
+
+Names:
+
+- PseudoPseudoCode
+- PseudocodePseudocode
+- PseudoCompiler
+
 ## Enforce function purity
 
 It would be nice if we could enforce function purity with a "pure" keyword that restricts the function to only use its formal parameters and return value, and forbids calling impure functions.
+
+A function not marked as pure but effectively pure can be called by an explictly pure function.
+
+Effectively, the pure keyword makes the purity analysis of a function eager instead of lazy.
+
+Indeed, making it lazy means that non-pure functions will never see their purity analyzed (hence no error will be displayed) if they are not required to be pure.
+
+This could be implemented as a `RequirePure(Messenger msger) -> bool` method on a Function or the like object.
 
 ## Make scalar initializers affect deepest subobject
 

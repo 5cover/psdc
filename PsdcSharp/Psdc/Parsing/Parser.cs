@@ -95,7 +95,7 @@ public sealed partial class Parser
 
         // Don't report an error the errenous token is EOF (which means the tokens stream was empty)
         if (!program.HasValue && program.Error.ErroneousToken.Map(t => t.Type != Eof).ValueOr(true)) {
-            messenger.Report(Message.ErrorSyntax(program.SourceTokens, program.Error));
+            messenger.Report(Message.ErrorSyntax(program.SourceTokens.Location, program.Error));
         }
 
         return program.DropError();
@@ -363,7 +363,7 @@ public sealed partial class Parser
             .ParseToken(Punctuation.Arrow)
             .ParseZeroOrMoreUntilToken(out var block, _statement,
             Set.Of<TokenType>(Keyword.When, Keyword.EndSwitch))
-            .MapResult<Statement.Switch.Case>(t => when is Expression.Lvalue.VariableReference { Name.Value: "autre" }
+            .MapResult<Statement.Switch.Case>(t => when is Expression.Lvalue.VariableReference { Name.Name: "autre" }
                 ? new Statement.Switch.Case.Default(t, ReportErrors(block))
                 : new Statement.Switch.Case.OfValue(t, when, ReportErrors(block))),
         Set.Of<TokenType>(Keyword.EndSwitch))
@@ -461,7 +461,7 @@ public sealed partial class Parser
      => ParseOperation.Start(tokens, "array designator")
         .ParseToken(Punctuation.LBracket)
         .ParseOneOrMoreSeparated(out var indexes, Expression, Punctuation.Comma, Punctuation.RBracket)
-        .MapResult(_ => ReportErrors(indexes).Select(i => new Designator.Array(i.SourceTokens, i)));
+        .MapResult(_ => ReportErrors(indexes).Select(i => new Designator.Array(i.Location, i)));
 
     ParseResult<IEnumerable<Designator.Structure>> StructureDesignator(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "structure designator")
@@ -524,5 +524,5 @@ public sealed partial class Parser
     #endregion Terminals
 
     T[] ReportErrors<T>(IEnumerable<ParseResult<T>> source)
-     => source.Select(pr => pr.DropError(err => _msger.Report(Message.ErrorSyntax(pr.SourceTokens, err)))).WhereSome().ToArray();
+     => source.Select(pr => pr.DropError(err => _msger.Report(Message.ErrorSyntax(pr.SourceTokens.Location, err)))).WhereSome().ToArray();
 }

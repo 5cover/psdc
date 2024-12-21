@@ -51,7 +51,7 @@ public enum MessageCode
 
     ExpressionValueUnused,
     RedundantCast,
-    FeatureNotOfficial,
+    UnofficialFeature,
     CustomHint = 2999,
 
     #endregion Hint

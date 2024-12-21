@@ -55,7 +55,7 @@ static class ConstantFolding
         EvaluatedType targetType = sa.EvaluateType(scope, cast.Target);
         // Implicit conversions
         if (operand.Type.IsConvertibleTo(targetType)) {
-            return OperationResult.OkUnary(operand, (opUn, operandType) => Message.HintRedundantCast(opUn.SourceTokens, operandType, targetType));
+            return OperationResult.OkUnary(operand, (opUn, operandType) => Message.HintRedundantCast(opUn.Location, operandType, targetType));
         }
         // Explicit conversions
         return (operand, targetType) switch {
@@ -64,7 +64,7 @@ static class ConstantFolding
             (IntegerValue iv, BooleanType bt) => Operate(bt, iv.Status, i => i != 0),
             (IntegerValue, CharacterType ct) => OperationResult.OkUnary(ct.RuntimeValue), // runtime since target language encoding is unknown
             (RealValue rv, IntegerType it) => Operate(it, rv.Status, r => (int)r),
-            _ => (UnaryOperationMessage)((opUn, operandType) => Message.ErrorInvalidCast(opUn.SourceTokens, operandType, targetType))
+            _ => (UnaryOperationMessage)((opUn, operandType) => Message.ErrorInvalidCast(opUn.Location, operandType, targetType))
         };
     }
 
@@ -79,7 +79,7 @@ static class ConstantFolding
         (Equal, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r),
         (Equal, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (int l, int r) => l == r),
         (Equal, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r)
-            .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.SourceTokens)),
+            .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.Location)),
 
         // Unequality
         (NotEqual, BooleanValue l, BooleanValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r),
@@ -87,7 +87,7 @@ static class ConstantFolding
         (NotEqual, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r),
         (NotEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (int l, int r) => l != r),
         (NotEqual, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r)
-            .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.SourceTokens)),
+            .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.Location)),
 
         // Comparison
         (GreaterThan, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (int l, int r) => l > r),
@@ -109,7 +109,7 @@ static class ConstantFolding
         (Divide, IntegerValue l, IntegerValue r) => Operate(l.Status, r.Status,
             (Option<int> l, Option<int> r) => l.Zip(r).Map((l, r) => r == 0
                 ? OperationResult.OkBinary(IntegerType.Instance.RuntimeValue)
-                    .WithMessages((opBin, _, _) => Message.WarningDivisionByZero(opBin.SourceTokens))
+                    .WithMessages((opBin, _, _) => Message.WarningDivisionByZero(opBin.Location))
                 : OperationResult.OkBinary(IntegerType.Instance.Instanciate(l / r)))
             .ValueOr(OperationResult.OkBinary(IntegerType.Instance.RuntimeValue))),
         (Divide, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l / r),

@@ -33,9 +33,11 @@ delegate ParseResult<T> ParseBlock<out T>(ParseOperation operation);
 /// A function that creates a node from source tokens.
 /// </summary>
 /// <typeparam name="T">The type of the node to create.</typeparam>
-/// <param name="sourceTokens">The source tokens of the node.</param>
+/// <param name="location">The location of the node.</param>
 /// <returns>The resulting node.</returns>
-delegate T ResultCreator<out T>(SourceTokens sourceTokens);
+delegate T ResultCreator<out T>(Range location);
+
+delegate T ValuedResultCreator<out T>(Range location, string value);
 
 /// <summary>
 /// A fluent class to parse production rules.
@@ -328,11 +330,11 @@ abstract class ParseOperation
 
         public override ParseOperation Get<T>(out T result, ResultCreator<T> resultCreator)
         {
-            result = resultCreator(ReadTokens);
+            result = resultCreator(ReadTokens.Location);
             return this;
         }
 
-        public override ParseResult<T> MapResult<T>(ResultCreator<T> resultCreator) => MakeOkResult(resultCreator(ReadTokens));
+        public override ParseResult<T> MapResult<T>(ResultCreator<T> resultCreator) => MakeOkResult(resultCreator(ReadTokens.Location));
 
         public override ParseOperation Parse<T>(out T result, Parser<T> parse)
         {
@@ -517,7 +519,7 @@ abstract class ParseOperation
 
         FailedOperation Fail(ParseError error) => new(_tokens, _readCount, error);
 
-        ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(new(_tokens, _readCount), result);
+        ParseResult<T> MakeOkResult<T>(T result) => ParseResult.Ok(ReadTokens, result);
 
         ParseError MakeOurs(ParseError error)
          => _prod == error.FailedProduction

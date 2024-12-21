@@ -227,6 +227,8 @@ public static class Extensions
 
     public static (Position Start, Position End) Apply(this Range range, string str)
     => (str.GetPositionAt(range.Start), str.GetPositionAt(range.End));
+
+    public static bool IsEmpty(this Range range) => range.Start.Equals(range.End);
 }
 
 static class Function

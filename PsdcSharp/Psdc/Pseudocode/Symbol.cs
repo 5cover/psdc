@@ -28,18 +28,18 @@ public interface Symbol : EquatableSemantics<Symbol>
     public string Kind { get; }
 
     public Identifier Name { get; }
-    public SourceTokens SourceTokens { get; }
+    public Range Location { get; }
 
-    internal abstract record Variable(Identifier Name, SourceTokens SourceTokens, EvaluatedType Type) : Symbol
+    internal abstract record Variable(Identifier Name, Range Location, EvaluatedType Type) : Symbol
     {
         public virtual string Kind => KindVariable;
 
         public abstract bool SemanticsEqual(Symbol other);
     }
 
-    internal sealed record LocalVariable(Identifier Name, SourceTokens SourceTokens,
+    internal sealed record LocalVariable(Identifier Name, Range Location,
         EvaluatedType Type, Option<Value> Initializer)
-    : Variable(Name, SourceTokens, Type)
+    : Variable(Name, Location, Type)
     {
         public override string Kind => KindLocalVariable;
         public override bool SemanticsEqual(Symbol other) => other is LocalVariable o
@@ -48,9 +48,9 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.Initializer.Equals(Initializer);
     }
 
-    internal sealed record Constant(Identifier Name, SourceTokens SourceTokens,
+    internal sealed record Constant(Identifier Name, Range Location,
         EvaluatedType Type, Value Value)
-    : Variable(Name, SourceTokens, Type)
+    : Variable(Name, Location, Type)
     {
         public override string Kind => KindConstant;
         public override bool SemanticsEqual(Symbol other) => other is Constant o
@@ -59,7 +59,7 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.Value.Equals(Value);
     }
 
-    internal sealed record TypeAlias(Identifier Name, SourceTokens SourceTokens,
+    internal sealed record TypeAlias(Identifier Name, Range Location,
         EvaluatedType Type)
     : Symbol
     {
@@ -69,7 +69,7 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed record Callable(Identifier Name, SourceTokens SourceTokens,
+    internal sealed record Callable(Identifier Name, Range Location,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType)
     : Symbol
@@ -83,10 +83,10 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.ReturnType.SemanticsEqual(ReturnType);
     }
 
-    internal sealed record Parameter(Identifier Name, SourceTokens SourceTokens,
+    internal sealed record Parameter(Identifier Name, Range Location,
         EvaluatedType Type,
         ParameterMode Mode)
-    : Variable(Name, SourceTokens, Type)
+    : Variable(Name, Location, Type)
     {
         public override string Kind => KindParameter;
         public override bool SemanticsEqual(Symbol other) => other is Parameter o

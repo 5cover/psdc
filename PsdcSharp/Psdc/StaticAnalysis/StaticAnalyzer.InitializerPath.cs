@@ -16,10 +16,10 @@ public sealed partial class StaticAnalyzer
         : designators[0] switch {
             Designator.Structure s => targetType is StructureType t
                 ? EvaluateStructurePath(scope, s, designators[1..], t).Map(s => s.Some<InitializerPath>())
-                : Message.ErrorUnsupportedDesignator(s.Meta.SourceTokens, targetType),
+                : Message.ErrorUnsupportedDesignator(s.Meta.Location, targetType),
             Designator.Array a => targetType is ArrayType t
                 ? EvaluateArrayPath(scope, a, designators[1..], t).Map(s => s.Some<InitializerPath>())
-                : Message.ErrorUnsupportedDesignator(a.Meta.SourceTokens, targetType),
+                : Message.ErrorUnsupportedDesignator(a.Meta.Location, targetType),
             _ => throw designators[0].ToUnmatchedException(),
         };
 
@@ -45,11 +45,11 @@ public sealed partial class StaticAnalyzer
         ValueOption<InitializerPath> Rest { get; }
         EvaluatedType Type { get; }
 
-        /// <summary>Advances this path to thext subobject in natural order.</summary>
+        /// <summary>Advances this path to the next subobject in natural order.</summary>
         /// <returns>An altered copy of this path.</returns>
-        Option<InitializerPath, Message> Advance(SourceTokens context);
+        Option<InitializerPath, Message> Advance(Range location);
 
-        Option<Value, Message> SetValue(SourceTokens context, object haystack, Value needle);
+        Option<Value, Message> SetValue(Range location, object haystack, Value needle);
 
         abstract record Impl<TSelf, TDesignator, TType, TValue, TUnderlying>(TDesignator First, ValueOption<InitializerPath> Rest, TType Type) : InitializerPath
         where TSelf : Impl<TSelf, TDesignator, TType, TValue, TUnderlying>
@@ -60,44 +60,44 @@ public sealed partial class StaticAnalyzer
         {
             EvaluatedType InitializerPath.Type => Type;
             DesignatorInfo InitializerPath.First => First;
-            public Option<TSelf, Message> Advance(SourceTokens context)
+            public Option<TSelf, Message> Advance(Range location)
             {
-                return Rest.Map(r => r.Advance(context).Map(r => WithRest(r.Some())).Or(ByFirst)).ValueOr(ByFirst);
-                Option<TSelf, Message> ByFirst() => AdvanceFirst(context).Map(WithFirst);
+                return Rest.Map(r => r.Advance(location).Map(r => WithRest(r.Some())).Or(ByFirst)).ValueOr(ByFirst);
+                Option<TSelf, Message> ByFirst() => AdvanceFirst(location).Map(WithFirst);
             }
 
-            public Option<TValue, Message> SetValue(SourceTokens context, TUnderlying haystack, Value needle)
-             => SetValueFirst(context, haystack, Rest.Match(
+            public Option<TValue, Message> SetValue(Range location, TUnderlying haystack, Value needle)
+             => SetValueFirst(location, haystack, Rest.Match(
                     rest => inner => inner.Status.ComptimeValue.Match(
-                        v => rest.SetValue(context, v, needle),
+                        v => rest.SetValue(location, v, needle),
                         () => inner.Some<Value, Message>()), // If the default value is non-comptime, just leave it as it is.
                     () => (ValueTransform)(_ => needle.Some<Value, Message>())))
                 .Map(Type.Instanciate);
 
-            protected abstract ValueOption<TDesignator, Message> AdvanceFirst(SourceTokens context);
-            protected abstract Option<TUnderlying, Message> SetValueFirst(SourceTokens context, TUnderlying haystack, ValueTransform transform);
+            protected abstract ValueOption<TDesignator, Message> AdvanceFirst(Range location);
+            protected abstract Option<TUnderlying, Message> SetValueFirst(Range location, TUnderlying haystack, ValueTransform transform);
 
             protected abstract TSelf WithRest(ValueOption<InitializerPath> rest);
             protected abstract TSelf WithFirst(TDesignator first);
 
-            Option<InitializerPath, Message> InitializerPath.Advance(SourceTokens context) => Advance(context);
-            Option<Value, Message> InitializerPath.SetValue(SourceTokens context, object haystack, Value needle)
-             => SetValue(context, (TUnderlying)haystack, needle).Map(v => (Value)v);
+            Option<InitializerPath, Message> InitializerPath.Advance(Range location) => Advance(location);
+            Option<Value, Message> InitializerPath.SetValue(Range location, object haystack, Value needle)
+             => SetValue(location, (TUnderlying)haystack, needle).Map(v => (Value)v);
         }
         public sealed record Array(DesignatorInfo.Array First, ValueOption<InitializerPath> Rest, ArrayType Type)
         : Impl<Array, DesignatorInfo.Array, ArrayType, ArrayValue, ImmutableArray<Value>>(First, Rest, Type)
         {
-            public static ValueOption<Array, Message> OfFirstObject(ArrayType type, SourceTokens context)
+            public static ValueOption<Array, Message> OfFirstObject(ArrayType type, Range location)
              => 0.Indexes(type.Length.Value)
                 ? new Array(new(0), default, type)
-                : Message.ErrorExcessElementInInitializer(context);
-            protected override ValueOption<DesignatorInfo.Array, Message> AdvanceFirst(SourceTokens context)
+                : Message.ErrorExcessElementInInitializer(location);
+            protected override ValueOption<DesignatorInfo.Array, Message> AdvanceFirst(Range location)
              => (First.Index + 1).Indexes(Type.Length.Value)
                 ? new DesignatorInfo.Array(First.Index + 1)
-                : Message.ErrorIndexOutOfBounds(context, First.Index + 2, Type.Length.Value);
-            protected override Option<ImmutableArray<Value>, Message> SetValueFirst(SourceTokens context, ImmutableArray<Value> haystack, ValueTransform transform)
+                : Message.ErrorIndexOutOfBounds(location, First.Index + 2, Type.Length.Value);
+            protected override Option<ImmutableArray<Value>, Message> SetValueFirst(Range location, ImmutableArray<Value> haystack, ValueTransform transform)
              => haystack.ElementAtOrNone(First.Index)
-                .OrWithError(Message.ErrorIndexOutOfBounds(context, First.Index + 1, haystack.Length))
+                .OrWithError(Message.ErrorIndexOutOfBounds(location, First.Index + 1, haystack.Length))
                 .Bind(transform)
                 .Map(inner => haystack.SetItem(First.Index, inner));
             protected override Array WithFirst(DesignatorInfo.Array first) => this with { First = first };
@@ -106,18 +106,18 @@ public sealed partial class StaticAnalyzer
         public sealed record Structure(DesignatorInfo.Structure First, ValueOption<InitializerPath> Rest, StructureType Type)
         : Impl<Structure, DesignatorInfo.Structure, StructureType, StructureValue, ImmutableOrderedMap<Identifier, Value>>(First, Rest, Type)
         {
-            public static ValueOption<Structure, Message> OfFirstObject(StructureType type, SourceTokens context)
+            public static ValueOption<Structure, Message> OfFirstObject(StructureType type, Range location)
              => type.Components.List.FirstOrNone().Map(comp => new Structure(new(comp.Key), default, type))
-                .OrWithError(Message.ErrorExcessElementInInitializer(context));
+                .OrWithError(Message.ErrorExcessElementInInitializer(location));
 
-            protected override ValueOption<DesignatorInfo.Structure, Message> AdvanceFirst(SourceTokens context)
+            protected override ValueOption<DesignatorInfo.Structure, Message> AdvanceFirst(Range location)
              => Type.Components.List.TryGetAt(1 + Type.Components.List
                                                   .IndexOfFirst(i => i.Key.Equals(First.Component)).Unwrap(),
                                               out var c)
                 ? new DesignatorInfo.Structure(c.Key)
-                : Message.ErrorExcessElementInInitializer(context);
+                : Message.ErrorExcessElementInInitializer(location);
 
-            protected override Option<ImmutableOrderedMap<Identifier, Value>, Message> SetValueFirst(SourceTokens context, ImmutableOrderedMap<Identifier, Value> haystack, ValueTransform transform)
+            protected override Option<ImmutableOrderedMap<Identifier, Value>, Message> SetValueFirst(Range location, ImmutableOrderedMap<Identifier, Value> haystack, ValueTransform transform)
              => haystack.Map.GetValueOrNone(First.Component)
                 .OrWithError(Message.ErrorStructureComponentDoesntExist(First.Component, Type))
                 .Bind(transform)

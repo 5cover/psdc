@@ -212,6 +212,11 @@ public static class Option
     public static T ValueOr<T, TError>(this Option<T, TError> option, Func<T> defaultValue)
      => option.HasValue ? option.Value : defaultValue();
 
+    public static T? ValueOrDefault<T>(this Option<T> option)
+     => option.HasValue ? option.Value : default;
+    public static T? ValueOrDefault<T, TError>(this Option<T, TError> option)
+     => option.HasValue ? option.Value : default;
+
     public static ValueOption<T, TError> OrWithError<T, TError>(this Option<T> option, TError error)
      => option.HasValue ? option.Value : error;
 

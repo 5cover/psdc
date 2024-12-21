@@ -5,7 +5,7 @@ namespace Scover.Psdc.Parsing;
 
 public interface Node : EquatableSemantics<Node>
 {
-    SourceTokens SourceTokens { get; }
+    Range Location { get; }
 
     internal interface BracketedExpression : Expression
     {
@@ -14,19 +14,19 @@ public interface Node : EquatableSemantics<Node>
 
     public interface CompilerDirective : Declaration, Statement, Component, Initializer.Braced.Item
     {
-        internal sealed record EvalExpr(SourceTokens SourceTokens, Expression Expression) : CompilerDirective
+        internal sealed record EvalExpr(Range Location, Expression Expression) : CompilerDirective
         {
             public bool SemanticsEqual(Node other) => other is EvalExpr o
                 && o.Expression.SemanticsEqual(Expression);
         }
 
-        internal sealed record EvalType(SourceTokens SourceTokens, Type Type) : CompilerDirective
+        internal sealed record EvalType(Range Location, Type Type) : CompilerDirective
         {
             public bool SemanticsEqual(Node other) => other is EvalType o
                 && o.Type.SemanticsEqual(Type);
         }
 
-        internal sealed record Assert(SourceTokens SourceTokens, Expression Expression, Option<Expression> Message) : CompilerDirective
+        internal sealed record Assert(Range Location, Expression Expression, Option<Expression> Message) : CompilerDirective
         {
             public bool SemanticsEqual(Node other) => other is Assert o
                 && o.Expression.SemanticsEqual(Expression)
@@ -34,7 +34,7 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    public sealed record Program(SourceTokens SourceTokens,
+    public sealed record Program(Range Location,
         IReadOnlyList<CompilerDirective> LeadingDirectives,
         Identifier Title,
         IReadOnlyList<Declaration> Declarations) : Node
@@ -47,7 +47,7 @@ public interface Node : EquatableSemantics<Node>
 
     public interface Declaration : Node
     {
-        internal sealed record MainProgram(SourceTokens SourceTokens,
+        internal sealed record MainProgram(Range Location,
             Block Block)
         : Declaration
         {
@@ -55,7 +55,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed record TypeAlias(SourceTokens SourceTokens,
+        internal sealed record TypeAlias(Range Location,
             Identifier Name,
             Type Type)
         : Declaration
@@ -65,7 +65,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Type.SemanticsEqual(Type);
         }
 
-        internal sealed record Constant(SourceTokens SourceTokens,
+        internal sealed record Constant(Range Location,
             Type Type,
             Identifier Name,
             Initializer Value)
@@ -77,7 +77,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Value.SemanticsEqual(Value);
         }
 
-        internal sealed record Procedure(SourceTokens SourceTokens,
+        internal sealed record Procedure(Range Location,
             ProcedureSignature Signature)
         : Declaration
         {
@@ -85,7 +85,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Signature.SemanticsEqual(Signature);
         }
 
-        internal sealed record ProcedureDefinition(SourceTokens SourceTokens,
+        internal sealed record ProcedureDefinition(Range Location,
             ProcedureSignature Signature,
             Block Block)
         : Declaration
@@ -95,7 +95,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed record Function(SourceTokens SourceTokens,
+        internal sealed record Function(Range Location,
             FunctionSignature Signature)
         : Declaration
         {
@@ -103,7 +103,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Signature.SemanticsEqual(Signature);
         }
 
-        internal sealed record FunctionDefinition(SourceTokens SourceTokens,
+        internal sealed record FunctionDefinition(Range Location,
             FunctionSignature Signature,
             Block Block)
         : Declaration
@@ -116,13 +116,13 @@ public interface Node : EquatableSemantics<Node>
 
     public interface Statement : Node
     {
-        internal sealed record ExpressionStatement(SourceTokens SourceTokens,
+        internal sealed record ExpressionStatement(Range Location,
             Expression Expression) : Statement
         {
             public bool SemanticsEqual(Node other) => other is ExpressionStatement o
              && o.Expression.SemanticsEqual(Expression);
         }
-        internal sealed record Alternative(SourceTokens SourceTokens,
+        internal sealed record Alternative(Range Location,
             Alternative.IfClause If,
             IReadOnlyList<Alternative.ElseIfClause> ElseIfs,
             Option<Alternative.ElseClause> Else)
@@ -134,7 +134,7 @@ public interface Node : EquatableSemantics<Node>
              && o.ElseIfs.AllSemanticsEqual(ElseIfs)
              && o.Else.OptionSemanticsEqual(Else);
 
-            internal sealed record IfClause(SourceTokens SourceTokens,
+            internal sealed record IfClause(Range Location,
                 Expression Condition,
                 Block Block)
             : Node
@@ -144,7 +144,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.Block.AllSemanticsEqual(Block);
             }
 
-            internal sealed record ElseIfClause(SourceTokens SourceTokens,
+            internal sealed record ElseIfClause(Range Location,
                 Expression Condition,
                 Block Block)
             : Node
@@ -154,7 +154,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.Block.AllSemanticsEqual(Block);
             }
 
-            internal sealed record ElseClause(SourceTokens SourceTokens,
+            internal sealed record ElseClause(Range Location,
                 Block Block)
             : Node
             {
@@ -163,7 +163,7 @@ public interface Node : EquatableSemantics<Node>
             }
         }
 
-        internal sealed record Switch(SourceTokens SourceTokens,
+        internal sealed record Switch(Range Location,
             Expression Expression,
             IReadOnlyList<Switch.Case> Cases)
         : Statement
@@ -175,7 +175,7 @@ public interface Node : EquatableSemantics<Node>
             internal interface Case : Node
             {
                 public Block Block { get; }
-                internal sealed record OfValue(SourceTokens SourceTokens,
+                internal sealed record OfValue(Range Location,
                     Expression Value,
                     Block Block)
                 : Case
@@ -185,7 +185,7 @@ public interface Node : EquatableSemantics<Node>
                      && o.Block.AllSemanticsEqual(Block);
                 }
 
-                internal sealed record Default(SourceTokens SourceTokens,
+                internal sealed record Default(Range Location,
                     Block Block)
                 : Case
                 {
@@ -195,7 +195,7 @@ public interface Node : EquatableSemantics<Node>
             }
         }
 
-        internal sealed record Assignment(SourceTokens SourceTokens,
+        internal sealed record Assignment(Range Location,
             Expression.Lvalue Target,
             Expression Value)
         : Statement
@@ -205,7 +205,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Value.SemanticsEqual(Value);
         }
 
-        internal sealed record DoWhileLoop(SourceTokens SourceTokens,
+        internal sealed record DoWhileLoop(Range Location,
             Expression Condition,
             Block Block)
         : Node, Statement
@@ -217,7 +217,7 @@ public interface Node : EquatableSemantics<Node>
 
         internal interface Builtin : Statement
         {
-            internal sealed record Ecrire(SourceTokens SourceTokens,
+            internal sealed record Ecrire(Range Location,
                 Expression ArgumentNomLog,
                 Expression ArgumentExpression)
             : Builtin
@@ -227,7 +227,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.ArgumentExpression.SemanticsEqual(ArgumentExpression);
             }
 
-            internal sealed record Fermer(SourceTokens SourceTokens,
+            internal sealed record Fermer(Range Location,
                 Expression ArgumentNomLog)
             : Builtin
             {
@@ -235,7 +235,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
 
-            internal sealed record Lire(SourceTokens SourceTokens,
+            internal sealed record Lire(Range Location,
                 Expression ArgumentNomLog,
                 Expression.Lvalue ArgumentVariable)
             : Builtin
@@ -245,7 +245,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.ArgumentVariable.SemanticsEqual(ArgumentVariable);
             }
 
-            internal sealed record OuvrirAjout(SourceTokens SourceTokens,
+            internal sealed record OuvrirAjout(Range Location,
                 Expression ArgumentNomLog)
             : Builtin
             {
@@ -253,7 +253,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
 
-            internal sealed record OuvrirEcriture(SourceTokens SourceTokens,
+            internal sealed record OuvrirEcriture(Range Location,
                 Expression ArgumentNomLog)
             : Builtin
             {
@@ -261,7 +261,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
 
-            internal sealed record OuvrirLecture(SourceTokens SourceTokens,
+            internal sealed record OuvrirLecture(Range Location,
                 Expression ArgumentNomLog)
             : Builtin
             {
@@ -269,7 +269,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
             }
 
-            internal sealed record Assigner(SourceTokens SourceTokens,
+            internal sealed record Assigner(Range Location,
                 Expression.Lvalue ArgumentNomLog,
                 Expression ArgumentNomExt)
             : Builtin
@@ -279,7 +279,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.ArgumentNomExt.SemanticsEqual(ArgumentNomExt);
             }
 
-            internal sealed record EcrireEcran(SourceTokens SourceTokens,
+            internal sealed record EcrireEcran(Range Location,
                 IReadOnlyList<Expression> Arguments)
             : Builtin
             {
@@ -287,7 +287,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.Arguments.AllSemanticsEqual(Arguments);
             }
 
-            internal sealed record LireClavier(SourceTokens SourceTokens,
+            internal sealed record LireClavier(Range Location,
                 Expression.Lvalue ArgumentVariable)
             : Builtin
             {
@@ -296,7 +296,7 @@ public interface Node : EquatableSemantics<Node>
             }
         }
 
-        internal sealed record ForLoop(SourceTokens SourceTokens,
+        internal sealed record ForLoop(Range Location,
             Expression.Lvalue Variant,
             Expression Start,
             Expression End,
@@ -312,7 +312,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed record RepeatLoop(SourceTokens SourceTokens,
+        internal sealed record RepeatLoop(Range Location,
             Expression Condition,
             Block Block)
         : Node, Statement
@@ -322,7 +322,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal sealed record Return(SourceTokens SourceTokens,
+        internal sealed record Return(Range Location,
             Option<Expression> Value)
         : Statement
         {
@@ -330,7 +330,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Value.OptionSemanticsEqual(Value);
         }
 
-        internal sealed record LocalVariable(SourceTokens SourceTokens,
+        internal sealed record LocalVariable(Range Location,
             VariableDeclaration Declaration,
             Option<Initializer> Value)
         : Statement
@@ -340,7 +340,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Value.OptionSemanticsEqual(Value);
         }
 
-        internal sealed record WhileLoop(SourceTokens SourceTokens,
+        internal sealed record WhileLoop(Range Location,
             Expression Condition,
             Block Block)
         : Node, Statement
@@ -353,7 +353,7 @@ public interface Node : EquatableSemantics<Node>
 
     public interface Initializer : Node
     {
-        public sealed record Braced(SourceTokens SourceTokens,
+        public sealed record Braced(Range Location,
             IReadOnlyList<Braced.Item> Items)
         : Initializer
         {
@@ -362,7 +362,7 @@ public interface Node : EquatableSemantics<Node>
 
             public interface Item : Node;
 
-            internal sealed record ValuedItem(SourceTokens SourceTokens,
+            internal sealed record ValuedItem(Range Location,
                 IReadOnlyList<Designator> Designators,
                 Initializer Value)
             : Item
@@ -378,7 +378,7 @@ public interface Node : EquatableSemantics<Node>
     {
         internal interface Lvalue : Expression
         {
-            internal sealed record ComponentAccess(SourceTokens SourceTokens,
+            internal sealed record ComponentAccess(Range Location,
                 Expression Structure,
                 Identifier ComponentName)
             : Lvalue
@@ -391,12 +391,12 @@ public interface Node : EquatableSemantics<Node>
             internal new sealed record Bracketed
             : Lvalue, BracketedExpression
             {
-                public Bracketed(SourceTokens sourceTokens,
-                Lvalue lvalue) => (SourceTokens, ContainedLvalue) = (sourceTokens,
+                public Bracketed(Range location,
+                Lvalue lvalue) => (Location, ContainedLvalue) = (location,
                     lvalue is BracketedExpression b
                     && b.ContainedExpression is Lvalue l
                     ? l : lvalue);
-                public SourceTokens SourceTokens { get; }
+                public Range Location { get; }
                 public Lvalue ContainedLvalue { get; }
                 Expression BracketedExpression.ContainedExpression => ContainedLvalue;
 
@@ -404,7 +404,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.ContainedLvalue.SemanticsEqual(ContainedLvalue);
             }
 
-            internal sealed record ArraySubscript(SourceTokens SourceTokens,
+            internal sealed record ArraySubscript(Range Location,
                 Expression Array,
                 Expression Index)
             : Lvalue
@@ -414,7 +414,7 @@ public interface Node : EquatableSemantics<Node>
                  && o.Index.SemanticsEqual(Index);
             }
 
-            internal sealed record VariableReference(SourceTokens SourceTokens,
+            internal sealed record VariableReference(Range Location,
                 Identifier Name)
             : Lvalue
             {
@@ -423,7 +423,7 @@ public interface Node : EquatableSemantics<Node>
             }
         }
 
-        internal sealed record UnaryOperation(SourceTokens SourceTokens,
+        internal sealed record UnaryOperation(Range Location,
             UnaryOperator Operator,
             Expression Operand)
         : Expression
@@ -433,7 +433,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Operand.SemanticsEqual(Operand);
         }
 
-        internal sealed record BinaryOperation(SourceTokens SourceTokens,
+        internal sealed record BinaryOperation(Range Location,
             Expression Left,
             BinaryOperator Operator,
             Expression Right)
@@ -445,7 +445,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Right.SemanticsEqual(Right);
         }
 
-        internal sealed record BuiltinFdf(SourceTokens SourceTokens,
+        internal sealed record BuiltinFdf(Range Location,
             Expression ArgumentNomLog)
         : Expression
         {
@@ -453,7 +453,7 @@ public interface Node : EquatableSemantics<Node>
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
         }
 
-        internal sealed record Call(SourceTokens SourceTokens,
+        internal sealed record Call(Range Location,
             Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters)
         : Expression
@@ -466,17 +466,17 @@ public interface Node : EquatableSemantics<Node>
         internal sealed record Bracketed
         : BracketedExpression
         {
-            public Bracketed(SourceTokens sourceTokens,
-            Expression expr) => (SourceTokens, ContainedExpression) = (sourceTokens,
+            public Bracketed(Range location,
+            Expression expr) => (Location, ContainedExpression) = (location,
                 expr is BracketedExpression b ? b.ContainedExpression : expr);
-            public SourceTokens SourceTokens { get; }
+            public Range Location { get; }
             public Expression ContainedExpression { get; }
 
             public bool SemanticsEqual(Node other) => other is Bracketed o
              && o.ContainedExpression.SemanticsEqual(ContainedExpression);
         }
 
-        internal abstract record Literal<TType, TValue, TUnderlying>(SourceTokens SourceTokens,
+        internal abstract record Literal<TType, TValue, TUnderlying>(Range Location,
             TType ValueType,
             TUnderlying Value)
         : Literal
@@ -499,37 +499,37 @@ public interface Node : EquatableSemantics<Node>
             EvaluatedType ValueType { get; }
             Value CreateValue();
 
-            internal sealed record True(SourceTokens SourceTokens)
-            : Literal<BooleanType, BooleanValue, bool>(SourceTokens, BooleanType.Instance, true);
+            internal sealed record True(Range Location)
+            : Literal<BooleanType, BooleanValue, bool>(Location, BooleanType.Instance, true);
 
-            internal sealed record False(SourceTokens SourceTokens)
-            : Literal<BooleanType, BooleanValue, bool>(SourceTokens, BooleanType.Instance, false);
+            internal sealed record False(Range Location)
+            : Literal<BooleanType, BooleanValue, bool>(Location, BooleanType.Instance, false);
 
-            internal sealed record Character(SourceTokens SourceTokens, char Value)
-            : Literal<CharacterType, CharacterValue, char>(SourceTokens, CharacterType.Instance, Value);
+            internal sealed record Character(Range Location, char Value)
+            : Literal<CharacterType, CharacterValue, char>(Location, CharacterType.Instance, Value);
 
-            internal sealed record Integer(SourceTokens SourceTokens, int Value)
-            : Literal<IntegerType, IntegerValue, int>(SourceTokens, IntegerType.Instance, Value)
+            internal sealed record Integer(Range Location, int Value)
+            : Literal<IntegerType, IntegerValue, int>(Location, IntegerType.Instance, Value)
             {
-                public Integer(SourceTokens sourceTokens, string valueStr)
-                : this(sourceTokens, int.Parse(valueStr, Format.Code)) { }
+                public Integer(Range location, string valueStr)
+                : this(location, int.Parse(valueStr, Format.Code)) { }
             }
 
-            internal sealed record Real(SourceTokens SourceTokens, decimal Value)
-            : Literal<RealType, RealValue, decimal>(SourceTokens, RealType.Instance, Value)
+            internal sealed record Real(Range Location, decimal Value)
+            : Literal<RealType, RealValue, decimal>(Location, RealType.Instance, Value)
             {
-                public Real(SourceTokens sourceTokens, string valueStr)
-                : this(sourceTokens, decimal.Parse(valueStr, Format.Code)) { }
+                public Real(Range location, string valueStr)
+                : this(location, decimal.Parse(valueStr, Format.Code)) { }
             }
 
-            internal sealed record String(SourceTokens SourceTokens, string Value)
-            : Literal<LengthedStringType, LengthedStringValue, string>(SourceTokens, LengthedStringType.Create(Value.Length), Value);
+            internal sealed record String(Range Location, string Value)
+            : Literal<LengthedStringType, LengthedStringValue, string>(Location, LengthedStringType.Create(Value.Length), Value);
         }
     }
 
     internal interface Type : Node
     {
-        internal sealed record AliasReference(SourceTokens SourceTokens,
+        internal sealed record AliasReference(Range Location,
             Identifier Name)
         : Type
         {
@@ -537,13 +537,13 @@ public interface Node : EquatableSemantics<Node>
              && o.Name.SemanticsEqual(Name);
         }
 
-        internal sealed record String(SourceTokens SourceTokens)
+        internal sealed record String(Range Location)
         : Type
         {
             public bool SemanticsEqual(Node other) => other is String;
         }
 
-        internal sealed record Array(SourceTokens SourceTokens,
+        internal sealed record Array(Range Location,
             Type Type,
             IReadOnlyList<Expression> Dimensions)
         : Type
@@ -553,37 +553,37 @@ public interface Node : EquatableSemantics<Node>
              && o.Dimensions.AllSemanticsEqual(Dimensions);
         }
 
-        internal sealed record File(SourceTokens SourceTokens)
+        internal sealed record File(Range Location)
         : Type
         {
             public bool SemanticsEqual(Node other) => other is File;
         }
 
-        internal sealed record Character(SourceTokens SourceTokens)
+        internal sealed record Character(Range Location)
         : Type
         {
             public bool SemanticsEqual(Node other) => other is Character;
         }
 
-        internal sealed record Boolean(SourceTokens SourceTokens)
+        internal sealed record Boolean(Range Location)
         : Type
         {
             public bool SemanticsEqual(Node other) => other is Boolean;
         }
 
-        internal sealed record Integer(SourceTokens SourceTokens)
+        internal sealed record Integer(Range Location)
         : Type
         {
             public bool SemanticsEqual(Node other) => other is Integer;
         }
 
-        internal sealed record Real(SourceTokens SourceTokens)
+        internal sealed record Real(Range Location)
         : Type
         {
             public bool SemanticsEqual(Node other) => other is Real;
         }
 
-        internal sealed record LengthedString(SourceTokens SourceTokens,
+        internal sealed record LengthedString(Range Location,
             Expression Length)
         : Type
         {
@@ -591,7 +591,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Length.SemanticsEqual(Length);
         }
 
-        internal sealed record Structure(SourceTokens SourceTokens,
+        internal sealed record Structure(Range Location,
             IReadOnlyList<Component> Components)
         : Type
         {
@@ -602,7 +602,7 @@ public interface Node : EquatableSemantics<Node>
 
     internal interface Designator : Node
     {
-        internal sealed record Array(SourceTokens SourceTokens,
+        internal sealed record Array(Range Location,
             Expression Index)
         : Designator
         {
@@ -610,7 +610,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Index.SemanticsEqual(Index);
         }
 
-        internal sealed record Structure(SourceTokens SourceTokens,
+        internal sealed record Structure(Range Location,
             Identifier Component)
         : Designator
         {
@@ -621,12 +621,12 @@ public interface Node : EquatableSemantics<Node>
 
     public interface Component : Node;
 
-    internal sealed record Nop(SourceTokens SourceTokens) : Statement, Declaration
+    internal sealed record Nop(Range Location) : Statement, Declaration
     {
         public bool SemanticsEqual(Node other) => other is Nop;
     }
 
-    internal sealed record ParameterActual(SourceTokens SourceTokens,
+    internal sealed record ParameterActual(Range Location,
         ParameterMode Mode,
         Expression Value)
     : Node
@@ -636,7 +636,7 @@ public interface Node : EquatableSemantics<Node>
          && o.Value.SemanticsEqual(Value);
     }
 
-    internal sealed record ParameterFormal(SourceTokens SourceTokens,
+    internal sealed record ParameterFormal(Range Location,
         ParameterMode Mode,
         Identifier Name,
         Type Type)
@@ -648,7 +648,7 @@ public interface Node : EquatableSemantics<Node>
          && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed record VariableDeclaration(SourceTokens SourceTokens,
+    internal sealed record VariableDeclaration(Range Location,
         IReadOnlyList<Identifier> Names,
         Type Type)
     : Component
@@ -658,7 +658,7 @@ public interface Node : EquatableSemantics<Node>
          && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed record ProcedureSignature(SourceTokens SourceTokens,
+    internal sealed record ProcedureSignature(Range Location,
         Identifier Name,
         IReadOnlyList<ParameterFormal> Parameters)
     : Node
@@ -668,7 +668,7 @@ public interface Node : EquatableSemantics<Node>
          && o.Parameters.AllSemanticsEqual(Parameters);
     }
 
-    internal sealed record FunctionSignature(SourceTokens SourceTokens,
+    internal sealed record FunctionSignature(Range Location,
         Identifier Name,
         IReadOnlyList<ParameterFormal> Parameters,
         Type ReturnType)
@@ -680,35 +680,35 @@ public interface Node : EquatableSemantics<Node>
          && o.ReturnType.SemanticsEqual(ReturnType);
     }
 
-    internal abstract record UnaryOperator(SourceTokens SourceTokens, string Representation) : Node
+    internal abstract record UnaryOperator(Range Location, string Representation) : Node
     {
         public bool SemanticsEqual(Node other) => other is UnaryOperator o
          && o.Representation == Representation;
 
-        public sealed record Cast(SourceTokens SourceTokens, Type Target) : UnaryOperator(SourceTokens, "(cast)");
-        public sealed record Minus(SourceTokens SourceTokens) : UnaryOperator(SourceTokens, "-");
-        public sealed record Not(SourceTokens SourceTokens) : UnaryOperator(SourceTokens, "NON");
-        public sealed record Plus(SourceTokens SourceTokens) : UnaryOperator(SourceTokens, "+");
+        public sealed record Cast(Range Location, Type Target) : UnaryOperator(Location, "(cast)");
+        public sealed record Minus(Range Location) : UnaryOperator(Location, "-");
+        public sealed record Not(Range Location) : UnaryOperator(Location, "NON");
+        public sealed record Plus(Range Location) : UnaryOperator(Location, "+");
     }
 
-    internal abstract record BinaryOperator(SourceTokens SourceTokens, string Representation) : Node
+    internal abstract record BinaryOperator(Range Location, string Representation) : Node
     {
         public bool SemanticsEqual(Node other) => other is UnaryOperator o
          && o.Representation == Representation;
 
-        public sealed record Add(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "ET");
-        public sealed record And(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "/");
-        public sealed record Divide(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "==");
-        public sealed record Equal(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, ">");
-        public sealed record GreaterThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, ">=");
-        public sealed record GreaterThanOrEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "<");
-        public sealed record LessThan(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "<=");
-        public sealed record LessThanOrEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "-");
-        public sealed record Mod(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "%");
-        public sealed record Multiply(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "*");
-        public sealed record NotEqual(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "!=");
-        public sealed record Or(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "OU");
-        public sealed record Subtract(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "+");
-        public sealed record Xor(SourceTokens SourceTokens) : BinaryOperator(SourceTokens, "XOR");
+        public sealed record Add(Range Location) : BinaryOperator(Location, "ET");
+        public sealed record And(Range Location) : BinaryOperator(Location, "/");
+        public sealed record Divide(Range Location) : BinaryOperator(Location, "==");
+        public sealed record Equal(Range Location) : BinaryOperator(Location, ">");
+        public sealed record GreaterThan(Range Location) : BinaryOperator(Location, ">=");
+        public sealed record GreaterThanOrEqual(Range Location) : BinaryOperator(Location, "<");
+        public sealed record LessThan(Range Location) : BinaryOperator(Location, "<=");
+        public sealed record LessThanOrEqual(Range Location) : BinaryOperator(Location, "-");
+        public sealed record Mod(Range Location) : BinaryOperator(Location, "%");
+        public sealed record Multiply(Range Location) : BinaryOperator(Location, "*");
+        public sealed record NotEqual(Range Location) : BinaryOperator(Location, "!=");
+        public sealed record Or(Range Location) : BinaryOperator(Location, "OU");
+        public sealed record Subtract(Range Location) : BinaryOperator(Location, "+");
+        public sealed record Xor(Range Location) : BinaryOperator(Location, "XOR");
     }
 }

@@ -40,8 +40,8 @@ where TOpTable : OperatorTable
 
     protected string ValidateIdentifier(Scope scope, Identifier ident)
      => _kwTable.Validate(scope, ident, _msger);
-    protected string ValidateIdentifier(Scope scope, SourceTokens sourceTokens, string ident)
-     => _kwTable.Validate(scope, sourceTokens, ident, _msger);
+    protected string ValidateIdentifier(Scope scope, Range location, string ident)
+     => _kwTable.Validate(scope, location, ident, _msger);
 
     public abstract string Generate(StaticAnalysis.SemanticNode.Program program);
 

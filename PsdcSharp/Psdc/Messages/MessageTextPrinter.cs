@@ -46,7 +46,7 @@ public sealed class MessageTextPrinter(
 
     void PrintMessage(Message message)
     {
-        var (start, end) = message.InputRange.Apply(_input);
+        var (start, end) = message.Location.Apply(_input);
         var msgColor = ConsoleColors.ForMessageSeverity(message.Severity);
         var lineNoPadding = (end.Line + 1).DigitCount();
 
@@ -134,7 +134,7 @@ public sealed class MessageTextPrinter(
 
     void PrintLocationGnu(Message msg)
     {
-        var (start, end) = msg.InputRange.Apply(_input);
+        var (start, end) = msg.Location.Apply(_input);
 
         if (start.Line == end.Line) {
             _output.Write($"{_sourceFile}:{start.Line + 1}.{start.Column + 1}-{end.Column + 1}: ");
@@ -150,7 +150,7 @@ public sealed class MessageTextPrinter(
 
     void PrintLocationVsCode(Message msg)
     {
-        var (start, end) = msg.InputRange.Apply(_input);
+        var (start, end) = msg.Location.Apply(_input);
 
         var msgColor = ConsoleColors.ForMessageSeverity(msg.Severity);
         msgColor.DoInColor(() => _output.Write(string.Create(Format.Msg, $"[P{(int)msg.Code:d4}] ")));

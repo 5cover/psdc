@@ -39,7 +39,7 @@ static class Program
             return SysExit.Usage;
         }
 
-        FilterMessenger msger = new(code => opt.Pedantic || code is not MessageCode.FeatureNotOfficial);
+        FilterMessenger msger = new(code => opt.Pedantic || code is not MessageCode.UnofficialFeature);
 
         var tokens = "Tokenizing".LogOperation(opt.Verbose,
             () => Lexer.Lex(msger, input).ToArray());

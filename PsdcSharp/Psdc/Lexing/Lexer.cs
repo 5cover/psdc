@@ -51,7 +51,7 @@ public sealed class Lexer
             if (token.HasValue) {
                 t.ReportInvalidToken(ref iInvalidStart, i);
                 if (!ignoredTokens.Contains(token.Value.Type)) {
-                    yield return token.Value with { Position = t.AdjustInputRangeForLineContinuations(token.Value.Position.Start, token.Value.Position.Length) };
+                    yield return token.Value with { Position = t.AdjustLocationForLineContinuations(token.Value.Position.Start, token.Value.Position.Length) };
                 }
                 i += token.Value.Position.Length;
             } else {
@@ -64,13 +64,13 @@ public sealed class Lexer
 
         t.ReportInvalidToken(ref iInvalidStart, i);
 
-        yield return new Token(Eof, null, t.AdjustInputRangeForLineContinuations(i, 0));
+        yield return new Token(Eof, null, t.AdjustLocationForLineContinuations(i, 0));
     }
 
     void ReportInvalidToken(ref int iInvalidStart, int i)
     {
         if (iInvalidStart != NA_INDEX) {
-            _msger.Report(Message.ErrorUnknownToken(AdjustInputRangeForLineContinuations(iInvalidStart, i - iInvalidStart)));
+            _msger.Report(Message.ErrorUnknownToken(AdjustLocationForLineContinuations(iInvalidStart, i - iInvalidStart)));
             iInvalidStart = NA_INDEX;
         }
     }
@@ -105,7 +105,7 @@ public sealed class Lexer
         return (new(preprocessedCode.AsSpan()[..i]), sortedLineContinuationsIndexes);
     }
 
-    FixedRange AdjustInputRangeForLineContinuations(int start, int length)
+    LengthRange AdjustLocationForLineContinuations(int start, int length)
     {
         start += MeasureLineContinuations(0, start);
         length += MeasureLineContinuations(start, start + length);

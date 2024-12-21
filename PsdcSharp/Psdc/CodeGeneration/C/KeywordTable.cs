@@ -8,7 +8,7 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
     KeywordTable() { }
     public static KeywordTable Instance { get; } = new();
 
-    public string Validate(Scope scope, SourceTokens sourceTokens, string ident, Messenger msger)
+    public string Validate(Scope scope, Range location, string ident, Messenger msger)
     {
         if (keywords.Contains(ident)) {
             var newIdent = ident + "_";
@@ -17,7 +17,7 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
                 newIdent = string.Create(Format.Code, $"{ident}_{identNo++}");
             }
             msger.Report(Message.WarningTargetLanguageReservedKeyword(
-                sourceTokens, Language.Name.C, ident, newIdent));
+                location, Language.Name.C, ident, newIdent));
             return newIdent;
         }
         return ident;

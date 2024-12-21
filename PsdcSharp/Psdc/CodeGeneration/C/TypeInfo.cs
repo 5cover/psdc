@@ -59,7 +59,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
     static TypeInfo Create(EvaluatedType type, Indentation indent, Help help)
     {
         TypeInfo typeInfo = type switch {
-            UnknownType u => new(help.KwTable.Validate(help.Scope, u.SourceTokens, u.ToString(Format.Code), help.Msger)),
+            UnknownType u => new(help.KwTable.Validate(help.Scope, u.Location, u.ToString(Format.Code), help.Msger)),
             FileType => new("FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield()),
             BooleanType => new("bool", "%hhu", requiredHeaders: IncludeSet.StdBool.Yield()),
             CharacterType => new("char", "%c"),

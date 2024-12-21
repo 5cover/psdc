@@ -21,7 +21,7 @@ partial class CodeGenerator
                 CreateTypeInfo(part.Meta.Scope, part.Value.Type).FormatComponent.Tap(fmtComp => {
                     format.Append(fmtComp);
                     arguments.Add(part);
-                }, () => _msger.Report(Message.ErrorTargetLanguageFormat(part.Meta.SourceTokens, Language.Name.C,
+                }, () => _msger.Report(Message.ErrorTargetLanguageFormat(part.Meta.Location, Language.Name.C,
                     $"type '{part.Value.Type}' cannot be used in a format string")));
             }
         }

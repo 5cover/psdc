@@ -309,19 +309,15 @@ sealed class VoidType : EvaluatedTypeImplNotInstantiable<VoidValue>
 sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
 {
     readonly string _repr;
-    UnknownType(SourceTokens sourceTokens, string repr, ValueOption<Identifier> alias = default) : base(alias, ValueStatus.Invalid.Instance)
-     => (SourceTokens, _repr) = (sourceTokens, repr);
+    UnknownType(Range location, string repr, ValueOption<Identifier> alias = default) : base(alias, ValueStatus.Invalid.Instance)
+     => (Location, _repr) = (location, repr);
 
-    public SourceTokens SourceTokens { get; }
+    public Range Location { get; }
+    public static UnknownType Inferred { get; } = new UnknownType(default, "<unknown-type>");
 
-    public static UnknownType Inferred { get; } = new UnknownType(SourceTokens.Empty, "<unknown-type>");
+    public static UnknownType Declared(string input, Range location) => new(location, input[location]);
 
-    public static UnknownType Declared(string input, SourceTokens sourceTokens) => new(sourceTokens, input[sourceTokens.InputRange]);
-
-    // Provied an alternative overload which returns a more generic type for implicit operators
-    public static UnknownType Declared(string input, Node node) => Declared(input, node.SourceTokens);
-
-    public override UnknownType ToAliasReference(Identifier alias) => new(SourceTokens, _repr, alias);
+    public override UnknownType ToAliasReference(Identifier alias) => new(Location, _repr, alias);
 
     // Unknown is convertible to every other type, and every type is convertible to Unknwon.
     // This is to prevent cascading errors when an object of an unknown type is used.
@@ -329,7 +325,8 @@ sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
     protected override bool IsConvertibleFrom(EvaluatedTypeImpl<UnknownValue> other) => true;
 
     public override bool SemanticsEqual(EvaluatedType other) => other is UnknownType o
-     && o.SourceTokens.SequenceEqual(SourceTokens);
+     && o._repr == _repr;
+
     protected override UnknownValue CreateValue(ValueStatus status) => new(this, status);
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider) => _repr;
 }

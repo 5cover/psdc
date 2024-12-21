@@ -10,7 +10,7 @@ namespace Scover.Psdc.Parsing;
 
 partial class Parser
 {
-    static readonly Dictionary<TokenType, Func<SourceTokens, BinaryOperator>>
+    static readonly Dictionary<TokenType, ResultCreator<BinaryOperator>>
         operatorsOr = new() {
             [Keyword.Or] = t => new BinaryOperator.Or(t),
         },
@@ -108,7 +108,7 @@ partial class Parser
      };
 
     static Parser<Expression> ParserBinaryOperation(
-        IReadOnlyDictionary<TokenType, Func<SourceTokens, BinaryOperator>> operators,
+        IReadOnlyDictionary<TokenType, ResultCreator<BinaryOperator>> operators,
         Parser<Expression> descentParser)
      => tokens => {
          var prLeft = descentParser(tokens);
@@ -122,7 +122,7 @@ partial class Parser
              count += prRright.SourceTokens.Count;
 
              prLeft = prRright.WithSourceTokens(new(tokens, count)).Map((srcTokens, right)
-              => new Expression.BinaryOperation(srcTokens, prLeft.Value, prOp.Value(prOp.SourceTokens), right));
+              => new Expression.BinaryOperation(srcTokens.Location, prLeft.Value, prOp.Value(prOp.SourceTokens.Location), right));
          }
 
          return prLeft;
@@ -171,7 +171,7 @@ partial class Parser
              op => {
                  var prOperand = ParserUnaryOperation(descentParser)(tokens.Skip(prOp.SourceTokens.Count));
                  return prOperand.WithSourceTokens(new(tokens, prOp.SourceTokens.Count + prOperand.SourceTokens.Count))
-                     .Map((t, expr) => new Expression.UnaryOperation(t, op, expr));
+                     .Map((t, expr) => new Expression.UnaryOperation(t.Location, op, expr));
              },
              _ => descentParser(tokens));
      };
@@ -203,7 +203,7 @@ partial class Parser
     ParseResult<Expression.Lvalue> TerminalLvalue(IEnumerable<Token> tokens)
      => ParserFirst(
             t => Identifier(tokens)
-                .Map((t, name) => new Expression.Lvalue.VariableReference(t, name)),
+                .Map((t, name) => new Expression.Lvalue.VariableReference(t.Location, name)),
             BracketedLvalue)(tokens);
 
     ParseResult<Expression> TerminalRvalue(IEnumerable<Token> tokens)
@@ -225,7 +225,7 @@ partial class Parser
             var ind = ReportErrors(indexes).AsSpan();
             Debug.Assert(!ind.IsEmpty);
             foreach (var index in ind) {
-                result = new Expression.Lvalue.ArraySubscript(index.SourceTokens, result, index);
+                result = new Expression.Lvalue.ArraySubscript(index.Location, result, index);
             }
             return (Expression.Lvalue.ArraySubscript)result; // this cast is safe as ind cannot be empty.
         });

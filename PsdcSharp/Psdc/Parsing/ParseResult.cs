@@ -25,9 +25,6 @@ static class ParseResult
         ? result
         : Fail<T>(result.SourceTokens, transformError(result.Error));
 
-    public static ParseResult<T> Ok<T>(T result) where T : Node
-                     => new ParseResultImpl<T>(true, result, null, result.SourceTokens);
-
     public static ParseResult<T> Ok<T>(SourceTokens sourceTokens, T result)
      => new ParseResultImpl<T>(true, result, null, sourceTokens);
 
