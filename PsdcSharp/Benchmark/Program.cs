@@ -11,7 +11,7 @@ static class Program
             Console.Error.WriteLine($"usage: {Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "benchmark")} INPUT_FILE");
             return;
         }
-        var filename = Path.GetFullPath(args[1]);
+        var filename = Path.GetFullPath(args[0]);
         Console.WriteLine($"Benchmarking {filename}");
 
         Environment.SetEnvironmentVariable(EnvNameFilename, filename);
