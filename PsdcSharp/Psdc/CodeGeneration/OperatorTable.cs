@@ -19,7 +19,7 @@ readonly record struct OperatorInfo
         OperatorInfoAppender append) => (Associativity, _append, Arity, Precedence) = (associativity, append, arity, precedence);
 
     public Associativity Associativity { get; }
-    private readonly OperatorInfoAppender _append;
+    readonly OperatorInfoAppender _append;
     public StringBuilder Append(StringBuilder o, TypeGenerator typeGenerator, IReadOnlyList<Appender> @params)
     {
         Debug.Assert(Arity < 0

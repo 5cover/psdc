@@ -498,7 +498,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     StringBuilder FeatureComingSoon(StringBuilder o, SemanticNode node, string feature)
     {
-        _msger.Report(Message.ErrorFeatureComingSoon(node.Meta.SourceTokens, "files"));
+        _msger.Report(Message.ErrorFeatureComingSoon(node.Meta.SourceTokens, feature));
         return o;
     }
 

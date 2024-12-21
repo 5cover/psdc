@@ -7,7 +7,7 @@
     <Company>$(Authors)</Company>
     <Copyright>© 2024 Scover</Copyright>
     <Description>Lannion IUT Pseudocode transpiler.</Description>
-    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsAotCompatible>true</IsAotCompatible>
     <LangVersion>12</LangVersion>
@@ -22,7 +22,7 @@
 
   <!-- Output options -->
   <PropertyGroup>
-    <IncludeSourceRevisionInInformationalVersion>False</IncludeSourceRevisionInInformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <PublishAot>true</PublishAot>
     <PublishCompression>true</PublishCompression>
     <PublishProtocol>FileSystem</PublishProtocol>
@@ -32,12 +32,12 @@
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <DebugSymbols>true</DebugSymbols>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <DebugSymbols>false</DebugSymbols>
-    <Optimize>True</Optimize>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
   <ItemGroup>

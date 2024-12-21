@@ -125,10 +125,10 @@ sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArra
         return new(this, status);
     }
 
-    private ImmutableList<ComptimeExpression<int>>? _dimensions;
-    private IReadOnlyList<ComptimeExpression<int>> Dimensions => _dimensions ??= GetDimensions();
+    ImmutableList<ComptimeExpression<int>>? _dimensions;
+    IReadOnlyList<ComptimeExpression<int>> Dimensions => _dimensions ??= GetDimensions();
 
-    private ImmutableList<ComptimeExpression<int>> GetDimensions()
+    ImmutableList<ComptimeExpression<int>> GetDimensions()
     {
         var l = ImmutableList.Create(Length);
         return ItemType is ArrayType arr
@@ -136,9 +136,9 @@ sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArra
             : l;
     }
 
-    private EvaluatedType? _innermostItemType;
-    private EvaluatedType InnermostItemType => _innermostItemType ??= GetInnermostItemType();
-    private EvaluatedType GetInnermostItemType()
+    EvaluatedType? _innermostItemType;
+    EvaluatedType InnermostItemType => _innermostItemType ??= GetInnermostItemType();
+    EvaluatedType GetInnermostItemType()
      => ItemType is ArrayType arr
         ? arr.InnermostItemType
         : ItemType;
@@ -308,7 +308,7 @@ sealed class VoidType : EvaluatedTypeImplNotInstantiable<VoidValue>
 
 sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
 {
-    private readonly string _repr;
+    readonly string _repr;
     UnknownType(SourceTokens sourceTokens, string repr, ValueOption<Identifier> alias = default) : base(alias, ValueStatus.Invalid.Instance)
      => (SourceTokens, _repr) = (sourceTokens, repr);
 

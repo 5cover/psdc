@@ -4,7 +4,7 @@ namespace Scover.Psdc.CodeGeneration;
 
 sealed class Indentation(int tabSize)
 {
-    private readonly int _tabSize = tabSize;
+    readonly int _tabSize = tabSize;
     const char Character = ' ';
     int _level;
 

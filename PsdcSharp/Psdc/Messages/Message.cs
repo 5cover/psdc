@@ -34,7 +34,7 @@ public readonly struct Message
         }
     }
 
-    private static string Fmt(ref DefaultInterpolatedStringHandler dish) => string.Create(Format.Msg, ref dish);
+    static string Fmt(ref DefaultInterpolatedStringHandler dish) => string.Create(Format.Msg, ref dish);
 
     static FormattableString Quantity(int quantity, string singular, string plural)
      => $"{quantity} {(quantity == 1 ? singular : plural)}";

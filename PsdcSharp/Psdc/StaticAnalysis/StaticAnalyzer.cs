@@ -9,7 +9,7 @@ namespace Scover.Psdc.StaticAnalysis;
 
 public sealed partial class StaticAnalyzer
 {
-    private enum MainProgramStatus
+    enum MainProgramStatus
     {
         NotYet,
         Inside,

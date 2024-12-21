@@ -14,7 +14,7 @@ public class TokenType
 
     protected static IEnumerable<T> GetRules<T>(TokenType self, IEnumerable<Func<TokenType, T>> rules) => rules.Select(r => r(self));
 
-    private readonly string _repr;
+    readonly string _repr;
 
     TokenType(string repr, bool isCode) => _repr = isCode ? $"'{repr}'" : repr;
 

@@ -10,8 +10,8 @@ namespace Scover.Psdc.Library;
 readonly struct ImmutableOrderedMap<TKey, TValue>
 where TKey : notnull
 {
-    private readonly IImmutableDictionary<TKey, TValue> _map;
-    private readonly IImmutableList<KeyValuePair<TKey, TValue>> _list;
+    readonly IImmutableDictionary<TKey, TValue> _map;
+    readonly IImmutableList<KeyValuePair<TKey, TValue>> _list;
     public IReadOnlyDictionary<TKey, TValue> Map => _map;
     public IReadOnlyList<KeyValuePair<TKey, TValue>> List => _list;
 

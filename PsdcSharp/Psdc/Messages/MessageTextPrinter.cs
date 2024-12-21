@@ -13,10 +13,10 @@ public sealed class MessageTextPrinter(
         VSCode,
     }
 
-    private readonly TextWriter _output = output;
-    private readonly string _sourceFile = sourceFile;
-    private readonly string _input = input;
-    private readonly Style _style = style;
+    readonly TextWriter _output = output;
+    readonly string _sourceFile = sourceFile;
+    readonly string _input = input;
+    readonly Style _style = style;
     const string LineNoMargin = "    ";
     const string Bar = " | ";
     const int MaxMultilineErrorLines = 10;

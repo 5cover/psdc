@@ -6,6 +6,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Scover.Psdc.Benchmark</RootNamespace>
     <TargetFramework>net8.0</TargetFramework>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

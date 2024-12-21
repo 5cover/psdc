@@ -175,7 +175,7 @@ public interface Node : EquatableSemantics<Node>
             internal interface Case : Node
             {
                 public Block Block { get; }
-                internal record OfValue(SourceTokens SourceTokens,
+                internal sealed record OfValue(SourceTokens SourceTokens,
                     Expression Value,
                     Block Block)
                 : Case

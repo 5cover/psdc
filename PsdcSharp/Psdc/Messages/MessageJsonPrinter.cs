@@ -28,7 +28,7 @@ public sealed class MessageJsonPrinter(TextWriter output, string input) : Messag
         _output.Write(']');
     }
 
-    private void PrintMessage(Message msg)
+    void PrintMessage(Message msg)
     {
         var (start, end) = msg.InputRange.Apply(_input);
         _output.Write(string.Create(CultureInfo.InvariantCulture, @$"{{""code"":{msg.Code:d},""content"":""{JsonStr(msg.Content.Get(_input))}"",""start"":{FormatPosition(start)},""end"":{FormatPosition(end)},""severity"":{(int)msg.Severity},""advice"":["));
@@ -44,9 +44,9 @@ public sealed class MessageJsonPrinter(TextWriter output, string input) : Messag
         _output.Write("]}");
     }
 
-    private static FormattableString FormatPosition(Position pos) => @$"{{""line"":{pos.Line},""col"":{pos.Column}}}";
+    static FormattableString FormatPosition(Position pos) => @$"{{""line"":{pos.Line},""col"":{pos.Column}}}";
 
-    private static string JsonStr(string input)
+    static string JsonStr(string input)
      => JsonEncodedText.Encode(input, System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping).Value;
 
 }

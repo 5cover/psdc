@@ -2,9 +2,9 @@ namespace Scover.Psdc.Messages;
 
 public sealed class FilterMessenger(Func<MessageCode, bool> enableMsg) : Messenger
 {
-    private readonly List<Message> _msgs = [];
-    private readonly Func<MessageCode, bool> _enableMsg = enableMsg;
-    private readonly DefaultDictionary<MessageSeverity, int> _msgCount = new(0);
+    readonly List<Message> _msgs = [];
+    readonly Func<MessageCode, bool> _enableMsg = enableMsg;
+    readonly DefaultDictionary<MessageSeverity, int> _msgCount = new(0);
 
     public IEnumerable<Message> Messages => _msgs;
 
