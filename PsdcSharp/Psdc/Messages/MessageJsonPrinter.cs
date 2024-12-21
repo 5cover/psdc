@@ -9,9 +9,7 @@ public sealed class MessageJsonPrinter(TextWriter output, string input) : Messag
     readonly TextWriter _output = output;
     readonly string _input = input;
 
-    public void Conclude(Func<MessageSeverity, int> msgCount)
-    {
-    }
+    public void Conclude(Func<MessageSeverity, int> msgCount) { }
 
     public void PrintMessageList(IEnumerable<Message> messages)
     {

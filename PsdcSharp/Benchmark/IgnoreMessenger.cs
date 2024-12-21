@@ -10,7 +10,5 @@ sealed class IgnoreMessenger : Messenger
 
     public int GetMessageCount(MessageSeverity severity) => 0;
 
-    public void Report(Message message)
-    {
-    }
+    public void Report(Message message) { }
 }

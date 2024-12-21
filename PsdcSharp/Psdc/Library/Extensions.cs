@@ -41,6 +41,9 @@ public static class Extensions
     internal static T Product<T>(this IEnumerable<T> source) where T : IMultiplyOperators<T, T, T>
      => source.Aggregate((soFar, next) => soFar *= next);
 
+    internal static bool AllEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : IEquatable<T>
+     => first.AllZipped(second, (f, s) => f.Equals(s));
+
     internal static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T>
      => first.AllZipped(second, (f, s) => f.SemanticsEqual(s));
 

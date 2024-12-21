@@ -17,8 +17,6 @@ public sealed class Identifier : Node, IEquatable<Identifier?>
     public Range Location { get; }
     public string Name { get; }
 
-    public bool SemanticsEqual(Node other) => Equals(other as Identifier);
-
     // Equals and GetHashCode implementation for usage in dictionaries.
     public override bool Equals(object? obj) => Equals(obj as Identifier);
     public bool Equals(Identifier? other) => other is not null && other.Name == Name;

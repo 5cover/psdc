@@ -43,7 +43,7 @@ public interface Symbol : EquatableSemantics<Symbol>
     {
         public override string Kind => KindLocalVariable;
         public override bool SemanticsEqual(Symbol other) => other is LocalVariable o
-         && o.Name.SemanticsEqual(Name)
+         && o.Name.Equals(Name)
          && o.Type.SemanticsEqual(Type)
          && o.Initializer.Equals(Initializer);
     }
@@ -54,7 +54,7 @@ public interface Symbol : EquatableSemantics<Symbol>
     {
         public override string Kind => KindConstant;
         public override bool SemanticsEqual(Symbol other) => other is Constant o
-         && o.Name.SemanticsEqual(Name)
+         && o.Name.Equals(Name)
          && o.Type.SemanticsEqual(Type)
          && o.Value.Equals(Value);
     }
@@ -65,7 +65,7 @@ public interface Symbol : EquatableSemantics<Symbol>
     {
         public string Kind => KindTypeAlias;
         public bool SemanticsEqual(Symbol other) => other is TypeAlias o
-         && o.Name.SemanticsEqual(Name)
+         && o.Name.Equals(Name)
          && o.Type.SemanticsEqual(Type);
     }
 
@@ -78,7 +78,7 @@ public interface Symbol : EquatableSemantics<Symbol>
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
         public bool SemanticsEqual(Symbol other) => other is Callable o
-         && o.Name.SemanticsEqual(Name)
+         && o.Name.Equals(Name)
          && o.Parameters.AllSemanticsEqual(Parameters)
          && o.ReturnType.SemanticsEqual(ReturnType);
     }
@@ -90,7 +90,7 @@ public interface Symbol : EquatableSemantics<Symbol>
     {
         public override string Kind => KindParameter;
         public override bool SemanticsEqual(Symbol other) => other is Parameter o
-         && o.Name.SemanticsEqual(Name)
+         && o.Name.Equals(Name)
          && o.Type.SemanticsEqual(Type)
          && o.Mode == Mode;
     }

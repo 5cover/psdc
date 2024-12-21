@@ -265,7 +265,7 @@ sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, Immut
     public override StructureType ToAliasReference(Identifier alias) => new(Components, alias);
 
     public override bool SemanticsEqual(EvaluatedType other) => other is StructureType o
-     && o.Components.Map.Keys.AllSemanticsEqual(Components.Map.Keys)
+     && o.Components.Map.Keys.AllEqual(Components.Map.Keys)
      && o.Components.Map.Values.AllSemanticsEqual(Components.Map.Values);
 
     public ImmutableOrderedMap<Identifier, Value> CreateDefaultValue() => CreateDefaultValue(Components);
