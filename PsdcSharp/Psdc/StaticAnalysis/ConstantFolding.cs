@@ -3,7 +3,6 @@ using Scover.Psdc.Messages;
 using static Scover.Psdc.Parsing.Node;
 using static Scover.Psdc.Parsing.Node.UnaryOperator;
 using static Scover.Psdc.Parsing.Node.BinaryOperator;
-using System.Numerics;
 
 namespace Scover.Psdc.StaticAnalysis;
 

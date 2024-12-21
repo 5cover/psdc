@@ -2,10 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "C#: Psdc Debug",
-      "type": "dotnet",
+      "name": "Psdc Debug",
+      "type": "coreclr",
       "request": "launch",
-      "projectPath": "${workspaceFolder}/PsdcSharp/Psdc/Psdc.csproj",
-    }
+      "program": "${workspaceFolder}/PsdcSharp/Psdc/bin/Debug/net8.0/psdc.dll",
+      "args": ["c", "${workspaceFolder}/testPrograms/test.psc"],
+      "console": "internalConsole"
+    }   
   ],
 }

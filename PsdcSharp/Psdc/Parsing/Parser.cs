@@ -277,7 +277,7 @@ public sealed partial class Parser
         .MapResult(result);
 
     ParseResult<Statement> DoWhileLoop(IEnumerable<Token> tokens)
-     => ParseOperation.Start(tokens, "do..while loop")
+     => ParseOperation.Start(tokens, "do ... while loop")
         .ParseToken(Keyword.Do)
         .ParseZeroOrMoreUntilToken(out var block, _statement, Set.Of<TokenType>(Keyword.While))
         .ParseToken(Keyword.While)

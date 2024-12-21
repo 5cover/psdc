@@ -25,11 +25,11 @@ public sealed class Lexer
     Lexer(Messenger msger, string input)
     {
         _msger = msger;
-        (_code, _sortedlineContinutationIndexes) = PreprocessLineContinuations(input);
+        (_code, _sortedLineContinutationIndexes) = PreprocessLineContinuations(input);
     }
 
     readonly Messenger _msger;
-    readonly List<int> _sortedlineContinutationIndexes;
+    readonly List<int> _sortedLineContinutationIndexes;
     readonly string _code;
     const int NA_INDEX = -1;
 
@@ -46,13 +46,14 @@ public sealed class Lexer
                 continue;
             }
 
-            var Token = t.Lex(ref i);
+            var token = t.Lex(i);
 
-            if (Token.HasValue) {
+            if (token.HasValue) {
                 t.ReportInvalidToken(ref iInvalidStart, i);
-                if (!ignoredTokens.Contains(Token.Value.Type)) {
-                    yield return Token.Value with { Position = t.GetInputRange(Token.Value.Position.Start, Token.Value.Position.End) };
+                if (!ignoredTokens.Contains(token.Value.Type)) {
+                    yield return token.Value with { Position = t.AdjustInputRangeForLineContinuations(token.Value.Position.Start, token.Value.Position.Length) };
                 }
+                i += token.Value.Position.Length;
             } else {
                 if (iInvalidStart == NA_INDEX) {
                     iInvalidStart = i;
@@ -63,23 +64,21 @@ public sealed class Lexer
 
         t.ReportInvalidToken(ref iInvalidStart, i);
 
-        yield return new Token(Eof, null, t.GetInputRange(i, 0));
+        yield return new Token(Eof, null, t.AdjustInputRangeForLineContinuations(i, 0));
     }
 
-    void ReportInvalidToken(ref int iInvalidStart, int index)
+    void ReportInvalidToken(ref int iInvalidStart, int i)
     {
         if (iInvalidStart != NA_INDEX) {
-            _msger.Report(Message.ErrorUnknownToken(GetInputRange(iInvalidStart, index - iInvalidStart)));
+            _msger.Report(Message.ErrorUnknownToken(AdjustInputRangeForLineContinuations(iInvalidStart, i - iInvalidStart)));
             iInvalidStart = NA_INDEX;
         }
     }
 
-    ValueOption<Token> Lex(ref int offset)
+    ValueOption<Token> Lex(int offset)
     {
         foreach (var rule in rules) {
-            var token = rule.Extract(_code, offset);
-            if (token.HasValue) {
-                offset += token.Value.Position.Length;
+            if (rule.Extract(_code, offset) is { HasValue: true } token) {
                 return token;
             }
         }
@@ -106,14 +105,33 @@ public sealed class Lexer
         return (new(preprocessedCode.AsSpan()[..i]), sortedLineContinuationsIndexes);
     }
 
-    FixedRange GetInputRange(int start, int length)
+    FixedRange AdjustInputRangeForLineContinuations(int start, int length)
+    {
+        start += MeasureLineContinuations(0, start);
+        length += MeasureLineContinuations(start, start + length);
+        return new(start, length);
+    }
+
+    int MeasureLineContinuations(int start, int end)
     {
         const int LineContinuationLen = 2;
-        return new(
-            start + LineContinuationLen
-                * _sortedlineContinutationIndexes.Count(lco => lco < start),
-            length == 0 ? 0 : length + LineContinuationLen
-                * _sortedlineContinutationIndexes.Count(lco => lco > start && lco < start + length)
-        );
+
+        int iFirstLC = _sortedLineContinutationIndexes.BinarySearch(start);
+        // If there's no line continuation after start
+        if (~iFirstLC == _sortedLineContinutationIndexes.Count) {
+            return 0;
+        }
+        if (iFirstLC < 0) {
+            iFirstLC = ~iFirstLC;
+        }
+        int iLastLC = iFirstLC;
+        for (int i = _sortedLineContinutationIndexes[iFirstLC]; iLastLC < _sortedLineContinutationIndexes.Count && i < end; ++i) {
+            if (i == _sortedLineContinutationIndexes[iLastLC]) {
+                ++iLastLC;
+                end += LineContinuationLen;
+            }
+        }
+
+        return LineContinuationLen * (iLastLC - iFirstLC);
     }
 }
