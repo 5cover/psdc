@@ -13,8 +13,8 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
         Scope Scope,
         Messenger Msger,
         CodeGeneration.KeywordTable KwTable,
-        Generator<SemanticNode.Expression> GenExpr,
-        Generator<SemanticNode.Expression> GenExprAdd1);
+        Generator<SemanticNode.Expr> GenExpr,
+        Generator<SemanticNode.Expr> GenExprAdd1);
 
     readonly string _stars;
 

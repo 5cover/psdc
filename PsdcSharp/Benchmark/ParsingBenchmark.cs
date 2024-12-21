@@ -15,6 +15,6 @@ public class ParsingBenchmark
     public void Setup() => _tokens = new LexingBenchmark().Run();
 
     [Benchmark]
-    public ValueOption<Node.Program> Run()
+    public ValueOption<Node.Algorithm> Run()
      => Parser.Parse(p.Msger, _tokens);
 }

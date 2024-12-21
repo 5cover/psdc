@@ -9,7 +9,7 @@ namespace Scover.Psdc.CodeGeneration;
 
 public static class CodeGenerator
 {
-    public static bool TryGet(string language, [NotNullWhen(true)] out Func<Messenger, StaticAnalysis.SemanticNode.Program, string>? func)
+    public static bool TryGet(string language, [NotNullWhen(true)] out Func<Messenger, Algorithm, string>? func)
     {
         switch (language.ToLower(Format.Code)) {
         case Language.CliOption.C:
@@ -43,16 +43,16 @@ where TOpTable : OperatorTable
     protected string ValidateIdentifier(Scope scope, Range location, string ident)
      => _kwTable.Validate(scope, location, ident, _msger);
 
-    public abstract string Generate(StaticAnalysis.SemanticNode.Program program);
+    public abstract string Generate(Algorithm algorithm);
 
     protected abstract TypeGenerator TypeGeneratorFor(Scope scope);
 
-    protected StringBuilder AppendUnaryOperation<TExpr>(StringBuilder o, OperatorInfo op, TExpr operand, Appender<TExpr> appender) where TExpr : Expression
+    protected StringBuilder AppendUnaryOperation<TExpr>(StringBuilder o, OperatorInfo op, TExpr operand, Appender<TExpr> appender) where TExpr : Expr
      => op.Append(o, TypeGeneratorFor(operand.Meta.Scope), [
-        o => AppendBracketed(o, _opTable.ShouldBracketOperand(op, operand), o => appender(o, operand))
+        o => AppendBetweenParens(o, _opTable.ShouldBracketOperand(op, operand), o => appender(o, operand))
     ]);
 
-    protected static StringBuilder AppendBracketed(StringBuilder o, bool bracket, Action<StringBuilder> appender)
+    protected static StringBuilder AppendBetweenParens(StringBuilder o, bool bracket, Action<StringBuilder> appender)
     {
         if (bracket) {
             o.Append('(');

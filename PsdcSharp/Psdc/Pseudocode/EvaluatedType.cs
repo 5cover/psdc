@@ -187,18 +187,18 @@ sealed class FileType : EvaluatedTypeImplNotInstantiable<FileValue>
 
 sealed class LengthedStringType : EvaluatedTypeImplInstantiable<LengthedStringValue, string>
 {
-    LengthedStringType(Option<Expression> lengthExpression, int length, ValueOption<Identifier> alias = default) : base(alias, ValueStatus.Garbage<string>.Instance)
+    LengthedStringType(Option<Expr> lengthExpression, int length, ValueOption<Identifier> alias = default) : base(alias, ValueStatus.Garbage<string>.Instance)
     {
         LengthConstantExpression = lengthExpression;
         Length = length;
     }
 
     public int Length { get; }
-    public Option<Expression> LengthConstantExpression { get; }
+    public Option<Expr> LengthConstantExpression { get; }
     public static LengthedStringType Create(ComptimeExpression<int> length)
      => new(length.Expression.Some(), length.Value);
     public static LengthedStringType Create(int length)
-     => new(Option.None<Expression>(), length, default);
+     => new(Option.None<Expr>(), length, default);
 
     public override bool IsConvertibleTo(EvaluatedType other) => base.IsConvertibleTo(other) || other is StringType;
     public override bool IsAssignableTo(EvaluatedType other) => base.IsAssignableTo(other) || other is LengthedStringType o && o.Length >= Length;

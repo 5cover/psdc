@@ -9,7 +9,7 @@ namespace Scover.Psdc.Benchmark;
 public class CodeGenerationBenchmark
 {
     static readonly Parameters p = Program.Parameters;
-    SemanticNode.Program? _sast;
+    SemanticNode.Algorithm? _sast;
 
     [GlobalSetup]
     public void Setup()

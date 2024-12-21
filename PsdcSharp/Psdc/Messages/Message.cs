@@ -179,19 +179,19 @@ public readonly struct Message
      => new(location, MessageCode.UnknownToken, new(input =>
         Fmt($"stray `{input[location]}` in program")));
 
-    internal static Message ErrorUnsupportedOperation(Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType)
+    internal static Message ErrorUnsupportedOperation(Expr.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType)
      => new(opBin.Location, MessageCode.UnsupportedOperation,
         Fmt($"unsupported operand types for {opBin.Operator.Representation}: '{leftType}' and '{rightType}'"));
     internal static Message ErrorInvalidCast(Range location, EvaluatedType sourceType, EvaluatedType targetType)
      => new(location, MessageCode.InvalidCast,
         Fmt($"Invalid cast: there is no implicit or explicit conversion from '{sourceType}' to '{targetType}'."));
-    internal static Message ErrorUnsupportedOperation(Expression.UnaryOperation opUn, EvaluatedType operandType)
+    internal static Message ErrorUnsupportedOperation(Expr.UnaryOperation opUn, EvaluatedType operandType)
      => new(opUn.Location, MessageCode.UnsupportedOperation,
         Fmt($"unsupported operand type for {opUn.Operator.Representation}: '{operandType}'"));
     internal static Message HintRedundantCast(Range location, EvaluatedType sourceType, EvaluatedType targetType)
      => new(location, MessageCode.RedundantCast,
         Fmt($"Rendundant cast from '{sourceType}' to '{targetType}': an implicit conversion exists"));
-    internal static Message ErrrorComponentAccessOfNonStruct(Expression.Lvalue.ComponentAccess compAccess, EvaluatedType actualStructType)
+    internal static Message ErrrorComponentAccessOfNonStruct(Expr.Lvalue.ComponentAccess compAccess, EvaluatedType actualStructType)
      => new(compAccess.Location, MessageCode.ComponentAccessOfNonStruct,
         Fmt($"request for component `{compAccess.ComponentName}` in something ('{actualStructType}') not a structure"));
 

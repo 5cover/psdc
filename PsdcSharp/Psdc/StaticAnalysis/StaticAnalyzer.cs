@@ -28,7 +28,7 @@ public sealed partial class StaticAnalyzer
         _msger.Report(Message.HintUnofficialFeature(compilerDirective.Location, "compiler directives"));
         switch (compilerDirective) {
         case Node.CompilerDirective.Assert cd: {
-            GetComptimeValue<BooleanType, bool>(BooleanType.Instance, EvaluateExpression(scope, cd.Expression))
+            GetComptimeValue<BooleanType, bool>(BooleanType.Instance, EvaluateExpression(scope, cd.Expr))
             .DropError(_msger.Report)
             .Tap(@true => {
                 if (!@true) {
@@ -40,7 +40,7 @@ public sealed partial class StaticAnalyzer
             break;
         }
         case Node.CompilerDirective.EvalExpr cd: {
-            _msger.Report(Message.DebugEvaluateExpression(cd.Location, EvaluateExpression(scope, cd.Expression).Value));
+            _msger.Report(Message.DebugEvaluateExpression(cd.Location, EvaluateExpression(scope, cd.Expr).Value));
             break;
         }
         case Node.CompilerDirective.EvalType cd: {
@@ -52,7 +52,7 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    public static SemanticNode.Program Analyze(Messenger messenger, string input, Node.Program ast)
+    public static Algorithm Analyze(Messenger messenger, string input, Node.Algorithm ast)
     {
         StaticAnalyzer a = new(messenger, input);
 
@@ -62,7 +62,7 @@ public sealed partial class StaticAnalyzer
             a.EvaluateCompilerDirective(scope, directive);
         }
 
-        SemanticNode.Program semanticAst = new(new(scope, ast.Location), ast.Title,
+        Algorithm semanticAst = new(new(scope, ast.Location), ast.Title,
             ast.Declarations.Select(d => a.AnalyzeDeclaration(scope, d)).WhereSome().ToArray());
 
         foreach (var callable in scope.GetSymbols<Symbol.Callable>().Where(c => !c.HasBeenDefined)) {
@@ -83,7 +83,7 @@ public sealed partial class StaticAnalyzer
         case Node.Declaration.Constant constant: {
             var type = EvaluateType(scope, constant.Type);
             var init = AnalyzeInitializer(scope, constant.Value, EvaluatedType.IsAssignableTo, type);
-            if (init is Expression) {
+            if (init is Expr) {
                 _msger.Report(Message.HintUnofficialFeatureScalarInitializers(constant.Value.Location));
             }
 
@@ -210,23 +210,23 @@ public sealed partial class StaticAnalyzer
     static Symbol.Parameter DeclareParameter(ParameterFormal param)
      => new(param.Name, param.Meta.Location, param.Type, param.Mode);
 
-    Statement[] AnalyzeStatements(MutableScope scope, IEnumerable<Node.Statement> statements) => statements.Select(s => AnalyzeStatement(scope, s)).WhereSome().ToArray();
+    Statement[] AnalyzeStatements(MutableScope scope, IEnumerable<Node.Stmt> statements) => statements.Select(s => AnalyzeStatement(scope, s)).WhereSome().ToArray();
 
-    ValueOption<Statement> AnalyzeStatement(MutableScope scope, Node.Statement statement)
+    ValueOption<Statement> AnalyzeStatement(MutableScope scope, Node.Stmt statement)
     {
         SemanticMetadata meta = new(scope, statement.Location);
         switch (statement) {
-        case Node.Statement.ExpressionStatement e: {
-            var expr = EvaluateExpression(scope, e.Expression);
+        case Node.Stmt.ExprStmt e: {
+            var expr = EvaluateExpression(scope, e.Expr);
             if (!expr.Value.Type.IsConvertibleTo(VoidType.Instance)) {
-                _msger.Report(Message.HintExpressionValueUnused(e.Expression.Location));
+                _msger.Report(Message.HintExpressionValueUnused(e.Expr.Location));
             }
             return new Statement.ExpressionStatement(meta, expr);
         }
         case Node.Nop: {
             return new Nop(meta);
         }
-        case Node.Statement.Alternative s: {
+        case Node.Stmt.Alternative s: {
             return new Statement.Alternative(meta,
                 new(new(scope, s.If.Location),
                     EvaluateExpression(scope, s.If.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
@@ -240,8 +240,8 @@ public sealed partial class StaticAnalyzer
                     AnalyzeStatements(new(scope), @else.Block)
                 )));
         }
-        case Node.Statement.Assignment s: {
-            if (s.Target is Node.Expression.Lvalue.VariableReference varRef) {
+        case Node.Stmt.Assignment s: {
+            if (s.Target is Node.Expr.Lvalue.VariableReference varRef) {
                 scope.GetSymbol<Symbol.Constant>(varRef.Name)
                 .Tap(constant => _msger.Report(Message.ErrorConstantAssignment(s.Location, constant)));
             }
@@ -249,51 +249,51 @@ public sealed partial class StaticAnalyzer
             var value = EvaluateExpression(scope, s.Value, EvaluatedType.IsAssignableTo, target.Value.Type);
             return new Statement.Assignment(meta, target, value);
         }
-        case Node.Statement.Builtin.Assigner s: {
+        case Node.Stmt.Builtin.Assigner s: {
             return new Statement.Builtin.Assigner(meta,
                 EvaluateLvalue(scope, s.ArgumentNomLog, EvaluatedType.IsConvertibleTo, FileType.Instance),
                 EvaluateExpression(scope, s.ArgumentNomExt, EvaluatedType.IsConvertibleTo, StringType.Instance));
         }
-        case Node.Statement.Builtin.Ecrire s: {
+        case Node.Stmt.Builtin.Ecrire s: {
             return new Statement.Builtin.Ecrire(meta,
                 EvaluateExpression(scope, s.ArgumentNomLog, EvaluatedType.IsConvertibleTo, FileType.Instance),
                 EvaluateExpression(scope, s.ArgumentExpression));
         }
-        case Node.Statement.Builtin.EcrireEcran s: {
+        case Node.Stmt.Builtin.EcrireEcran s: {
             return new Statement.Builtin.EcrireEcran(meta,
                 s.Arguments.Select(a => EvaluateExpression(scope, a)).ToArray());
         }
-        case Node.Statement.Builtin.Fermer s: {
+        case Node.Stmt.Builtin.Fermer s: {
             return new Statement.Builtin.Fermer(meta,
                 EvaluateExpression(scope, s.ArgumentNomLog, EvaluatedType.IsConvertibleTo, FileType.Instance));
         }
-        case Node.Statement.Builtin.Lire s: {
+        case Node.Stmt.Builtin.Lire s: {
             return new Statement.Builtin.Lire(meta,
                 EvaluateExpression(scope, s.ArgumentNomLog, EvaluatedType.IsConvertibleTo, FileType.Instance),
                 EvaluateLvalue(scope, s.ArgumentVariable));
         }
-        case Node.Statement.Builtin.LireClavier s: {
+        case Node.Stmt.Builtin.LireClavier s: {
             return new Statement.Builtin.LireClavier(meta,
                 EvaluateLvalue(scope, s.ArgumentVariable));
         }
-        case Node.Statement.Builtin.OuvrirAjout s: {
+        case Node.Stmt.Builtin.OuvrirAjout s: {
             return new Statement.Builtin.OuvrirAjout(meta,
                 EvaluateExpression(scope, s.ArgumentNomLog, EvaluatedType.IsConvertibleTo, FileType.Instance));
         }
-        case Node.Statement.Builtin.OuvrirEcriture s: {
+        case Node.Stmt.Builtin.OuvrirEcriture s: {
             return new Statement.Builtin.OuvrirEcriture(meta,
                 EvaluateExpression(scope, s.ArgumentNomLog, EvaluatedType.IsConvertibleTo, FileType.Instance));
         }
-        case Node.Statement.Builtin.OuvrirLecture s: {
+        case Node.Stmt.Builtin.OuvrirLecture s: {
             return new Statement.Builtin.OuvrirLecture(meta,
                 EvaluateExpression(scope, s.ArgumentNomLog, EvaluatedType.IsConvertibleTo, FileType.Instance));
         }
-        case Node.Statement.DoWhileLoop s: {
+        case Node.Stmt.DoWhileLoop s: {
             return new Statement.DoWhileLoop(meta,
                 EvaluateExpression(scope, s.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
                 AnalyzeStatements(new(scope), s.Block));
         }
-        case Node.Statement.ForLoop s: {
+        case Node.Stmt.ForLoop s: {
             var variant = EvaluateLvalue(scope, s.Variant);
             return new Statement.ForLoop(meta,
                 variant,
@@ -302,14 +302,14 @@ public sealed partial class StaticAnalyzer
                 s.Step.Map(e => EvaluateExpression(scope, e, EvaluatedType.IsConvertibleTo, variant.Value.Type)),
                 AnalyzeStatements(new(scope), s.Block));
         }
-        case Node.Statement.LocalVariable s: {
+        case Node.Stmt.LocalVariable s: {
             var type = EvaluateType(scope, s.Declaration.Type);
             var declaration = new VariableDeclaration(new(scope, s.Declaration.Location),
                 s.Declaration.Names,
                 type);
             var initializer = s.Value.Map(i => {
                 var init = AnalyzeInitializer(scope, i, EvaluatedType.IsAssignableTo, type);
-                if (init is Expression) {
+                if (init is Expr) {
                     _msger.Report(Message.HintUnofficialFeatureScalarInitializers(init.Meta.Location));
                 }
                 return init;
@@ -322,12 +322,12 @@ public sealed partial class StaticAnalyzer
 
             return new Statement.LocalVariable(meta, declaration, initializer);
         }
-        case Node.Statement.RepeatLoop s: {
+        case Node.Stmt.RepeatLoop s: {
             return new Statement.RepeatLoop(meta,
                 EvaluateExpression(scope, s.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
                 AnalyzeStatements(new(scope), s.Block));
         }
-        case Node.Statement.Return s: {
+        case Node.Stmt.Return s: {
             return new Statement.Return(meta, _currentCallable.Match(
                 func => EvaluateTypedValue(func.ReturnType),
                 () => {
@@ -339,7 +339,7 @@ public sealed partial class StaticAnalyzer
                     }
                 }));
 
-            Option<Expression> EvaluateTypedValue(EvaluatedType expectedType) => s.Value
+            Option<Expr> EvaluateTypedValue(EvaluatedType expectedType) => s.Value
                 .Map(v => EvaluateExpression(scope, v, EvaluatedType.IsConvertibleTo, expectedType))
                 .Tap(none: () => {
                     if (!expectedType.IsConvertibleTo(VoidType.Instance)) {
@@ -347,8 +347,8 @@ public sealed partial class StaticAnalyzer
                     }
                 });
         }
-        case Node.Statement.Switch s: {
-            var expr = EvaluateExpression(scope, s.Expression);
+        case Node.Stmt.Switch s: {
+            var expr = EvaluateExpression(scope, s.Expr);
             if (expr.Value.Type.IsConvertibleTo(StringType.Instance)) {
                 _msger.Report(Message.ErrorCannotSwitchOnString(s.Location));
             }
@@ -356,14 +356,14 @@ public sealed partial class StaticAnalyzer
                 expr,
                 s.Cases.Select((@case, i) => {
                     switch (@case) {
-                    case Node.Statement.Switch.Case.OfValue c: {
+                    case Node.Stmt.Switch.Case.OfValue c: {
                         var caseExpr = EvaluateExpression(scope, c.Value, EvaluatedType.IsConvertibleTo, expr.Value.Type);
                         if (caseExpr.Value.Status is not ValueStatus.Comptime) {
                             _msger.Report(Message.ErrorComptimeExpressionExpected(c.Value.Location));
                         }
                         return (Statement.Switch.Case)new Statement.Switch.Case.OfValue(new(scope, c.Location), caseExpr, AnalyzeStatements(scope, c.Block));
                     }
-                    case Node.Statement.Switch.Case.Default d: {
+                    case Node.Stmt.Switch.Case.Default d: {
                         if (i != s.Cases.Count - 1) {
                             _msger.Report(Message.ErrorSwitchDefaultIsNotLast(d.Location));
                         }
@@ -375,7 +375,7 @@ public sealed partial class StaticAnalyzer
                     }
                 }).ToArray());
         }
-        case Node.Statement.WhileLoop s: {
+        case Node.Stmt.WhileLoop s: {
             return new Statement.WhileLoop(meta,
                 EvaluateExpression(scope, s.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
                 AnalyzeStatements(new(scope), s.Block));
@@ -395,7 +395,7 @@ public sealed partial class StaticAnalyzer
         SemanticMetadata meta = new(scope, initializer.Location);
 
         switch (initializer) {
-        case Node.Expression expr:
+        case Node.Expr expr:
             return EvaluateExpression(scope, expr, typeComparer, targetType);
         case Node.Initializer.Braced braced: {
             var (value, items) = Evaluate();
@@ -518,23 +518,23 @@ public sealed partial class StaticAnalyzer
     static Designator.Structure AnalyzeStructureDesignator(Scope scope, Node.Designator.Structure designator)
      => new(new(scope, designator.Location), designator.Component);
 
-    Expression EvaluateExpression(Scope scope, Node.Expression expr, TypeComparer typeComparer, EvaluatedType targetType)
+    Expr EvaluateExpression(Scope scope, Node.Expr expr, TypeComparer typeComparer, EvaluatedType targetType)
      => EvaluateExpression(scope, expr, v => CheckType(expr.Location, typeComparer, targetType, v));
 
-    Expression EvaluateExpression(Scope scope, Node.Expression expr, Func<Value, Value>? adjustValue = null)
+    Expr EvaluateExpression(Scope scope, Node.Expr expr, Func<Value, Value>? adjustValue = null)
     {
         adjustValue ??= v => v;
         SemanticMetadata meta = new(scope, expr.Location);
         switch (expr) {
-        case Node.Expression.Literal lit: {
+        case Node.Expr.Literal lit: {
             var value = lit.CreateValue();
-            return new Expression.Literal(meta, lit.Value, adjustValue(value));
+            return new Expr.Literal(meta, lit.Value, adjustValue(value));
         }
-        case Node.Expression.Bracketed b: {
-            var contained = EvaluateExpression(scope, b.ContainedExpression);
-            return new Expression.Bracketed(meta, contained, adjustValue(contained.Value));
+        case Node.Expr.ParenExprImpl b: {
+            var contained = EvaluateExpression(scope, b.InnerExpr);
+            return new Expr.ParenExprImpl(meta, contained, adjustValue(contained.Value));
         }
-        case Node.Expression.BinaryOperation opBin: {
+        case Node.Expr.BinaryOperation opBin: {
             var left = EvaluateExpression(scope, opBin.Left);
             var right = EvaluateExpression(scope, opBin.Right);
 
@@ -543,9 +543,9 @@ public sealed partial class StaticAnalyzer
                 _msger.Report(msg(opBin, left.Value.Type, right.Value.Type));
             }
 
-            return new Expression.BinaryOperation(meta, left, AnalyzeOperator(scope, opBin.Operator), right, adjustValue(result.Value));
+            return new Expr.BinaryOperation(meta, left, AnalyzeOperator(scope, opBin.Operator), right, adjustValue(result.Value));
         }
-        case Node.Expression.UnaryOperation opUn: {
+        case Node.Expr.UnaryOperation opUn: {
             var operand = EvaluateExpression(scope, opUn.Operand);
 
             var result = this.EvaluateOperation(scope, opUn.Operator, operand.Value);
@@ -553,9 +553,9 @@ public sealed partial class StaticAnalyzer
                 _msger.Report(msg(opUn, operand.Value.Type));
             }
 
-            return new Expression.UnaryOperation(meta, AnalyzeOperator(scope, opUn.Operator), operand, adjustValue(result.Value));
+            return new Expr.UnaryOperation(meta, AnalyzeOperator(scope, opUn.Operator), operand, adjustValue(result.Value));
         }
-        case Node.Expression.Call call: {
+        case Node.Expr.Call call: {
             var parameters = AnalyzeParameters(scope, call.Parameters);
 
             var callable = scope.GetSymbol<Symbol.Callable>(call.Callee).DropError(_msger.Report).Tap(callable => {
@@ -588,18 +588,18 @@ public sealed partial class StaticAnalyzer
                 }
             });
 
-            return new Expression.Call(meta, call.Callee, parameters,
+            return new Expr.Call(meta, call.Callee, parameters,
                 adjustValue(callable
                     .Map(f => f.ReturnType)
                     .ValueOr(UnknownType.Inferred)
                     .RuntimeValue));
         }
-        case Node.Expression.BuiltinFdf fdf: {
-            return new Expression.BuiltinFdf(meta,
+        case Node.Expr.BuiltinFdf fdf: {
+            return new Expr.BuiltinFdf(meta,
                 EvaluateExpression(scope, fdf.ArgumentNomLog, EvaluatedType.IsConvertibleTo, FileType.Instance),
                 adjustValue(BooleanType.Instance.RuntimeValue));
         }
-        case Node.Expression.Lvalue lvalue: {
+        case Node.Expr.Lvalue lvalue: {
             return EvaluateLvalue(scope, lvalue, adjustValue);
         }
         default:
@@ -607,19 +607,19 @@ public sealed partial class StaticAnalyzer
         }
     }
 
-    Expression.Lvalue EvaluateLvalue(Scope scope, Node.Expression.Lvalue expr, TypeComparer typeComparer, EvaluatedType targetType)
+    Expr.Lvalue EvaluateLvalue(Scope scope, Node.Expr.Lvalue expr, TypeComparer typeComparer, EvaluatedType targetType)
      => EvaluateLvalue(scope, expr, v => CheckType(expr.Location, typeComparer, targetType, v));
 
-    Expression.Lvalue EvaluateLvalue(Scope scope, Node.Expression.Lvalue lvalue, Func<Value, Value>? adjustValue = null)
+    Expr.Lvalue EvaluateLvalue(Scope scope, Node.Expr.Lvalue lvalue, Func<Value, Value>? adjustValue = null)
     {
         adjustValue ??= v => v;
         SemanticMetadata meta = new(scope, lvalue.Location);
         switch (lvalue) {
-        case Node.Expression.Lvalue.ArraySubscript arrSub: {
+        case Node.Expr.Lvalue.ArraySubscript arrSub: {
             var index = EvaluateExpression(scope, arrSub.Index);
 
             var array = EvaluateExpression(scope, arrSub.Array);
-            return new Expression.Lvalue.ArraySubscript(meta, array, index, adjustValue(Evaluate()));
+            return new Expr.Lvalue.ArraySubscript(meta, array, index, adjustValue(Evaluate()));
 
             Value Evaluate()
             {
@@ -649,13 +649,13 @@ public sealed partial class StaticAnalyzer
                 }
             }
         }
-        case Node.Expression.Lvalue.Bracketed b: {
+        case Node.Expr.Lvalue.ParenLValue b: {
             var contained = EvaluateLvalue(scope, b.ContainedLvalue);
-            return new Expression.Lvalue.Bracketed(meta, contained, adjustValue(contained.Value));
+            return new Expr.Lvalue.ParenLValue(meta, contained, adjustValue(contained.Value));
         }
-        case Node.Expression.Lvalue.ComponentAccess compAccess: {
+        case Node.Expr.Lvalue.ComponentAccess compAccess: {
             var @struct = EvaluateExpression(scope, compAccess.Structure);
-            return new Expression.Lvalue.ComponentAccess(meta, @struct, compAccess.ComponentName, adjustValue(Evaluate()));
+            return new Expr.Lvalue.ComponentAccess(meta, @struct, compAccess.ComponentName, adjustValue(Evaluate()));
 
             Value Evaluate()
             {
@@ -671,8 +671,8 @@ public sealed partial class StaticAnalyzer
                 return UnknownType.Inferred.InvalidValue;
             }
         }
-        case Node.Expression.Lvalue.VariableReference varRef: {
-            return new Expression.Lvalue.VariableReference(meta, varRef.Name,
+        case Node.Expr.Lvalue.VariableReference varRef: {
+            return new Expr.Lvalue.VariableReference(meta, varRef.Name,
                 adjustValue(scope.GetSymbol<Symbol.Variable>(varRef.Name)
                     .DropError(_msger.Report)
                     .Map(vp => vp is Symbol.Constant constant
@@ -777,13 +777,13 @@ public sealed partial class StaticAnalyzer
         })
         .ValueOr(UnknownType.Declared(_input, array.Location));
 
-    static ValueOption<TUnderlying, Message> GetComptimeValue<TType, TUnderlying>(TType expectedType, Expression expr)
+    static ValueOption<TUnderlying, Message> GetComptimeValue<TType, TUnderlying>(TType expectedType, Expr expr)
     where TType : EvaluatedType
      => expr is { Value: Value<TType, TUnderlying> v }
         ? v.Status.ComptimeValue.OrWithError(Message.ErrorComptimeExpressionExpected(expr.Meta.Location))
         : Message.ErrorExpressionHasWrongType(expr.Meta.Location, expectedType, expr.Value.Type);
 
-    Option<ComptimeExpression<TUnderlying>, Message> GetComptimeExpression<TType, TUnderlying>(TType type, Scope scope, Node.Expression expr)
+    Option<ComptimeExpression<TUnderlying>, Message> GetComptimeExpression<TType, TUnderlying>(TType type, Scope scope, Node.Expr expr)
     where TType : EvaluatedType
     {
         var sexpr = EvaluateExpression(scope, expr);

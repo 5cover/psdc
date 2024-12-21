@@ -39,45 +39,45 @@ readonly record struct OperatorInfo
 
 abstract class OperatorTable
 {
-    public virtual int GetPrecedence(Expression expr)
+    public virtual int GetPrecedence(Expr expr)
      => expr switch {
-         Expression.Call or Expression.BuiltinFdf => FunctionCall.Precedence,
-         Expression.BinaryOperation opBin => Get(opBin).Precedence,
-         Expression.UnaryOperation opUn => Get(opUn).Precedence,
-         Expression.Lvalue.ArraySubscript => ArraySubscript.Precedence,
-         Expression.Lvalue.ComponentAccess => ComponentAccess.Precedence,
-         Expression.Lvalue.VariableReference or Expression.Literal or BracketedExpression => int.MinValue,
+         Expr.Call or Expr.BuiltinFdf => FunctionCall.Precedence,
+         Expr.BinaryOperation opBin => Get(opBin).Precedence,
+         Expr.UnaryOperation opUn => Get(opUn).Precedence,
+         Expr.Lvalue.ArraySubscript => ArraySubscript.Precedence,
+         Expr.Lvalue.ComponentAccess => ComponentAccess.Precedence,
+         Expr.Lvalue.VariableReference or Expr.Literal or ParenExpr => int.MinValue,
          _ => throw expr.ToUnmatchedException(),
      };
 
     /// <summary>
-    /// Should a binary operation should be bracketed.
+    /// Should a binary operation should be parenthesized.
     /// </summary>
     /// <param name="opBin">A binary operation.</param>
-    /// <returns>2-uple: the left operand should be bracketed, the right operand should be bracketed.</returns>
-    public (bool bracketLeft, bool bracketRight) ShouldBracketBinary(Expression.BinaryOperation opBin)
+    /// <returns>2-uple: the left operand should be parenthesized, the right operand should be parenthesized.</returns>
+    public (bool bracketLeft, bool bracketRight) ShouldBracketBinary(Expr.BinaryOperation opBin)
          => ShouldBracketBinary(
             GetPrecedence(opBin.Left),
             GetPrecedence(opBin.Right),
             Get(opBin.Operator, opBin.Left.Value.Type, opBin.Right.Value.Type));
 
-    public bool ShouldBracketUnary(Expression.UnaryOperation opUn)
+    public bool ShouldBracketUnary(Expr.UnaryOperation opUn)
      => ShouldBracketOperand(Get(opUn.Operator, opUn.Operand.Value.Type), opUn.Operand);
 
     /// <summary>
-    /// Should an component access operation's structure operand be bracketed?
+    /// Should an component access operation's structure operand be parenthesized?
     /// </summary>
     /// <param name="compAccess">A component access expression.</param>
-    /// <returns><paramref name="compAccess"/>'s structure operand should be bracketed.</returns>
-    public bool ShouldBracket(Expression.Lvalue.ComponentAccess compAccess)
+    /// <returns><paramref name="compAccess"/>'s structure operand should be parenthesized.</returns>
+    public bool ShouldBracket(Expr.Lvalue.ComponentAccess compAccess)
      => ShouldBracketOperand(ComponentAccess, compAccess.Structure);
 
     /// <summary>
-    /// Should an array subscript operation's array operand be bracketed?
+    /// Should an array subscript operation's array operand be parenthesized?
     /// </summary>
     /// <param name="arrSub">An array subscript expression.</param>
-    /// <returns><paramref name="arrSub"/>'s array operand should be bracketed.</returns>
-    public bool ShouldBracket(Expression.Lvalue.ArraySubscript arrSub)
+    /// <returns><paramref name="arrSub"/>'s array operand should be parenthesized.</returns>
+    public bool ShouldBracket(Expr.Lvalue.ArraySubscript arrSub)
      => ShouldBracketOperand(ArraySubscript, arrSub.Array);
 
     static (bool bracketLeft, bool bracketRight) ShouldBracketBinary(int precedenceLeft, int precedenceRight, OperatorInfo op)
@@ -87,15 +87,15 @@ abstract class OperatorTable
                    || precedenceRight == op.Precedence && op.Associativity == LeftToRight);
 
     /// <summary>
-    /// Should an operand expression be bracketed?
+    /// Should an operand expression be parenthesized?
     /// </summary>
     /// <param name="operand">An operand of an <paramref name="op"/> operation.</param>
     /// <param name="op">An operator that has <paramref name="operand"/> as one of its operands.</param>
-    /// <returns><paramref name="operand"/> should be bracketed when used as an operand of an <paramref name="op"/> operation.</returns>
-    public bool ShouldBracketOperand(OperatorInfo op, Expression operand) => GetPrecedence(operand) > op.Precedence;
+    /// <returns><paramref name="operand"/> should be parenthesized when used as an operand of an <paramref name="op"/> operation.</returns>
+    public bool ShouldBracketOperand(OperatorInfo op, Expr operand) => GetPrecedence(operand) > op.Precedence;
 
-    public OperatorInfo Get(Expression.BinaryOperation opBin) => Get(opBin.Operator, opBin.Left.Value.Type, opBin.Right.Value.Type);
-    public OperatorInfo Get(Expression.UnaryOperation opUn) => Get(opUn.Operator, opUn.Operand.Value.Type);
+    public OperatorInfo Get(Expr.BinaryOperation opBin) => Get(opBin.Operator, opBin.Left.Value.Type, opBin.Right.Value.Type);
+    public OperatorInfo Get(Expr.UnaryOperation opUn) => Get(opUn.Operator, opUn.Operand.Value.Type);
     protected abstract OperatorInfo Get(BinaryOperator op, EvaluatedType leftType, EvaluatedType rightType);
     protected abstract OperatorInfo Get(UnaryOperator op, EvaluatedType operandType);
 

@@ -7,13 +7,13 @@ namespace Scover.Psdc.CodeGeneration.C;
 
 partial class CodeGenerator
 {
-    (string format, IReadOnlyList<Expression> arguments) BuildFormatString(IEnumerable<Expression> parts)
+    (string format, IReadOnlyList<Expr> arguments) BuildFormatString(IEnumerable<Expr> parts)
     {
-        List<Expression> arguments = [];
+        List<Expr> arguments = [];
         StringBuilder format = new();
 
         foreach (var part in parts) {
-            if (part is Expression.Literal l) {
+            if (part is Expr.Literal l) {
                 format.Append(new StringBuilder(l.UnderlyingValue.ToStringFmt(Format.Code))
                     .Replace("%", "%%") // escape C format specifiers
                     .Replace(@"\", @"\\")); // escape C escape sequences

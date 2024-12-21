@@ -4,11 +4,11 @@ namespace Scover.Psdc.Pseudocode;
 
 static class ComptimeExpression
 {
-    public static ComptimeExpression<TUnderlying> Create<TUnderlying>(Expression expression, TUnderlying value)
+    public static ComptimeExpression<TUnderlying> Create<TUnderlying>(Expr expression, TUnderlying value)
      => new(expression, value);
 }
 
-readonly record struct ComptimeExpression<TUnderlying>(Expression Expression, TUnderlying Value)
+readonly record struct ComptimeExpression<TUnderlying>(Expr Expression, TUnderlying Value)
 {
     public override string? ToString() => Value?.ToString();
 }

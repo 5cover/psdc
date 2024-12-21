@@ -9,8 +9,8 @@ static class OperationResult
     public static OperationResult<UnaryOperationMessage> OkUnary(Value value, params UnaryOperationMessage[] messages) => new(value, messages);
 }
 
-delegate Message UnaryOperationMessage(Expression.UnaryOperation opUn, EvaluatedType operandType);
-delegate Message BinaryOperationMessage(Expression.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType);
+delegate Message UnaryOperationMessage(Expr.UnaryOperation opUn, EvaluatedType operandType);
+delegate Message BinaryOperationMessage(Expr.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType);
 
 readonly struct OperationResult<TMessage>
 {

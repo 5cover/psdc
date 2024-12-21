@@ -11,12 +11,12 @@ public interface SemanticNode
 {
     SemanticMetadata Meta { get; }
 
-    internal interface BracketedExpression : Expression
+    internal interface ParenExpr : Expr
     {
-        public Expression ContainedExpression { get; }
+        public Expr ContainedExpression { get; }
     }
 
-    public sealed record Program(SemanticMetadata Meta,
+    public sealed record Algorithm(SemanticMetadata Meta,
         Identifier Title,
         IReadOnlyList<Declaration> Declarations)
     : SemanticNode;
@@ -51,7 +51,7 @@ public interface SemanticNode
     internal interface Statement : SemanticNode
     {
         internal sealed record ExpressionStatement(SemanticMetadata Meta,
-            Expression Expression)
+            Expr Expression)
         : Statement;
 
         internal sealed record Alternative(SemanticMetadata Meta,
@@ -61,12 +61,12 @@ public interface SemanticNode
         : Statement
         {
             internal sealed record IfClause(SemanticMetadata Meta,
-                Expression Condition,
+                Expr Condition,
                 SemanticBlock Block)
             : SemanticNode;
 
             internal sealed record ElseIfClause(SemanticMetadata Meta,
-                Expression Condition,
+                Expr Condition,
                 SemanticBlock Block)
             : SemanticNode;
 
@@ -76,7 +76,7 @@ public interface SemanticNode
         }
 
         internal sealed record Switch(SemanticMetadata Meta,
-            Expression Expression,
+            Expr Expression,
             IReadOnlyList<Switch.Case> Cases)
         : Statement
         {
@@ -85,7 +85,7 @@ public interface SemanticNode
                 SemanticBlock Block { get; }
 
                 internal sealed record OfValue(SemanticMetadata Meta,
-                Expression Value,
+                Expr Value,
                 SemanticBlock Block)
                 : Case;
 
@@ -96,72 +96,72 @@ public interface SemanticNode
         }
 
         internal sealed record Assignment(SemanticMetadata Meta,
-            Expression.Lvalue Target,
-            Expression Value)
+            Expr.Lvalue Target,
+            Expr Value)
         : Statement;
 
         internal sealed record DoWhileLoop(SemanticMetadata Meta,
-            Expression Condition,
+            Expr Condition,
             SemanticBlock Block)
         : Statement;
 
         internal interface Builtin : Statement
         {
             internal sealed record Ecrire(SemanticMetadata Meta,
-                Expression ArgumentNomLog,
-                Expression ArgumentExpression)
+                Expr ArgumentNomLog,
+                Expr ArgumentExpression)
             : Builtin;
 
             internal sealed record Fermer(SemanticMetadata Meta,
-                Expression ArgumentNomLog)
+                Expr ArgumentNomLog)
             : Builtin;
 
             internal sealed record Lire(SemanticMetadata Meta,
-                Expression ArgumentNomLog,
-                Expression.Lvalue ArgumentVariable)
+                Expr ArgumentNomLog,
+                Expr.Lvalue ArgumentVariable)
             : Builtin;
 
             internal sealed record OuvrirAjout(SemanticMetadata Meta,
-                Expression ArgumentNomLog)
+                Expr ArgumentNomLog)
             : Builtin;
 
             internal sealed record OuvrirEcriture(SemanticMetadata Meta,
-                Expression ArgumentNomLog)
+                Expr ArgumentNomLog)
             : Builtin;
 
             internal sealed record OuvrirLecture(SemanticMetadata Meta,
-                Expression ArgumentNomLog)
+                Expr ArgumentNomLog)
             : Builtin;
 
             internal sealed record Assigner(SemanticMetadata Meta,
-                Expression.Lvalue ArgumentNomLog,
-                Expression ArgumentNomExt)
+                Expr.Lvalue ArgumentNomLog,
+                Expr ArgumentNomExt)
             : Builtin;
 
             internal sealed record EcrireEcran(SemanticMetadata Meta,
-                IReadOnlyList<Expression> Arguments)
+                IReadOnlyList<Expr> Arguments)
             : Builtin;
 
             internal sealed record LireClavier(SemanticMetadata Meta,
-                Expression.Lvalue ArgumentVariable)
+                Expr.Lvalue ArgumentVariable)
             : Builtin;
         }
 
         internal sealed record ForLoop(SemanticMetadata Meta,
-            Expression.Lvalue Variant,
-            Expression Start,
-            Expression End,
-            Option<Expression> Step,
+            Expr.Lvalue Variant,
+            Expr Start,
+            Expr End,
+            Option<Expr> Step,
             SemanticBlock Block)
         : Statement;
 
         internal sealed record RepeatLoop(SemanticMetadata Meta,
-            Expression Condition,
+            Expr Condition,
             SemanticBlock Block)
         : Statement;
 
         internal sealed record Return(SemanticMetadata Meta,
-            Option<Expression> Value)
+            Option<Expr> Value)
         : Statement;
 
         internal sealed record LocalVariable(SemanticMetadata Meta,
@@ -170,7 +170,7 @@ public interface SemanticNode
         : Statement;
 
         internal sealed record WhileLoop(SemanticMetadata Meta,
-            Expression Condition,
+            Expr Condition,
             SemanticBlock Block) : Statement;
     }
 
@@ -189,27 +189,27 @@ public interface SemanticNode
         }
     }
 
-    internal interface Expression : Initializer
+    internal interface Expr : Initializer
     {
-        internal interface Lvalue : Expression
+        internal interface Lvalue : Expr
         {
             internal sealed record ComponentAccess(SemanticMetadata Meta,
-                Expression Structure,
+                Expr Structure,
                 Identifier ComponentName,
                 Value Value)
             : Lvalue;
 
-            internal new sealed record Bracketed(SemanticMetadata Meta,
+            internal sealed record ParenLValue(SemanticMetadata Meta,
                 Lvalue ContainedLValue,
                 Value Value)
-            : Lvalue, BracketedExpression
+            : Lvalue, ParenExpr
             {
-                Expression BracketedExpression.ContainedExpression => ContainedLValue;
+                Expr ParenExpr.ContainedExpression => ContainedLValue;
             }
 
             internal sealed record ArraySubscript(SemanticMetadata Meta,
-                Expression Array,
-                Expression Index,
+                Expr Array,
+                Expr Index,
                 Value Value)
             : Lvalue;
 
@@ -221,37 +221,37 @@ public interface SemanticNode
 
         internal sealed record UnaryOperation(SemanticMetadata Meta,
             UnaryOperator Operator,
-            Expression Operand,
+            Expr Operand,
             Value Value)
-        : Expression;
+        : Expr;
 
         internal sealed record BinaryOperation(SemanticMetadata Meta,
-            Expression Left,
+            Expr Left,
             BinaryOperator Operator,
-            Expression Right,
+            Expr Right,
             Value Value)
-        : Expression;
+        : Expr;
 
         internal sealed record BuiltinFdf(SemanticMetadata Meta,
-            Expression ArgumentNomLog,
+            Expr ArgumentNomLog,
             Value Value)
-        : Expression;
+        : Expr;
 
         internal sealed record Call(SemanticMetadata Meta,
             Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters,
             Value Value)
-        : Expression;
+        : Expr;
 
-        internal sealed record Bracketed(SemanticMetadata Meta,
-            Expression ContainedExpression,
+        internal sealed record ParenExprImpl(SemanticMetadata Meta,
+            Expr ContainedExpression,
             Value Value)
-        : Expression, BracketedExpression;
+        : Expr, ParenExpr;
 
         internal sealed record Literal(SemanticMetadata Meta,
             object UnderlyingValue,
             Value Value)
-        : Expression;
+        : Expr;
     }
 
     internal interface Designator : SemanticNode
@@ -267,7 +267,7 @@ public interface SemanticNode
 
     internal sealed record ParameterActual(SemanticMetadata Meta,
         ParameterMode Mode,
-        Expression Value)
+        Expr Value)
     : SemanticNode;
 
     internal sealed record ParameterFormal(SemanticMetadata Meta,

@@ -1,4 +1,4 @@
-global using Block = System.Collections.Generic.IReadOnlyList<Scover.Psdc.Parsing.Node.Statement>;
+global using Block = System.Collections.Generic.IReadOnlyList<Scover.Psdc.Parsing.Node.Stmt>;
 using Scover.Psdc.Pseudocode;
 
 namespace Scover.Psdc.Parsing;
@@ -7,17 +7,17 @@ public interface Node : EquatableSemantics<Node>
 {
     Range Location { get; }
 
-    internal interface BracketedExpression : Expression
+    internal interface ParenExpr : Expr
     {
-        public Expression ContainedExpression { get; }
+        public Expr InnerExpr { get; }
     }
 
-    public interface CompilerDirective : Declaration, Statement, Component, Initializer.Braced.Item
+    public interface CompilerDirective : Declaration, Stmt, Component, Initializer.Braced.Item
     {
-        internal sealed record EvalExpr(Range Location, Expression Expression) : CompilerDirective
+        internal sealed record EvalExpr(Range Location, Expr Expr) : CompilerDirective
         {
             public bool SemanticsEqual(Node other) => other is EvalExpr o
-                && o.Expression.SemanticsEqual(Expression);
+                && o.Expr.SemanticsEqual(Expr);
         }
 
         internal sealed record EvalType(Range Location, Type Type) : CompilerDirective
@@ -26,20 +26,20 @@ public interface Node : EquatableSemantics<Node>
                 && o.Type.SemanticsEqual(Type);
         }
 
-        internal sealed record Assert(Range Location, Expression Expression, Option<Expression> Message) : CompilerDirective
+        internal sealed record Assert(Range Location, Expr Expr, Option<Expr> Message) : CompilerDirective
         {
             public bool SemanticsEqual(Node other) => other is Assert o
-                && o.Expression.SemanticsEqual(Expression)
+                && o.Expr.SemanticsEqual(Expr)
                 && o.Message.OptionSemanticsEqual(Message);
         }
     }
 
-    public sealed record Program(Range Location,
+    public sealed record Algorithm(Range Location,
         IReadOnlyList<CompilerDirective> LeadingDirectives,
         Identifier Title,
         IReadOnlyList<Declaration> Declarations) : Node
     {
-        public bool SemanticsEqual(Node other) => other is Program o
+        public bool SemanticsEqual(Node other) => other is Algorithm o
          && o.LeadingDirectives.AllSemanticsEqual(LeadingDirectives)
          && o.Title.SemanticsEqual(Title)
          && o.Declarations.AllSemanticsEqual(Declarations);
@@ -114,19 +114,19 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    public interface Statement : Node
+    public interface Stmt : Node
     {
-        internal sealed record ExpressionStatement(Range Location,
-            Expression Expression) : Statement
+        internal sealed record ExprStmt(Range Location,
+            Expr Expr) : Stmt
         {
-            public bool SemanticsEqual(Node other) => other is ExpressionStatement o
-             && o.Expression.SemanticsEqual(Expression);
+            public bool SemanticsEqual(Node other) => other is ExprStmt o
+             && o.Expr.SemanticsEqual(Expr);
         }
         internal sealed record Alternative(Range Location,
             Alternative.IfClause If,
             IReadOnlyList<Alternative.ElseIfClause> ElseIfs,
             Option<Alternative.ElseClause> Else)
-        : Statement
+        : Stmt
         {
 
             public bool SemanticsEqual(Node other) => other is Alternative o
@@ -135,7 +135,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Else.OptionSemanticsEqual(Else);
 
             internal sealed record IfClause(Range Location,
-                Expression Condition,
+                Expr Condition,
                 Block Block)
             : Node
             {
@@ -145,7 +145,7 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record ElseIfClause(Range Location,
-                Expression Condition,
+                Expr Condition,
                 Block Block)
             : Node
             {
@@ -164,19 +164,19 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record Switch(Range Location,
-            Expression Expression,
+            Expr Expr,
             IReadOnlyList<Switch.Case> Cases)
-        : Statement
+        : Stmt
         {
             public bool SemanticsEqual(Node other) => other is Switch o
-                 && o.Expression.SemanticsEqual(Expression)
+                 && o.Expr.SemanticsEqual(Expr)
                  && o.Cases.AllSemanticsEqual(Cases);
 
             internal interface Case : Node
             {
                 public Block Block { get; }
                 internal sealed record OfValue(Range Location,
-                    Expression Value,
+                    Expr Value,
                     Block Block)
                 : Case
                 {
@@ -196,9 +196,9 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record Assignment(Range Location,
-            Expression.Lvalue Target,
-            Expression Value)
-        : Statement
+            Expr.Lvalue Target,
+            Expr Value)
+        : Stmt
         {
             public bool SemanticsEqual(Node other) => other is Assignment o
              && o.Target.SemanticsEqual(Target)
@@ -206,20 +206,20 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record DoWhileLoop(Range Location,
-            Expression Condition,
+            Expr Condition,
             Block Block)
-        : Node, Statement
+        : Node, Stmt
         {
             public bool SemanticsEqual(Node other) => other is DoWhileLoop o
              && o.Condition.SemanticsEqual(Condition)
                 && o.Block.AllSemanticsEqual(Block);
         }
 
-        internal interface Builtin : Statement
+        internal interface Builtin : Stmt
         {
             internal sealed record Ecrire(Range Location,
-                Expression ArgumentNomLog,
-                Expression ArgumentExpression)
+                Expr ArgumentNomLog,
+                Expr ArgumentExpression)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is Ecrire o
@@ -228,7 +228,7 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record Fermer(Range Location,
-                Expression ArgumentNomLog)
+                Expr ArgumentNomLog)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is Fermer o
@@ -236,8 +236,8 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record Lire(Range Location,
-                Expression ArgumentNomLog,
-                Expression.Lvalue ArgumentVariable)
+                Expr ArgumentNomLog,
+                Expr.Lvalue ArgumentVariable)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is Lire o
@@ -246,7 +246,7 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record OuvrirAjout(Range Location,
-                Expression ArgumentNomLog)
+                Expr ArgumentNomLog)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is OuvrirAjout o
@@ -254,7 +254,7 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record OuvrirEcriture(Range Location,
-                Expression ArgumentNomLog)
+                Expr ArgumentNomLog)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is OuvrirEcriture o
@@ -262,7 +262,7 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record OuvrirLecture(Range Location,
-                Expression ArgumentNomLog)
+                Expr ArgumentNomLog)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is OuvrirLecture o
@@ -270,8 +270,8 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record Assigner(Range Location,
-                Expression.Lvalue ArgumentNomLog,
-                Expression ArgumentNomExt)
+                Expr.Lvalue ArgumentNomLog,
+                Expr ArgumentNomExt)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is Assigner o
@@ -280,7 +280,7 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record EcrireEcran(Range Location,
-                IReadOnlyList<Expression> Arguments)
+                IReadOnlyList<Expr> Arguments)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is EcrireEcran o
@@ -288,7 +288,7 @@ public interface Node : EquatableSemantics<Node>
             }
 
             internal sealed record LireClavier(Range Location,
-                Expression.Lvalue ArgumentVariable)
+                Expr.Lvalue ArgumentVariable)
             : Builtin
             {
                 public bool SemanticsEqual(Node other) => other is LireClavier o
@@ -297,12 +297,12 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record ForLoop(Range Location,
-            Expression.Lvalue Variant,
-            Expression Start,
-            Expression End,
-            Option<Expression> Step,
+            Expr.Lvalue Variant,
+            Expr Start,
+            Expr End,
+            Option<Expr> Step,
             Block Block)
-        : Statement
+        : Stmt
         {
             public bool SemanticsEqual(Node other) => other is ForLoop o
              && o.Variant.SemanticsEqual(Variant)
@@ -313,9 +313,9 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record RepeatLoop(Range Location,
-            Expression Condition,
+            Expr Condition,
             Block Block)
-        : Node, Statement
+        : Node, Stmt
         {
             public bool SemanticsEqual(Node other) => other is RepeatLoop o
              && o.Condition.SemanticsEqual(Condition)
@@ -323,8 +323,8 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record Return(Range Location,
-            Option<Expression> Value)
-        : Statement
+            Option<Expr> Value)
+        : Stmt
         {
             public bool SemanticsEqual(Node other) => other is Return o
              && o.Value.OptionSemanticsEqual(Value);
@@ -333,7 +333,7 @@ public interface Node : EquatableSemantics<Node>
         internal sealed record LocalVariable(Range Location,
             VariableDeclaration Declaration,
             Option<Initializer> Value)
-        : Statement
+        : Stmt
         {
             public bool SemanticsEqual(Node other) => other is LocalVariable o
              && o.Declaration.SemanticsEqual(Declaration)
@@ -341,9 +341,9 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record WhileLoop(Range Location,
-            Expression Condition,
+            Expr Condition,
             Block Block)
-        : Node, Statement
+        : Node, Stmt
         {
             public bool SemanticsEqual(Node other) => other is WhileLoop o
              && o.Condition.SemanticsEqual(Condition)
@@ -374,12 +374,12 @@ public interface Node : EquatableSemantics<Node>
         }
     }
 
-    internal interface Expression : Initializer
+    internal interface Expr : Initializer
     {
-        internal interface Lvalue : Expression
+        internal interface Lvalue : Expr
         {
             internal sealed record ComponentAccess(Range Location,
-                Expression Structure,
+                Expr Structure,
                 Identifier ComponentName)
             : Lvalue
             {
@@ -388,25 +388,25 @@ public interface Node : EquatableSemantics<Node>
                  && o.ComponentName.SemanticsEqual(ComponentName);
             }
 
-            internal new sealed record Bracketed
-            : Lvalue, BracketedExpression
+            internal sealed record ParenLValue
+            : Lvalue, ParenExpr
             {
-                public Bracketed(Range location,
+                public ParenLValue(Range location,
                 Lvalue lvalue) => (Location, ContainedLvalue) = (location,
-                    lvalue is BracketedExpression b
-                    && b.ContainedExpression is Lvalue l
+                    lvalue is ParenExpr b
+                    && b.InnerExpr is Lvalue l
                     ? l : lvalue);
                 public Range Location { get; }
                 public Lvalue ContainedLvalue { get; }
-                Expression BracketedExpression.ContainedExpression => ContainedLvalue;
+                Expr ParenExpr.InnerExpr => ContainedLvalue;
 
-                public bool SemanticsEqual(Node other) => other is Bracketed o
+                public bool SemanticsEqual(Node other) => other is ParenLValue o
                  && o.ContainedLvalue.SemanticsEqual(ContainedLvalue);
             }
 
             internal sealed record ArraySubscript(Range Location,
-                Expression Array,
-                Expression Index)
+                Expr Array,
+                Expr Index)
             : Lvalue
             {
                 public bool SemanticsEqual(Node other) => other is ArraySubscript o
@@ -425,8 +425,8 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record UnaryOperation(Range Location,
             UnaryOperator Operator,
-            Expression Operand)
-        : Expression
+            Expr Operand)
+        : Expr
         {
             public bool SemanticsEqual(Node other) => other is UnaryOperation o
              && o.Operator.Equals(Operator)
@@ -434,10 +434,10 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record BinaryOperation(Range Location,
-            Expression Left,
+            Expr Left,
             BinaryOperator Operator,
-            Expression Right)
-        : Expression
+            Expr Right)
+        : Expr
         {
             public bool SemanticsEqual(Node other) => other is BinaryOperation o
              && o.Left.SemanticsEqual(Left)
@@ -446,8 +446,8 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record BuiltinFdf(Range Location,
-            Expression ArgumentNomLog)
-        : Expression
+            Expr ArgumentNomLog)
+        : Expr
         {
             public bool SemanticsEqual(Node other) => other is BuiltinFdf o
              && o.ArgumentNomLog.SemanticsEqual(ArgumentNomLog);
@@ -456,24 +456,24 @@ public interface Node : EquatableSemantics<Node>
         internal sealed record Call(Range Location,
             Identifier Callee,
             IReadOnlyList<ParameterActual> Parameters)
-        : Expression
+        : Expr
         {
             public bool SemanticsEqual(Node other) => other is Call o
              && o.Callee.SemanticsEqual(Callee)
              && o.Parameters.AllSemanticsEqual(Parameters);
         }
 
-        internal sealed record Bracketed
-        : BracketedExpression
+        internal sealed record ParenExprImpl
+        : ParenExpr
         {
-            public Bracketed(Range location,
-            Expression expr) => (Location, ContainedExpression) = (location,
-                expr is BracketedExpression b ? b.ContainedExpression : expr);
+            public ParenExprImpl(Range location,
+            Expr expr) => (Location, InnerExpr) = (location,
+                expr is ParenExpr b ? b.InnerExpr : expr);
             public Range Location { get; }
-            public Expression ContainedExpression { get; }
+            public Expr InnerExpr { get; }
 
-            public bool SemanticsEqual(Node other) => other is Bracketed o
-             && o.ContainedExpression.SemanticsEqual(ContainedExpression);
+            public bool SemanticsEqual(Node other) => other is ParenExprImpl o
+             && o.InnerExpr.SemanticsEqual(InnerExpr);
         }
 
         internal abstract record Literal<TType, TValue, TUnderlying>(Range Location,
@@ -493,7 +493,7 @@ public interface Node : EquatableSemantics<Node>
              && o.Value.Equals(Value);
         }
 
-        internal interface Literal : Expression
+        internal interface Literal : Expr
         {
             object Value { get; }
             EvaluatedType ValueType { get; }
@@ -545,7 +545,7 @@ public interface Node : EquatableSemantics<Node>
 
         internal sealed record Array(Range Location,
             Type Type,
-            IReadOnlyList<Expression> Dimensions)
+            IReadOnlyList<Expr> Dimensions)
         : Type
         {
             public bool SemanticsEqual(Node other) => other is Array o
@@ -584,7 +584,7 @@ public interface Node : EquatableSemantics<Node>
         }
 
         internal sealed record LengthedString(Range Location,
-            Expression Length)
+            Expr Length)
         : Type
         {
             public bool SemanticsEqual(Node other) => other is LengthedString o
@@ -603,7 +603,7 @@ public interface Node : EquatableSemantics<Node>
     internal interface Designator : Node
     {
         internal sealed record Array(Range Location,
-            Expression Index)
+            Expr Index)
         : Designator
         {
             public bool SemanticsEqual(Node other) => other is Array o
@@ -621,14 +621,14 @@ public interface Node : EquatableSemantics<Node>
 
     public interface Component : Node;
 
-    internal sealed record Nop(Range Location) : Statement, Declaration
+    internal sealed record Nop(Range Location) : Stmt, Declaration
     {
         public bool SemanticsEqual(Node other) => other is Nop;
     }
 
     internal sealed record ParameterActual(Range Location,
         ParameterMode Mode,
-        Expression Value)
+        Expr Value)
     : Node
     {
         public bool SemanticsEqual(Node other) => other is ParameterActual o

@@ -10,8 +10,8 @@ static class C
      => mode != ParameterMode.In
      && type is not ArrayType;
 
-    public static bool IsPointerParameter(Expression expr)
-     => expr is Expression.Lvalue.VariableReference varRef
+    public static bool IsPointerParameter(Expr expr)
+     => expr is Expr.Lvalue.VariableReference varRef
      && expr.Meta.Scope.TryGetSymbol<Symbol.Parameter>(varRef.Name, out var param)
      && RequiresPointer(param.Mode, param.Type);
 }

@@ -9,7 +9,7 @@ namespace Scover.Psdc.Benchmark;
 public class StaticAnalysisBenchmark
 {
     static readonly Parameters p = Program.Parameters;
-    Node.Program _ast = null!;
+    Node.Algorithm _ast = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -20,6 +20,6 @@ public class StaticAnalysisBenchmark
     }
 
     [Benchmark]
-    public SemanticNode.Program Run()
+    public SemanticNode.Algorithm Run()
      => StaticAnalyzer.Analyze(p.Msger, p.Input, _ast);
 }

@@ -39,7 +39,7 @@ sealed class OperatorTable : CodeGeneration.OperatorTable
     public override OperatorInfo UnaryMinus { get; } = new(RightToLeft, 2, 1, Prefix('-'));
     public override OperatorInfo UnaryPlus { get; } = new(RightToLeft, 2, 1, Prefix('+'));
 
-    public override int GetPrecedence(Expression expr)
+    public override int GetPrecedence(Expr expr)
      => C.IsPointerParameter(expr)
         ? Dereference.Precedence
         : base.GetPrecedence(expr);
