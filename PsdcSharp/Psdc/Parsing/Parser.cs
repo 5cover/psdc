@@ -68,6 +68,7 @@ public sealed partial class Parser
             [Keyword.True] = t => ParseToken(t, Keyword.True, t => new Expr.Literal.True(t)),
             [Valued.LiteralCharacter] = t => ParseTokenValue(t, Valued.LiteralCharacter, (t, val) => {
                 var unescaped = Strings.Unescape(val, Format.Code).ToString();
+                // The character literal token rule must not accept empty char literals for this to work.
                 if (unescaped.Length != 1) {
                     _msger.Report(Message.ErrorCharacterLiteralContainsMoreThanOneCharacter(t, unescaped[0]));
                 }
