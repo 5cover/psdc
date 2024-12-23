@@ -1,4 +1,4 @@
-global using Block = System.Collections.Generic.IReadOnlyList<Scover.Psdc.Parsing.Node.Stmt>;
+using System.Diagnostics;
 using Scover.Psdc.Pseudocode;
 
 namespace Scover.Psdc.Parsing;
@@ -13,26 +13,26 @@ public interface Node
     }
 
     public sealed record Algorithm(Range Location,
-            IReadOnlyList<CompilerDirective> LeadingDirectives,
-            Identifier Title,
-            IReadOnlyList<Declaration> Declarations) : Node;
+        IReadOnlyList<CompilerDirective> LeadingDirectives,
+        Ident Title,
+        IReadOnlyList<Declaration> Declarations) : Node;
 
     public interface Declaration : Node
     {
-        internal sealed record MainProgram(Range Location, Block Block) : Declaration;
-        internal sealed record TypeAlias(Range Location, Identifier Name, Type Type) : Declaration;
-        internal sealed record Constant(Range Location, Type Type, Identifier Name, Initializer Value) : Declaration;
+        internal sealed record MainProgram(Range Location, IReadOnlyList<Stmt> Body) : Declaration;
+        internal sealed record TypeAlias(Range Location, Ident Name, Type Type) : Declaration;
+        internal sealed record Constant(Range Location, Type Type, Ident Name, Initializer Value) : Declaration;
         internal sealed record Procedure(Range Location, ProcedureSignature Signature) : Declaration;
-        internal sealed record ProcedureDefinition(Range Location, ProcedureSignature Signature, Block Block) : Declaration;
+        internal sealed record ProcedureDefinition(Range Location, ProcedureSignature Signature, IReadOnlyList<Stmt> Body) : Declaration;
         internal sealed record Function(Range Location, FunctionSignature Signature) : Declaration;
-        internal sealed record FunctionDefinition(Range Location, FunctionSignature Signature, Block Block) : Declaration;
+        internal sealed record FunctionDefinition(Range Location, FunctionSignature Signature, IReadOnlyList<Stmt> Body) : Declaration;
     }
 
     public interface Stmt : Node
     {
         internal sealed record ExprStmt(Range Location, Expr Expr) : Stmt;
         internal sealed record Assignment(Range Location, Expr.Lvalue Target, Expr Value) : Stmt;
-        internal sealed record DoWhileLoop(Range Location, Expr Condition, Block Block) : Node, Stmt;
+        internal sealed record DoWhileLoop(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Node, Stmt;
 
         internal sealed record Alternative(Range Location,
             Alternative.IfClause If,
@@ -40,18 +40,18 @@ public interface Node
             Option<Alternative.ElseClause> Else)
         : Stmt
         {
-            internal sealed record IfClause(Range Location, Expr Condition, Block Block) : Node;
-            internal sealed record ElseIfClause(Range Location, Expr Condition, Block Block) : Node;
-            internal sealed record ElseClause(Range Location, Block Block) : Node;
+            internal sealed record IfClause(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Node;
+            internal sealed record ElseIfClause(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Node;
+            internal sealed record ElseClause(Range Location, IReadOnlyList<Stmt> Body) : Node;
         }
 
         internal sealed record Switch(Range Location, Expr Expr, IReadOnlyList<Switch.Case> Cases) : Stmt
         {
             internal interface Case : Node
             {
-                public Block Block { get; }
-                internal sealed record OfValue(Range Location, Expr Value, Block Block) : Case;
-                internal sealed record Default(Range Location, Block Block) : Case;
+                public IReadOnlyList<Stmt> Body { get; }
+                internal sealed record OfValue(Range Location, Expr Value, IReadOnlyList<Stmt> Body) : Case;
+                internal sealed record Default(Range Location, IReadOnlyList<Stmt> Body) : Case;
             }
         }
 
@@ -73,12 +73,12 @@ public interface Node
             Expr Start,
             Expr End,
             Option<Expr> Step,
-            Block Block)
+            IReadOnlyList<Stmt> Body)
         : Stmt;
 
         internal sealed record RepeatLoop(Range Location,
             Expr Condition,
-            Block Block)
+            IReadOnlyList<Stmt> Body)
         : Node, Stmt;
 
         internal sealed record Return(Range Location,
@@ -92,7 +92,7 @@ public interface Node
 
         internal sealed record WhileLoop(Range Location,
             Expr Condition,
-            Block Block)
+            IReadOnlyList<Stmt> Body)
         : Node, Stmt;
     }
 
@@ -111,7 +111,7 @@ public interface Node
         {
             internal sealed record ComponentAccess(Range Location,
                 Expr Structure,
-                Identifier ComponentName)
+                Ident ComponentName)
             : Lvalue;
 
             internal sealed record ParenLValue
@@ -134,7 +134,7 @@ public interface Node
             : Lvalue;
 
             internal sealed record VariableReference(Range Location,
-                Identifier Name)
+                Ident Name)
             : Lvalue;
         }
 
@@ -154,7 +154,7 @@ public interface Node
         : Expr;
 
         internal sealed record Call(Range Location,
-            Identifier Callee,
+            Ident Callee,
             IReadOnlyList<ParameterActual> Parameters)
         : Expr;
 
@@ -219,7 +219,7 @@ public interface Node
     internal interface Type : Node
     {
         internal sealed record AliasReference(Range Location,
-            Identifier Name)
+            Ident Name)
         : Type;
 
         internal sealed record String(Range Location)
@@ -257,7 +257,7 @@ public interface Node
     internal interface Designator : Node
     {
         internal sealed record Array(Range Location, Expr Index) : Designator;
-        internal sealed record Structure(Range Location, Identifier Component) : Designator;
+        internal sealed record Structure(Range Location, Ident Component) : Designator;
     }
 
     public interface Component : Node;
@@ -271,22 +271,22 @@ public interface Node
 
     internal sealed record ParameterFormal(Range Location,
         ParameterMode Mode,
-        Identifier Name,
+        Ident Name,
         Type Type)
     : Node;
 
     internal sealed record VariableDeclaration(Range Location,
-        IReadOnlyList<Identifier> Names,
+        IReadOnlyList<Ident> Names,
         Type Type)
     : Component;
 
     internal sealed record ProcedureSignature(Range Location,
-        Identifier Name,
+        Ident Name,
         IReadOnlyList<ParameterFormal> Parameters)
     : Node;
 
     internal sealed record FunctionSignature(Range Location,
-        Identifier Name,
+        Ident Name,
         IReadOnlyList<ParameterFormal> Parameters,
         Type ReturnType)
     : Node;

@@ -27,17 +27,17 @@ public interface Symbol : EquatableSemantics<Symbol>
 
     public string Kind { get; }
 
-    public Identifier Name { get; }
+    public Ident Name { get; }
     public Range Location { get; }
 
-    internal abstract record Variable(Identifier Name, Range Location, EvaluatedType Type) : Symbol
+    internal abstract record Variable(Ident Name, Range Location, EvaluatedType Type) : Symbol
     {
         public virtual string Kind => KindVariable;
 
         public abstract bool SemanticsEqual(Symbol other);
     }
 
-    internal sealed record LocalVariable(Identifier Name, Range Location,
+    internal sealed record LocalVariable(Ident Name, Range Location,
         EvaluatedType Type, Option<Value> Initializer)
     : Variable(Name, Location, Type)
     {
@@ -48,7 +48,7 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.Initializer.Equals(Initializer);
     }
 
-    internal sealed record Constant(Identifier Name, Range Location,
+    internal sealed record Constant(Ident Name, Range Location,
         EvaluatedType Type, Value Value)
     : Variable(Name, Location, Type)
     {
@@ -59,7 +59,7 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.Value.Equals(Value);
     }
 
-    internal sealed record TypeAlias(Identifier Name, Range Location,
+    internal sealed record TypeAlias(Ident Name, Range Location,
         EvaluatedType Type)
     : Symbol
     {
@@ -69,7 +69,7 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed record Callable(Identifier Name, Range Location,
+    internal sealed record Callable(Ident Name, Range Location,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType)
     : Symbol
@@ -83,7 +83,7 @@ public interface Symbol : EquatableSemantics<Symbol>
          && o.ReturnType.SemanticsEqual(ReturnType);
     }
 
-    internal sealed record Parameter(Identifier Name, Range Location,
+    internal sealed record Parameter(Ident Name, Range Location,
         EvaluatedType Type,
         ParameterMode Mode)
     : Variable(Name, Location, Type)

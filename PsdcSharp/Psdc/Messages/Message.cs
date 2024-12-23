@@ -113,7 +113,7 @@ public readonly struct Message
      => new(newSig.Location, MessageCode.SignatureMismatch, new(input =>
         Fmt($"this signature of {newSig.Kind} `{newSig.Name}` differs from previous signature (`{input[expectedSig.Location]}`)")));
 
-    internal static Message ErrorStructureComponentDoesntExist(Identifier component,
+    internal static Message ErrorStructureComponentDoesntExist(Ident component,
         StructureType structType)
      => new(component.Location, MessageCode.StructureComponentDoesntExist,
         structType.Alias is null // avoid the long struct representation
@@ -129,7 +129,7 @@ public readonly struct Message
      => new(location, MessageCode.UnsupportedDesignator,
         Fmt($"unsupported designator in '{targetType}' initializer"));
 
-    internal static Message ErrorStructureDuplicateComponent(Range location, Identifier component)
+    internal static Message ErrorStructureDuplicateComponent(Range location, Ident component)
      => new(location, MessageCode.StructureDuplicateComponent,
         Fmt($"duplicate component `{component}` in structure is ignored"));
 
@@ -168,11 +168,11 @@ public readonly struct Message
     internal static Message ErrorTargetLanguage(Range location, string targetLanguageName, string content)
      => CreateTargetLanguage(location, MessageCode.TargetLanguageError, targetLanguageName, content);
 
-    internal static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier) where TSymbol : Symbol
+    internal static Message ErrorUndefinedSymbol<TSymbol>(Ident identifier) where TSymbol : Symbol
      => new(identifier.Location, MessageCode.UndefinedSymbol,
         Fmt($"undefined {Symbol.GetKind<TSymbol>()} `{identifier}`"));
 
-    internal static Message ErrorUndefinedSymbol<TSymbol>(Identifier identifier, Symbol existingSymbol) where TSymbol : Symbol
+    internal static Message ErrorUndefinedSymbol<TSymbol>(Ident identifier, Symbol existingSymbol) where TSymbol : Symbol
      => new(identifier.Location, MessageCode.UndefinedSymbol,
         Fmt($"`{identifier}` is a {existingSymbol.Kind}, {Symbol.GetKind<TSymbol>()} expected"));
     internal static Message ErrorUnknownToken(Range location)
@@ -199,10 +199,10 @@ public readonly struct Message
      => new(location, MessageCode.ExcessElementInInitializer,
         "excess element in initializer");
 
-    internal static string ProblemWrongArgumentMode(Identifier name, string expected, string actual)
+    internal static string ProblemWrongArgumentMode(Ident name, string expected, string actual)
      => Fmt($"wrong mode for `{name}`: expected '{expected}', got '{actual}'");
 
-    internal static string ProblemWrongArgumentType(Identifier name, EvaluatedType expected, EvaluatedType actual)
+    internal static string ProblemWrongArgumentType(Ident name, EvaluatedType expected, EvaluatedType actual)
      => Fmt($"wrong type for `{name}`: expected '{expected}', got '{actual}'");
 
     internal static string ProblemWrongNumberOfArguments(int expected, int actual)

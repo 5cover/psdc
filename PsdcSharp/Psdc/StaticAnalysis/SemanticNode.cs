@@ -17,7 +17,7 @@ public interface SemanticNode
     }
 
     public sealed record Algorithm(SemanticMetadata Meta,
-        Identifier Title,
+        Ident Title,
         IReadOnlyList<Declaration> Declarations)
     : SemanticNode;
 
@@ -28,13 +28,13 @@ public interface SemanticNode
         : Declaration;
 
         internal sealed record TypeAlias(SemanticMetadata Meta,
-            Identifier Name,
+            Ident Name,
             EvaluatedType Type)
         : Declaration;
 
         internal sealed record Constant(SemanticMetadata Meta,
             EvaluatedType Type,
-            Identifier Name,
+            Ident Name,
             Initializer Value)
         : Declaration;
 
@@ -195,7 +195,7 @@ public interface SemanticNode
         {
             internal sealed record ComponentAccess(SemanticMetadata Meta,
                 Expr Structure,
-                Identifier ComponentName,
+                Ident ComponentName,
                 Value Value)
             : Lvalue;
 
@@ -214,7 +214,7 @@ public interface SemanticNode
             : Lvalue;
 
             internal sealed record VariableReference(SemanticMetadata Meta,
-                Identifier Name,
+                Ident Name,
                 Value Value)
             : Lvalue;
         }
@@ -238,7 +238,7 @@ public interface SemanticNode
         : Expr;
 
         internal sealed record Call(SemanticMetadata Meta,
-            Identifier Callee,
+            Ident Callee,
             IReadOnlyList<ParameterActual> Parameters,
             Value Value)
         : Expr;
@@ -261,7 +261,7 @@ public interface SemanticNode
         : Designator;
 
         internal sealed record Structure(SemanticMetadata Meta,
-            Identifier Component)
+            Ident Component)
         : Designator;
     }
 
@@ -272,16 +272,16 @@ public interface SemanticNode
 
     internal sealed record ParameterFormal(SemanticMetadata Meta,
         ParameterMode Mode,
-        Identifier Name,
+        Ident Name,
         EvaluatedType Type)
     : SemanticNode;
 
     internal sealed record VariableDeclaration(SemanticMetadata Meta,
-                IReadOnlyList<Identifier> Names,
+                IReadOnlyList<Ident> Names,
                 EvaluatedType Type) : SemanticNode;
 
     internal sealed record CallableSignature(SemanticMetadata Meta,
-        Identifier Name,
+        Ident Name,
         IReadOnlyList<ParameterFormal> Parameters,
         EvaluatedType ReturnType)
     : SemanticNode;

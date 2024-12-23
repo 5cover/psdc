@@ -108,7 +108,7 @@ public sealed partial class StaticAnalyzer
             AddCallableDefinitionSymbol(scope, f);
 
             _currentCallable = f;
-            var sFuncDef = new Declaration.CallableDefinition(meta, sig, AnalyzeStatements(funcScope, d.Block));
+            var sFuncDef = new Declaration.CallableDefinition(meta, sig, AnalyzeStatements(funcScope, d.Body));
             _currentCallable = default;
 
             return sFuncDef;
@@ -118,7 +118,7 @@ public sealed partial class StaticAnalyzer
                 _msger.Report(Message.ErrorRedefinedMainProgram(d.Location));
             }
             _mainProgramStatus = MainProgramStatus.Inside;
-            Declaration.MainProgram mp = new(meta, AnalyzeStatements(new(scope), d.Block));
+            Declaration.MainProgram mp = new(meta, AnalyzeStatements(new(scope), d.Body));
             _mainProgramStatus = MainProgramStatus.Seen;
             return mp;
         }
@@ -133,7 +133,7 @@ public sealed partial class StaticAnalyzer
             var p = MakeSymbol(sig, DefineParameter(inScope: procScope));
             AddCallableDefinitionSymbol(scope, p);
             _currentCallable = p;
-            Declaration.CallableDefinition sProcDef = new(meta, sig, AnalyzeStatements(procScope, d.Block));
+            Declaration.CallableDefinition sProcDef = new(meta, sig, AnalyzeStatements(procScope, d.Body));
             _currentCallable = default;
             return sProcDef;
         }
@@ -230,14 +230,14 @@ public sealed partial class StaticAnalyzer
             return new Statement.Alternative(meta,
                 new(new(scope, s.If.Location),
                     EvaluateExpression(scope, s.If.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
-                    AnalyzeStatements(new(scope), s.If.Block)
+                    AnalyzeStatements(new(scope), s.If.Body)
                 ),
                 s.ElseIfs.Select(elseIf => new Statement.Alternative.ElseIfClause(new(scope, elseIf.Location),
                     EvaluateExpression(scope, elseIf.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
-                    AnalyzeStatements(new(scope), elseIf.Block)
+                    AnalyzeStatements(new(scope), elseIf.Body)
                 )).ToArray(),
                 @s.Else.Map(@else => new Statement.Alternative.ElseClause(new(scope, @else.Location),
-                    AnalyzeStatements(new(scope), @else.Block)
+                    AnalyzeStatements(new(scope), @else.Body)
                 )));
         }
         case Node.Stmt.Assignment s: {
@@ -291,7 +291,7 @@ public sealed partial class StaticAnalyzer
         case Node.Stmt.DoWhileLoop s: {
             return new Statement.DoWhileLoop(meta,
                 EvaluateExpression(scope, s.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
-                AnalyzeStatements(new(scope), s.Block));
+                AnalyzeStatements(new(scope), s.Body));
         }
         case Node.Stmt.ForLoop s: {
             var variant = EvaluateLvalue(scope, s.Variant);
@@ -300,7 +300,7 @@ public sealed partial class StaticAnalyzer
                 EvaluateExpression(scope, s.Start, EvaluatedType.IsAssignableTo, variant.Value.Type),
                 EvaluateExpression(scope, s.End, EvaluatedType.IsConvertibleTo, variant.Value.Type),
                 s.Step.Map(e => EvaluateExpression(scope, e, EvaluatedType.IsConvertibleTo, variant.Value.Type)),
-                AnalyzeStatements(new(scope), s.Block));
+                AnalyzeStatements(new(scope), s.Body));
         }
         case Node.Stmt.LocalVariable s: {
             var type = EvaluateType(scope, s.Declaration.Type);
@@ -325,7 +325,7 @@ public sealed partial class StaticAnalyzer
         case Node.Stmt.RepeatLoop s: {
             return new Statement.RepeatLoop(meta,
                 EvaluateExpression(scope, s.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
-                AnalyzeStatements(new(scope), s.Block));
+                AnalyzeStatements(new(scope), s.Body));
         }
         case Node.Stmt.Return s: {
             return new Statement.Return(meta, _currentCallable.Match(
@@ -361,13 +361,13 @@ public sealed partial class StaticAnalyzer
                         if (caseExpr.Value.Status is not ValueStatus.Comptime) {
                             _msger.Report(Message.ErrorComptimeExpressionExpected(c.Value.Location));
                         }
-                        return (Statement.Switch.Case)new Statement.Switch.Case.OfValue(new(scope, c.Location), caseExpr, AnalyzeStatements(scope, c.Block));
+                        return (Statement.Switch.Case)new Statement.Switch.Case.OfValue(new(scope, c.Location), caseExpr, AnalyzeStatements(scope, c.Body));
                     }
                     case Node.Stmt.Switch.Case.Default d: {
                         if (i != s.Cases.Count - 1) {
                             _msger.Report(Message.ErrorSwitchDefaultIsNotLast(d.Location));
                         }
-                        return new Statement.Switch.Case.Default(new(scope, d.Location), AnalyzeStatements(scope, d.Block));
+                        return new Statement.Switch.Case.Default(new(scope, d.Location), AnalyzeStatements(scope, d.Body));
                     }
                     default: {
                         throw @case.ToUnmatchedException();
@@ -378,7 +378,7 @@ public sealed partial class StaticAnalyzer
         case Node.Stmt.WhileLoop s: {
             return new Statement.WhileLoop(meta,
                 EvaluateExpression(scope, s.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
-                AnalyzeStatements(new(scope), s.Block));
+                AnalyzeStatements(new(scope), s.Body));
         }
         case Node.CompilerDirective cd: {
             EvaluateCompilerDirective(scope, cd);
@@ -796,7 +796,7 @@ public sealed partial class StaticAnalyzer
 
     StructureType EvaluateStructureType(Scope scope, Node.Type.Structure structure)
     {
-        var components = ImmutableOrderedMap<Identifier, EvaluatedType>.Empty;
+        var components = ImmutableOrderedMap<Ident, EvaluatedType>.Empty;
         foreach (var c in structure.Components) {
             switch (c) {
             case Node.VariableDeclaration comp: {

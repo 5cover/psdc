@@ -36,7 +36,7 @@ public sealed partial class StaticAnalyzer
     interface DesignatorInfo
     {
         public readonly record struct Array(int Index) : DesignatorInfo;
-        public readonly record struct Structure(Identifier Component) : DesignatorInfo;
+        public readonly record struct Structure(Ident Component) : DesignatorInfo;
     }
 
     interface InitializerPath
@@ -104,7 +104,7 @@ public sealed partial class StaticAnalyzer
             protected override Array WithRest(ValueOption<InitializerPath> rest) => this with { Rest = rest };
         }
         public sealed record Structure(DesignatorInfo.Structure First, ValueOption<InitializerPath> Rest, StructureType Type)
-        : Impl<Structure, DesignatorInfo.Structure, StructureType, StructureValue, ImmutableOrderedMap<Identifier, Value>>(First, Rest, Type)
+        : Impl<Structure, DesignatorInfo.Structure, StructureType, StructureValue, ImmutableOrderedMap<Ident, Value>>(First, Rest, Type)
         {
             public static ValueOption<Structure, Message> OfFirstObject(StructureType type, Range location)
              => type.Components.List.FirstOrNone().Map(comp => new Structure(new(comp.Key), default, type))
@@ -117,7 +117,7 @@ public sealed partial class StaticAnalyzer
                 ? new DesignatorInfo.Structure(c.Key)
                 : Message.ErrorExcessElementInInitializer(location);
 
-            protected override Option<ImmutableOrderedMap<Identifier, Value>, Message> SetValueFirst(Range location, ImmutableOrderedMap<Identifier, Value> haystack, ValueTransform transform)
+            protected override Option<ImmutableOrderedMap<Ident, Value>, Message> SetValueFirst(Range location, ImmutableOrderedMap<Ident, Value> haystack, ValueTransform transform)
              => haystack.Map.GetValueOrNone(First.Component)
                 .OrWithError(Message.ErrorStructureComponentDoesntExist(First.Component, Type))
                 .Bind(transform)

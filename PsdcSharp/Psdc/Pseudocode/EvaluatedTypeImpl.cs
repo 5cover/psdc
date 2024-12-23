@@ -4,8 +4,8 @@ namespace Scover.Psdc.Pseudocode;
 
 abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<TValue> where TValue : Value
 {
-    protected EvaluatedTypeImpl(Option<Identifier> alias) => Alias = alias;
-    public Option<Identifier> Alias { get; }
+    protected EvaluatedTypeImpl(Option<Ident> alias) => Alias = alias;
+    public Option<Ident> Alias { get; }
 
     protected abstract string ToStringNoAlias(IFormatProvider? fmtProvider);
 
@@ -22,7 +22,7 @@ abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<
 
     public abstract bool SemanticsEqual(EvaluatedType other);
 
-    public abstract EvaluatedType ToAliasReference(Identifier alias);
+    public abstract EvaluatedType ToAliasReference(Ident alias);
 
     public const string FmtFull = "f";
 
@@ -44,7 +44,7 @@ abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<
     Value EvaluatedType.InvalidValue => InvalidValue;
 }
 
-abstract class EvaluatedTypeImplNotInstantiable<TValue>(Option<Identifier> alias, ValueStatus defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias)
+abstract class EvaluatedTypeImplNotInstantiable<TValue>(Option<Ident> alias, ValueStatus defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias)
 where TValue : class, Value
 {
     TValue? _defaultValue;
@@ -59,11 +59,11 @@ where TValue : class, Value
     protected abstract TValue CreateValue(ValueStatus status);
 }
 
-abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Option<Identifier> alias, ValueStatus<TUnderlying> defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias), InstantiableType<TValue, TUnderlying>
+abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Option<Ident> alias, ValueStatus<TUnderlying> defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias), InstantiableType<TValue, TUnderlying>
 where TValue : class, Value
 where TUnderlying : notnull
 {
-    protected EvaluatedTypeImplInstantiable(Option<Identifier> alias, TUnderlying defaultValue) : this(alias, ValueStatus.Comptime.Of(defaultValue))
+    protected EvaluatedTypeImplInstantiable(Option<Ident> alias, TUnderlying defaultValue) : this(alias, ValueStatus.Comptime.Of(defaultValue))
     { }
 
     TValue? _defaultValue;

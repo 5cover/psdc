@@ -38,7 +38,7 @@ where TOpTable : OperatorTable
     protected readonly TKwTable _kwTable = keywordTable;
     protected readonly TOpTable _opTable = operatorTable;
 
-    protected string ValidateIdentifier(Scope scope, Identifier ident)
+    protected string ValidateIdentifier(Scope scope, Ident ident)
      => _kwTable.Validate(scope, ident, _msger);
     protected string ValidateIdentifier(Scope scope, Range location, string ident)
      => _kwTable.Validate(scope, location, ident, _msger);

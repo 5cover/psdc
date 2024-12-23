@@ -516,10 +516,10 @@ public sealed partial class Parser
         [Keyword.EntSortF] = ParameterMode.InOut,
     };
 
-    ParseResult<Identifier> Identifier(IEnumerable<Token> tokens)
+    ParseResult<Ident> Identifier(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "identifier")
         .ParseTokenValue(out var name, Valued.Identifier)
-        .MapResult(t => new Identifier(t, name));
+        .MapResult(t => new Ident(t, name));
 
     #endregion Terminals
 

@@ -24,7 +24,7 @@ interface EvaluatedType : IFormattableUsable, EquatableSemantics<EvaluatedType>
     /// Get the alias used to refer to this type indirectly.
     /// </summary>
     /// <value>The alias used to refer to this type indirectly or <see langword="null"/> if this type is not aliased.</value>
-    public Option<Identifier> Alias { get; }
+    public Option<Ident> Alias { get; }
 
     // Static methods used for method groups
     public static bool IsConvertibleTo(EvaluatedType self, EvaluatedType other) => self.IsConvertibleTo(other);
@@ -75,7 +75,7 @@ interface EvaluatedType : IFormattableUsable, EquatableSemantics<EvaluatedType>
     /// </summary>
     /// <param name="alias">A type alias name.</param>
     /// <returns>A clone of this type, but with the <see cref="Alias"/> property set to <paramref name="alias"/>.</returns>
-    public EvaluatedType ToAliasReference(Identifier alias);
+    public EvaluatedType ToAliasReference(Ident alias);
 }
 
 interface EvaluatedType<out TValue> : EvaluatedType where TValue : Value
@@ -92,7 +92,7 @@ interface EvaluatedType<out TValue> : EvaluatedType where TValue : Value
 
 sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArray<Value>>
 {
-    ArrayType(EvaluatedType itemType, ComptimeExpression<int> length, ValueOption<Identifier> alias)
+    ArrayType(EvaluatedType itemType, ComptimeExpression<int> length, ValueOption<Ident> alias)
      : base(alias, CreateDefaultValue(itemType, length))
     {
         ItemType = itemType;
@@ -110,7 +110,7 @@ sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArra
         ComptimeExpression<int> length)
       : this(itemType, length, default) { }
 
-    public override ArrayType ToAliasReference(Identifier alias)
+    public override ArrayType ToAliasReference(Ident alias)
      => new(ItemType, Length, alias);
 
     public override bool SemanticsEqual(EvaluatedType other) => other is ArrayType o
@@ -149,11 +149,11 @@ sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArra
 
 sealed class BooleanType : EvaluatedTypeImplInstantiable<BooleanValue, bool>
 {
-    BooleanType(ValueOption<Identifier> alias) : base(alias, false)
+    BooleanType(ValueOption<Ident> alias) : base(alias, false)
     { }
 
     public static BooleanType Instance { get; } = new(default);
-    public override BooleanType ToAliasReference(Identifier alias) => new(alias);
+    public override BooleanType ToAliasReference(Ident alias) => new(alias);
 
     public override bool SemanticsEqual(EvaluatedType other) => other is BooleanType;
     protected override BooleanValue CreateValue(ValueStatus<bool> status) => new(this, status);
@@ -162,11 +162,11 @@ sealed class BooleanType : EvaluatedTypeImplInstantiable<BooleanValue, bool>
 
 sealed class CharacterType : EvaluatedTypeImplInstantiable<CharacterValue, char>
 {
-    CharacterType(ValueOption<Identifier> alias) : base(alias, '\0')
+    CharacterType(ValueOption<Ident> alias) : base(alias, '\0')
     { }
 
     public static CharacterType Instance { get; } = new(default);
-    public override CharacterType ToAliasReference(Identifier alias) => new(alias);
+    public override CharacterType ToAliasReference(Ident alias) => new(alias);
     public override bool SemanticsEqual(EvaluatedType other) => other is CharacterType;
     protected override CharacterValue CreateValue(ValueStatus<char> status) => new(this, status);
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider) => "caractère";
@@ -174,11 +174,11 @@ sealed class CharacterType : EvaluatedTypeImplInstantiable<CharacterValue, char>
 
 sealed class FileType : EvaluatedTypeImplNotInstantiable<FileValue>
 {
-    FileType(ValueOption<Identifier> alias) : base(alias, ValueStatus.Garbage.Instance)
+    FileType(ValueOption<Ident> alias) : base(alias, ValueStatus.Garbage.Instance)
     { }
 
     public static FileType Instance { get; } = new(default);
-    public override FileType ToAliasReference(Identifier alias) => new(alias);
+    public override FileType ToAliasReference(Ident alias) => new(alias);
 
     public override bool SemanticsEqual(EvaluatedType other) => other is FileType;
     protected override FileValue CreateValue(ValueStatus status) => new(this, status);
@@ -187,7 +187,7 @@ sealed class FileType : EvaluatedTypeImplNotInstantiable<FileValue>
 
 sealed class LengthedStringType : EvaluatedTypeImplInstantiable<LengthedStringValue, string>
 {
-    LengthedStringType(Option<Expr> lengthExpression, int length, ValueOption<Identifier> alias = default) : base(alias, ValueStatus.Garbage<string>.Instance)
+    LengthedStringType(Option<Expr> lengthExpression, int length, ValueOption<Ident> alias = default) : base(alias, ValueStatus.Garbage<string>.Instance)
     {
         LengthConstantExpression = lengthExpression;
         Length = length;
@@ -204,7 +204,7 @@ sealed class LengthedStringType : EvaluatedTypeImplInstantiable<LengthedStringVa
     public override bool IsAssignableTo(EvaluatedType other) => base.IsAssignableTo(other) || other is LengthedStringType o && o.Length >= Length;
     public override bool SemanticsEqual(EvaluatedType other) => other is LengthedStringType o && o.Length == Length;
 
-    public override LengthedStringType ToAliasReference(Identifier alias) => new(LengthConstantExpression, Length, alias);
+    public override LengthedStringType ToAliasReference(Ident alias) => new(LengthConstantExpression, Length, alias);
     protected override LengthedStringValue CreateValue(ValueStatus<string> status)
     {
         Debug.Assert(status.ComptimeValue is not { HasValue: true } c || c.Value.Length == Length);
@@ -216,11 +216,11 @@ sealed class LengthedStringType : EvaluatedTypeImplInstantiable<LengthedStringVa
 
 sealed class IntegerType : EvaluatedTypeImplInstantiable<IntegerValue, int>
 {
-    IntegerType(ValueOption<Identifier> alias) : base(alias, 0)
+    IntegerType(ValueOption<Ident> alias) : base(alias, 0)
     { }
 
     public static IntegerType Instance { get; } = new(default);
-    public override IntegerType ToAliasReference(Identifier alias) => new(alias);
+    public override IntegerType ToAliasReference(Ident alias) => new(alias);
 
     public override bool IsConvertibleTo(EvaluatedType other) => base.IsConvertibleTo(other) || other is RealType;
 
@@ -231,10 +231,10 @@ sealed class IntegerType : EvaluatedTypeImplInstantiable<IntegerValue, int>
 
 sealed class RealType : EvaluatedTypeImplInstantiable<RealValue, decimal>
 {
-    RealType(ValueOption<Identifier> alias) : base(alias, 0m)
+    RealType(ValueOption<Ident> alias) : base(alias, 0m)
     { }
     public static RealType Instance { get; } = new(default);
-    public override RealType ToAliasReference(Identifier alias) => new(alias);
+    public override RealType ToAliasReference(Ident alias) => new(alias);
     public override bool SemanticsEqual(EvaluatedType other) => other is RealType;
     protected override RealValue CreateValue(ValueStatus<decimal> status) => new RealValueImpl(this, status);
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider) => "réel";
@@ -242,38 +242,38 @@ sealed class RealType : EvaluatedTypeImplInstantiable<RealValue, decimal>
 
 sealed class StringType : EvaluatedTypeImplInstantiable<StringValue, string>
 {
-    StringType(ValueOption<Identifier> alias) : base(alias, ValueStatus.Garbage<string>.Instance)
+    StringType(ValueOption<Ident> alias) : base(alias, ValueStatus.Garbage<string>.Instance)
     { }
 
     public static StringType Instance { get; } = new(default);
 
-    public override StringType ToAliasReference(Identifier alias) => new(alias);
+    public override StringType ToAliasReference(Ident alias) => new(alias);
 
     public override bool SemanticsEqual(EvaluatedType other) => other is StringType;
     protected override StringValue CreateValue(ValueStatus<string> status) => new StringValueImpl(this, status);
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider) => "chaîne";
 }
 
-sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, ImmutableOrderedMap<Identifier, Value>>
+sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, ImmutableOrderedMap<Ident, Value>>
 {
     const int MaxComponentsInRepresentation = 3;
-    public StructureType(ImmutableOrderedMap<Identifier, EvaluatedType> components, ValueOption<Identifier> alias = default)
+    public StructureType(ImmutableOrderedMap<Ident, EvaluatedType> components, ValueOption<Ident> alias = default)
      : base(alias, CreateDefaultValue(components))
      => Components = components;
 
-    public ImmutableOrderedMap<Identifier, EvaluatedType> Components { get; }
-    public override StructureType ToAliasReference(Identifier alias) => new(Components, alias);
+    public ImmutableOrderedMap<Ident, EvaluatedType> Components { get; }
+    public override StructureType ToAliasReference(Ident alias) => new(Components, alias);
 
     public override bool SemanticsEqual(EvaluatedType other) => other is StructureType o
      && o.Components.Map.Keys.AllEqual(Components.Map.Keys)
      && o.Components.Map.Values.AllSemanticsEqual(Components.Map.Values);
 
-    public ImmutableOrderedMap<Identifier, Value> CreateDefaultValue() => CreateDefaultValue(Components);
+    public ImmutableOrderedMap<Ident, Value> CreateDefaultValue() => CreateDefaultValue(Components);
 
-    public static ImmutableOrderedMap<Identifier, Value> CreateDefaultValue(ImmutableOrderedMap<Identifier, EvaluatedType> components)
+    public static ImmutableOrderedMap<Ident, Value> CreateDefaultValue(ImmutableOrderedMap<Ident, EvaluatedType> components)
      => new(components.List.Select(kvp => KeyValuePair.Create(kvp.Key, kvp.Value.DefaultValue)).ToImmutableList());
 
-    protected override StructureValue CreateValue(ValueStatus<ImmutableOrderedMap<Identifier, Value>> status)
+    protected override StructureValue CreateValue(ValueStatus<ImmutableOrderedMap<Ident, Value>> status)
     {
         Debug.Assert(status.ComptimeValue is not { HasValue: true } v
                   || Components.Map.Keys.ToHashSet().SetEquals(v.Value.Map.Keys), "Provided value and struture has different components");
@@ -297,10 +297,10 @@ sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, Immut
 
 sealed class VoidType : EvaluatedTypeImplNotInstantiable<VoidValue>
 {
-    VoidType(ValueOption<Identifier> alias) : base(alias, ValueStatus.Runtime.Instance)
+    VoidType(ValueOption<Ident> alias) : base(alias, ValueStatus.Runtime.Instance)
     { }
     public static VoidType Instance { get; } = new(default);
-    public override VoidType ToAliasReference(Identifier alias) => new(alias);
+    public override VoidType ToAliasReference(Ident alias) => new(alias);
     public override bool SemanticsEqual(EvaluatedType other) => other is VoidType;
     protected override VoidValue CreateValue(ValueStatus status) => new(this, status);
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider) => "<void>";
@@ -309,7 +309,7 @@ sealed class VoidType : EvaluatedTypeImplNotInstantiable<VoidValue>
 sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
 {
     readonly string _repr;
-    UnknownType(Range location, string repr, ValueOption<Identifier> alias = default) : base(alias, ValueStatus.Invalid.Instance)
+    UnknownType(Range location, string repr, ValueOption<Ident> alias = default) : base(alias, ValueStatus.Invalid.Instance)
      => (Location, _repr) = (location, repr);
 
     public Range Location { get; }
@@ -317,7 +317,7 @@ sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
 
     public static UnknownType Declared(string input, Range location) => new(location, input[location]);
 
-    public override UnknownType ToAliasReference(Identifier alias) => new(Location, _repr, alias);
+    public override UnknownType ToAliasReference(Ident alias) => new(Location, _repr, alias);
 
     // Unknown is convertible to every other type, and every type is convertible to Unknwon.
     // This is to prevent cascading errors when an object of an unknown type is used.

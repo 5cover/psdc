@@ -1,0 +1,184 @@
+# yaml-language-server: $schema=nodes_schema.json
+algorithm:
+  decls: decl*
+
+decl:
+  compiler_directive:
+  constant_def:
+    type: type
+    declarators: init_declarator+
+  type_def:
+    type: type
+    names: ident+
+  main_program:
+    title: ident
+    body: stmt*
+  func_decl:
+    sig: func_sig
+  func_def:
+    sig: func_sig
+    body: stmt*
+  nop:
+#
+compiler_directive:
+  assert:
+    expr: expr
+    messsage: expr?
+  eval_expr:
+    expr: expr
+  eval_type:
+    type: type
+
+nop:
+#
+type:
+  aliased:
+    name: ident
+  boolean:
+  character:
+  integer:
+  real:
+  string:
+    length: expr?
+  array:
+    item_type: type
+    dimensions: expr+
+  structure:
+    members: structure.member*
+    member:
+      compiler_directive:
+      component:
+        type: type
+        names: ident+
+
+init_declarator:
+  name: ident
+  init: init
+
+#ident: # manually written
+
+stmt:
+  compiler_directive:
+  expr:
+  block:
+    stmts: stmt*
+  assignment:
+    target: expr.lvalue
+    value: expr
+  while_loop:
+    condition: expr
+    body: stmt*
+  do_while_loop:
+    condition: expr
+    body: stmt*
+  for_loop:
+    initialization: stmt?
+    condition: expr?
+    increment: stmt.assignment?
+    body: stmt*
+  return:
+    value: expr
+  write:
+    args: expr*
+  read:
+    target: expr.lvalue
+  trunc:
+    arg: expr
+  local_var_decl:
+    type: type
+    declarators: declarator
+  alternative:
+    if: clause
+    else_ifs: clause*
+    else: stmt*?
+  switch:
+    condition: expr
+    cases: clause*
+    default: stmt*?
+  nop:
+
+func_sig: # procedures are functions with no return type
+  name: ident
+  params: formal_param*
+  return_type: type?
+#
+expr:
+  unary:
+    operator: unary_operator
+    operand: expr
+  binary:
+    left: expr
+    operator: binary_operator
+    right: expr
+  call:
+    callee: ident
+    args: effective_param*
+  lvalue:
+    component_access:
+      structure: expr
+      name: ident
+    array_sub:
+      array: expr
+      index: expr
+    var_ref:
+      isout: =bool
+      name: ident
+  literal:
+    'true':
+    'false':
+    string:
+    real:
+    character:
+    integer:
+
+init:
+  expr:
+  braced:
+    items: braced.item*
+    item:
+      compiler_directive:
+      value:
+        designator: designator*
+        init: init
+
+declarator:
+  name: ident
+  init: init
+
+clause:
+  condition: expr
+  body: stmt*
+
+formal_param:
+#
+unary_operator:
+  cast:
+  minus:
+  not:
+  plus:
+
+binary_operator:
+  add:
+  and:
+  div:
+  eq:
+  gt:
+  ge:
+  lt:
+  le:
+  mod:
+  mult:
+  ne:
+  or:
+  sub:
+  xor:
+
+effective_param:
+  isout: =bool
+  value: expr
+
+designator:
+  component:
+    name: ident
+  indice:
+    at: expr

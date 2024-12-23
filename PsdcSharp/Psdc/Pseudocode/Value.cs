@@ -53,10 +53,10 @@ sealed class StringValueImpl(StringType type, ValueStatus<string> value) : Value
      => $"\"{Strings.Escape(value, fmtProvider)}\"";
 }
 
-sealed class StructureValue(StructureType type, ValueStatus<ImmutableOrderedMap<Identifier, Value>> value) : ValueImpl<StructureValue, StructureType, ImmutableOrderedMap<Identifier, Value>>(type, value)
+sealed class StructureValue(StructureType type, ValueStatus<ImmutableOrderedMap<Ident, Value>> value) : ValueImpl<StructureValue, StructureType, ImmutableOrderedMap<Ident, Value>>(type, value)
 {
-    protected override StructureValue Clone(ValueStatus<ImmutableOrderedMap<Identifier, Value>> value) => new(Type, value);
-    protected override string ValueToString(ImmutableOrderedMap<Identifier, Value> value, IFormatProvider? fmtProvider, Indentation indent)
+    protected override StructureValue Clone(ValueStatus<ImmutableOrderedMap<Ident, Value>> value) => new(Type, value);
+    protected override string ValueToString(ImmutableOrderedMap<Ident, Value> value, IFormatProvider? fmtProvider, Indentation indent)
     {
         StringBuilder o = new();
         o.AppendLine("{");

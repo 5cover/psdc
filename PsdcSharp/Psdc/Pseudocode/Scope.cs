@@ -19,7 +19,7 @@ public abstract class Scope(Scope? parent)
         }
     }
 
-    public Option<T, Message> GetSymbol<T>(Identifier name) where T : Symbol
+    public Option<T, Message> GetSymbol<T>(Ident name) where T : Symbol
      => !TryGetSymbol(name.ToString(), out var symbol)
         ? Message.ErrorUndefinedSymbol<T>(name).None<T, Message>()
         : symbol is not T t
@@ -48,9 +48,9 @@ public abstract class Scope(Scope? parent)
         return false;
     }
 
-    public bool TryGetSymbol<T>(Identifier name, [NotNullWhen(true)] out T? symbol) where T : Symbol => TryGetSymbol(name.ToString(), out symbol);
-    public bool TryGetSymbol(Identifier name, [NotNullWhen(true)] out Symbol? symbol) => TryGetSymbol(name.ToString(), out symbol);
+    public bool TryGetSymbol<T>(Ident name, [NotNullWhen(true)] out T? symbol) where T : Symbol => TryGetSymbol(name.ToString(), out symbol);
+    public bool TryGetSymbol(Ident name, [NotNullWhen(true)] out Symbol? symbol) => TryGetSymbol(name.ToString(), out symbol);
 
-    public bool HasSymbol(Identifier name) => HasSymbol(name.ToString());
+    public bool HasSymbol(Ident name) => HasSymbol(name.ToString());
     public bool HasSymbol(string name) => _symbolTable.ContainsKey(name);
 }

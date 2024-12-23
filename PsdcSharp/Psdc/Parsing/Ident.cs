@@ -2,9 +2,9 @@ using System.Diagnostics;
 
 namespace Scover.Psdc.Parsing;
 
-public sealed class Identifier : Node, IEquatable<Identifier?>
+public sealed class Ident : Node, IEquatable<Ident?>
 {
-    public Identifier(Range location, string name)
+    public Ident(Range location, string name)
     {
         Debug.Assert(
             name.Length > 0
@@ -18,8 +18,8 @@ public sealed class Identifier : Node, IEquatable<Identifier?>
     public string Name { get; }
 
     // Equals and GetHashCode implementation for usage in dictionaries.
-    public override bool Equals(object? obj) => Equals(obj as Identifier);
-    public bool Equals(Identifier? other) => other is not null && other.Name == Name;
+    public override bool Equals(object? obj) => Equals(obj as Ident);
+    public bool Equals(Ident? other) => other is not null && other.Name == Name;
     public override int GetHashCode() => Name.GetHashCode();
     public override string ToString() => Name;
 }
