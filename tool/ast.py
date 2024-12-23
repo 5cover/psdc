@@ -100,21 +100,5 @@ def pr(o, **kwargs):
 def node_is_union(node: AstNode) -> TypeGuard[OrderedDict[str, AstNode]]:
     return node is not None and not any(isinstance(v, str) for v in node.values())
 
-
-@cache
-def validation_expr(name: str, type: str):
-    match type[-1]:
-        case '?':
-            inner = validation_expr(name + '.Value', type[:-1])
-            return f'!{name}.HasValue || {inner}' if inner else ''
-        case '+':
-            inner = validation_expr(name, type[:-1])
-            return f'{name}.Count > 0' + (f' && {name}.All({name} => {inner})' if inner else '')
-        case '*':
-            inner = validation_expr(name, type[:-1])
-            return f'{name}.All({name} => {inner})' if inner else ''
-        case _: return ''
-
-
 if __name__ == '__main__':
     main()
