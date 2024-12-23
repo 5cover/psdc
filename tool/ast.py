@@ -8,15 +8,6 @@ from src.util import NodeKind, cslq
 from typing import TypeGuard
 import yaml
 
-"""
-1. Print 
-union TheThreeOfUs : Node
-    class Third : TheThreeOfUs
-union TheOneOfUs : Node
-class First : TheThreeOfUs, TheOneOfUs
-class Second : TheThreeOfUs
-"""
-
 AstNode = frozendict[str, 'AstNode | str'] | None
 
 Filename = path.dirname(path.realpath(__file__)) + '/nodes.yml'
@@ -37,8 +28,9 @@ def main():
          exit_node)
     conclusion()
 
-# todo: refer to subtype with dot notation automatically
-
+# todo: cleanup and test ancestor node reachability. do we need two arguments nodes and reachable_nodes
+# todo: instead of visiting on the fly, build a datastructure and revisit. this means we'll be able to query the properties and subnodes of a node when generating it, which will allow for smarter code generation (refer to subtype with dot notation automatically, semi-colon body)
+# todo: typecheck property types not marked as do not touch
 
 def walk(lvl: int, parent: tuple[str, NodeKind], nodes: Mapping[str, AstNode], reachable_nodes: frozendict[str, AstNode],
          enter_node: Callable[[int, tuple[str, NodeKind], dict[str, NodeKind], dict[str, str]], None],
