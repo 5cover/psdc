@@ -121,7 +121,7 @@ expr:
       array: expr
       index: expr
     var_ref:
-      isout: =bool
+      is_out: =bool
       name: ident
   literal:
     'true':
@@ -174,7 +174,7 @@ binary_operator:
   xor:
 
 effective_param:
-  isout: =bool
+  is_out: =bool
   value: expr
 
 designator:

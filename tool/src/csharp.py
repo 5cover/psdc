@@ -18,7 +18,6 @@ NodeKinds = {NodeKind.Class: 'sealed class', NodeKind.Union: 'interface'}
 
 def intro():
     print('using System.Diagnostics;')
-    print('using Scover.Psdc.Pseudocode;')
     print()
     print('namespace Scover.Psdc.Parsing;')
     print()
