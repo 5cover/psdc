@@ -4,8 +4,12 @@ from functools import cache
 import re
 
 
+def is_do_not_touch(s: str) -> bool:
+    return s.startswith('=')
+
+
 def get_dont_touch_me(s: str) -> str:
-    return s[1:] if s.startswith('=') else ''
+    return s[1:] if is_do_not_touch(s) else ''
 
 
 class NodeKind(Enum):
@@ -16,6 +20,10 @@ class NodeKind(Enum):
 def println(lvl: int, *args, **kwargs):
     print(lvl * 4 * ' ', end='')
     print(*args, **kwargs)
+
+
+def remove_prefix(prefix: str, s: str) -> str:
+    return s[len(prefix):] if s.startswith(prefix) else s
 
 
 @cache

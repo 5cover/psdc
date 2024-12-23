@@ -1,5 +1,7 @@
-from collections.abc import Sequence
-from .util import camelize, println, pascalize, NodeKind, csl, cslq, get_dont_touch_me
+from collections import OrderedDict
+from itertools import chain
+from collections.abc import Iterable, Mapping
+from .util import camelize, println, pascalize, NodeKind, csl, cslq, get_dont_touch_me, remove_prefix
 from functools import cache
 
 Keywords = {
@@ -24,22 +26,29 @@ def intro():
     print('{')
     println(1, 'Range Location { get; }')
     print()
+    return 1
 
 
 def conclusion():
     print('}')
 
 
-def enter_node(common_props: dict[str, str], lvl: int, node: tuple[str, NodeKind], parents: dict[str, NodeKind], props: dict[str, str]):
+def enter_node(
+        common_props: Mapping[str, str],
+        lvl: int,
+        parent: tuple[str, NodeKind],
+        node: tuple[str, NodeKind],
+        implements: Mapping[str, NodeKind],
+        props: Mapping[str, str]):
     if reserved_props := props & common_props.keys():
         raise ValueError(f"reserved propety names in '{node[0]}': {cslq(reserved_props)}")
 
-    props = common_props | props
+    props = OrderedDict(chain(common_props.items(), props.items()))
     require_explicit_constructor = any((requires_validation(t) for t in props.values()))
     println(lvl, f'public {NodeKinds[node[1]]} {pascalize(node[0])}', end='')
     if node[1] is NodeKind.Class and props and not require_explicit_constructor:
         print(f'({csl(map(argument, props.items()))})', end='')
-    print(base_type_list(tuple(k for k, v in parents.items() if v is NodeKind.Union)))
+    print(base_type_list((parent[0],) + tuple(implements.keys()) if parent[1] is NodeKind.Union else implements))
     println(lvl, '{')
     lvl += 1
     if node[1] is NodeKind.Class and props:
@@ -50,10 +59,10 @@ def enter_node(common_props: dict[str, str], lvl: int, node: tuple[str, NodeKind
                 put_assignment(lvl + 1, *p)
             println(lvl, '}')
             for p in props.items():
-                put_prop(lvl, *p, 'public')
+                put_prop(lvl, node[0], *p, 'public')
         else:
             for p in props.items():
-                put_prop(lvl, *p, 'public', True)
+                put_prop(lvl, node[0], *p, 'public', True)
 
 
 def exit_node(lvl: int):
@@ -64,14 +73,14 @@ def argument(prop: tuple[str, str]):
     return f'{real_type(prop[1])} {camel_ident(prop[0])}'
 
 
-def base_type_list(bases: Sequence[str]):
+def base_type_list(bases: Iterable[str]):
     return ' : ' + csl(map(pascalize, bases)) if bases else ''
 
 
-def put_prop(lvl: int, name: str, type: str, access: str = '', put_init: bool = False):
+def put_prop(lvl: int, type_name: str, name: str, type: str, access: str = '', put_init: bool = False):
     access = access + ' ' if access else ''
     init = ' = ' + camel_ident(name) + ';' if put_init else ''
-    println(lvl, f'{access}{real_type(type)} {pascalize(name)} {{ get; }}{init}')
+    println(lvl, f'{access}{real_type(remove_prefix(type_name + ".", type))} {pascalize(name)} {{ get; }}{init}')
 
 
 def put_assignment(lvl: int, name: str, type: str):
