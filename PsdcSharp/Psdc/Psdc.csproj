@@ -1,6 +1,4 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:schemaLocation="http://schemas.microsoft.com/developer/msbuild/2003 https://raw.githubusercontent.com/dotnet/msbuild/main/src/MSBuild/MSBuild/Microsoft.Build.Core.xsd" Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>psdc</AssemblyName>
     <Authors>Scover</Authors>
@@ -42,9 +40,11 @@
 
   <ItemGroup>
     <Using Include="Scover.Psdc.Library" />
+    <Using Include="Scover.Options" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Scover.Options" Version="1.1.0" />
   </ItemGroup>
 </Project>

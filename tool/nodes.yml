@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=nodes_schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/5cover/ast-gen/refs/heads/main/schemas/nodes.json
 algorithm:
   decls: decl*
 

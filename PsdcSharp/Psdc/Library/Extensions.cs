@@ -193,32 +193,6 @@ public static class Extensions
         yield return t;
     }
 
-    public static bool TryGetAt<T>(this IEnumerable<T> source, int index, [NotNullWhen(true)] out T? item) where T : notnull
-    {
-        if (index >= 0) {
-            if (source is IReadOnlyList<T> rolist) {
-                if (index < rolist.Count) {
-                    item = rolist[index];
-                    return true;
-                }
-            } else if (source is IList<T> list) {
-                if (index < list.Count) {
-                    item = list[index];
-                    return true;
-                }
-            } else {
-                using var enumerator = source.GetEnumerator();
-                while (enumerator.MoveNext()) {
-                    if (index-- == 0) {
-                        item = enumerator.Current;
-                        return true;
-                    }
-                }
-            }
-        }
-        item = default;
-        return false;
-    }
 
     public static bool Test(this Random random, double chance) => random.NextDouble() <= chance;
 
