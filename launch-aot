@@ -9,4 +9,4 @@ if [[ $# -ne 1 ]]; then
 fi
 
 
-PsdcSharp/Psdc/bin/publish/psdc c "testPrograms/$1.psc"
+Psdc/bin/publish/psdc c "testPrograms/$1.psc"

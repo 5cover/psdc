@@ -15,4 +15,4 @@ else
 fi
 
 
-dotnet exec "PsdcSharp/Psdc/bin/$dir/psdc.dll" c "testPrograms/$file.psc"
+dotnet exec "Psdc/bin/$dir/psdc.dll" c "testPrograms/$file.psc"

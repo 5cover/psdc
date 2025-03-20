@@ -5,7 +5,7 @@
       "name": "Psdc Debug",
       "type": "coreclr",
       "request": "launch",
-      "program": "${workspaceFolder}/PsdcSharp/Psdc/bin/Debug/net8.0/psdc.dll",
+      "program": "${workspaceFolder}/Psdc/bin/Debug/net8.0/psdc.dll",
       "args": ["c", "${workspaceFolder}/testPrograms/test.psc"],
       "console": "internalConsole"
     }   
