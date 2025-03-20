@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Scover.Psdc.Pseudocode;
 
 namespace Scover.Psdc.Parsing;
@@ -9,15 +8,13 @@ public interface Node
 
     internal interface ParenExpr : Expr
     {
-        public Expr InnerExpr { get; }
+        Expr InnerExpr { get; }
     }
-
-    public sealed record Algorithm(Range Location,
+    sealed record Algorithm(Range Location,
         IReadOnlyList<CompilerDirective> LeadingDirectives,
         Ident Title,
         IReadOnlyList<Declaration> Declarations) : Node;
-
-    public interface Declaration : Node
+    interface Declaration : Node
     {
         internal sealed record MainProgram(Range Location, IReadOnlyList<Stmt> Body) : Declaration;
         internal sealed record TypeAlias(Range Location, Ident Name, Type Type) : Declaration;
@@ -27,12 +24,11 @@ public interface Node
         internal sealed record Function(Range Location, FunctionSignature Signature) : Declaration;
         internal sealed record FunctionDefinition(Range Location, FunctionSignature Signature, IReadOnlyList<Stmt> Body) : Declaration;
     }
-
-    public interface Stmt : Node
+    interface Stmt : Node
     {
         internal sealed record ExprStmt(Range Location, Expr Expr) : Stmt;
         internal sealed record Assignment(Range Location, Expr.Lvalue Target, Expr Value) : Stmt;
-        internal sealed record DoWhileLoop(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Node, Stmt;
+        internal sealed record DoWhileLoop(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Stmt;
 
         internal sealed record Alternative(Range Location,
             Alternative.IfClause If,
@@ -49,7 +45,7 @@ public interface Node
         {
             internal interface Case : Node
             {
-                public IReadOnlyList<Stmt> Body { get; }
+                IReadOnlyList<Stmt> Body { get; }
                 internal sealed record OfValue(Range Location, Expr Value, IReadOnlyList<Stmt> Body) : Case;
                 internal sealed record Default(Range Location, IReadOnlyList<Stmt> Body) : Case;
             }
@@ -79,26 +75,25 @@ public interface Node
         internal sealed record RepeatLoop(Range Location,
             Expr Condition,
             IReadOnlyList<Stmt> Body)
-        : Node, Stmt;
+        : Stmt;
 
         internal sealed record Return(Range Location,
             Option<Expr> Value)
         : Stmt;
 
         internal sealed record LocalVariable(Range Location,
-            VariableDeclaration Declaration,
+            VariableDeclaration Decl,
             Option<Initializer> Value)
         : Stmt;
 
         internal sealed record WhileLoop(Range Location,
             Expr Condition,
             IReadOnlyList<Stmt> Body)
-        : Node, Stmt;
+        : Stmt;
     }
-
-    public interface Initializer : Node
+    interface Initializer : Node
     {
-        public sealed record Braced(Range Location, IReadOnlyList<Braced.Item> Items) : Initializer
+        sealed record Braced(Range Location, IReadOnlyList<Braced.Item> Items) : Initializer
         {
             public interface Item : Node;
             internal sealed record ValuedItem(Range Location, IReadOnlyList<Designator> Designators, Initializer Value) : Item;
@@ -119,9 +114,8 @@ public interface Node
             {
                 public ParenLValue(Range location,
                 Lvalue lvalue) => (Location, ContainedLvalue) = (location,
-                    lvalue is ParenExpr b
-                    && b.InnerExpr is Lvalue l
-                    ? l : lvalue);
+                    lvalue is ParenExpr { InnerExpr: Lvalue l }
+                        ? l : lvalue);
                 public Range Location { get; }
                 public Lvalue ContainedLvalue { get; }
                 Expr ParenExpr.InnerExpr => ContainedLvalue;
@@ -257,10 +251,9 @@ public interface Node
     internal interface Designator : Node
     {
         internal sealed record Array(Range Location, Expr Index) : Designator;
-        internal sealed record Structure(Range Location, Ident Component) : Designator;
+        internal sealed record Structure(Range Location, Ident Comp) : Designator;
     }
-
-    public interface Component : Node;
+    interface Component : Node;
 
     internal sealed record Nop(Range Location) : Stmt, Declaration;
 
@@ -316,8 +309,7 @@ public interface Node
         public sealed record Subtract(Range Location) : BinaryOperator(Location, "+");
         public sealed record Xor(Range Location) : BinaryOperator(Location, "XOR");
     }
-
-    public interface CompilerDirective : Declaration, Stmt, Component, Initializer.Braced.Item
+    interface CompilerDirective : Declaration, Stmt, Component, Initializer.Braced.Item
     {
         internal sealed record EvalExpr(Range Location, Expr Expr) : CompilerDirective;
         internal sealed record EvalType(Range Location, Type Type) : CompilerDirective;

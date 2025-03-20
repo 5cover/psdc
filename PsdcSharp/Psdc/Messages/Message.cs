@@ -116,9 +116,9 @@ public readonly struct Message
     internal static Message ErrorStructureComponentDoesntExist(Ident component,
         StructureType structType)
      => new(component.Location, MessageCode.StructureComponentDoesntExist,
-        structType.Alias is null // avoid the long struct representation
-            ? Fmt($"no component named `{component}` in structure")
-            : Fmt($"`{structType}` has no component named `{component}`"));
+        structType.Alias.HasValue // avoid the long struct representation
+            ? Fmt($"`{structType}` has no component named `{component}`")
+            : Fmt($"no component named `{component}` in structure"));
 
     internal static Message ErrorCharacterLiteralContainsMoreThanOneCharacter(Range location, char firstChar)
      => new(location, MessageCode.CharacterLiteralContainsMoreThanOneCharacter,

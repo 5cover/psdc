@@ -2,11 +2,10 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.Pseudocode;
 
-abstract class EvaluatedTypeImpl<TValue> : FormattableUsableImpl, EvaluatedType<TValue> where TValue : Value
+abstract class EvaluatedTypeImpl<TValue>(Option<Ident> alias) : FormattableUsableImpl, EvaluatedType<TValue>
+where TValue : Value
 {
-    protected EvaluatedTypeImpl(Option<Ident> alias) => Alias = alias;
-    public Option<Ident> Alias { get; }
-
+    public Option<Ident> Alias { get; } = alias;
     protected abstract string ToStringNoAlias(IFormatProvider? fmtProvider);
 
     public virtual bool IsConvertibleTo(EvaluatedType other) => SemanticsEqual(other) || other is EvaluatedTypeImpl<TValue> o && o.IsConvertibleFrom(this);
@@ -51,7 +50,8 @@ where TValue : class, Value
     TValue? _runtimeValue;
     TValue? _garbageValue;
     TValue? _invalidValue;
-    public override TValue DefaultValue => _defaultValue ??= CreateValue(defaultValueStatus);
+    readonly ValueStatus _defaultValueStatus = defaultValueStatus;
+    public override TValue DefaultValue => _defaultValue ??= CreateValue(_defaultValueStatus);
     public override TValue RuntimeValue => _runtimeValue ??= CreateValue(ValueStatus.Runtime.Instance);
     public override TValue GarbageValue => _garbageValue ??= CreateValue(ValueStatus.Garbage.Instance);
     public override TValue InvalidValue => _invalidValue ??= CreateValue(ValueStatus.Invalid.Instance);
@@ -63,15 +63,14 @@ abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Option<Ident> 
 where TValue : class, Value
 where TUnderlying : notnull
 {
-    protected EvaluatedTypeImplInstantiable(Option<Ident> alias, TUnderlying defaultValue) : this(alias, ValueStatus.Comptime.Of(defaultValue))
-    { }
+    protected EvaluatedTypeImplInstantiable(Option<Ident> alias, TUnderlying defaultValue) : this(alias, ValueStatus.Comptime.Of(defaultValue)) { }
 
     TValue? _defaultValue;
     TValue? _runtimeValue;
     TValue? _garbageValue;
     TValue? _invalidValue;
-
-    public override TValue DefaultValue => _defaultValue ??= CreateValue(defaultValueStatus);
+    readonly ValueStatus<TUnderlying> _defaultValueStatus = defaultValueStatus;
+    public override TValue DefaultValue => _defaultValue ??= CreateValue(_defaultValueStatus);
     public override TValue RuntimeValue => _runtimeValue ??= CreateValue(ValueStatus.Runtime<TUnderlying>.Instance);
     public override TValue GarbageValue => _garbageValue ??= CreateValue(ValueStatus.Garbage<TUnderlying>.Instance);
     public override TValue InvalidValue => _invalidValue ??= CreateValue(ValueStatus.Invalid<TUnderlying>.Instance);

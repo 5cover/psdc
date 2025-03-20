@@ -31,14 +31,14 @@ public sealed class Lexer
     readonly Messenger _msger;
     readonly List<int> _sortedLineContinutationIndexes;
     readonly string _code;
-    const int NA_INDEX = -1;
+    const int NaIndex = -1;
 
     public static IEnumerable<Token> Lex(Messenger messenger, string input)
     {
         Lexer t = new(messenger, input);
 
         int i = 0;
-        int iInvalidStart = NA_INDEX;
+        int iInvalidStart = NaIndex;
 
         while (i < t._code.Length) {
             if (char.IsWhiteSpace(t._code[i])) {
@@ -55,7 +55,7 @@ public sealed class Lexer
                 }
                 i += token.Value.Position.Length;
             } else {
-                if (iInvalidStart == NA_INDEX) {
+                if (iInvalidStart == NaIndex) {
                     iInvalidStart = i;
                 }
                 i++;
@@ -69,9 +69,9 @@ public sealed class Lexer
 
     void ReportInvalidToken(ref int iInvalidStart, int i)
     {
-        if (iInvalidStart != NA_INDEX) {
+        if (iInvalidStart != NaIndex) {
             _msger.Report(Message.ErrorUnknownToken(AdjustLocationForLineContinuations(iInvalidStart, i - iInvalidStart)));
-            iInvalidStart = NA_INDEX;
+            iInvalidStart = NaIndex;
         }
     }
 
@@ -116,22 +116,22 @@ public sealed class Lexer
     {
         const int LineContinuationLen = 2;
 
-        int iFirstLC = _sortedLineContinutationIndexes.BinarySearch(start);
+        int iFirstLc = _sortedLineContinutationIndexes.BinarySearch(start);
         // If there's no line continuation after start
-        if (~iFirstLC == _sortedLineContinutationIndexes.Count) {
+        if (~iFirstLc == _sortedLineContinutationIndexes.Count) {
             return 0;
         }
-        if (iFirstLC < 0) {
-            iFirstLC = ~iFirstLC;
+        if (iFirstLc < 0) {
+            iFirstLc = ~iFirstLc;
         }
-        int iLastLC = iFirstLC;
-        for (int i = _sortedLineContinutationIndexes[iFirstLC]; iLastLC < _sortedLineContinutationIndexes.Count && i < end; ++i) {
-            if (i == _sortedLineContinutationIndexes[iLastLC]) {
-                ++iLastLC;
+        int iLastLc = iFirstLc;
+        for (int i = _sortedLineContinutationIndexes[iFirstLc]; iLastLc < _sortedLineContinutationIndexes.Count && i < end; ++i) {
+            if (i == _sortedLineContinutationIndexes[iLastLc]) {
+                ++iLastLc;
                 end += LineContinuationLen;
             }
         }
 
-        return LineContinuationLen * (iLastLC - iFirstLC);
+        return LineContinuationLen * (iLastLc - iFirstLc);
     }
 }

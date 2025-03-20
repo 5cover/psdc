@@ -4,7 +4,7 @@ namespace Scover.Psdc.Benchmark;
 
 sealed class IgnoreMessenger : Messenger
 {
-    private IgnoreMessenger() { }
+    IgnoreMessenger() { }
     public static IgnoreMessenger Instance { get; } = new();
     public IEnumerable<Message> Messages => [];
 

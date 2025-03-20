@@ -7,7 +7,7 @@ using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
 namespace Scover.Psdc.Pseudocode;
 
-interface InstantiableType<TValue, TUnderlying> : EvaluatedType<TValue>
+interface InstantiableType<out TValue, in TUnderlying> : EvaluatedType<TValue>
 where TValue : Value
 {
     /// <summary>
@@ -15,7 +15,7 @@ where TValue : Value
     /// </summary>
     /// <param name="value">The underlying value of the new instance.</param>
     /// <returns>An instance of this type.</returns>
-    public TValue Instanciate(TUnderlying value);
+    TValue Instanciate(TUnderlying value);
 }
 
 interface EvaluatedType : IFormattableUsable, EquatableSemantics<EvaluatedType>
@@ -24,70 +24,70 @@ interface EvaluatedType : IFormattableUsable, EquatableSemantics<EvaluatedType>
     /// Get the alias used to refer to this type indirectly.
     /// </summary>
     /// <value>The alias used to refer to this type indirectly or <see langword="null"/> if this type is not aliased.</value>
-    public Option<Ident> Alias { get; }
+    Option<Ident> Alias { get; }
 
     // Static methods used for method groups
-    public static bool IsConvertibleTo(EvaluatedType self, EvaluatedType other) => self.IsConvertibleTo(other);
-    public static bool IsAssignableTo(EvaluatedType self, EvaluatedType other) => self.IsAssignableTo(other);
+    static bool IsConvertibleTo(EvaluatedType self, EvaluatedType other) => self.IsConvertibleTo(other);
+    static bool IsAssignableTo(EvaluatedType self, EvaluatedType other) => self.IsAssignableTo(other);
 
     /// <summary>
     /// Is this type implicitly convertible to another type?
     /// </summary>
     /// <param name="other">Another type to compare with the current type.</param>
     /// <returns>This type is implicitly convertible to <paramref name="other"/>.</returns>
-    /// <remarks>Overrides will usually want to call base method in <see cref="EvaluatedType"/> in an logical disjunction.</remarks>
-    public bool IsConvertibleTo(EvaluatedType other);
+    /// <remarks>Overrides will usually want to call base method in <see cref="EvaluatedType"/> in a logical disjunction.</remarks>
+    bool IsConvertibleTo(EvaluatedType other);
 
     /// <summary>
     /// Can a value of this type be assigned to a variable of another type?
     /// </summary>
     /// <param name="other">The type of the variable a value of this type would be assigned to.</param>
     /// <returns>This type is assignable to <paramref name="other"/>.</returns>
-    /// <remarks>Overrides will usually want to call base in <see cref="EvaluatedTypeImpl"/> in an logical disjunction.</remarks>
-    public bool IsAssignableTo(EvaluatedType other);
+    /// <remarks>Overrides will usually want to call base in <see cref="EvaluatedTypeImpl{TValue}"/> in a logical disjunction.</remarks>
+    bool IsAssignableTo(EvaluatedType other);
 
     /// <summary>
     /// Get the value for this type that is not known at compile-time.
     /// </summary>
     /// <value>A value of this type, whose status is always <see cref="ValueStatus.Runtime"/>.</value>
-    public Value RuntimeValue { get; }
+    Value RuntimeValue { get; }
 
     /// <summary>
     /// Get the value for this type that is not known, either at run-time or compile-time.
     /// </summary>
     /// <value>A value of this type, whose  is always <see cref="ValueStatus.Garbage"/>.</value>
-    public Value GarbageValue { get; }
+    Value GarbageValue { get; }
 
     /// <summary>
     /// Get the default value for this type.
     /// </summary>
     /// <value>A value of this type, whose status is always <see cref="ValueStatus.Garbage"/> or <see cref="ValueStatus.Comptime"/>. Represents the default value to set to in an initializer.</value>
-    public Value DefaultValue { get; }
+    Value DefaultValue { get; }
 
     /// <summary>
     /// Gets the invalid value for this type
     /// </summary>
     /// <value>A value of this types, whose status is always <see cref="ValueStatus.Invalid"/>.</value>
-    public Value InvalidValue { get; }
+    Value InvalidValue { get; }
 
     /// <summary>
     /// Clone this type, but with an alias
     /// </summary>
     /// <param name="alias">A type alias name.</param>
     /// <returns>A clone of this type, but with the <see cref="Alias"/> property set to <paramref name="alias"/>.</returns>
-    public EvaluatedType ToAliasReference(Ident alias);
+    EvaluatedType ToAliasReference(Ident alias);
 }
 
 interface EvaluatedType<out TValue> : EvaluatedType where TValue : Value
 {
     /// <inheritdoc cref="EvaluatedType.RuntimeValue"/>
-    public new TValue RuntimeValue { get; }
+    new TValue RuntimeValue { get; }
     /// <inheritdoc cref="EvaluatedType.GarbageValue"/>
-    public new TValue GarbageValue { get; }
+    new TValue GarbageValue { get; }
     /// <inheritdoc cref="EvaluatedType.DefaultValue"/>
-    public new TValue DefaultValue { get; }
+    new TValue DefaultValue { get; }
     /// <inheritdoc cref="EvaluatedType.InvalidValue"/>
-    public new TValue InvalidValue { get; }
+    new TValue InvalidValue { get; }
 }
 
 sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArray<Value>>
@@ -104,7 +104,7 @@ sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArra
     public EvaluatedType ItemType { get; }
 
     public ImmutableArray<Value> CreateDefaultValue() => CreateDefaultValue(ItemType, Length);
-    static ImmutableArray<Value> CreateDefaultValue(EvaluatedType type, ComptimeExpression<int> length) => Enumerable.Repeat(type.DefaultValue, length.Value).ToImmutableArray();
+    static ImmutableArray<Value> CreateDefaultValue(EvaluatedType type, ComptimeExpression<int> length) => [..Enumerable.Repeat(type.DefaultValue, length.Value)];
 
     public ArrayType(EvaluatedType itemType,
         ComptimeExpression<int> length)
@@ -198,7 +198,7 @@ sealed class LengthedStringType : EvaluatedTypeImplInstantiable<LengthedStringVa
     public static LengthedStringType Create(ComptimeExpression<int> length)
      => new(length.Expression.Some(), length.Value);
     public static LengthedStringType Create(int length)
-     => new(Option.None<Expr>(), length, default);
+     => new(Option.None<Expr>(), length);
 
     public override bool IsConvertibleTo(EvaluatedType other) => base.IsConvertibleTo(other) || other is StringType;
     public override bool IsAssignableTo(EvaluatedType other) => base.IsAssignableTo(other) || other is LengthedStringType o && o.Length >= Length;
@@ -254,14 +254,13 @@ sealed class StringType : EvaluatedTypeImplInstantiable<StringValue, string>
     protected override string ToStringNoAlias(IFormatProvider? fmtProvider) => "chaîne";
 }
 
-sealed class StructureType : EvaluatedTypeImplInstantiable<StructureValue, ImmutableOrderedMap<Ident, Value>>
+sealed class StructureType(ImmutableOrderedMap<Ident, EvaluatedType> components, ValueOption<Ident> alias = default)
+    : EvaluatedTypeImplInstantiable<StructureValue, ImmutableOrderedMap<Ident, Value>>(
+        alias, CreateDefaultValue(components)
+    )
 {
     const int MaxComponentsInRepresentation = 3;
-    public StructureType(ImmutableOrderedMap<Ident, EvaluatedType> components, ValueOption<Ident> alias = default)
-     : base(alias, CreateDefaultValue(components))
-     => Components = components;
-
-    public ImmutableOrderedMap<Ident, EvaluatedType> Components { get; }
+    public ImmutableOrderedMap<Ident, EvaluatedType> Components { get; } = components;
     public override StructureType ToAliasReference(Ident alias) => new(Components, alias);
 
     public override bool SemanticsEqual(EvaluatedType other) => other is StructureType o
@@ -313,7 +312,7 @@ sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
      => (Location, _repr) = (location, repr);
 
     public Range Location { get; }
-    public static UnknownType Inferred { get; } = new UnknownType(default, "<unknown-type>");
+    public static UnknownType Inferred { get; } = new(default, "<unknown-type>");
 
     public static UnknownType Declared(string input, Range location) => new(location, input[location]);
 

@@ -1,12 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
-using Scover.Psdc.Library;
+
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.Benchmark;
 
 [MemoryDiagnoser]
-public class StaticAnalysisBenchmark
+public sealed class StaticAnalysisBenchmark
 {
     static readonly Parameters p = Program.Parameters;
     Node.Algorithm _ast = null!;

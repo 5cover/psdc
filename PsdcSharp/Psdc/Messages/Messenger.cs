@@ -9,9 +9,7 @@ public interface Messenger
     /// Report a message.
     /// </summary>
     /// <param name="message">The message to report.</param>
-    public void Report(Message message);
-
-    public int GetMessageCount(MessageSeverity severity);
-
-    public IEnumerable<Message> Messages { get; }
+    void Report(Message message);
+    int GetMessageCount(MessageSeverity severity);
+    IEnumerable<Message> Messages { get; }
 }

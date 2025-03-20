@@ -96,7 +96,7 @@ public sealed class MessageTextPrinter(
             }
 
             int badLineCount = end.Line - start.Line - 1;
-            var badLines = Enumerable.Range(start.Line + 1, badLineCount);
+            var badLines = Enumerable.Range(start.Line + 1, badLineCount).ToArray();
             const int MaxBadLines = MaxMultilineErrorLines - 2;
             foreach (var line in badLines.Take(MaxBadLines)) {
                 ReadOnlySpan<char> badLine = _input.GetLine(line);
@@ -104,7 +104,7 @@ public sealed class MessageTextPrinter(
                 msgColor.SetColor();
                 EndLine(badLine);
                 Console.ResetColor();
-            };
+            }
 
             badLines.FirstOrNone().Tap(l => {
                 if (badLineCount > MaxBadLines) {
@@ -127,7 +127,7 @@ public sealed class MessageTextPrinter(
         foreach (var advice in message.AdvicePieces) {
             StartLine(lineNoPadding);
             _output.WriteLine(advice);
-        };
+        }
 
         _output.WriteLine();
     }
@@ -136,11 +136,11 @@ public sealed class MessageTextPrinter(
     {
         var (start, end) = msg.Location.Apply(_input);
 
-        if (start.Line == end.Line) {
-            _output.Write($"{_sourceFile}:{start.Line + 1}.{start.Column + 1}-{end.Column + 1}: ");
-        } else {
-            _output.Write($"{_sourceFile}:{start.Line + 1}.{start.Column + 1}-{end.Line + 1}.{end.Column + 1}: ");
-        }
+        _output.Write(
+            start.Line == end.Line
+                ? $"{_sourceFile}:{start.Line + 1}.{start.Column + 1}-{end.Column + 1}: "
+                : $"{_sourceFile}:{start.Line + 1}.{start.Column + 1}-{end.Line + 1}.{end.Column + 1}: "
+        );
         var msgColor = ConsoleColors.ForMessageSeverity(msg.Severity);
         msgColor.DoInColor(() => _output.Write(
             string.Create(Format.Msg, $"P{(int)msg.Code:d4}: {msg.Severity.ToString().ToLower(Format.Msg)}:")));
@@ -150,7 +150,7 @@ public sealed class MessageTextPrinter(
 
     void PrintLocationVsCode(Message msg)
     {
-        var (start, end) = msg.Location.Apply(_input);
+        var (start, _) = msg.Location.Apply(_input);
 
         var msgColor = ConsoleColors.ForMessageSeverity(msg.Severity);
         msgColor.DoInColor(() => _output.Write(string.Create(Format.Msg, $"[P{(int)msg.Code:d4}] ")));

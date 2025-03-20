@@ -5,15 +5,16 @@ namespace Scover.Psdc.StaticAnalysis;
 
 public static class SemanticNodeExtensions
 {
+    /// <summary>
     /// Invert an expression, assuming it is boolean.
     /// </summary>
     /// <param name="expr">The expression.</param>
-    /// <returns>The inverse of <paramref name="expr"/>. If <param name="expr"> is not a boolean expression, a simple NOT logical operation is created.</returns>
+    /// <returns>The inverse of <paramref name="expr"/>. If <param name="expr"/> is not a boolean expression, a simple NOT logical operation is created.</returns>
     internal static Expr Invert(this Expr expr) => expr switch {
         Expr.Literal { Value: BooleanValue v } l => new Expr.Literal(expr.Meta,
             v.Status.ComptimeValue.Match(v => !v, () => l.UnderlyingValue), v.Invert()),
         Expr.ParenExprImpl e => new Expr.ParenExprImpl(expr.Meta, e.ContainedExpression.Invert(), e.Value.Invert()),
-        Expr.UnaryOperation uo when uo.Operator is UnaryOperator.Not => uo.Operand,
+        Expr.UnaryOperation { Operator: UnaryOperator.Not } uo => uo.Operand,
         Expr.BinaryOperation bo when bo.Invert() is { HasValue: true } bov => bov.Value,
         _ => new Expr.UnaryOperation(expr.Meta, new UnaryOperator.Not(expr.Meta), expr, expr.Value.Invert()),
     };
@@ -27,12 +28,12 @@ public static class SemanticNodeExtensions
     {
         var v = bo.Value.Invert();
         return bo.Operator switch {
-            BinaryOperator.Equal e => new Expr.BinaryOperation(bo.Meta, bo.Left, new BinaryOperator.NotEqual(e.Meta), bo.Right, v),
-            BinaryOperator.NotEqual e => new Expr.BinaryOperation(bo.Meta, bo.Left, new BinaryOperator.Equal(e.Meta), bo.Right, v),
-            BinaryOperator.GreaterThan e => new Expr.BinaryOperation(bo.Meta, bo.Left, new BinaryOperator.LessThanOrEqual(e.Meta), bo.Right, v),
-            BinaryOperator.GreaterThanOrEqual e => new Expr.BinaryOperation(bo.Meta, bo.Left, new BinaryOperator.LessThan(e.Meta), bo.Right, v),
-            BinaryOperator.LessThan e => new Expr.BinaryOperation(bo.Meta, bo.Left, new BinaryOperator.GreaterThanOrEqual(e.Meta), bo.Right, v),
-            BinaryOperator.LessThanOrEqual e => new Expr.BinaryOperation(bo.Meta, bo.Left, new BinaryOperator.GreaterThan(e.Meta), bo.Right, v),
+            BinaryOperator.Equal e => bo with { Operator = new BinaryOperator.NotEqual(e.Meta), Value = v },
+            BinaryOperator.NotEqual e => bo with { Operator = new BinaryOperator.Equal(e.Meta), Value = v },
+            BinaryOperator.GreaterThan e => bo with { Operator = new BinaryOperator.LessThanOrEqual(e.Meta), Value = v },
+            BinaryOperator.GreaterThanOrEqual e => bo with { Operator = new BinaryOperator.LessThan(e.Meta), Value = v },
+            BinaryOperator.LessThan e => bo with { Operator = new BinaryOperator.GreaterThanOrEqual(e.Meta), Value = v },
+            BinaryOperator.LessThanOrEqual e => bo with { Operator = new BinaryOperator.GreaterThan(e.Meta), Value = v },
             // NOT (A AND B) <=> NOT A OR NOT B
             BinaryOperator.And e => new Expr.BinaryOperation(bo.Meta,
                 bo.Left.Invert(),
@@ -46,12 +47,8 @@ public static class SemanticNodeExtensions
                 bo.Right.Invert(),
                 v),
             // NOT (A XOR B) <=> A = B
-            BinaryOperator.Xor e => new Expr.BinaryOperation(bo.Meta,
-                bo.Left,
-                new BinaryOperator.Equal(e.Meta),
-                bo.Right,
-                v).Some(), // gives the target type of the switch expression
-            _ => default
+            BinaryOperator.Xor e => (bo with { Operator = new BinaryOperator.Equal(e.Meta), Value = v }).Some(), // gives the target type of the switch expression
+            _ => default,
         };
     }
 

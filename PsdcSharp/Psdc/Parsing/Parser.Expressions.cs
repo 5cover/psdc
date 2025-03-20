@@ -122,7 +122,9 @@ partial class Parser
              count += prRright.SourceTokens.Count;
 
              prLeft = prRright.WithSourceTokens(new(tokens, count)).Map((srcTokens, right)
-              => new Expr.BinaryOperation(srcTokens.Location, prLeft.Value, prOp.Value(prOp.SourceTokens.Location), right));
+                 // ReSharper disable once AccessToModifiedClosure
+                 // Justification: the closure is executed immediately
+                 => new Expr.BinaryOperation(srcTokens.Location, prLeft.Value, prOp.Value(prOp.SourceTokens.Location), right));
          }
 
          return prLeft;

@@ -5,15 +5,13 @@ namespace Scover.Psdc;
 public sealed class SourceTokens
 {
     readonly Lazy<Range> _location;
-    readonly IEnumerable<Token> _tokens;
-
     public SourceTokens(IEnumerable<Token> tokens, int count)
     {
         Count = count;
-        _tokens = tokens.Take(count);
+        tokens = tokens.Take(count);
         _location = count == 0
             ? new(Range.EndAt(Index.Start))
-            : new(() => _tokens.First().Position.Start.._tokens.Last().Position.End);
+            : new(() => tokens.First().Position.Start..tokens.Last().Position.End);
     }
 
     public SourceTokens(Token token) : this(token.Yield(), 1) { }

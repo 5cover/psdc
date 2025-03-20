@@ -1,5 +1,6 @@
-using Scover.Psdc.Pseudocode;
 using Scover.Psdc.Messages;
+using Scover.Psdc.Pseudocode;
+
 using static Scover.Psdc.Parsing.Node;
 using static Scover.Psdc.Parsing.Node.UnaryOperator;
 using static Scover.Psdc.Parsing.Node.BinaryOperator;
@@ -33,13 +34,13 @@ static class ConstantFolding
         (_, UnknownValue) => OperationResult.OkUnary(operand),
 
         // Arithmetic
-        (Minus, IntegerValue x) => Operate(x.Type, x.Status, (int x) => -x),
+        (Minus, IntegerValue x) => Operate(x.Type, x.Status, x => -x),
         (Minus, RealValue x) => Operate(x.Type, x.Status, x => -x),
         (Plus, IntegerValue x) => OperationResult.OkUnary(x),
         (Plus, RealValue x) => OperationResult.OkUnary(x),
 
         // Bitwise
-        (Not, IntegerValue x) => Operate(x.Type, x.Status, (int x) => ~x),
+        (Not, IntegerValue x) => Operate(x.Type, x.Status, x => ~x),
 
         // Logical
         (Not, BooleanValue x) => Operate(x.Type, x.Status, x => !x),
@@ -64,7 +65,7 @@ static class ConstantFolding
             (IntegerValue iv, BooleanType bt) => Operate(bt, iv.Status, i => i != 0),
             (IntegerValue, CharacterType ct) => OperationResult.OkUnary(ct.RuntimeValue), // runtime since target language encoding is unknown
             (RealValue rv, IntegerType it) => Operate(it, rv.Status, r => (int)r),
-            _ => (UnaryOperationMessage)((opUn, operandType) => Message.ErrorInvalidCast(opUn.Location, operandType, targetType))
+            _ => (UnaryOperationMessage)((opUn, operandType) => Message.ErrorInvalidCast(opUn.Location, operandType, targetType)),
         };
     }
 
@@ -77,7 +78,7 @@ static class ConstantFolding
         (Equal, BooleanValue l, BooleanValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r),
         (Equal, CharacterValue l, CharacterValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r),
         (Equal, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r),
-        (Equal, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (int l, int r) => l == r),
+        (Equal, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r),
         (Equal, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r)
             .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.Location)),
 
@@ -85,45 +86,45 @@ static class ConstantFolding
         (NotEqual, BooleanValue l, BooleanValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r),
         (NotEqual, CharacterValue l, CharacterValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r),
         (NotEqual, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r),
-        (NotEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (int l, int r) => l != r),
+        (NotEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r),
         (NotEqual, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r)
             .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.Location)),
 
         // Comparison
-        (GreaterThan, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (int l, int r) => l > r),
+        (GreaterThan, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l > r),
         (GreaterThan, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l > r),
         (GreaterThan, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => string.CompareOrdinal(l, r) > 0),
-        (GreaterThanOrEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (int l, int r) => l >= r),
+        (GreaterThanOrEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l >= r),
         (GreaterThanOrEqual, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l >= r),
         (GreaterThanOrEqual, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => string.CompareOrdinal(l, r) >= 0),
-        (LessThan, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (int l, int r) => l < r),
+        (LessThan, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l < r),
         (LessThan, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l < r),
         (LessThan, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => string.CompareOrdinal(l, r) < 0),
-        (LessThanOrEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (int l, int r) => l <= r),
+        (LessThanOrEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l <= r),
         (LessThanOrEqual, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l <= r),
         (LessThanOrEqual, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => string.CompareOrdinal(l, r) <= 0),
 
         // Arithmetic
-        (Add, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l + r),
+        (Add, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (l, r) => l + r),
         (Add, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l + r),
         (Divide, IntegerValue l, IntegerValue r) => Operate(l.Status, r.Status,
-            (Option<int> l, Option<int> r) => l.Zip(r).Map((l, r) => r == 0
+            (l, r) => l.Zip(r).Map((l, r) => r == 0
                 ? OperationResult.OkBinary(IntegerType.Instance.RuntimeValue)
                     .WithMessages((opBin, _, _) => Message.WarningDivisionByZero(opBin.Location))
                 : OperationResult.OkBinary(IntegerType.Instance.Instanciate(l / r)))
             .ValueOr(OperationResult.OkBinary(IntegerType.Instance.RuntimeValue))),
         (Divide, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l / r),
-        (Mod, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l % r),
+        (Mod, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (l, r) => l % r),
         (Mod, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l % r),
-        (Multiply, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l * r),
+        (Multiply, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (l, r) => l * r),
         (Multiply, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l * r),
-        (Subtract, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l - r),
+        (Subtract, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (l, r) => l - r),
         (Subtract, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l - r),
 
         // Bitwise
-        (And, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l & r),
-        (Or, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l | r),
-        (Xor, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (int l, int r) => l ^ r),
+        (And, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (l, r) => l & r),
+        (Or, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (l, r) => l | r),
+        (Xor, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (l, r) => l ^ r),
 
         // Logical
         (And, BooleanValue l, BooleanValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l && r),

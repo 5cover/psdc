@@ -57,7 +57,7 @@ static class Strings
             case '\x1b':
                 o.Append("\\e");
                 break;
-            case char when char.IsControl(c):
+            case { } when char.IsControl(c):
                 // If c can be represented in 3 octal chars
                 if (c < 8 * 8 * 8) {
                     o.Append(fmtProvider, $"\\{Convert.ToString(c, 8)}");
@@ -126,7 +126,7 @@ static class Strings
                     o.Append('\x1b');
                     i += OffsetSimple;
                     break;
-                case char c when GetOctalDigitValue(c) is { HasValue: true } firstDigit: {
+                case var c when GetOctalDigitValue(c) is { HasValue: true } firstDigit: {
                     ushort val = firstDigit.Value;
                     int digitCount = 1;
                     for (; digitCount < MaxLengthOctal
@@ -189,7 +189,7 @@ static class Strings
          >= '0' and <= '9' => (byte)(s[i] - '0'),
          >= 'A' and <= 'F' => (byte)(s[i] - 'A' + 10),
          >= 'a' and <= 'f' => (byte)(s[i] - 'a' + 10),
-         _ => default
+         _ => default,
      };
 }
 

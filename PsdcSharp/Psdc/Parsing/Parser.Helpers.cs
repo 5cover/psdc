@@ -54,7 +54,7 @@ partial class Parser
     /// <param name="firstParser">The first parser.</param>
     /// <param name="parsers">The other parsers.</param>
     /// <returns>The result of the first successful parsers or the error of all parsers combined.</returns>
-    /// <remarks>Parsers should be ordered by decreasing length for maximum munch.</remakrs>
+    /// <remarks>Parsers should be ordered by decreasing length for maximum munch.</remarks>
     static Parser<T> ParserFirst<T>(Parser<T> firstParser, params Parser<T>[] parsers)
      => tokens => {
          var result = firstParser(tokens);

@@ -23,9 +23,9 @@ interface ValueStatus : IEquatable<ValueStatus>
     internal sealed class Comptime<TUnderlying>(TUnderlying value) : Comptime(value), ValueStatus<TUnderlying>
     where TUnderlying : notnull
     {
-        public new TUnderlying Value => value;
-        public ValueOption<TUnderlying> ComptimeValue => value;
-        ValueStatus<TResult> ValueStatus<TUnderlying>.Map<TResult>(Func<TUnderlying, TResult> transform) => Of(transform(value));
+        public new TUnderlying Value { get; } = value;
+        public ValueOption<TUnderlying> ComptimeValue => Value;
+        ValueStatus<TResult> ValueStatus<TUnderlying>.Map<TResult>(Func<TUnderlying, TResult> transform) => Of(transform(Value));
     }
 
     /// <summary>
@@ -36,30 +36,30 @@ interface ValueStatus : IEquatable<ValueStatus>
     {
         ValueOption<object> ValueStatus.ComptimeValue => default;
         public bool Equals(ValueStatus? other) => other is Runtime;
-        public static Runtime Instance { get; } = Runtime<object>.Instance;
+        public static Runtime Instance => Runtime<object>.Instance;
     }
     internal sealed class Runtime<TUnderlying> : Runtime, ValueStatus<TUnderlying>
     {
         Runtime() { }
-        public static new Runtime<TUnderlying> Instance { get; } = new();
+        public new static Runtime<TUnderlying> Instance { get; } = new();
         public ValueOption<TUnderlying> ComptimeValue => default;
         ValueStatus<TResult> ValueStatus<TUnderlying>.Map<TResult>(Func<TUnderlying, TResult> transform) => Runtime<TResult>.Instance;
     }
 
     /// <summary>
-    /// The value is neither known at compile-time or run-time.
+    /// The value is neither known at compile-time nor run-time.
     /// </summary>
     /// <remarks>Example: unitialized variable, unallocated memory.</remarks>
     internal abstract class Garbage : ValueStatus
     {
         ValueOption<object> ValueStatus.ComptimeValue => default;
         public bool Equals(ValueStatus? other) => other is Garbage;
-        public static Garbage Instance { get; } = Garbage<object>.Instance;
+        public static Garbage Instance => Garbage<object>.Instance;
     }
     internal sealed class Garbage<TUnderlying> : Garbage, ValueStatus<TUnderlying>
     {
         Garbage() { }
-        public static new Garbage<TUnderlying> Instance { get; } = new();
+        public new static Garbage<TUnderlying> Instance { get; } = new();
         public ValueOption<TUnderlying> ComptimeValue => default;
         ValueStatus<TResult> ValueStatus<TUnderlying>.Map<TResult>(Func<TUnderlying, TResult> transform) => Garbage<TResult>.Instance;
     }
@@ -71,12 +71,12 @@ interface ValueStatus : IEquatable<ValueStatus>
     {
         ValueOption<object> ValueStatus.ComptimeValue => default;
         public bool Equals(ValueStatus? other) => other is Invalid;
-        public static Invalid Instance { get; } = Invalid<object>.Instance;
+        public static Invalid Instance => Invalid<object>.Instance;
     }
     internal sealed class Invalid<TUnderlying> : Invalid, ValueStatus<TUnderlying>
     {
         Invalid() { }
-        public static new Invalid<TUnderlying> Instance { get; } = new();
+        public new static Invalid<TUnderlying> Instance { get; } = new();
         public ValueOption<TUnderlying> ComptimeValue => default;
         ValueStatus<TResult> ValueStatus<TUnderlying>.Map<TResult>(Func<TUnderlying, TResult> transform) => Invalid<TResult>.Instance;
     }
@@ -84,6 +84,6 @@ interface ValueStatus : IEquatable<ValueStatus>
 
 interface ValueStatus<TUnderlying> : ValueStatus
 {
-    public ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) where TResult : notnull;
-    public new ValueOption<TUnderlying> ComptimeValue { get; }
+    ValueStatus<TResult> Map<TResult>(Func<TUnderlying, TResult> transform) where TResult : notnull;
+    new ValueOption<TUnderlying> ComptimeValue { get; }
 }

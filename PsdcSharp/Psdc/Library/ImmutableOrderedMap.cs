@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 
+// ReSharper disable LoopCanBeConvertedToQuery
+
 namespace Scover.Psdc.Library;
 
 /// <summary>
@@ -37,7 +39,7 @@ where TKey : notnull
         _map.Add(key, value),
         _list.Add(new(key, value))
     );
-    public ImmutableOrderedMap<TKey, TValue> AddRange(IEnumerable<KeyValuePair<TKey, TValue>> pairs) => new(
+    public ImmutableOrderedMap<TKey, TValue> AddRange(IReadOnlyCollection<KeyValuePair<TKey, TValue>> pairs) => new(
         _map.AddRange(pairs),
         _list.AddRange(pairs)
     );
@@ -49,7 +51,7 @@ where TKey : notnull
         _map.Remove(key),
         _list.RemoveAt(IndexOfKey(_list, key))
     );
-    public ImmutableOrderedMap<TKey, TValue> RemoveRange(IEnumerable<TKey> keys)
+    public ImmutableOrderedMap<TKey, TValue> RemoveRange(IReadOnlyCollection<TKey> keys)
     {
         var newList = _list;
         foreach (var key in keys) {
@@ -63,7 +65,7 @@ where TKey : notnull
         _list.SetItem(IndexOfKey(_list, key), new(key, value))
     );
 
-    public ImmutableOrderedMap<TKey, TValue> SetItems(IEnumerable<KeyValuePair<TKey, TValue>> items)
+    public ImmutableOrderedMap<TKey, TValue> SetItems(IReadOnlyCollection<KeyValuePair<TKey, TValue>> items)
     {
         var newList = _list;
         foreach (var item in items) {

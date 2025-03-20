@@ -2,7 +2,6 @@ using System.Text;
 
 using Scover.Psdc.Pseudocode;
 using Scover.Psdc.Messages;
-using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
 
 namespace Scover.Psdc.CodeGeneration.C;
@@ -49,7 +48,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
 
     public TypeInfo ToPointer(int level)
      => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length + level,
-        _postModifier, null);
+        _postModifier);
 
     static string AddSpaceBefore(string? str) => str is null ? "" : string.Concat(" ", str);
 
@@ -63,18 +62,18 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
             FileType => new("FILE", starCount: 1, requiredHeaders: IncludeSet.StdIo.Yield()),
             BooleanType => new("bool", "%hhu", requiredHeaders: IncludeSet.StdBool.Yield()),
             CharacterType => new("char", "%c"),
-            RealType real => new("float", "%g"),
-            IntegerType integer => new("int", "%d"),
+            RealType => new("float", "%g"),
+            IntegerType => new("int", "%d"),
             StringType => new("char", "%s", starCount: 1),
             ArrayType array => CreateArrayType(array, help),
             LengthedStringType strlen => CreateLengthedString(strlen, help),
             StructureType structure => CreateStructure(structure, help),
-            VoidType @void => new("void"),
+            VoidType => new("void"),
             _ => throw type.ToUnmatchedException(),
         };
 
         return type.Alias.Match(
-            a => new TypeInfo(help.KwTable.Validate(help.Scope, a, help.Msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders),
+            a => new(help.KwTable.Validate(help.Scope, a, help.Msger), typeInfo.FormatComponent, typeInfo.RequiredHeaders),
             () => typeInfo);
 
         TypeInfo CreateArrayType(ArrayType array, Help help)
@@ -88,7 +87,7 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
                 postModifier: postModifier.ToString());
         }
 
-        TypeInfo CreateLengthedString(LengthedStringType strlen, Help help)
+        static TypeInfo CreateLengthedString(LengthedStringType strlen, Help help)
         {
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression

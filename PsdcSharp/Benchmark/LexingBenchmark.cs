@@ -4,7 +4,7 @@ using Scover.Psdc.Lexing;
 namespace Scover.Psdc.Benchmark;
 
 [MemoryDiagnoser]
-public class LexingBenchmark
+public sealed class LexingBenchmark
 {
     static readonly Parameters p = Program.Parameters;
     [Benchmark]

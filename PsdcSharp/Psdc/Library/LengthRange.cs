@@ -1,5 +1,6 @@
 namespace Scover.Psdc.Library;
 
+/// <inheritdoc />
 /// <summary>
 /// A range with a known length.
 /// </summary>

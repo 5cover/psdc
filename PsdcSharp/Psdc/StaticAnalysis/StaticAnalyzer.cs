@@ -236,7 +236,7 @@ public sealed partial class StaticAnalyzer
                     EvaluateExpression(scope, elseIf.Condition, EvaluatedType.IsConvertibleTo, BooleanType.Instance),
                     AnalyzeStatements(new(scope), elseIf.Body)
                 )).ToArray(),
-                @s.Else.Map(@else => new Statement.Alternative.ElseClause(new(scope, @else.Location),
+                s.Else.Map(@else => new Statement.Alternative.ElseClause(new(scope, @else.Location),
                     AnalyzeStatements(new(scope), @else.Body)
                 )));
         }
@@ -303,9 +303,9 @@ public sealed partial class StaticAnalyzer
                 AnalyzeStatements(new(scope), s.Body));
         }
         case Node.Stmt.LocalVariable s: {
-            var type = EvaluateType(scope, s.Declaration.Type);
-            var declaration = new VariableDeclaration(new(scope, s.Declaration.Location),
-                s.Declaration.Names,
+            var type = EvaluateType(scope, s.Decl.Type);
+            var declaration = new VariableDeclaration(new(scope, s.Decl.Location),
+                s.Decl.Names,
                 type);
             var initializer = s.Value.Map(i => {
                 var init = AnalyzeInitializer(scope, i, EvaluatedType.IsAssignableTo, type);
@@ -333,10 +333,9 @@ public sealed partial class StaticAnalyzer
                 () => {
                     if (_mainProgramStatus is MainProgramStatus.Inside) {
                         return EvaluateTypedValue(IntegerType.Instance);
-                    } else {
-                        _msger.Report(Message.ErrorReturnInNonReturnable(s.Location));
-                        return s.Value.Map(v => EvaluateExpression(scope, v));
                     }
+                    _msger.Report(Message.ErrorReturnInNonReturnable(s.Location));
+                    return s.Value.Map(v => EvaluateExpression(scope, v));
                 }));
 
             Option<Expr> EvaluateTypedValue(EvaluatedType expectedType) => s.Value
@@ -354,14 +353,15 @@ public sealed partial class StaticAnalyzer
             }
             return new Statement.Switch(meta,
                 expr,
-                s.Cases.Select((@case, i) => {
+                s.Cases.Select(
+                    Statement.Switch.Case (@case, i) => {
                     switch (@case) {
                     case Node.Stmt.Switch.Case.OfValue c: {
                         var caseExpr = EvaluateExpression(scope, c.Value, EvaluatedType.IsConvertibleTo, expr.Value.Type);
                         if (caseExpr.Value.Status is not ValueStatus.Comptime) {
                             _msger.Report(Message.ErrorComptimeExpressionExpected(c.Value.Location));
                         }
-                        return (Statement.Switch.Case)new Statement.Switch.Case.OfValue(new(scope, c.Location), caseExpr, AnalyzeStatements(scope, c.Body));
+                        return new Statement.Switch.Case.OfValue(new(scope, c.Location), caseExpr, AnalyzeStatements(scope, c.Body));
                     }
                     case Node.Stmt.Switch.Case.Default d: {
                         if (i != s.Cases.Count - 1) {
@@ -516,7 +516,7 @@ public sealed partial class StaticAnalyzer
         .Map(i => new Designator.Array(new(scope, designator.Location), i));
 
     static Designator.Structure AnalyzeStructureDesignator(Scope scope, Node.Designator.Structure designator)
-     => new(new(scope, designator.Location), designator.Component);
+     => new(new(scope, designator.Location), designator.Comp);
 
     Expr EvaluateExpression(Scope scope, Node.Expr expr, TypeComparer typeComparer, EvaluatedType targetType)
      => EvaluateExpression(scope, expr, v => CheckType(expr.Location, typeComparer, targetType, v));
@@ -643,10 +643,9 @@ public sealed partial class StaticAnalyzer
                     return arrVal.Status.ComptimeValue.Zip(actualIndex)
                         .Map((arr, index) => arr[index - 1])
                         .ValueOr(arrVal.Type.ItemType.RuntimeValue);
-                } else {
-                    _msger.Report(Message.ErrorSubscriptOfNonArray(arrSub.Location, array.Value.Type));
-                    return UnknownType.Inferred.InvalidValue;
                 }
+                _msger.Report(Message.ErrorSubscriptOfNonArray(arrSub.Location, array.Value.Type));
+                return UnknownType.Inferred.InvalidValue;
             }
         }
         case Node.Expr.Lvalue.ParenLValue b: {
@@ -737,7 +736,7 @@ public sealed partial class StaticAnalyzer
         }
         default:
             throw unOp.ToUnmatchedException();
-        };
+        }
     }
 
     internal EvaluatedType EvaluateType(Scope scope, Node.Type type) => type switch {
@@ -748,10 +747,10 @@ public sealed partial class StaticAnalyzer
         Node.Type.Array array => EvaluateArrayType(scope, array),
         Node.Type.Boolean => BooleanType.Instance,
         Node.Type.Character => CharacterType.Instance,
-        Node.Type.File file => FileType.Instance,
-        Node.Type.Integer p => IntegerType.Instance,
+        Node.Type.File => FileType.Instance,
+        Node.Type.Integer => IntegerType.Instance,
         Node.Type.LengthedString str => EvaluateLengthedStringType(scope, str),
-        Node.Type.Real p => RealType.Instance,
+        Node.Type.Real => RealType.Instance,
         Node.Type.Structure structure => EvaluateStructureType(scope, structure),
         Node.Type.String => StringType.Instance,
         _ => throw type.ToUnmatchedException(),
@@ -770,10 +769,7 @@ public sealed partial class StaticAnalyzer
             var type = EvaluateType(scope, array.Type);
             Debug.Assert(dimensions.Any());
             // Start innermost with the least significant dimension
-            foreach (var dim in dimensions.Reverse()) {
-                type = new ArrayType(type, dim);
-            }
-            return type;
+            return dimensions.Reverse().Aggregate(type, (current, dim) => new ArrayType(current, dim));
         })
         .ValueOr(UnknownType.Declared(_input, array.Location));
 

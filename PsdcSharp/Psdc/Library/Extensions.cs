@@ -12,34 +12,34 @@ public static class Extensions
      => (kvp.Key, kvp.Value);
 
     /// <summary>
-    /// Get the flattened index of a multi-dimensional array.
+    /// Get the flattened index of a multidimensional array.
     /// </summary>
     /// <param name="dimensionIndexes">The 0-based index in each dimension.</param>
     /// <param name="dimensionLengths">The length of each dimension.</param>
     /// <returns>An integer that indexes a 1-dimensional array whose length is the product of <paramref name="dimensionLengths"/>.</returns>
-    internal static int FlatIndex(this IEnumerable<int> dimensionIndexes, IEnumerable<int> dimensionLengths)
+    internal static int FlatIndex(this IReadOnlyCollection<int> dimensionIndexes, IReadOnlyCollection<int> dimensionLengths)
     {
-        Debug.Assert(dimensionIndexes.Count() == dimensionLengths.Count());
+        Debug.Assert(dimensionIndexes.Count == dimensionLengths.Count);
         return dimensionLengths
             .Zip(dimensionIndexes)
             .Aggregate(0, (soFar, next) => soFar * next.First + next.Second);
     }
 
     /// <summary>
-    /// Get the N-dimensional index in a multi-dimensional array from the flattened index.
+    /// Get the N-dimensional index in a multidimensional array from the flattened index.
     /// </summary>
     /// <param name="flatIndex">The flattened index.</param>
     /// <param name="dimensionLengths">The length of each dimension.</param>
     /// <remarks>This function is the inverse of <see cref="FlatIndex"/>.</remarks>
     /// <returns>An enumarable containing 0-based index in each dimension. Same count as <paramref name="dimensionLengths"/>.</returns>
-    internal static IEnumerable<int> NDimIndex(this int flatIndex, IReadOnlyList<int> dimensionLengths)
+    internal static IEnumerable<int> NDimIndex(this int flatIndex, IEnumerable<int> dimensionLengths)
      => dimensionLengths.Reverse().Select(l => {
          flatIndex = Math.DivRem(flatIndex, l, out var i);
          return i;
      }).Reverse();
 
     internal static T Product<T>(this IEnumerable<T> source) where T : IMultiplyOperators<T, T, T>
-     => source.Aggregate((soFar, next) => soFar *= next);
+     => source.Aggregate((soFar, next) => soFar * next);
 
     internal static bool AllEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : IEquatable<T>
      => first.AllZipped(second, (f, s) => f.Equals(s));
@@ -135,7 +135,7 @@ public static class Extensions
     /// <see langword="true"/> if <paramref name="e"/> is of or derived from any of the following types :
     /// </para>
     /// <br><see cref="IOException"/></br><br><see cref="UnauthorizedAccessException"/></br><br><see
-    /// cref="SecurityException"/></br>
+    /// cref="System.Security.SecurityException"/></br>
     /// <para>Otherwise; <see langword="false"/>.</para>
     /// </returns>
     /// <remarks>Note that unrelated methods may throw any of these exceptions.</remarks>
@@ -166,7 +166,7 @@ public static class Extensions
     internal static string? ToStringFmt(this object obj, IFormatProvider? fmtProvider) => obj switch {
         IFormattable f => f.ToString(null, fmtProvider),
         IConvertible c => c.ToString(fmtProvider),
-        _ => obj.ToString()
+        _ => obj.ToString(),
     };
 
     internal static bool OptionSemanticsEqual<T>(this Option<T> first, Option<T> second) where T : EquatableSemantics<T>

@@ -5,7 +5,7 @@ sealed class WordTokenRule(TokenType tokenType, string word, StringComparison co
     readonly StringTokenRule _stringRule = new(tokenType, word, comparison);
 
     public string Expected => _stringRule.Expected;
-    public TokenType TokenType => tokenType;
+    public TokenType TokenType { get; } = tokenType;
 
     public ValueOption<Token> Extract(string code, int startIndex)
     {

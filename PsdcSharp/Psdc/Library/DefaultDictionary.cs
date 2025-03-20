@@ -3,11 +3,11 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Scover.Psdc.Library;
 
-public class DefaultDictionary<TKey, TValue>(TValue defaultValue) : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> where TKey : notnull
+public sealed class DefaultDictionary<TKey, TValue>(TValue defaultValue) : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> where TKey : notnull
 {
     readonly Dictionary<TKey, TValue> _dic = [];
 
-    public TValue DefaultValue { get; set; } = defaultValue;
+    public TValue DefaultValue { get; } = defaultValue;
 
     public ICollection<TKey> Keys => _dic.Keys;
 

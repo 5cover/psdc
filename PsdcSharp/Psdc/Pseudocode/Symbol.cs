@@ -22,13 +22,10 @@ public interface Symbol : EquatableSemantics<Symbol>
         [typeof(Variable)] = KindVariable,
         [typeof(Symbol)] = KindSymbol,
     });
-
-    public static string GetKind<T>() where T : Symbol => symbolKinds.Value[typeof(T)];
-
-    public string Kind { get; }
-
-    public Ident Name { get; }
-    public Range Location { get; }
+    static string GetKind<T>() where T : Symbol => symbolKinds.Value[typeof(T)];
+    string Kind { get; }
+    Ident Name { get; }
+    Range Location { get; }
 
     internal abstract record Variable(Ident Name, Range Location, EvaluatedType Type) : Symbol
     {

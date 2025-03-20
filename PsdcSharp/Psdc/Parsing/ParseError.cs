@@ -40,9 +40,9 @@ public sealed record ParseError(
                 ? this
             : ErroneousToken.Value.Position.Start < other.ErroneousToken.Value.Position.Start
                 ? other
-            : (other with {
+            : other with {
                 ExpectedTokens = ExpectedTokens.Union(other.ExpectedTokens),
                 ExpectedProductions = ExpectedProductions.Union(other.ExpectedProductions),
-            })
+            }
         : ErroneousToken.HasValue ? this : other;
 }

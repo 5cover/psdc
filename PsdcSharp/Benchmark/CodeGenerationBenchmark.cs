@@ -6,7 +6,7 @@ using Scover.Psdc.StaticAnalysis;
 namespace Scover.Psdc.Benchmark;
 
 [MemoryDiagnoser]
-public class CodeGenerationBenchmark
+public sealed class CodeGenerationBenchmark
 {
     static readonly Parameters p = Program.Parameters;
     SemanticNode.Algorithm? _sast;

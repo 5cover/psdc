@@ -22,26 +22,26 @@ public static class CodeGenerator
     }
 }
 
-delegate StringBuilder Appender<T>(StringBuilder o, T node);
+delegate StringBuilder Appender<in T>(StringBuilder o, T node);
 delegate StringBuilder Appender(StringBuilder o);
-delegate string Generator<T>(T node);
+delegate string Generator<in T>(T node);
 
-abstract partial class CodeGenerator<TKwTable, TOpTable>(Messenger msger, TKwTable keywordTable, TOpTable operatorTable)
+abstract class CodeGenerator<TKwTable, TOpTable>(Messenger msger, TKwTable keywordTable, TOpTable operatorTable)
 where TKwTable : KeywordTable
 where TOpTable : OperatorTable
 {
     protected static Generator<T> ToGenerator<T>(Appender<T> appender)
      => node => appender(new(), node).ToString();
 
-    protected readonly Indentation _indent = new(4);
-    protected readonly Messenger _msger = msger;
-    protected readonly TKwTable _kwTable = keywordTable;
-    protected readonly TOpTable _opTable = operatorTable;
+    protected readonly Indentation Indentation = new(4);
+    protected readonly Messenger Msger = msger;
+    protected readonly TKwTable KwTable = keywordTable;
+    protected readonly TOpTable OpTable = operatorTable;
 
     protected string ValidateIdentifier(Scope scope, Ident ident)
-     => _kwTable.Validate(scope, ident, _msger);
+     => KwTable.Validate(scope, ident, Msger);
     protected string ValidateIdentifier(Scope scope, Range location, string ident)
-     => _kwTable.Validate(scope, location, ident, _msger);
+     => KwTable.Validate(scope, location, ident, Msger);
 
     public abstract string Generate(Algorithm algorithm);
 
@@ -49,7 +49,7 @@ where TOpTable : OperatorTable
 
     protected StringBuilder AppendUnaryOperation<TExpr>(StringBuilder o, OperatorInfo op, TExpr operand, Appender<TExpr> appender) where TExpr : Expr
      => op.Append(o, TypeGeneratorFor(operand.Meta.Scope), [
-        o => AppendBetweenParens(o, _opTable.ShouldBracketOperand(op, operand), o => appender(o, operand))
+        o => AppendBetweenParens(o, OpTable.ShouldBracketOperand(op, operand), o => appender(o, operand)),
     ]);
 
     protected static StringBuilder AppendBetweenParens(StringBuilder o, bool bracket, Action<StringBuilder> appender)

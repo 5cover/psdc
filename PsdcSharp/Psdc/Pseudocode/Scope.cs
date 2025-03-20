@@ -7,13 +7,13 @@ namespace Scover.Psdc.Pseudocode;
 
 public abstract class Scope(Scope? parent)
 {
-    private protected readonly Dictionary<string, Symbol> _symbolTable = [];
-    private protected readonly Scope? _parentScope = parent;
+    private protected readonly Dictionary<string, Symbol> SymbolTable = [];
+    private protected readonly Scope? ParentScope = parent;
 
     public IEnumerable<T> GetSymbols<T>() where T : Symbol
     {
-        for (var scope = this; scope is not null; scope = scope._parentScope) {
-            foreach (T t in scope._symbolTable.Values.OfType<T>()) {
+        for (var scope = this; scope is not null; scope = scope.ParentScope) {
+            foreach (T t in scope.SymbolTable.Values.OfType<T>()) {
                 yield return t;
             }
         }
@@ -38,8 +38,8 @@ public abstract class Scope(Scope? parent)
 
     public bool TryGetSymbol(string name, [NotNullWhen(true)] out Symbol? symbol)
     {
-        for (var scope = this; scope is not null; scope = scope._parentScope) {
-            if (scope._symbolTable.TryGetValue(name, out symbol)) {
+        for (var scope = this; scope is not null; scope = scope.ParentScope) {
+            if (scope.SymbolTable.TryGetValue(name, out symbol)) {
                 return true;
             }
         }
@@ -52,5 +52,5 @@ public abstract class Scope(Scope? parent)
     public bool TryGetSymbol(Ident name, [NotNullWhen(true)] out Symbol? symbol) => TryGetSymbol(name.ToString(), out symbol);
 
     public bool HasSymbol(Ident name) => HasSymbol(name.ToString());
-    public bool HasSymbol(string name) => _symbolTable.ContainsKey(name);
+    public bool HasSymbol(string name) => SymbolTable.ContainsKey(name);
 }

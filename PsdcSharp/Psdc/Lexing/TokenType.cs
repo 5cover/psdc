@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Data;
 using System.Text.RegularExpressions;
 
 namespace Scover.Psdc.Lexing;
@@ -9,7 +8,7 @@ public class TokenType
 
     internal interface Ruled<out T> where T : TokenRule
     {
-        public IEnumerable<T> Rules { get; }
+        IEnumerable<T> Rules { get; }
     }
 
     protected static IEnumerable<T> GetRules<T>(TokenType self, IEnumerable<Func<TokenType, T>> rules) => rules.Select(r => r(self));

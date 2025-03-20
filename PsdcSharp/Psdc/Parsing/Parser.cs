@@ -401,7 +401,7 @@ public sealed partial class Parser
             [Punctuation.LParen] = o => (o
                 .Parse(out var length, Expression)
                 .ParseToken(Punctuation.RParen),
-                t => new Type.LengthedString(t, length))
+                t => new Type.LengthedString(t, length)),
         }, o => (o, t => new Type.String(t)))
         .Fork(out var result, branch)
         .MapResult(result);
@@ -446,7 +446,7 @@ public sealed partial class Parser
     ParseResult<Initializer> BracedInitializer(IEnumerable<Token> tokens)
      => ParseOperation.Start(tokens, "braced initializer")
         .ParseToken(Punctuation.LBrace)
-        .ParseZeroOrMoreSeparated(out var values, ParserFirst<Initializer.Braced.Item>((tokens)
+        .ParseZeroOrMoreSeparated(out var values, ParserFirst<Initializer.Braced.Item>(tokens
              => ParseOperation.Start(tokens, "braced initializer item")
                 .ParseOptional(out var designators, t => ParseOperation.Start(t, "designators")
                     .ParseZeroOrMoreUntilToken(out var des, _designator, Set.Of<TokenType>(Punctuation.ColonEqual))

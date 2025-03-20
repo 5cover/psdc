@@ -38,7 +38,7 @@ sealed partial class CodeGenerator(Messenger messenger)
         var normalName = ValidateIdentifier(constant.Meta.Scope, constant.Name);
         return AppendCDefine(o, normalName, constant.Value switch {
             Initializer.Braced braced => AppendBracedInitializer(new(), braced),
-            Expr expr => AppendExpression(new(), expr, _opTable.ShouldBracketOperand(OperatorInfo.None, expr)),
+            Expr expr => AppendExpression(new(), expr, OpTable.ShouldBracketOperand(OperatorInfo.None, expr)),
             _ => throw constant.Value.ToUnmatchedException(),
         });
     }
@@ -130,21 +130,24 @@ sealed partial class CodeGenerator(Messenger messenger)
         var valueType = assignment.Value.Value.Type;
         var targetType = assignment.Target.Value.Type;
 
-        if (valueType is LengthedStringType
-         && targetType.IsConvertibleTo(StringType.Instance)) {
+        switch (valueType) {
+        case LengthedStringType
+            when targetType.IsConvertibleTo(StringType.Instance):
             _includes.Ensure(IncludeSet.String);
             AppendExpression(o.Append("strcpy("), assignment.Target);
             AppendExpression(o.Append(", "), assignment.Value).Append(')');
-        } else if (valueType is ArrayType vat
-                && targetType is ArrayType tat) {
+            break;
+        case ArrayType when targetType is ArrayType:
             _includes.Ensure(IncludeSet.String);
             AppendExpression(o.Append("memcpy("), assignment.Target);
             AppendExpression(o.Append(", "), assignment.Value);
-            AppendUnaryOperation(o.Append($", "), _opTable.SizeOf, assignment.Target, AppendExpression).Append(')');
-        } else {
+            AppendUnaryOperation(o.Append(", "), OpTable.SizeOf, assignment.Target, AppendExpression).Append(')');
+            break;
+        default:
             AppendExpression(o, assignment.Target);
             o.Append(" = ");
             AppendExpression(o, assignment.Value);
+            break;
         }
 
         return o.AppendLine(";");
@@ -153,10 +156,10 @@ sealed partial class CodeGenerator(Messenger messenger)
     StringBuilder AppendBlock(StringBuilder o, SemanticBlock block, Action<StringBuilder>? suffix = null)
     {
         o.AppendLine("{");
-        _indent.Increase();
+        Indentation.Increase();
         AppendStatements(o, block);
         suffix?.Invoke(o);
-        _indent.Decrease();
+        Indentation.Decrease();
         Indent(o).Append('}');
 
         return o;
@@ -255,10 +258,10 @@ sealed partial class CodeGenerator(Messenger messenger)
             }
 
             if (@case.Block.Count != 0) {
-                _indent.Increase();
+                Indentation.Increase();
                 AppendStatements(o, @case.Block);
                 Indent(o).AppendLine("break;");
-                _indent.Decrease();
+                Indentation.Decrease();
             }
         }
 
@@ -267,8 +270,8 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     protected override StringBuilder AppendLocalVariable(StringBuilder o, Statement.LocalVariable local)
     {
-        Indent(o).Append(CreateTypeInfo(local.Meta.Scope, local.Declaration.Type)
-            .GenerateDeclaration(local.Declaration.Names.Select(n => ValidateIdentifier(local.Meta.Scope, n))));
+        Indent(o).Append(CreateTypeInfo(local.Meta.Scope, local.Decl.Type)
+            .GenerateDeclaration(local.Decl.Names.Select(n => ValidateIdentifier(local.Meta.Scope, n))));
         local.Value.Tap(i => AppendInitializer(o.Append(" = "), i, false));
         return o.AppendLine(";");
     }
@@ -285,7 +288,7 @@ sealed partial class CodeGenerator(Messenger messenger)
     StringBuilder AppendBracedInitializer(StringBuilder o, Initializer.Braced initializer)
     {
         o.AppendLine("{");
-        _indent.Increase();
+        Indentation.Increase();
         foreach (var value in initializer.Items) {
             Indent(o);
             foreach (var d in value.Designators) {
@@ -298,7 +301,7 @@ sealed partial class CodeGenerator(Messenger messenger)
             AppendInitializer(o, value.Value);
             o.AppendLine(",");
         }
-        _indent.Decrease();
+        Indentation.Decrease();
         return Indent(o).Append('}');
     }
 
@@ -315,13 +318,13 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     StringBuilder AppendArraySubscript(StringBuilder o, Expr.Lvalue.ArraySubscript arrSub)
     {
-        AppendExpression(o, arrSub.Array, _opTable.ShouldBracket(arrSub));
+        AppendExpression(o, arrSub.Array, OpTable.ShouldBracket(arrSub));
         AppendIndex(o, arrSub.Index);
         return o;
     }
 
     StringBuilder AppendIndex(StringBuilder o, Expr index)
-     => AppendExpressionAlter(o.Append('['), index, _opTable.Subtract, 1, (l, r) => l - r).Append(']');
+     => AppendExpressionAlter(o.Append('['), index, OpTable.Subtract, 1, (l, r) => l - r).Append(']');
 
     StringBuilder AppendParenExpr(StringBuilder o, Expr expr)
      => AppendExpression(o, expr, expr is not ParenExpr);
@@ -332,19 +335,21 @@ sealed partial class CodeGenerator(Messenger messenger)
     StringBuilder AppendExpression(StringBuilder o, Expr expr) => AppendExpression(o, expr, false);
 
     StringBuilder AppendExpression(StringBuilder o, Expr expr,
+        // ReSharper disable once MethodOverloadWithOptionalParameter
+        // Justification : method group calls
         bool bracket = false, bool convertInitToCompoundLiteral = true)
      => AppendBetweenParens(o, bracket, o => {
          _ = expr switch {
              ParenExpr b => AppendExpression(o, b.ContainedExpression, !bracket),
              Expr.Call call => AppendCall(o, call),
-             Expr.Literal { Value: BooleanValue, UnderlyingValue: bool v } => AppendLiteralBoolean(v),
+             Expr.Literal(_, bool v, BooleanValue) => AppendLiteralBoolean(v),
              // We're using the Pseudocode syntax for escaping string literals since it is the same as C's (except for \? which we can ignore, no one uses trigraphs)
              Expr.Literal { Value: CharacterValue v } => o.Append(v.ToString(Value.FmtNoType, Format.Code)),
              Expr.Literal { Value: StringValue v } => o.Append(v.ToString(Value.FmtNoType, Format.Code)),
              Expr.Literal l => o.Append(l.UnderlyingValue.ToStringFmt(Format.Code)),
              Expr.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
              Expr.Lvalue.ComponentAccess compAccess
-              => AppendExpression(o, compAccess.Structure, _opTable.ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
+              => AppendExpression(o, compAccess.Structure, OpTable.ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
              Expr.Lvalue.VariableReference variable => AppendVariableReference(o, variable, convertInitToCompoundLiteral),
              Expr.BinaryOperation opBin => AppendOperationBinary(o, opBin),
              Expr.UnaryOperation opUn => AppendOperationUnary(o, opUn),
@@ -366,7 +371,7 @@ sealed partial class CodeGenerator(Messenger messenger)
             o.Append(Format.Code, $"({CreateTypeInfo(variable.Meta.Scope, s.Value.Type)})");
         }
         return C.IsPointerParameter(variable)
-            ? AppendUnaryOperation(o, _opTable.Dereference, variable,
+            ? AppendUnaryOperation(o, OpTable.Dereference, variable,
                 (o, v) => o.Append(ValidateIdentifier(v.Meta.Scope, v.Name)))
             : o.Append(ValidateIdentifier(variable.Meta.Scope, variable.Name));
     }
@@ -377,16 +382,16 @@ sealed partial class CodeGenerator(Messenger messenger)
          && opBin.Right.Value.Type.IsConvertibleTo(StringType.Instance)
          && IsStringComparisonOperator(opBin.Operator)) {
             _includes.Ensure(IncludeSet.String);
-            return _opTable.Get(opBin).Append(o, TypeGeneratorFor(opBin.Meta.Scope), [
+            return OpTable.Get(opBin).Append(o, TypeGeneratorFor(opBin.Meta.Scope), [
                 o => AppendExpression(AppendExpression(o.Append("strcmp("), opBin.Left).Append(", "), opBin.Right).Append(')'),
-                o => o.Append('0')
+                o => o.Append('0'),
             ]);
         }
 
-        var (bracketLeft, bracketRight) = _opTable.ShouldBracketBinary(opBin);
-        return _opTable.Get(opBin).Append(o, TypeGeneratorFor(opBin.Meta.Scope), [
+        var (bracketLeft, bracketRight) = OpTable.ShouldBracketBinary(opBin);
+        return OpTable.Get(opBin).Append(o, TypeGeneratorFor(opBin.Meta.Scope), [
             o => AppendExpression(o, opBin.Left, bracketLeft),
-            o => AppendExpression(o, opBin.Right, bracketRight)
+            o => AppendExpression(o, opBin.Right, bracketRight),
         ]);
     }
 
@@ -399,8 +404,8 @@ sealed partial class CodeGenerator(Messenger messenger)
         or BinaryOperator.NotEqual;
 
     StringBuilder AppendOperationUnary(StringBuilder o, Expr.UnaryOperation opUn)
-     => _opTable.Get(opUn).Append(o, TypeGeneratorFor(opUn.Meta.Scope), [
-        o => AppendExpression(o, opUn.Operand, _opTable.ShouldBracketUnary(opUn))
+     => OpTable.Get(opUn).Append(o, TypeGeneratorFor(opUn.Meta.Scope), [
+        o => AppendExpression(o, opUn.Operand, OpTable.ShouldBracketUnary(opUn)),
     ]);
 
     #endregion Expressions
@@ -414,7 +419,7 @@ sealed partial class CodeGenerator(Messenger messenger)
         o.Append(Format.Code, $"{ValidateIdentifier(call.Meta.Scope, call.Callee)}(");
         foreach (var param in call.Parameters) {
             if (C.RequiresPointer(param.Mode, param.Value.Value.Type) && !C.IsPointerParameter(param.Value)) {
-                AppendUnaryOperation(o, _opTable.AddressOf, param.Value, AppendExpression);
+                AppendUnaryOperation(o, OpTable.AddressOf, param.Value, AppendExpression);
             } else {
                 AppendExpression(o, param.Value);
             }
@@ -437,9 +442,9 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     TypeInfo CreateTypeInfo(Scope scope, EvaluatedType type)
     {
-        var info = TypeInfo.Create(type, new(scope, _msger, _kwTable,
+        var info = TypeInfo.Create(type, new(scope, Msger, KwTable,
             ToGenerator<Expr>(AppendExpression),
-            ToGenerator<Expr>((o, e) => AppendExpressionAlter(o, e, _opTable.Add, 1, (l, r) => l + r))));
+            ToGenerator<Expr>((o, e) => AppendExpressionAlter(o, e, OpTable.Add, 1, (l, r) => l + r))));
         foreach (string header in info.RequiredHeaders) {
             _includes.Ensure(header);
         }
@@ -455,7 +460,7 @@ sealed partial class CodeGenerator(Messenger messenger)
      => collapseLiterals is not null && GetExpressionObviousValue(left) is { HasValue: true } v
         ? o.Append(collapseLiterals((T)v.Value, right).ToStringFmt(Format.Code))
         : @operator.Append(o, TypeGeneratorFor(left.Meta.Scope), [
-            o => AppendExpression(o, left, _opTable.ShouldBracketOperand(@operator, left)),
+            o => AppendExpression(o, left, OpTable.ShouldBracketOperand(@operator, left)),
             o => o.Append(right.ToStringFmt(Format.Code))]);
 
     static ValueOption<object> GetExpressionObviousValue(Expr expr)
@@ -468,7 +473,7 @@ sealed partial class CodeGenerator(Messenger messenger)
     protected override TypeGenerator TypeGeneratorFor(Scope scope)
      => type => CreateTypeInfo(scope, type);
 
-    StringBuilder Indent(StringBuilder o) => _indent.Indent(o);
+    StringBuilder Indent(StringBuilder o) => Indentation.Indent(o);
 
     StringBuilder SetGroup(StringBuilder o, Group newGroup)
     {
@@ -498,7 +503,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     StringBuilder FeatureComingSoon(StringBuilder o, SemanticNode node, string feature)
     {
-        _msger.Report(Message.ErrorFeatureComingSoon(node.Meta.Location, feature));
+        Msger.Report(Message.ErrorFeatureComingSoon(node.Meta.Location, feature));
         return o;
     }
 

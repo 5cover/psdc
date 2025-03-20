@@ -35,8 +35,8 @@ public sealed partial class StaticAnalyzer
 
     interface DesignatorInfo
     {
-        public readonly record struct Array(int Index) : DesignatorInfo;
-        public readonly record struct Structure(Ident Component) : DesignatorInfo;
+        readonly record struct Array(int Index) : DesignatorInfo;
+        readonly record struct Structure(Ident Component) : DesignatorInfo;
     }
 
     interface InitializerPath
@@ -84,7 +84,7 @@ public sealed partial class StaticAnalyzer
             Option<Value, Message> InitializerPath.SetValue(Range location, object haystack, Value needle)
              => SetValue(location, (TUnderlying)haystack, needle).Map(v => (Value)v);
         }
-        public sealed record Array(DesignatorInfo.Array First, ValueOption<InitializerPath> Rest, ArrayType Type)
+        sealed record Array(DesignatorInfo.Array First, ValueOption<InitializerPath> Rest, ArrayType Type)
         : Impl<Array, DesignatorInfo.Array, ArrayType, ArrayValue, ImmutableArray<Value>>(First, Rest, Type)
         {
             public static ValueOption<Array, Message> OfFirstObject(ArrayType type, Range location)
@@ -103,7 +103,7 @@ public sealed partial class StaticAnalyzer
             protected override Array WithFirst(DesignatorInfo.Array first) => this with { First = first };
             protected override Array WithRest(ValueOption<InitializerPath> rest) => this with { Rest = rest };
         }
-        public sealed record Structure(DesignatorInfo.Structure First, ValueOption<InitializerPath> Rest, StructureType Type)
+        sealed record Structure(DesignatorInfo.Structure First, ValueOption<InitializerPath> Rest, StructureType Type)
         : Impl<Structure, DesignatorInfo.Structure, StructureType, StructureValue, ImmutableOrderedMap<Ident, Value>>(First, Rest, Type)
         {
             public static ValueOption<Structure, Message> OfFirstObject(StructureType type, Range location)

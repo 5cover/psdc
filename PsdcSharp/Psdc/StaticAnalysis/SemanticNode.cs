@@ -13,15 +13,13 @@ public interface SemanticNode
 
     internal interface ParenExpr : Expr
     {
-        public Expr ContainedExpression { get; }
+        Expr ContainedExpression { get; }
     }
-
-    public sealed record Algorithm(SemanticMetadata Meta,
+    sealed record Algorithm(SemanticMetadata Meta,
         Ident Title,
         IReadOnlyList<Declaration> Declarations)
     : SemanticNode;
-
-    public interface Declaration : SemanticNode
+    interface Declaration : SemanticNode
     {
         internal sealed record MainProgram(SemanticMetadata Meta,
             SemanticBlock Block)
@@ -165,7 +163,7 @@ public interface SemanticNode
         : Statement;
 
         internal sealed record LocalVariable(SemanticMetadata Meta,
-            VariableDeclaration Declaration,
+            VariableDeclaration Decl,
             Option<Initializer> Value)
         : Statement;
 
@@ -176,7 +174,7 @@ public interface SemanticNode
 
     internal interface Initializer : SemanticNode
     {
-        public Value Value { get; }
+        Value Value { get; }
 
         internal sealed record Braced(SemanticMetadata Meta,
             IReadOnlyList<Braced.Item> Items,
@@ -246,7 +244,7 @@ public interface SemanticNode
         internal sealed record ParenExprImpl(SemanticMetadata Meta,
             Expr ContainedExpression,
             Value Value)
-        : Expr, ParenExpr;
+        : ParenExpr;
 
         internal sealed record Literal(SemanticMetadata Meta,
             object UnderlyingValue,
@@ -288,31 +286,30 @@ public interface SemanticNode
 
     internal interface UnaryOperator : SemanticNode
     {
-        public sealed record Cast(SemanticMetadata Meta,
+        sealed record Cast(SemanticMetadata Meta,
             EvaluatedType Target)
         : UnaryOperator;
-
-        public sealed record Minus(SemanticMetadata Meta) : UnaryOperator;
-        public sealed record Not(SemanticMetadata Meta) : UnaryOperator;
-        public sealed record Plus(SemanticMetadata Meta) : UnaryOperator;
+        sealed record Minus(SemanticMetadata Meta) : UnaryOperator;
+        sealed record Not(SemanticMetadata Meta) : UnaryOperator;
+        sealed record Plus(SemanticMetadata Meta) : UnaryOperator;
     }
 
     internal interface BinaryOperator : SemanticNode
     {
-        public sealed record Add(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record And(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record Divide(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record Equal(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record GreaterThan(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record GreaterThanOrEqual(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record LessThan(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record LessThanOrEqual(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record Mod(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record Multiply(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record Or(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record NotEqual(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record Xor(SemanticMetadata Meta) : BinaryOperator;
-        public sealed record Subtract(SemanticMetadata Meta) : BinaryOperator;
+        sealed record Add(SemanticMetadata Meta) : BinaryOperator;
+        sealed record And(SemanticMetadata Meta) : BinaryOperator;
+        sealed record Divide(SemanticMetadata Meta) : BinaryOperator;
+        sealed record Equal(SemanticMetadata Meta) : BinaryOperator;
+        sealed record GreaterThan(SemanticMetadata Meta) : BinaryOperator;
+        sealed record GreaterThanOrEqual(SemanticMetadata Meta) : BinaryOperator;
+        sealed record LessThan(SemanticMetadata Meta) : BinaryOperator;
+        sealed record LessThanOrEqual(SemanticMetadata Meta) : BinaryOperator;
+        sealed record Mod(SemanticMetadata Meta) : BinaryOperator;
+        sealed record Multiply(SemanticMetadata Meta) : BinaryOperator;
+        sealed record Or(SemanticMetadata Meta) : BinaryOperator;
+        sealed record NotEqual(SemanticMetadata Meta) : BinaryOperator;
+        sealed record Xor(SemanticMetadata Meta) : BinaryOperator;
+        sealed record Subtract(SemanticMetadata Meta) : BinaryOperator;
     }
 
     internal sealed record Nop(SemanticMetadata Meta) : Statement, Declaration;

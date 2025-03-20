@@ -1,7 +1,9 @@
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
-using Scover.Psdc.Benchmark;
+
 using Scover.Psdc.Messages;
+
+namespace Scover.Psdc.Benchmark;
 
 static class Program
 {
@@ -18,7 +20,7 @@ static class Program
 
         BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args[1..],
             ManualConfig.Create(DefaultConfig.Instance)
-            .WithOptions(ConfigOptions.JoinSummary));
+               .WithOptions(ConfigOptions.JoinSummary));
     }
 
     const string EnvNameFilename = "psdc_benchmark_filename";
@@ -26,7 +28,7 @@ static class Program
     public static Parameters Parameters {
         get {
             var filename = Environment.GetEnvironmentVariable(EnvNameFilename)
-                ?? throw new InvalidOperationException("Filename env var not set");
+                        ?? throw new InvalidOperationException("Filename env var not set");
             var input = File.ReadAllText(filename);
 
             return new(input, IgnoreMessenger.Instance);

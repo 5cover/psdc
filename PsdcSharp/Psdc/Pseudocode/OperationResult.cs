@@ -12,14 +12,10 @@ static class OperationResult
 delegate Message UnaryOperationMessage(Expr.UnaryOperation opUn, EvaluatedType operandType);
 delegate Message BinaryOperationMessage(Expr.BinaryOperation opBin, EvaluatedType leftType, EvaluatedType rightType);
 
-readonly struct OperationResult<TMessage>
+readonly struct OperationResult<TMessage>(Value value, IEnumerable<TMessage> messages)
 {
-    public OperationResult(Value value, IEnumerable<TMessage> messages)
-     => (Value, Messages) = (value, messages);
-
-    public Value Value { get; }
-    public IEnumerable<TMessage> Messages { get; }
-
+    public Value Value { get; } = value;
+    public IEnumerable<TMessage> Messages { get; } = messages;
     public OperationResult<TMessage> WithMessages(params TMessage[] messages)
      => new(Value, messages);
 

@@ -18,10 +18,10 @@ readonly record struct ConsoleColors(ValueOption<ConsoleColor> Foreground, Value
     }
 
     public static ConsoleColors ForMessageSeverity(MessageSeverity msgSeverity) => msgSeverity switch {
-        MessageSeverity.Error => new(ConsoleColor.Red, default),
-        MessageSeverity.Warning => new(ConsoleColor.Yellow, default),
-        MessageSeverity.Hint => new(ConsoleColor.Blue, default),
-        MessageSeverity.Debug => new(ConsoleColor.Green, default),
+        MessageSeverity.Error => new(ConsoleColor.Red),
+        MessageSeverity.Warning => new(ConsoleColor.Yellow),
+        MessageSeverity.Hint => new(ConsoleColor.Blue),
+        MessageSeverity.Debug => new(ConsoleColor.Green),
         _ => throw msgSeverity.ToUnmatchedException(),
     };
 }

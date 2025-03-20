@@ -25,7 +25,7 @@ where TType : EvaluatedType
     public override string ToString(string? format, IFormatProvider? fmtProvider) => format switch {
         Value.FmtMin => Type.ToString(fmtProvider),
         _ when string.IsNullOrEmpty(format) => string.Create(fmtProvider, $"{Status.GetPart()}'{Type}'"),
-        _ => throw new FormatException($"Unsupported format: '{format}'")
+        _ => throw new FormatException($"Unsupported format: '{format}'"),
     };
     public string ToString(string? format, IFormatProvider? fmtProvider, Indentation indent) => ToString(format, fmtProvider);
 }
@@ -52,6 +52,6 @@ where TUnderlying : notnull
         "" or null => Status.ComptimeValue.Match(
              v => string.Create(fmtProvider, $"{Status.GetPart()}'{Type}' : {ValueToString(v, fmtProvider, indent)}"),
             () => string.Create(fmtProvider, $"{Status.GetPart()}'{Type}'")),
-        _ => throw new FormatException($"Unsupported format: '{format}'")
+        _ => throw new FormatException($"Unsupported format: '{format}'"),
     };
 }

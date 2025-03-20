@@ -4,5 +4,5 @@ public enum MessageStyle
 {
     Gnu,
     VSCode,
-    Json
+    Json,
 }

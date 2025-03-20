@@ -89,7 +89,7 @@ abstract class ParseOperation
     /// Fork based on a previously chosen branch.
     /// </summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>
-    /// <param name="result">Assigned to the result creator. Pass it to <see cref="MapResult"/> to retrieve the parse result.</param>
+    /// <param name="result">Assigned to the result creator. Pass it to <see cref="MapResult{T}"/> to retrieve the parse result.</param>
     /// <param name="branch">The branch to execute.</param>
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
     public abstract ParseOperation Fork<T>(out ResultCreator<T> result, Branch<T> branch);
@@ -127,6 +127,7 @@ abstract class ParseOperation
     /// <param name="separator">The separator token.</param>
     /// <param name="end">The end token.</param>
     /// <param name="readEndToken">To read the end token.</param>
+    /// <param name="allowTrailingSeparator">To allow a trailing separator.</param>
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
     public abstract ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<ParseResult<T>> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken = true, bool allowTrailingSeparator = true);
 
@@ -148,7 +149,6 @@ abstract class ParseOperation
     /// <summary>Parse a node, optionally.</summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>
     /// <param name="result">Assigned to the parsed node option.</param>
-    /// <param name="block">The block to execute to get each node.</param>
     /// <param name="parse">The node parser.</param>
     /// <returns>The current <see cref="ParseOperation"/>.</returns>
     public abstract ParseOperation ParseOptional<T>(out Option<T> result, ParseBlock<T> parse);
@@ -181,7 +181,6 @@ abstract class ParseOperation
 
     /// <summary>Parse zero or more separated nodes.</summary>
     /// <typeparam name="T">The type of node to parse.</typeparam>
-    /// <param name="allowTrailingSeparator">To allow a trailing separator.</param>
     /// <param name="separator">The separator token.</param>
     /// <param name="end">The end token.</param>
     /// <param name="readEndToken">To read the end token.</param>
@@ -314,7 +313,8 @@ abstract class ParseOperation
             if (token.HasValue && cases.TryGetValue(token.Value.Type, out branch!)) {
                 _readCount++;
                 return this;
-            } else if (@default is not null) {
+            }
+            if (@default is not null) {
                 branch = @default;
                 return this;
             }
@@ -343,10 +343,9 @@ abstract class ParseOperation
             if (pr.HasValue) {
                 result = pr.Value;
                 return this;
-            } else {
-                result = default!;
-                return Fail(MakeOurs(pr.Error));
             }
+            result = default!;
+            return Fail(MakeOurs(pr.Error));
         }
 
         public override ParseOperation ParseOneOrMoreSeparated<T>(out IReadOnlyList<ParseResult<T>> result, Parser<T> parse, TokenType separator, TokenType end, bool readEndToken, bool allowTrailingSeparator)
@@ -355,15 +354,15 @@ abstract class ParseOperation
             result = items;
 
             if (Peek(end).ValueOr(true)) {
-                // try to parse to get an appropriate error, it should fail since we're on the end token. 
+                // try to parse to get an appropriate error, it should fail since we're on the end token.
                 return Fail(CallParser(parse).Error.NotNull());
-            } else {
-                do {
-                    var item = CallParser(parse);
-                    _readCount += item.SourceTokens.Count;
-                    items.Add(item);
-                } while (Match(separator) && (!allowTrailingSeparator || !Peek(end).ValueOr(true)));
             }
+
+            do {
+                var item = CallParser(parse);
+                _readCount += item.SourceTokens.Count;
+                items.Add(item);
+            } while (Match(separator) && (!allowTrailingSeparator || !Peek(end).ValueOr(true)));
 
             return readEndToken ? ParseToken(end) : this;
         }
@@ -541,7 +540,7 @@ abstract class ParseOperation
                 _readCount += prItem.SourceTokens.Count;
 
                 {
-                    var thisFailedWith0SrcTokens = !prItem.HasValue && prItem.SourceTokens.Count == 0;
+                    var thisFailedWith0SrcTokens = prItem is { HasValue: false, SourceTokens.Count: 0 };
                     if (prevFailedWith0SrcTokens && thisFailedWith0SrcTokens) {
                         break;
                     }

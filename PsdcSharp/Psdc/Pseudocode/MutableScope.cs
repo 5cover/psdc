@@ -13,12 +13,12 @@ public sealed class MutableScope(Scope? scope) : Scope(scope)
         }
     }
 
-    public bool TryAdd(Symbol symbol) => _symbolTable.TryAdd(symbol.Name.ToString(), symbol);
+    public bool TryAdd(Symbol symbol) => SymbolTable.TryAdd(symbol.Name.ToString(), symbol);
 
     public bool TryAdd(Symbol symbol, [NotNullWhen(false)] out Symbol? existingSymbol)
     {
-        var added = _symbolTable.TryAdd(symbol.Name.ToString(), symbol);
-        existingSymbol = added ? null : _symbolTable[symbol.Name.ToString()];
+        var added = SymbolTable.TryAdd(symbol.Name.ToString(), symbol);
+        existingSymbol = added ? null : SymbolTable[symbol.Name.ToString()];
         return added;
     }
 }

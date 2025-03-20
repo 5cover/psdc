@@ -2,6 +2,6 @@ namespace Scover.Psdc.Messages;
 
 public interface MessagePrinter
 {
-    public void PrintMessageList(IEnumerable<Message> messages);
-    public void Conclude(Func<MessageSeverity, int> msgCount);
+    void PrintMessageList(IEnumerable<Message> messages);
+    void Conclude(Func<MessageSeverity, int> msgCount);
 }
