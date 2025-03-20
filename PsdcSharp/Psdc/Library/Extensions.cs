@@ -8,8 +8,7 @@ namespace Scover.Psdc.Library;
 
 public static class Extensions
 {
-    internal static (TKey, TValue) ToTuple<TKey, TValue>(this KeyValuePair<TKey, TValue> kvp)
-     => (kvp.Key, kvp.Value);
+    internal static (TKey, TValue) ToTuple<TKey, TValue>(this KeyValuePair<TKey, TValue> kvp) => (kvp.Key, kvp.Value);
 
     /// <summary>
     /// Get the flattened index of a multidimensional array.
@@ -21,8 +20,8 @@ public static class Extensions
     {
         Debug.Assert(dimensionIndexes.Count == dimensionLengths.Count);
         return dimensionLengths
-            .Zip(dimensionIndexes)
-            .Aggregate(0, (soFar, next) => soFar * next.First + next.Second);
+           .Zip(dimensionIndexes)
+           .Aggregate(0, (soFar, next) => soFar * next.First + next.Second);
     }
 
     /// <summary>
@@ -32,20 +31,18 @@ public static class Extensions
     /// <param name="dimensionLengths">The length of each dimension.</param>
     /// <remarks>This function is the inverse of <see cref="FlatIndex"/>.</remarks>
     /// <returns>An enumarable containing 0-based index in each dimension. Same count as <paramref name="dimensionLengths"/>.</returns>
-    internal static IEnumerable<int> NDimIndex(this int flatIndex, IEnumerable<int> dimensionLengths)
-     => dimensionLengths.Reverse().Select(l => {
-         flatIndex = Math.DivRem(flatIndex, l, out var i);
-         return i;
-     }).Reverse();
+    internal static IEnumerable<int> NDimIndex(this int flatIndex, IEnumerable<int> dimensionLengths) => dimensionLengths.Reverse().Select(l => {
+        flatIndex = Math.DivRem(flatIndex, l, out var i);
+        return i;
+    }).Reverse();
 
-    internal static T Product<T>(this IEnumerable<T> source) where T : IMultiplyOperators<T, T, T>
-     => source.Aggregate((soFar, next) => soFar * next);
+    internal static T Product<T>(this IEnumerable<T> source) where T : IMultiplyOperators<T, T, T> => source.Aggregate((soFar, next) => soFar * next);
 
-    internal static bool AllEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : IEquatable<T>
-     => first.AllZipped(second, (f, s) => f.Equals(s));
+    internal static bool AllEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : IEquatable<T> =>
+        first.AllZipped(second, (f, s) => f.Equals(s));
 
-    internal static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T>
-     => first.AllZipped(second, (f, s) => f.SemanticsEqual(s));
+    internal static bool AllSemanticsEqual<T>(this IEnumerable<T> first, IEnumerable<T> second) where T : EquatableSemantics<T> =>
+        first.AllZipped(second, (f, s) => f.SemanticsEqual(s));
 
     internal static bool AllZipped<T1, T2>(this IEnumerable<T1> first, IEnumerable<T2> second, Func<T1, T2, bool> predicate)
     {
@@ -139,8 +136,7 @@ public static class Extensions
     /// <para>Otherwise; <see langword="false"/>.</para>
     /// </returns>
     /// <remarks>Note that unrelated methods may throw any of these exceptions.</remarks>
-    internal static bool IsFileSystemExogenous(this Exception e)
-        => e is IOException or UnauthorizedAccessException or System.Security.SecurityException;
+    internal static bool IsFileSystemExogenous(this Exception e) => e is IOException or UnauthorizedAccessException or System.Security.SecurityException;
 
     internal static T LogOperation<T>(this string name, bool verbose, Func<T> operation)
     {
@@ -169,13 +165,12 @@ public static class Extensions
         _ => obj.ToString(),
     };
 
-    internal static bool OptionSemanticsEqual<T>(this Option<T> first, Option<T> second) where T : EquatableSemantics<T>
-     => first.HasValue && second.HasValue
+    internal static bool OptionSemanticsEqual<T>(this Option<T> first, Option<T> second) where T : EquatableSemantics<T> => first.HasValue && second.HasValue
         ? first.Value.SemanticsEqual(second.Value)
         : first.HasValue == second.HasValue;
 
-    internal static UnreachableException ToUnmatchedException<T>(this T t)
-     => new(string.Create(CultureInfo.InvariantCulture, $"Unmatched {typeof(T).Name}: {t}"));
+    internal static UnreachableException ToUnmatchedException<T>(this T t) =>
+        new(string.Create(CultureInfo.InvariantCulture, $"Unmatched {typeof(T).Name}: {t}"));
 
     internal static void WriteNTimes(this TextWriter writer, int n, char c)
     {
@@ -193,21 +188,17 @@ public static class Extensions
         yield return t;
     }
 
-
     public static bool Test(this Random random, double chance) => random.NextDouble() <= chance;
 
-    public static string ToQuantity(this int amount, string singular, string plural)
-     => string.Create(Format.Msg, $"{amount} {(amount == 1 ? singular : plural)}");
+    public static string ToQuantity(this int amount, string singular, string plural) =>
+        string.Create(Format.Msg, $"{amount} {(amount == 1 ? singular : plural)}");
 
-    public static string ToQuantity(this int amount, string singular)
-     => amount.ToQuantity(singular, singular + "s");
+    public static string ToQuantity(this int amount, string singular) => amount.ToQuantity(singular, singular + "s");
 
-    public static (Position Start, Position End) Apply(this Range range, string str)
-    => (str.GetPositionAt(range.Start), str.GetPositionAt(range.End));
+    public static (Position Start, Position End) Apply(this Range range, string str) => (str.GetPositionAt(range.Start), str.GetPositionAt(range.End));
 
     public static bool IsEmpty(this Range range) => range.Start.Equals(range.End);
 }
-
 static class Function
 {
     /// <summary>
@@ -216,14 +207,12 @@ static class Function
     /// <typeparam name="T">The type of items in the collection.</typeparam>
     /// <param name="action">The action to be executed for each item.</param>
     /// <returns>An action that can be used to iterate over a collection and execute the specified action for each item.</returns>
-    internal static Action<IEnumerable<T>> Foreach<T>(this Action<T> action)
-         => items => {
-             foreach (var item in items) {
-                 action(item);
-             }
-         };
+    internal static Action<IEnumerable<T>> Foreach<T>(this Action<T> action) => items => {
+        foreach (var item in items) {
+            action(item);
+        }
+    };
 }
-
 static class Set
 {
     internal static ImmutableHashSet<T> Of<T>(params T[] items) => [.. items];

@@ -16,5 +16,5 @@ public sealed class ParsingBenchmark
 
     [Benchmark]
     public ValueOption<Node.Algorithm> Run()
-     => Parser.Parse(p.Msger, _tokens);
+        => Parser.Parse(p.Msger, _tokens);
 }

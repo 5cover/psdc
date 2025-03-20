@@ -15,12 +15,12 @@ public sealed class Lexer
     static readonly IReadOnlyList<TokenRule> rules =
         // Variable length
         GetRules(new Ruled<TokenRule>[] { CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter })
-        // Maximum munch
-        .Concat(GetRules(Keyword.Instances).OrderByDescending(r => r.Expected.Length))
-        .Concat(GetRules(Punctuation.Instances).OrderByDescending(r => r.Expected.Length))
-        // Identifiers after keywords and punctuation/operators (just to be sure that they won't be lexed as identifiers)
-        .Concat(Identifier.Rules)
-        .ToArray();
+            // Maximum munch
+           .Concat(GetRules(Keyword.Instances).OrderByDescending(r => r.Expected.Length))
+           .Concat(GetRules(Punctuation.Instances).OrderByDescending(r => r.Expected.Length))
+            // Identifiers after keywords and punctuation/operators (just to be sure that they won't be lexed as identifiers)
+           .Concat(Identifier.Rules)
+           .ToArray();
 
     Lexer(Messenger msger, string input)
     {

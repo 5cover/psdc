@@ -4,8 +4,8 @@ public sealed class MessageTextPrinter(
     TextWriter output,
     string sourceFile,
     string input,
-    MessageTextPrinter.Style style)
- : MessagePrinter
+    MessageTextPrinter.Style style
+) : MessagePrinter
 {
     public enum Style
     {
@@ -39,9 +39,9 @@ public sealed class MessageTextPrinter(
         }
 
         _output.WriteLine(string.Create(Format.Msg, $" ({msgCount
-        (MessageSeverity.Error).ToQuantity("error")}, {msgCount
-        (MessageSeverity.Warning).ToQuantity("warning")}, {msgCount
-        (MessageSeverity.Hint).ToQuantity("hint")})."));
+            (MessageSeverity.Error).ToQuantity("error")}, {msgCount
+            (MessageSeverity.Warning).ToQuantity("warning")}, {msgCount
+            (MessageSeverity.Hint).ToQuantity("hint")})."));
     }
 
     void PrintMessage(Message message)
@@ -51,14 +51,9 @@ public sealed class MessageTextPrinter(
         var lineNoPadding = (end.Line + 1).DigitCount();
 
         switch (_style) {
-        case Style.Gnu:
-            PrintLocationGnu(message);
-            break;
-        case Style.VSCode:
-            PrintLocationVsCode(message);
-            break;
-        default:
-            throw _style.ToUnmatchedException();
+        case Style.Gnu: PrintLocationGnu(message); break;
+        case Style.VSCode: PrintLocationVsCode(message); break;
+        default: throw _style.ToUnmatchedException();
         }
 
         // If the error spans over only 1 line, show it with carets underneath

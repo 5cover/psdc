@@ -84,5 +84,4 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
         "volatile",
         "while",
     ];
-
 }

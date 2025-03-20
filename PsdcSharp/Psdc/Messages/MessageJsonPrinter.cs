@@ -1,4 +1,3 @@
-
 using System.Globalization;
 using System.Text.Json;
 
@@ -29,7 +28,8 @@ public sealed class MessageJsonPrinter(TextWriter output, string input) : Messag
     void PrintMessage(Message msg)
     {
         var (start, end) = msg.Location.Apply(_input);
-        _output.Write(string.Create(CultureInfo.InvariantCulture, @$"{{""code"":{msg.Code:d},""content"":""{JsonStr(msg.Content.Get(_input))}"",""start"":{FormatPosition(start)},""end"":{FormatPosition(end)},""severity"":{(int)msg.Severity},""advice"":["));
+        _output.Write(string.Create(CultureInfo.InvariantCulture,
+            @$"{{""code"":{msg.Code:d},""content"":""{JsonStr(msg.Content.Get(_input))}"",""start"":{FormatPosition(start)},""end"":{FormatPosition(end)},""severity"":{(int)msg.Severity},""advice"":["));
         bool notFirst = false;
         foreach (var adv in msg.AdvicePieces) {
             if (notFirst) {
@@ -44,7 +44,5 @@ public sealed class MessageJsonPrinter(TextWriter output, string input) : Messag
 
     static FormattableString FormatPosition(Position pos) => @$"{{""line"":{pos.Line},""col"":{pos.Column}}}";
 
-    static string JsonStr(string input)
-     => JsonEncodedText.Encode(input, System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping).Value;
-
+    static string JsonStr(string input) => JsonEncodedText.Encode(input, System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping).Value;
 }

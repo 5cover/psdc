@@ -5,7 +5,6 @@ root = true
 
 # Code style
 
-max_line_length = 120
 csharp_indent_case_contents_when_block = false
 csharp_indent_labels = one_less_than_current
 csharp_indent_switch_labels = false

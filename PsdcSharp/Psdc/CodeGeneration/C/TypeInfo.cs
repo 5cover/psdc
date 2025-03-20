@@ -8,52 +8,55 @@ namespace Scover.Psdc.CodeGeneration.C;
 
 sealed class TypeInfo : CodeGeneration.TypeInfo
 {
-    public readonly record struct Help(
+    public readonly record struct Help
+    (
         Scope Scope,
         Messenger Msger,
         CodeGeneration.KeywordTable KwTable,
         Generator<SemanticNode.Expr> GenExpr,
-        Generator<SemanticNode.Expr> GenExprAdd1);
+        Generator<SemanticNode.Expr> GenExprAdd1
+    );
 
     readonly string _stars;
 
     readonly string _typeName, _postModifier, _typeQualifier;
 
-    TypeInfo(string typeName, ValueOption<string> formatComponent = default, IEnumerable<string>? requiredHeaders = null, int starCount = 0, string postModifier = "", string? typeQualifier = null)
-     => (_stars, _typeName, _postModifier, _typeQualifier, FormatComponent, RequiredHeaders)
+    TypeInfo(
+        string typeName,
+        ValueOption<string> formatComponent = default,
+        IEnumerable<string>? requiredHeaders = null,
+        int starCount = 0,
+        string postModifier = "",
+        string? typeQualifier = null
+    ) => (_stars, _typeName, _postModifier, _typeQualifier, FormatComponent, RequiredHeaders)
         = (new string('*', starCount),
-           typeName,
-           postModifier,
-           AddSpaceBefore(typeQualifier),
-           formatComponent,
-           requiredHeaders ?? []);
+            typeName,
+            postModifier,
+            AddSpaceBefore(typeQualifier),
+            formatComponent,
+            requiredHeaders ?? []);
 
     public ValueOption<string> FormatComponent { get; }
 
     public IEnumerable<string> RequiredHeaders { get; }
 
-    public string DecorateExpression(string expr)
-     => string.Concat(_stars, expr);
+    public string DecorateExpression(string expr) => string.Concat(_stars, expr);
     public override string ToString() => string.Concat(_typeName, _stars, _typeQualifier, _postModifier);
 
-    public string GenerateDeclaration(IEnumerable<string> declarators)
-     => string.Concat(_typeName, _typeQualifier, " ",
-            string.Join(", ", declarators.Select(name => string.Concat(_stars, name, _postModifier))));
+    public string GenerateDeclaration(IEnumerable<string> declarators) => string.Concat(_typeName, _typeQualifier, " ",
+        string.Join(", ", declarators.Select(name => string.Concat(_stars, name, _postModifier))));
 
     public string GenerateDeclaration(string declarator) => GenerateDeclaration(declarator.Yield());
 
-    public TypeInfo ToConst()
-     => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length, _postModifier,
+    public TypeInfo ToConst() => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length, _postModifier,
         "const");
 
-    public TypeInfo ToPointer(int level)
-     => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length + level,
+    public TypeInfo ToPointer(int level) => new(_typeName, FormatComponent, RequiredHeaders, _stars.Length + level,
         _postModifier);
 
     static string AddSpaceBefore(string? str) => str is null ? "" : string.Concat(" ", str);
 
-    public static TypeInfo Create(EvaluatedType type, Help help)
-     => Create(type, new(4), help);
+    public static TypeInfo Create(EvaluatedType type, Help help) => Create(type, new(4), help);
 
     static TypeInfo Create(EvaluatedType type, Indentation indent, Help help)
     {
@@ -91,8 +94,8 @@ sealed class TypeInfo : CodeGeneration.TypeInfo
         {
             // add 1 to the length for null terminator
             string lengthPlus1 = strlen.LengthConstantExpression
-                .Map(help.GenExpr.Invoke)
-                .ValueOr((strlen.Length + 1).ToString(Format.Code));
+               .Map(help.GenExpr.Invoke)
+               .ValueOr((strlen.Length + 1).ToString(Format.Code));
             return new("char", "%s", postModifier: $"[{lengthPlus1}]");
         }
 

@@ -34,61 +34,78 @@ public interface Symbol : EquatableSemantics<Symbol>
         public abstract bool SemanticsEqual(Symbol other);
     }
 
-    internal sealed record LocalVariable(Ident Name, Range Location,
-        EvaluatedType Type, Option<Value> Initializer)
-    : Variable(Name, Location, Type)
+    internal sealed record LocalVariable(
+        Ident Name,
+        Range Location,
+        EvaluatedType Type,
+        Option<Value> Initializer
+    )
+        : Variable(Name, Location, Type)
     {
         public override string Kind => KindLocalVariable;
         public override bool SemanticsEqual(Symbol other) => other is LocalVariable o
-         && o.Name.Equals(Name)
-         && o.Type.SemanticsEqual(Type)
-         && o.Initializer.Equals(Initializer);
+                                                          && o.Name.Equals(Name)
+                                                          && o.Type.SemanticsEqual(Type)
+                                                          && o.Initializer.Equals(Initializer);
     }
 
-    internal sealed record Constant(Ident Name, Range Location,
-        EvaluatedType Type, Value Value)
-    : Variable(Name, Location, Type)
+    internal sealed record Constant(
+        Ident Name,
+        Range Location,
+        EvaluatedType Type,
+        Value Value
+    )
+        : Variable(Name, Location, Type)
     {
         public override string Kind => KindConstant;
         public override bool SemanticsEqual(Symbol other) => other is Constant o
-         && o.Name.Equals(Name)
-         && o.Type.SemanticsEqual(Type)
-         && o.Value.Equals(Value);
+                                                          && o.Name.Equals(Name)
+                                                          && o.Type.SemanticsEqual(Type)
+                                                          && o.Value.Equals(Value);
     }
 
-    internal sealed record TypeAlias(Ident Name, Range Location,
-        EvaluatedType Type)
-    : Symbol
+    internal sealed record TypeAlias(
+        Ident Name,
+        Range Location,
+        EvaluatedType Type
+    )
+        : Symbol
     {
         public string Kind => KindTypeAlias;
         public bool SemanticsEqual(Symbol other) => other is TypeAlias o
-         && o.Name.Equals(Name)
-         && o.Type.SemanticsEqual(Type);
+                                                 && o.Name.Equals(Name)
+                                                 && o.Type.SemanticsEqual(Type);
     }
 
-    internal sealed record Callable(Ident Name, Range Location,
+    internal sealed record Callable(
+        Ident Name,
+        Range Location,
         IReadOnlyCollection<Parameter> Parameters,
-        EvaluatedType ReturnType)
-    : Symbol
+        EvaluatedType ReturnType
+    )
+        : Symbol
     {
         public string Kind => ReturnType is VoidType ? KindProcedure : KindFunction;
         public bool HasBeenDefined { get; private set; }
         public void MarkAsDefined() => HasBeenDefined = true;
         public bool SemanticsEqual(Symbol other) => other is Callable o
-         && o.Name.Equals(Name)
-         && o.Parameters.AllSemanticsEqual(Parameters)
-         && o.ReturnType.SemanticsEqual(ReturnType);
+                                                 && o.Name.Equals(Name)
+                                                 && o.Parameters.AllSemanticsEqual(Parameters)
+                                                 && o.ReturnType.SemanticsEqual(ReturnType);
     }
 
-    internal sealed record Parameter(Ident Name, Range Location,
+    internal sealed record Parameter(
+        Ident Name,
+        Range Location,
         EvaluatedType Type,
-        ParameterMode Mode)
-    : Variable(Name, Location, Type)
+        ParameterMode Mode
+    )
+        : Variable(Name, Location, Type)
     {
         public override string Kind => KindParameter;
         public override bool SemanticsEqual(Symbol other) => other is Parameter o
-         && o.Name.Equals(Name)
-         && o.Type.SemanticsEqual(Type)
-         && o.Mode == Mode;
+                                                          && o.Name.Equals(Name)
+                                                          && o.Type.SemanticsEqual(Type)
+                                                          && o.Mode == Mode;
     }
 }

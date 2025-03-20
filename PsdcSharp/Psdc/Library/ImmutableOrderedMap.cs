@@ -20,7 +20,8 @@ where TKey : notnull
     public ImmutableOrderedMap(IImmutableList<KeyValuePair<TKey, TValue>> list) : this(ImmutableDictionary.CreateRange(list), list) { }
     ImmutableOrderedMap(IImmutableDictionary<TKey, TValue> map, IImmutableList<KeyValuePair<TKey, TValue>> list) => (_map, _list) = (map, list);
 
-    public static ImmutableOrderedMap<TKey, TValue> Empty { get; } = new(ImmutableDictionary<TKey, TValue>.Empty, ImmutableList<KeyValuePair<TKey, TValue>>.Empty);
+    public static ImmutableOrderedMap<TKey, TValue> Empty { get; }
+        = new(ImmutableDictionary<TKey, TValue>.Empty, ImmutableList<KeyValuePair<TKey, TValue>>.Empty);
 
     // _map.Count and _list.Count would be equivalent
     public int Count => _map.Count;
@@ -74,6 +75,6 @@ where TKey : notnull
         return new(_map.SetItems(items), _list);
     }
 
-    static int IndexOfKey(IImmutableList<KeyValuePair<TKey, TValue>> list, TKey key)
-     => list.IndexOfFirst(kvp => EqualityComparer<TKey>.Default.Equals(kvp.Key, key)).Unwrap();
+    static int IndexOfKey(IImmutableList<KeyValuePair<TKey, TValue>> list, TKey key) =>
+        list.IndexOfFirst(kvp => EqualityComparer<TKey>.Default.Equals(kvp.Key, key)).Unwrap();
 }

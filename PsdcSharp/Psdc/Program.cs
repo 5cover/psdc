@@ -1,16 +1,17 @@
 using static CommandLine.ParserResultExtensions;
+
 using Scover.Psdc.CodeGeneration;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
 using Scover.Psdc.Lexing;
+
 using System.Diagnostics.CodeAnalysis;
 
 namespace Scover.Psdc;
 
 static class Program
 {
-
     static readonly TextWriter msgOutput = Console.Error;
 
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CliOptions))] // Needed for CommandLineOptions with AOT
@@ -19,18 +20,16 @@ static class Program
         s.GetoptMode = true;
         s.CaseInsensitiveEnumValues = true;
     }).ParseArguments<CliOptions>(args).MapResult(static opt => {
-
         using var output = OpenOutput(opt);
         if (output is null) {
             return SysExit.CantCreat;
         }
-
         var input = ReadInput(opt);
         return input is null ? SysExit.NoInput : Compile(output, input, opt);
     }, _ => SysExit.Usage);
 
-    static void WriteError(string message)
-     => msgOutput.WriteLine($"{Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "psdc")}: error: {message}");
+    static void WriteError(string message) =>
+        msgOutput.WriteLine($"{Path.GetRelativePath(Environment.CurrentDirectory, Environment.ProcessPath ?? "psdc")}: error: {message}");
 
     static int Compile(TextWriter output, string input, CliOptions opt)
     {
@@ -104,4 +103,3 @@ static class Program
         }
     }
 }
-

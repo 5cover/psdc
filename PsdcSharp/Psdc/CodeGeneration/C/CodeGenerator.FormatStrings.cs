@@ -1,4 +1,5 @@
 ﻿using System.Text;
+
 using Scover.Psdc.Messages;
 
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
@@ -15,8 +16,8 @@ partial class CodeGenerator
         foreach (var part in parts) {
             if (part is Expr.Literal l) {
                 format.Append(new StringBuilder(l.UnderlyingValue.ToStringFmt(Format.Code))
-                    .Replace("%", "%%") // escape C format specifiers
-                    .Replace(@"\", @"\\")); // escape C escape sequences
+                   .Replace("%", "%%") // escape C format specifiers
+                   .Replace(@"\", @"\\")); // escape C escape sequences
             } else {
                 CreateTypeInfo(part.Meta.Scope, part.Value.Type).FormatComponent.Tap(fmtComp => {
                     format.Append(fmtComp);

@@ -8,8 +8,8 @@ public sealed class Ident : Node, IEquatable<Ident?>
     {
         Debug.Assert(
             name.Length > 0
-                && (name[0] == '_' || char.IsLetter(name[0]))
-                && name.Skip(1).All(c => c == '_' || char.IsLetterOrDigit(c)),
+         && (name[0] == '_' || char.IsLetter(name[0]))
+         && name.Skip(1).All(c => c == '_' || char.IsLetterOrDigit(c)),
             $"`{name}` is not a valid identifier");
         (Location, Name) = (location, name);
     }

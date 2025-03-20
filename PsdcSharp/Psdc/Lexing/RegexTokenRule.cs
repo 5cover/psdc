@@ -13,9 +13,9 @@ sealed class RegexTokenRule(TokenType tokenType, string pattern, RegexOptions fl
         Debug.Assert(!match.Success || match.Groups.Count == 2);
         return match.Success
             ? new Token(
-            TokenType,
-            match.Groups[1].Value,
-            new(match.Index, match.Length)).Some()
+                TokenType,
+                match.Groups[1].Value,
+                new(match.Index, match.Length)).Some()
             : default;
     }
 }

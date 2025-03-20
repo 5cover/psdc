@@ -21,5 +21,5 @@ public sealed class StaticAnalysisBenchmark
 
     [Benchmark]
     public SemanticNode.Algorithm Run()
-     => StaticAnalyzer.Analyze(p.Msger, p.Input, _ast);
+        => StaticAnalyzer.Analyze(p.Msger, p.Input, _ast);
 }

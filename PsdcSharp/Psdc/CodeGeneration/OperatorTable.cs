@@ -2,6 +2,7 @@ using Scover.Psdc.Pseudocode;
 
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 using static Scover.Psdc.Pseudocode.Associativity;
+
 using System.Text;
 using System.Diagnostics;
 
@@ -9,14 +10,14 @@ namespace Scover.Psdc.CodeGeneration;
 
 delegate TypeInfo TypeGenerator(EvaluatedType type);
 delegate StringBuilder OperatorInfoAppender(StringBuilder o, TypeGenerator typeGenerator, IReadOnlyList<Appender> @params);
-
 readonly record struct OperatorInfo
 {
     public OperatorInfo(
         Associativity associativity,
         int precedence,
         int arity,
-        OperatorInfoAppender append) => (Associativity, _append, Arity, Precedence) = (associativity, append, arity, precedence);
+        OperatorInfoAppender append
+    ) => (Associativity, _append, Arity, Precedence) = (associativity, append, arity, precedence);
 
     public Associativity Associativity { get; }
     readonly OperatorInfoAppender _append;
@@ -36,53 +37,47 @@ readonly record struct OperatorInfo
     public int Precedence { get; }
     public static OperatorInfo None { get; } = new(LeftToRight, int.MinValue, 0, (o, _, _) => o);
 }
-
 abstract class OperatorTable
 {
-    public virtual int GetPrecedence(Expr expr)
-     => expr switch {
-         Expr.Call or Expr.BuiltinFdf => FunctionCall.Precedence,
-         Expr.BinaryOperation opBin => Get(opBin).Precedence,
-         Expr.UnaryOperation opUn => Get(opUn).Precedence,
-         Expr.Lvalue.ArraySubscript => ArraySubscript.Precedence,
-         Expr.Lvalue.ComponentAccess => ComponentAccess.Precedence,
-         Expr.Lvalue.VariableReference or Expr.Literal or ParenExpr => int.MinValue,
-         _ => throw expr.ToUnmatchedException(),
-     };
+    public virtual int GetPrecedence(Expr expr) => expr switch {
+        Expr.Call or Expr.BuiltinFdf => FunctionCall.Precedence,
+        Expr.BinaryOperation opBin => Get(opBin).Precedence,
+        Expr.UnaryOperation opUn => Get(opUn).Precedence,
+        Expr.Lvalue.ArraySubscript => ArraySubscript.Precedence,
+        Expr.Lvalue.ComponentAccess => ComponentAccess.Precedence,
+        Expr.Lvalue.VariableReference or Expr.Literal or ParenExpr => int.MinValue,
+        _ => throw expr.ToUnmatchedException(),
+    };
 
     /// <summary>
     /// Should a binary operation should be parenthesized.
     /// </summary>
     /// <param name="opBin">A binary operation.</param>
     /// <returns>2-uple: the left operand should be parenthesized, the right operand should be parenthesized.</returns>
-    public (bool bracketLeft, bool bracketRight) ShouldBracketBinary(Expr.BinaryOperation opBin)
-         => ShouldBracketBinary(
-            GetPrecedence(opBin.Left),
-            GetPrecedence(opBin.Right),
-            Get(opBin.Operator, opBin.Left.Value.Type, opBin.Right.Value.Type));
+    public (bool bracketLeft, bool bracketRight) ShouldBracketBinary(Expr.BinaryOperation opBin) => ShouldBracketBinary(
+        GetPrecedence(opBin.Left),
+        GetPrecedence(opBin.Right),
+        Get(opBin.Operator, opBin.Left.Value.Type, opBin.Right.Value.Type));
 
-    public bool ShouldBracketUnary(Expr.UnaryOperation opUn)
-     => ShouldBracketOperand(Get(opUn.Operator, opUn.Operand.Value.Type), opUn.Operand);
+    public bool ShouldBracketUnary(Expr.UnaryOperation opUn) => ShouldBracketOperand(Get(opUn.Operator, opUn.Operand.Value.Type), opUn.Operand);
 
     /// <summary>
-    /// Should an component access operation's structure operand be parenthesized?
+    /// Should a component access operation's structure operand be parenthesized?
     /// </summary>
     /// <param name="compAccess">A component access expression.</param>
     /// <returns><paramref name="compAccess"/>'s structure operand should be parenthesized.</returns>
-    public bool ShouldBracket(Expr.Lvalue.ComponentAccess compAccess)
-     => ShouldBracketOperand(ComponentAccess, compAccess.Structure);
+    public bool ShouldBracket(Expr.Lvalue.ComponentAccess compAccess) => ShouldBracketOperand(ComponentAccess, compAccess.Structure);
 
     /// <summary>
     /// Should an array subscript operation's array operand be parenthesized?
     /// </summary>
     /// <param name="arrSub">An array subscript expression.</param>
     /// <returns><paramref name="arrSub"/>'s array operand should be parenthesized.</returns>
-    public bool ShouldBracket(Expr.Lvalue.ArraySubscript arrSub)
-     => ShouldBracketOperand(ArraySubscript, arrSub.Array);
+    public bool ShouldBracket(Expr.Lvalue.ArraySubscript arrSub) => ShouldBracketOperand(ArraySubscript, arrSub.Array);
 
-    static (bool bracketLeft, bool bracketRight) ShouldBracketBinary(int precedenceLeft, int precedenceRight, OperatorInfo op)
-     => (bracketLeft: precedenceLeft > op.Precedence
-                   || precedenceLeft == op.Precedence && op.Associativity == RightToLeft,
+    static (bool bracketLeft, bool bracketRight) ShouldBracketBinary(int precedenceLeft, int precedenceRight, OperatorInfo op) => (
+        bracketLeft: precedenceLeft > op.Precedence
+                  || precedenceLeft == op.Precedence && op.Associativity == RightToLeft,
         bracketRight: precedenceRight > op.Precedence
                    || precedenceRight == op.Precedence && op.Associativity == LeftToRight);
 
@@ -137,6 +132,4 @@ abstract class OperatorTable
         Debug.Assert(p.Count == 1);
         return p[0](o.Append(@operator));
     };
-
 }
-

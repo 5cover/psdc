@@ -24,39 +24,17 @@ static class Strings
 
         foreach (var c in input) {
             switch (c) {
-            case '\'':
-                o.Append("\\'");
-                break;
-            case '\"':
-                o.Append("\\\"");
-                break;
-            case '\\':
-                o.Append("\\\\");
-                break;
-            case '\a':
-                o.Append("\\a");
-                break;
-            case '\b':
-                o.Append("\\b");
-                break;
-            case '\f':
-                o.Append("\\f");
-                break;
-            case '\n':
-                o.Append("\\n");
-                break;
-            case '\r':
-                o.Append("\\r");
-                break;
-            case '\t':
-                o.Append("\\t");
-                break;
-            case '\v':
-                o.Append("\\v");
-                break;
-            case '\x1b':
-                o.Append("\\e");
-                break;
+            case '\'': o.Append("\\'"); break;
+            case '\"': o.Append("\\\""); break;
+            case '\\': o.Append("\\\\"); break;
+            case '\a': o.Append("\\a"); break;
+            case '\b': o.Append("\\b"); break;
+            case '\f': o.Append("\\f"); break;
+            case '\n': o.Append("\\n"); break;
+            case '\r': o.Append("\\r"); break;
+            case '\t': o.Append("\\t"); break;
+            case '\v': o.Append("\\v"); break;
+            case '\x1b': o.Append("\\e"); break;
             case { } when char.IsControl(c):
                 // If c can be represented in 3 octal chars
                 if (c < 8 * 8 * 8) {
@@ -65,9 +43,7 @@ static class Strings
                     o.Append(fmtProvider, $"\\u{(int)c:X4}");
                 }
                 break;
-            default:
-                o.Append(c);
-                break;
+            default: o.Append(c); break;
             }
         }
 
@@ -129,8 +105,9 @@ static class Strings
                 case var c when GetOctalDigitValue(c) is { HasValue: true } firstDigit: {
                     ushort val = firstDigit.Value;
                     int digitCount = 1;
-                    for (; digitCount < MaxLengthOctal
-                        && GetOctalDigitValue(input, i + OffsetOctal + digitCount) is { HasValue: true } digit;
+                    for (;
+                        digitCount < MaxLengthOctal
+                     && GetOctalDigitValue(input, i + OffsetOctal + digitCount) is { HasValue: true } digit;
                         ++digitCount) {
                         val *= 8;
                         val += digit.Value;
@@ -180,16 +157,15 @@ static class Strings
     static ValueOption<byte> GetOctalDigitValue(char c) => c is >= '0' and <= '7'
         ? (byte)(c - '0')
         : Option.None<byte>();
-    static ValueOption<byte> GetOctalDigitValue(ReadOnlySpan<char> s, int i)
-     => i < s.Length && s[i] is >= '0' and <= '7'
+    static ValueOption<byte> GetOctalDigitValue(ReadOnlySpan<char> s, int i) => i < s.Length && s[i] is >= '0' and <= '7'
         ? (byte)(s[i] - '0')
         : Option.None<byte>();
-    static ValueOption<byte> GetHexDigitValue(ReadOnlySpan<char> s, int i)
-     => i < s.Length ? Option.None<byte>() : s[i] switch {
-         >= '0' and <= '9' => (byte)(s[i] - '0'),
-         >= 'A' and <= 'F' => (byte)(s[i] - 'A' + 10),
-         >= 'a' and <= 'f' => (byte)(s[i] - 'a' + 10),
-         _ => default,
-     };
+    static ValueOption<byte> GetHexDigitValue(ReadOnlySpan<char> s, int i) => i < s.Length
+        ? Option.None<byte>()
+        : s[i] switch {
+            >= '0' and <= '9' => (byte)(s[i] - '0'),
+            >= 'A' and <= 'F' => (byte)(s[i] - 'A' + 10),
+            >= 'a' and <= 'f' => (byte)(s[i] - 'a' + 10),
+            _ => default,
+        };
 }
-

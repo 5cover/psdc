@@ -10,10 +10,7 @@ public interface Node
     {
         Expr InnerExpr { get; }
     }
-    sealed record Algorithm(Range Location,
-        IReadOnlyList<CompilerDirective> LeadingDirectives,
-        Ident Title,
-        IReadOnlyList<Declaration> Declarations) : Node;
+    sealed record Algorithm(Range Location, IReadOnlyList<CompilerDirective> LeadingDirectives, Ident Title, IReadOnlyList<Declaration> Declarations) : Node;
     interface Declaration : Node
     {
         internal sealed record MainProgram(Range Location, IReadOnlyList<Stmt> Body) : Declaration;
@@ -30,11 +27,12 @@ public interface Node
         internal sealed record Assignment(Range Location, Expr.Lvalue Target, Expr Value) : Stmt;
         internal sealed record DoWhileLoop(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Stmt;
 
-        internal sealed record Alternative(Range Location,
+        internal sealed record Alternative(
+            Range Location,
             Alternative.IfClause If,
             IReadOnlyList<Alternative.ElseIfClause> ElseIfs,
-            Option<Alternative.ElseClause> Else)
-        : Stmt
+            Option<Alternative.ElseClause> Else
+        ) : Stmt
         {
             internal sealed record IfClause(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Node;
             internal sealed record ElseIfClause(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Node;
@@ -64,32 +62,15 @@ public interface Node
             internal sealed record LireClavier(Range Location, Expr.Lvalue ArgumentVariable) : Builtin;
         }
 
-        internal sealed record ForLoop(Range Location,
-            Expr.Lvalue Variant,
-            Expr Start,
-            Expr End,
-            Option<Expr> Step,
-            IReadOnlyList<Stmt> Body)
-        : Stmt;
+        internal sealed record ForLoop(Range Location, Expr.Lvalue Variant, Expr Start, Expr End, Option<Expr> Step, IReadOnlyList<Stmt> Body) : Stmt;
 
-        internal sealed record RepeatLoop(Range Location,
-            Expr Condition,
-            IReadOnlyList<Stmt> Body)
-        : Stmt;
+        internal sealed record RepeatLoop(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Stmt;
 
-        internal sealed record Return(Range Location,
-            Option<Expr> Value)
-        : Stmt;
+        internal sealed record Return(Range Location, Option<Expr> Value) : Stmt;
 
-        internal sealed record LocalVariable(Range Location,
-            VariableDeclaration Decl,
-            Option<Initializer> Value)
-        : Stmt;
+        internal sealed record LocalVariable(Range Location, VariableDeclaration Decl, Option<Initializer> Value) : Stmt;
 
-        internal sealed record WhileLoop(Range Location,
-            Expr Condition,
-            IReadOnlyList<Stmt> Body)
-        : Stmt;
+        internal sealed record WhileLoop(Range Location, Expr Condition, IReadOnlyList<Stmt> Body) : Stmt;
     }
     interface Initializer : Node
     {
@@ -104,71 +85,39 @@ public interface Node
     {
         internal interface Lvalue : Expr
         {
-            internal sealed record ComponentAccess(Range Location,
-                Expr Structure,
-                Ident ComponentName)
-            : Lvalue;
+            internal sealed record ComponentAccess(Range Location, Expr Structure, Ident ComponentName) : Lvalue;
 
-            internal sealed record ParenLValue
-            : Lvalue, ParenExpr
+            internal sealed record ParenLValue : Lvalue, ParenExpr
             {
-                public ParenLValue(Range location,
-                Lvalue lvalue) => (Location, ContainedLvalue) = (location,
-                    lvalue is ParenExpr { InnerExpr: Lvalue l }
-                        ? l : lvalue);
+                public ParenLValue(Range location, Lvalue lvalue) =>
+                    (Location, ContainedLvalue) = (location, lvalue is ParenExpr { InnerExpr: Lvalue l } ? l : lvalue);
                 public Range Location { get; }
                 public Lvalue ContainedLvalue { get; }
                 Expr ParenExpr.InnerExpr => ContainedLvalue;
-
             }
 
-            internal sealed record ArraySubscript(Range Location,
-                Expr Array,
-                Expr Index)
-            : Lvalue;
+            internal sealed record ArraySubscript(Range Location, Expr Array, Expr Index) : Lvalue;
 
-            internal sealed record VariableReference(Range Location,
-                Ident Name)
-            : Lvalue;
+            internal sealed record VariableReference(Range Location, Ident Name) : Lvalue;
         }
 
-        internal sealed record UnaryOperation(Range Location,
-            UnaryOperator Operator,
-            Expr Operand)
-        : Expr;
+        internal sealed record UnaryOperation(Range Location, UnaryOperator Operator, Expr Operand) : Expr;
 
-        internal sealed record BinaryOperation(Range Location,
-            Expr Left,
-            BinaryOperator Operator,
-            Expr Right)
-        : Expr;
+        internal sealed record BinaryOperation(Range Location, Expr Left, BinaryOperator Operator, Expr Right) : Expr;
 
-        internal sealed record BuiltinFdf(Range Location,
-            Expr ArgumentNomLog)
-        : Expr;
+        internal sealed record BuiltinFdf(Range Location, Expr ArgumentNomLog) : Expr;
 
-        internal sealed record Call(Range Location,
-            Ident Callee,
-            IReadOnlyList<ParameterActual> Parameters)
-        : Expr;
+        internal sealed record Call(Range Location, Ident Callee, IReadOnlyList<ParameterActual> Parameters) : Expr;
 
-        internal sealed record ParenExprImpl
-        : ParenExpr
+        internal sealed record ParenExprImpl : ParenExpr
         {
-            public ParenExprImpl(Range location,
-            Expr expr) => (Location, InnerExpr) = (location,
-                expr is ParenExpr b ? b.InnerExpr : expr);
+            public ParenExprImpl(Range location, Expr expr) => (Location, InnerExpr) = (location, expr is ParenExpr b ? b.InnerExpr : expr);
             public Range Location { get; }
             public Expr InnerExpr { get; }
         }
 
-        internal abstract record Literal<TType, TValue, TUnderlying>(Range Location,
-            TType ValueType,
-            TUnderlying Value)
-        : Literal
-            where TValue : Value
-            where TType : EvaluatedType, InstantiableType<TValue, TUnderlying>
-            where TUnderlying : notnull
+        internal abstract record Literal<TType, TValue, TUnderlying>(Range Location, TType ValueType, TUnderlying Value) : Literal
+        where TValue : Value where TType : EvaluatedType, InstantiableType<TValue, TUnderlying> where TUnderlying : notnull
         {
             object Literal.Value => Value;
             EvaluatedType Literal.ValueType => ValueType;
@@ -182,70 +131,49 @@ public interface Node
             EvaluatedType ValueType { get; }
             Value CreateValue();
 
-            internal sealed record True(Range Location)
-            : Literal<BooleanType, BooleanValue, bool>(Location, BooleanType.Instance, true);
+            internal sealed record True(Range Location) : Literal<BooleanType, BooleanValue, bool>(Location, BooleanType.Instance, true);
 
-            internal sealed record False(Range Location)
-            : Literal<BooleanType, BooleanValue, bool>(Location, BooleanType.Instance, false);
+            internal sealed record False(Range Location) : Literal<BooleanType, BooleanValue, bool>(Location, BooleanType.Instance, false);
 
             internal sealed record Character(Range Location, char Value)
-            : Literal<CharacterType, CharacterValue, char>(Location, CharacterType.Instance, Value);
+                : Literal<CharacterType, CharacterValue, char>(Location, CharacterType.Instance, Value);
 
-            internal sealed record Integer(Range Location, int Value)
-            : Literal<IntegerType, IntegerValue, int>(Location, IntegerType.Instance, Value)
+            internal sealed record Integer(Range Location, int Value) : Literal<IntegerType, IntegerValue, int>(Location, IntegerType.Instance, Value)
             {
-                public Integer(Range location, string valueStr)
-                : this(location, int.Parse(valueStr, Format.Code)) { }
+                public Integer(Range location, string valueStr) : this(location, int.Parse(valueStr, Format.Code)) { }
             }
 
-            internal sealed record Real(Range Location, decimal Value)
-            : Literal<RealType, RealValue, decimal>(Location, RealType.Instance, Value)
+            internal sealed record Real(Range Location, decimal Value) : Literal<RealType, RealValue, decimal>(Location, RealType.Instance, Value)
             {
-                public Real(Range location, string valueStr)
-                : this(location, decimal.Parse(valueStr, Format.Code)) { }
+                public Real(Range location, string valueStr) : this(location, decimal.Parse(valueStr, Format.Code)) { }
             }
 
             internal sealed record String(Range Location, string Value)
-            : Literal<LengthedStringType, LengthedStringValue, string>(Location, LengthedStringType.Create(Value.Length), Value);
+                : Literal<LengthedStringType, LengthedStringValue, string>(Location, LengthedStringType.Create(Value.Length), Value);
         }
     }
 
     internal interface Type : Node
     {
-        internal sealed record AliasReference(Range Location,
-            Ident Name)
-        : Type;
+        internal sealed record AliasReference(Range Location, Ident Name) : Type;
 
-        internal sealed record String(Range Location)
-        : Type;
+        internal sealed record String(Range Location) : Type;
 
-        internal sealed record Array(Range Location,
-            Type Type,
-            IReadOnlyList<Expr> Dimensions)
-        : Type;
+        internal sealed record Array(Range Location, Type Type, IReadOnlyList<Expr> Dimensions) : Type;
 
-        internal sealed record File(Range Location)
-        : Type;
+        internal sealed record File(Range Location) : Type;
 
-        internal sealed record Character(Range Location)
-        : Type;
+        internal sealed record Character(Range Location) : Type;
 
-        internal sealed record Boolean(Range Location)
-        : Type;
+        internal sealed record Boolean(Range Location) : Type;
 
-        internal sealed record Integer(Range Location)
-        : Type;
+        internal sealed record Integer(Range Location) : Type;
 
-        internal sealed record Real(Range Location)
-        : Type;
+        internal sealed record Real(Range Location) : Type;
 
-        internal sealed record LengthedString(Range Location,
-            Expr Length)
-        : Type;
+        internal sealed record LengthedString(Range Location, Expr Length) : Type;
 
-        internal sealed record Structure(Range Location,
-            IReadOnlyList<Component> Components)
-        : Type;
+        internal sealed record Structure(Range Location, IReadOnlyList<Component> Components) : Type;
     }
 
     internal interface Designator : Node
@@ -257,32 +185,15 @@ public interface Node
 
     internal sealed record Nop(Range Location) : Stmt, Declaration;
 
-    internal sealed record ParameterActual(Range Location,
-        ParameterMode Mode,
-        Expr Value)
-    : Node;
+    internal sealed record ParameterActual(Range Location, ParameterMode Mode, Expr Value) : Node;
 
-    internal sealed record ParameterFormal(Range Location,
-        ParameterMode Mode,
-        Ident Name,
-        Type Type)
-    : Node;
+    internal sealed record ParameterFormal(Range Location, ParameterMode Mode, Ident Name, Type Type) : Node;
 
-    internal sealed record VariableDeclaration(Range Location,
-        IReadOnlyList<Ident> Names,
-        Type Type)
-    : Component;
+    internal sealed record VariableDeclaration(Range Location, IReadOnlyList<Ident> Names, Type Type) : Component;
 
-    internal sealed record ProcedureSignature(Range Location,
-        Ident Name,
-        IReadOnlyList<ParameterFormal> Parameters)
-    : Node;
+    internal sealed record ProcedureSignature(Range Location, Ident Name, IReadOnlyList<ParameterFormal> Parameters) : Node;
 
-    internal sealed record FunctionSignature(Range Location,
-        Ident Name,
-        IReadOnlyList<ParameterFormal> Parameters,
-        Type ReturnType)
-    : Node;
+    internal sealed record FunctionSignature(Range Location, Ident Name, IReadOnlyList<ParameterFormal> Parameters, Type ReturnType) : Node;
 
     internal abstract record UnaryOperator(Range Location, string Representation) : Node
     {

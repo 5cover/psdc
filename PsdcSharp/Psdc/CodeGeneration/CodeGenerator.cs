@@ -1,8 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+
 using Scover.Psdc.Pseudocode;
 using Scover.Psdc.Messages;
 using Scover.Psdc.Parsing;
+
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
 namespace Scover.Psdc.CodeGeneration;
@@ -21,36 +23,31 @@ public static class CodeGenerator
         }
     }
 }
-
 delegate StringBuilder Appender<in T>(StringBuilder o, T node);
 delegate StringBuilder Appender(StringBuilder o);
 delegate string Generator<in T>(T node);
-
 abstract class CodeGenerator<TKwTable, TOpTable>(Messenger msger, TKwTable keywordTable, TOpTable operatorTable)
 where TKwTable : KeywordTable
 where TOpTable : OperatorTable
 {
-    protected static Generator<T> ToGenerator<T>(Appender<T> appender)
-     => node => appender(new(), node).ToString();
+    protected static Generator<T> ToGenerator<T>(Appender<T> appender) => node => appender(new(), node).ToString();
 
     protected readonly Indentation Indentation = new(4);
     protected readonly Messenger Msger = msger;
     protected readonly TKwTable KwTable = keywordTable;
     protected readonly TOpTable OpTable = operatorTable;
 
-    protected string ValidateIdentifier(Scope scope, Ident ident)
-     => KwTable.Validate(scope, ident, Msger);
-    protected string ValidateIdentifier(Scope scope, Range location, string ident)
-     => KwTable.Validate(scope, location, ident, Msger);
+    protected string ValidateIdentifier(Scope scope, Ident ident) => KwTable.Validate(scope, ident, Msger);
+    protected string ValidateIdentifier(Scope scope, Range location, string ident) => KwTable.Validate(scope, location, ident, Msger);
 
     public abstract string Generate(Algorithm algorithm);
 
     protected abstract TypeGenerator TypeGeneratorFor(Scope scope);
 
-    protected StringBuilder AppendUnaryOperation<TExpr>(StringBuilder o, OperatorInfo op, TExpr operand, Appender<TExpr> appender) where TExpr : Expr
-     => op.Append(o, TypeGeneratorFor(operand.Meta.Scope), [
-        o => AppendBetweenParens(o, OpTable.ShouldBracketOperand(op, operand), o => appender(o, operand)),
-    ]);
+    protected StringBuilder AppendUnaryOperation<TExpr>(StringBuilder o, OperatorInfo op, TExpr operand, Appender<TExpr> appender) where TExpr : Expr =>
+        op.Append(o, TypeGeneratorFor(operand.Meta.Scope), [
+            o => AppendBetweenParens(o, OpTable.ShouldBracketOperand(op, operand), o => appender(o, operand)),
+        ]);
 
     protected static StringBuilder AppendBetweenParens(StringBuilder o, bool bracket, Action<StringBuilder> appender)
     {

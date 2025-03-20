@@ -5,7 +5,6 @@ namespace Scover.Psdc.Lexing;
 
 public class TokenType
 {
-
     internal interface Ruled<out T> where T : TokenRule
     {
         IEnumerable<T> Rules { get; }
@@ -41,7 +40,7 @@ public class TokenType
 
         public static IReadOnlyCollection<Keyword> Instances => instances;
         public static Keyword Begin { get; } = new("début",
-                                                   "debut");
+            "debut");
         public static Keyword End { get; } = new("fin");
         public static Keyword Is { get; } = new("c'est");
         public static Keyword Program { get; } = new("programme");
@@ -60,24 +59,25 @@ public class TokenType
         #region Types
 
         public static Keyword Boolean { get; } = new("booléen",
-                                                     "booleen");
+            "booleen");
         public static Keyword Character { get; } = new("caractère",
-                                                       "caractere");
+            "caractere");
         public static Keyword File { get; } = new("nomFichierLog");
         public static Keyword Integer { get; } = new("entier");
         public static Keyword Real { get; } = new("réel",
-                                                  "reel");
+            "reel");
         public static Keyword String { get; } = new("chaîne",
-                                                    "chaine");
+            "chaine");
+
         #endregion Types
 
         #region Callables
 
         public static Keyword Delivers { get; } = new("délivre",
-                                                      "delivre");
+            "delivre");
         public static Keyword Function { get; } = new("fonction");
         public static Keyword Procedure { get; } = new("procédure",
-                                                       "procedure");
+            "procedure");
         public static Keyword Return { get; } = new("retourne");
 
         #endregion Callables
@@ -86,18 +86,18 @@ public class TokenType
 
         public static Keyword Assigner { get; } = new("assigner");
         public static Keyword Ecrire { get; } = new("écrire",
-                                                    "ecrire");
+            "ecrire");
         public static Keyword EcrireEcran { get; } = new("écrireEcran",
-                                                         "écrireÉcran",
-                                                         "ecrireÉcran",
-                                                         "ecrireEcran");
+            "écrireÉcran",
+            "ecrireÉcran",
+            "ecrireEcran");
         public static Keyword Fdf { get; } = new("FdF");
         public static Keyword Fermer { get; } = new("fermer");
         public static Keyword Lire { get; } = new("lire");
         public static Keyword LireClavier { get; } = new("lireClavier");
         public static Keyword OuvrirAjout { get; } = new("ouvrirAjout");
         public static Keyword OuvrirEcriture { get; } = new("ouvrirEcriture",
-                                                            "ouvrirÉcriture");
+            "ouvrirÉcriture");
         public static Keyword OuvrirLecture { get; } = new("ouvrirLecture");
 
         #endregion Builtins
@@ -107,25 +107,25 @@ public class TokenType
         public static Keyword Do { get; } = new("faire");
         public static Keyword Else { get; } = new("sinon");
         public static Keyword ElseIf { get; } = new("sinonsi",
-                                                    "sinonSi");
+            "sinonSi");
         public static Keyword EndDo { get; } = new("finfaire",
-                                                   "finFaire");
+            "finFaire");
         public static Keyword EndIf { get; } = new("finsi",
-                                                   "finSi");
+            "finSi");
         public static Keyword EndSwitch { get; } = new("finselon",
-                                                       "finSelon");
+            "finSelon");
         public static Keyword For { get; } = new("pour");
         public static Keyword EndFor { get; } = new("finpour",
-                                                    "finPour");
+            "finPour");
         public static Keyword If { get; } = new("si");
         public static Keyword Repeat { get; } = new("répéter",
-                                                    "répeter",
-                                                    "repéter",
-                                                    "repeter");
+            "répeter",
+            "repéter",
+            "repeter");
         public static Keyword Switch { get; } = new("selon");
         public static Keyword Then { get; } = new("alors");
         public static Keyword Until { get; } = new("jusqu'à",
-                                                   "jusqu'a");
+            "jusqu'a");
         public static Keyword When { get; } = new("quand");
         public static Keyword While { get; } = new("tant");
 
@@ -143,6 +143,7 @@ public class TokenType
         #endregion Parameters
 
         #region Logical operators
+
         public static Keyword And { get; } = new("et", StringComparison.OrdinalIgnoreCase);
         public static Keyword Not { get; } = new("non", StringComparison.OrdinalIgnoreCase);
         public static Keyword Or { get; } = new("ou", StringComparison.OrdinalIgnoreCase);

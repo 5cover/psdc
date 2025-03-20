@@ -3,6 +3,7 @@ namespace Scover.Psdc.Messages;
 public enum MessageCode
 {
     #region Errors
+
     UnknownToken,
     SyntaxError,
     UndefinedSymbol,

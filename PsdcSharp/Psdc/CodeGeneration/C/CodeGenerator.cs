@@ -3,6 +3,7 @@ using System.Text;
 using Scover.Psdc.Pseudocode;
 using Scover.Psdc.Messages;
 using Scover.Psdc.StaticAnalysis;
+
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
 namespace Scover.Psdc.CodeGeneration.C;
@@ -22,7 +23,7 @@ sealed partial class CodeGenerator(Messenger messenger)
         }
 
         return _includes.AppendIncludeSection(AppendFileHeader(new(), algorithm))
-            .Append(o).ToString();
+           .Append(o).ToString();
     }
 
     #region Declarations
@@ -30,7 +31,8 @@ sealed partial class CodeGenerator(Messenger messenger)
     protected override StringBuilder AppendAliasDeclaration(StringBuilder o, Declaration.TypeAlias alias)
     {
         SetGroup(o, Group.Types);
-        return Indent(o).AppendLine(Format.Code, $"typedef {CreateTypeInfo(alias.Meta.Scope, alias.Type).GenerateDeclaration(ValidateIdentifier(alias.Meta.Scope, alias.Name))};");
+        return Indent(o).AppendLine(Format.Code,
+            $"typedef {CreateTypeInfo(alias.Meta.Scope, alias.Type).GenerateDeclaration(ValidateIdentifier(alias.Meta.Scope, alias.Name))};");
     }
 
     protected override StringBuilder AppendConstant(StringBuilder o, Declaration.Constant constant)
@@ -51,7 +53,7 @@ sealed partial class CodeGenerator(Messenger messenger)
     }
 
     protected override StringBuilder AppendCallableDeclaration(StringBuilder o, Declaration.Callable callable)
-     => AppendCallableSignature(SetGroup(o, Group.Prototypes), callable.Signature).AppendLine(";");
+        => AppendCallableSignature(SetGroup(o, Group.Prototypes), callable.Signature).AppendLine(";");
 
     protected override StringBuilder AppendCallableDefinition(StringBuilder o, Declaration.CallableDefinition def)
     {
@@ -65,7 +67,7 @@ sealed partial class CodeGenerator(Messenger messenger)
         Indent(o).Append("int main() ");
         _includes.Ensure(IncludeSet.StdLib); // for EXIT_SUCCESS
         return AppendBlock(o, mainProgram.Block, o => Indent(o.AppendLine()).AppendLine("return EXIT_SUCCESS;"))
-            .AppendLine();
+           .AppendLine();
     }
 
     StringBuilder AppendCallableSignature(StringBuilder o, CallableSignature sig)
@@ -199,10 +201,10 @@ sealed partial class CodeGenerator(Messenger messenger)
 
         AppendExpression(o.Append("; "), forLoop.Variant);
         forLoop.Step.Must(
-            // replace += by ++ when the step is a literal 1
-            step => step is not Expr.Literal { UnderlyingValue: 1 })
-            .Match(step => AppendExpression(o.Append(" += "), step),
-                   none: () => o.Append("++"));
+                // replace += by ++ when the step is a literal 1
+                step => step is not Expr.Literal { UnderlyingValue: 1 })
+           .Match(step => AppendExpression(o.Append(" += "), step),
+                none: () => o.Append("++"));
 
         return AppendBlock(o.Append(") "), forLoop.Block).AppendLine();
     }
@@ -253,8 +255,7 @@ sealed partial class CodeGenerator(Messenger messenger)
                 Indent(o).AppendLine("default:");
                 break;
             }
-            default:
-                throw @case.ToUnmatchedException();
+            default: throw @case.ToUnmatchedException();
             }
 
             if (@case.Block.Count != 0) {
@@ -271,19 +272,22 @@ sealed partial class CodeGenerator(Messenger messenger)
     protected override StringBuilder AppendLocalVariable(StringBuilder o, Statement.LocalVariable local)
     {
         Indent(o).Append(CreateTypeInfo(local.Meta.Scope, local.Decl.Type)
-            .GenerateDeclaration(local.Decl.Names.Select(n => ValidateIdentifier(local.Meta.Scope, n))));
+           .GenerateDeclaration(local.Decl.Names.Select(n => ValidateIdentifier(local.Meta.Scope, n))));
         local.Value.Tap(i => AppendInitializer(o.Append(" = "), i, false));
         return o.AppendLine(";");
     }
 
-    StringBuilder AppendInitializer(StringBuilder o, Initializer initializer,
-        bool convertInitToCompoundLiteral = true)
-     => initializer switch {
-         Expr left => AppendExpression(o, left,
-            convertInitToCompoundLiteral: convertInitToCompoundLiteral),
-         Initializer.Braced array => AppendBracedInitializer(o, array),
-         _ => throw initializer.ToUnmatchedException(),
-     };
+    StringBuilder AppendInitializer(
+        StringBuilder o,
+        Initializer initializer,
+        bool convertInitToCompoundLiteral = true
+    )
+        => initializer switch {
+            Expr left => AppendExpression(o, left,
+                convertInitToCompoundLiteral: convertInitToCompoundLiteral),
+            Initializer.Braced array => AppendBracedInitializer(o, array),
+            _ => throw initializer.ToUnmatchedException(),
+        };
 
     StringBuilder AppendBracedInitializer(StringBuilder o, Initializer.Braced initializer)
     {
@@ -324,50 +328,55 @@ sealed partial class CodeGenerator(Messenger messenger)
     }
 
     StringBuilder AppendIndex(StringBuilder o, Expr index)
-     => AppendExpressionAlter(o.Append('['), index, OpTable.Subtract, 1, (l, r) => l - r).Append(']');
+        => AppendExpressionAlter(o.Append('['), index, OpTable.Subtract, 1, (l, r) => l - r).Append(']');
 
     StringBuilder AppendParenExpr(StringBuilder o, Expr expr)
-     => AppendExpression(o, expr, expr is not ParenExpr);
+        => AppendExpression(o, expr, expr is not ParenExpr);
 
     protected override StringBuilder AppendExpressionStatement(StringBuilder o, Statement.ExpressionStatement exprStmt)
-     => AppendExpression(Indent(o), exprStmt.Expression).AppendLine(";");
+        => AppendExpression(Indent(o), exprStmt.Expression).AppendLine(";");
 
     StringBuilder AppendExpression(StringBuilder o, Expr expr) => AppendExpression(o, expr, false);
 
-    StringBuilder AppendExpression(StringBuilder o, Expr expr,
+    StringBuilder AppendExpression(
+        StringBuilder o,
+        Expr expr,
         // ReSharper disable once MethodOverloadWithOptionalParameter
         // Justification : method group calls
-        bool bracket = false, bool convertInitToCompoundLiteral = true)
-     => AppendBetweenParens(o, bracket, o => {
-         _ = expr switch {
-             ParenExpr b => AppendExpression(o, b.ContainedExpression, !bracket),
-             Expr.Call call => AppendCall(o, call),
-             Expr.Literal(_, bool v, BooleanValue) => AppendLiteralBoolean(v),
-             // We're using the Pseudocode syntax for escaping string literals since it is the same as C's (except for \? which we can ignore, no one uses trigraphs)
-             Expr.Literal { Value: CharacterValue v } => o.Append(v.ToString(Value.FmtNoType, Format.Code)),
-             Expr.Literal { Value: StringValue v } => o.Append(v.ToString(Value.FmtNoType, Format.Code)),
-             Expr.Literal l => o.Append(l.UnderlyingValue.ToStringFmt(Format.Code)),
-             Expr.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
-             Expr.Lvalue.ComponentAccess compAccess
-              => AppendExpression(o, compAccess.Structure, OpTable.ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
-             Expr.Lvalue.VariableReference variable => AppendVariableReference(o, variable, convertInitToCompoundLiteral),
-             Expr.BinaryOperation opBin => AppendOperationBinary(o, opBin),
-             Expr.UnaryOperation opUn => AppendOperationUnary(o, opUn),
-             Expr.BuiltinFdf fdf => AppendBuiltinFdf(o, fdf),
-             _ => throw expr.ToUnmatchedException(),
-         };
+        bool bracket = false,
+        bool convertInitToCompoundLiteral = true
+    )
+        => AppendBetweenParens(o, bracket, o => {
+            _ = expr switch {
+                ParenExpr b => AppendExpression(o, b.ContainedExpression, !bracket),
+                Expr.Call call => AppendCall(o, call),
+                Expr.Literal(_, bool v, BooleanValue) => AppendLiteralBoolean(v),
+                // We're using the Pseudocode syntax for escaping string literals since it is the same as C's (except for \? which we can ignore, no one uses trigraphs)
+                Expr.Literal { Value: CharacterValue v } => o.Append(v.ToString(Value.FmtNoType, Format.Code)),
+                Expr.Literal { Value: StringValue v } => o.Append(v.ToString(Value.FmtNoType, Format.Code)),
+                Expr.Literal l => o.Append(l.UnderlyingValue.ToStringFmt(Format.Code)),
+                Expr.Lvalue.ArraySubscript arrSub => AppendArraySubscript(o, arrSub),
+                Expr.Lvalue.ComponentAccess compAccess
+                    => AppendExpression(o, compAccess.Structure, OpTable.ShouldBracket(compAccess)).Append('.').Append(compAccess.ComponentName),
+                Expr.Lvalue.VariableReference variable => AppendVariableReference(o, variable, convertInitToCompoundLiteral),
+                Expr.BinaryOperation opBin => AppendOperationBinary(o, opBin),
+                Expr.UnaryOperation opUn => AppendOperationUnary(o, opUn),
+                Expr.BuiltinFdf fdf => AppendBuiltinFdf(o, fdf),
+                _ => throw expr.ToUnmatchedException(),
+            };
 
-         StringBuilder AppendLiteralBoolean(bool b)
-         {
-             _includes.Ensure(IncludeSet.StdBool);
-             return o.Append(b ? "true" : "false");
-         }
-     });
+            StringBuilder AppendLiteralBoolean(bool b)
+            {
+                _includes.Ensure(IncludeSet.StdBool);
+                return o.Append(b ? "true" : "false");
+            }
+        });
 
     StringBuilder AppendVariableReference(StringBuilder o, Expr.Lvalue.VariableReference variable, bool convertInitToCompoundLiteral)
     {
-        if (convertInitToCompoundLiteral && variable.Meta.Scope.GetSymbol<Symbol.Constant>(variable.Name) is { HasValue: true } s
-            && s.Value.Type is ArrayType or StructureType) {
+        if (convertInitToCompoundLiteral
+         && variable.Meta.Scope.GetSymbol<Symbol.Constant>(variable.Name) is { HasValue: true } s
+         && s.Value.Type is ArrayType or StructureType) {
             o.Append(Format.Code, $"({CreateTypeInfo(variable.Meta.Scope, s.Value.Type)})");
         }
         return C.IsPointerParameter(variable)
@@ -397,16 +406,16 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     static bool IsStringComparisonOperator(BinaryOperator b) => b
         is BinaryOperator.Equal
-        or BinaryOperator.GreaterThan
-        or BinaryOperator.GreaterThanOrEqual
-        or BinaryOperator.LessThan
-        or BinaryOperator.LessThanOrEqual
-        or BinaryOperator.NotEqual;
+     or BinaryOperator.GreaterThan
+     or BinaryOperator.GreaterThanOrEqual
+     or BinaryOperator.LessThan
+     or BinaryOperator.LessThanOrEqual
+     or BinaryOperator.NotEqual;
 
     StringBuilder AppendOperationUnary(StringBuilder o, Expr.UnaryOperation opUn)
-     => OpTable.Get(opUn).Append(o, TypeGeneratorFor(opUn.Meta.Scope), [
-        o => AppendExpression(o, opUn.Operand, OpTable.ShouldBracketUnary(opUn)),
-    ]);
+        => OpTable.Get(opUn).Append(o, TypeGeneratorFor(opUn.Meta.Scope), [
+            o => AppendExpression(o, opUn.Operand, OpTable.ShouldBracketUnary(opUn)),
+        ]);
 
     #endregion Expressions
 
@@ -451,27 +460,30 @@ sealed partial class CodeGenerator(Messenger messenger)
         return info;
     }
 
-    StringBuilder AppendExpressionAlter<T>(StringBuilder o,
+    StringBuilder AppendExpressionAlter<T>(
+        StringBuilder o,
         Expr left,
         OperatorInfo @operator,
         T right,
-        Func<T, T, T>? collapseLiterals = null) where T : notnull
-        // Collapse literals
-     => collapseLiterals is not null && GetExpressionObviousValue(left) is { HasValue: true } v
-        ? o.Append(collapseLiterals((T)v.Value, right).ToStringFmt(Format.Code))
-        : @operator.Append(o, TypeGeneratorFor(left.Meta.Scope), [
-            o => AppendExpression(o, left, OpTable.ShouldBracketOperand(@operator, left)),
-            o => o.Append(right.ToStringFmt(Format.Code))]);
+        Func<T, T, T>? collapseLiterals = null
+    ) where T : notnull
+    // Collapse literals
+        => collapseLiterals is not null && GetExpressionObviousValue(left) is { HasValue: true } v
+            ? o.Append(collapseLiterals((T)v.Value, right).ToStringFmt(Format.Code))
+            : @operator.Append(o, TypeGeneratorFor(left.Meta.Scope), [
+                o => AppendExpression(o, left, OpTable.ShouldBracketOperand(@operator, left)),
+                o => o.Append(right.ToStringFmt(Format.Code)),
+            ]);
 
     static ValueOption<object> GetExpressionObviousValue(Expr expr)
-     => expr is Expr.Literal
-             or Expr.UnaryOperation { Operator: UnaryOperator.Plus or UnaryOperator.Minus }
-     && expr.Value.Status.ComptimeValue is { HasValue: true } v
-        ? v
-        : default;
+        => expr is Expr.Literal
+            or Expr.UnaryOperation { Operator: UnaryOperator.Plus or UnaryOperator.Minus }
+        && expr.Value.Status.ComptimeValue is { HasValue: true } v
+            ? v
+            : default;
 
     protected override TypeGenerator TypeGeneratorFor(Scope scope)
-     => type => CreateTypeInfo(scope, type);
+        => type => CreateTypeInfo(scope, type);
 
     StringBuilder Indent(StringBuilder o) => Indentation.Indent(o);
 
@@ -485,21 +497,21 @@ sealed partial class CodeGenerator(Messenger messenger)
     }
 
     protected override StringBuilder AppendBuiltinLire(StringBuilder o, Statement.Builtin.Lire lire)
-     => FeatureComingSoon(o, lire, "files");
+        => FeatureComingSoon(o, lire, "files");
     protected override StringBuilder AppendBuiltinEcrire(StringBuilder o, Statement.Builtin.Ecrire ecrire)
-     => FeatureComingSoon(o, ecrire, "files");
+        => FeatureComingSoon(o, ecrire, "files");
     protected override StringBuilder AppendBuiltinFermer(StringBuilder o, Statement.Builtin.Fermer fermer)
-     => FeatureComingSoon(o, fermer, "files");
+        => FeatureComingSoon(o, fermer, "files");
     protected override StringBuilder AppendBuiltinOuvrirLecture(StringBuilder o, Statement.Builtin.OuvrirLecture ouvrirLecture)
-     => FeatureComingSoon(o, ouvrirLecture, "files");
+        => FeatureComingSoon(o, ouvrirLecture, "files");
     protected override StringBuilder AppendBuiltinOuvrirEcriture(StringBuilder o, Statement.Builtin.OuvrirEcriture ouvrirEcriture)
-     => FeatureComingSoon(o, ouvrirEcriture, "files");
+        => FeatureComingSoon(o, ouvrirEcriture, "files");
     protected override StringBuilder AppendBuiltinOuvrirAjout(StringBuilder o, Statement.Builtin.OuvrirAjout ouvrirAjout)
-     => FeatureComingSoon(o, ouvrirAjout, "files");
+        => FeatureComingSoon(o, ouvrirAjout, "files");
     protected override StringBuilder AppendBuiltinAssigner(StringBuilder o, Statement.Builtin.Assigner assigner)
-     => FeatureComingSoon(o, assigner, "files");
+        => FeatureComingSoon(o, assigner, "files");
     StringBuilder AppendBuiltinFdf(StringBuilder o, Expr.BuiltinFdf fdf)
-     => FeatureComingSoon(o, fdf, "files");
+        => FeatureComingSoon(o, fdf, "files");
 
     StringBuilder FeatureComingSoon(StringBuilder o, SemanticNode node, string feature)
     {

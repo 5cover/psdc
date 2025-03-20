@@ -1,4 +1,5 @@
 using Scover.Psdc.Pseudocode;
+
 using static Scover.Psdc.StaticAnalysis.SemanticNode;
 
 namespace Scover.Psdc.StaticAnalysis;
@@ -19,9 +20,8 @@ public static class SemanticNodeExtensions
         _ => new Expr.UnaryOperation(expr.Meta, new UnaryOperator.Not(expr.Meta), expr, expr.Value.Invert()),
     };
 
-    static Value Invert(this Value val)
-     => val is BooleanValue b ?
-        b.Map(b => !b)
+    static Value Invert(this Value val) => val is BooleanValue b
+        ? b.Map(b => !b)
         : UnknownType.Inferred.DefaultValue;
 
     static ValueOption<Expr.BinaryOperation> Invert(this Expr.BinaryOperation bo)
@@ -47,15 +47,15 @@ public static class SemanticNodeExtensions
                 bo.Right.Invert(),
                 v),
             // NOT (A XOR B) <=> A = B
-            BinaryOperator.Xor e => (bo with { Operator = new BinaryOperator.Equal(e.Meta), Value = v }).Some(), // gives the target type of the switch expression
+            BinaryOperator.Xor e =>
+                (bo with { Operator = new BinaryOperator.Equal(e.Meta), Value = v }).Some(), // gives the target type of the switch expression
             _ => default,
         };
     }
 
     internal static ValueOption<Expr.Literal> ToLiteral<TType, TUnderlying>(this Value<TType, TUnderlying> value, Scope scope)
     where TType : EvaluatedType
-    where TUnderlying : notnull
-     => value.Status is ValueStatus.Comptime<TUnderlying> comptime
-         ? new Expr.Literal(new(scope, default), comptime.Value, value).Some()
-         : default;
+    where TUnderlying : notnull => value.Status is ValueStatus.Comptime<TUnderlying> comptime
+        ? new Expr.Literal(new(scope, default), comptime.Value, value).Some()
+        : default;
 }

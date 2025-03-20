@@ -12,44 +12,45 @@ static class ConstantFolding
     static OperationResult<UnaryOperationMessage> Operate<TResultValue, TOperand, TResult>(
         InstantiableType<TResultValue, TResult> type,
         ValueStatus<TOperand> value,
-        Func<TOperand, TResult> operation) where TResultValue : Value
-     => OperationResult.OkUnary(
-            value.ComptimeValue.Map(v => type.Instanciate(operation(v))).ValueOr(type.RuntimeValue));
+        Func<TOperand, TResult> operation
+    ) where TResultValue : Value => OperationResult.OkUnary(
+        value.ComptimeValue.Map(v => type.Instanciate(operation(v))).ValueOr(type.RuntimeValue));
 
     static OperationResult<BinaryOperationMessage> Operate<TResultValue, TLeft, TRight, TResult>(
         InstantiableType<TResultValue, TResult> type,
         ValueStatus<TLeft> left,
         ValueStatus<TRight> right,
-        Func<TLeft, TRight, TResult> operation) where TResultValue : Value
-     => OperationResult.OkBinary(
-            left.ComptimeValue.Zip(right.ComptimeValue).Map((l, r) => type.Instanciate(operation(l, r))).ValueOr(type.RuntimeValue));
+        Func<TLeft, TRight, TResult> operation
+    ) where TResultValue : Value => OperationResult.OkBinary(
+        left.ComptimeValue.Zip(right.ComptimeValue).Map((l, r) => type.Instanciate(operation(l, r))).ValueOr(type.RuntimeValue));
 
     static TResult Operate<TLeft, TRight, TResult>(
         ValueStatus<TLeft> left,
         ValueStatus<TRight> right,
-        Func<Option<TLeft>, Option<TRight>, TResult> operation)
-     => operation(left.ComptimeValue, right.ComptimeValue);
+        Func<Option<TLeft>, Option<TRight>, TResult> operation
+    ) => operation(left.ComptimeValue, right.ComptimeValue);
 
-    internal static OperationResult<UnaryOperationMessage> EvaluateOperation(this StaticAnalyzer sa, Scope scope, UnaryOperator op, Value operand) => (op, operand) switch {
-        (_, UnknownValue) => OperationResult.OkUnary(operand),
+    internal static OperationResult<UnaryOperationMessage> EvaluateOperation(this StaticAnalyzer sa, Scope scope, UnaryOperator op, Value operand) =>
+        (op, operand) switch {
+            (_, UnknownValue) => OperationResult.OkUnary(operand),
 
-        // Arithmetic
-        (Minus, IntegerValue x) => Operate(x.Type, x.Status, x => -x),
-        (Minus, RealValue x) => Operate(x.Type, x.Status, x => -x),
-        (Plus, IntegerValue x) => OperationResult.OkUnary(x),
-        (Plus, RealValue x) => OperationResult.OkUnary(x),
+            // Arithmetic
+            (Minus, IntegerValue x) => Operate(x.Type, x.Status, x => -x),
+            (Minus, RealValue x) => Operate(x.Type, x.Status, x => -x),
+            (Plus, IntegerValue x) => OperationResult.OkUnary(x),
+            (Plus, RealValue x) => OperationResult.OkUnary(x),
 
-        // Bitwise
-        (Not, IntegerValue x) => Operate(x.Type, x.Status, x => ~x),
+            // Bitwise
+            (Not, IntegerValue x) => Operate(x.Type, x.Status, x => ~x),
 
-        // Logical
-        (Not, BooleanValue x) => Operate(x.Type, x.Status, x => !x),
+            // Logical
+            (Not, BooleanValue x) => Operate(x.Type, x.Status, x => !x),
 
-        // Other
-        (Cast c, _) => sa.EvaluateCast(scope, c, operand),
+            // Other
+            (Cast c, _) => sa.EvaluateCast(scope, c, operand),
 
-        _ => (UnaryOperationMessage)Message.ErrorUnsupportedOperation,
-    };
+            _ => (UnaryOperationMessage)Message.ErrorUnsupportedOperation,
+        };
 
     static OperationResult<UnaryOperationMessage> EvaluateCast(this StaticAnalyzer sa, Scope scope, Cast cast, Value operand)
     {
@@ -80,7 +81,7 @@ static class ConstantFolding
         (Equal, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r),
         (Equal, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r),
         (Equal, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l == r)
-            .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.Location)),
+           .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.Location)),
 
         // Unequality
         (NotEqual, BooleanValue l, BooleanValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r),
@@ -88,7 +89,7 @@ static class ConstantFolding
         (NotEqual, StringValue l, StringValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r),
         (NotEqual, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r),
         (NotEqual, RealValue l, RealValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l != r)
-            .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.Location)),
+           .WithMessages((opBin, _, _) => Message.WarningFloatingPointEquality(opBin.Location)),
 
         // Comparison
         (GreaterThan, IntegerValue l, IntegerValue r) => Operate(BooleanType.Instance, l.Status, r.Status, (l, r) => l > r),
@@ -109,10 +110,10 @@ static class ConstantFolding
         (Add, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l + r),
         (Divide, IntegerValue l, IntegerValue r) => Operate(l.Status, r.Status,
             (l, r) => l.Zip(r).Map((l, r) => r == 0
-                ? OperationResult.OkBinary(IntegerType.Instance.RuntimeValue)
-                    .WithMessages((opBin, _, _) => Message.WarningDivisionByZero(opBin.Location))
-                : OperationResult.OkBinary(IntegerType.Instance.Instanciate(l / r)))
-            .ValueOr(OperationResult.OkBinary(IntegerType.Instance.RuntimeValue))),
+                    ? OperationResult.OkBinary(IntegerType.Instance.RuntimeValue)
+                       .WithMessages((opBin, _, _) => Message.WarningDivisionByZero(opBin.Location))
+                    : OperationResult.OkBinary(IntegerType.Instance.Instanciate(l / r)))
+               .ValueOr(OperationResult.OkBinary(IntegerType.Instance.RuntimeValue))),
         (Divide, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l / r),
         (Mod, IntegerValue l, IntegerValue r) => Operate(IntegerType.Instance, l.Status, r.Status, (l, r) => l % r),
         (Mod, RealValue l, RealValue r) => Operate(RealType.Instance, l.Status, r.Status, (l, r) => l % r),

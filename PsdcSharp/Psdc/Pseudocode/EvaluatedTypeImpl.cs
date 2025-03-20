@@ -42,7 +42,6 @@ where TValue : Value
     Value EvaluatedType.DefaultValue => DefaultValue;
     Value EvaluatedType.InvalidValue => InvalidValue;
 }
-
 abstract class EvaluatedTypeImplNotInstantiable<TValue>(Option<Ident> alias, ValueStatus defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias)
 where TValue : class, Value
 {
@@ -58,8 +57,8 @@ where TValue : class, Value
 
     protected abstract TValue CreateValue(ValueStatus status);
 }
-
-abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Option<Ident> alias, ValueStatus<TUnderlying> defaultValueStatus) : EvaluatedTypeImpl<TValue>(alias), InstantiableType<TValue, TUnderlying>
+abstract class EvaluatedTypeImplInstantiable<TValue, TUnderlying>(Option<Ident> alias, ValueStatus<TUnderlying> defaultValueStatus)
+    : EvaluatedTypeImpl<TValue>(alias), InstantiableType<TValue, TUnderlying>
 where TValue : class, Value
 where TUnderlying : notnull
 {

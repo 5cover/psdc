@@ -1,10 +1,10 @@
 namespace Scover.Psdc.Parsing;
+
 #region Terminals
 
 sealed record ParameterMode
 {
-    ParameterMode(string formal, string actual)
-     => (RepresentationFormal, RepresentationActual) = (formal, actual);
+    ParameterMode(string formal, string actual) => (RepresentationFormal, RepresentationActual) = (formal, actual);
 
     public string RepresentationFormal { get; }
     public string RepresentationActual { get; }

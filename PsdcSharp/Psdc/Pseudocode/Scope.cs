@@ -19,12 +19,11 @@ public abstract class Scope(Scope? parent)
         }
     }
 
-    public Option<T, Message> GetSymbol<T>(Ident name) where T : Symbol
-     => !TryGetSymbol(name.ToString(), out var symbol)
+    public Option<T, Message> GetSymbol<T>(Ident name) where T : Symbol => !TryGetSymbol(name.ToString(), out var symbol)
         ? Message.ErrorUndefinedSymbol<T>(name).None<T, Message>()
         : symbol is not T t
-        ? Message.ErrorUndefinedSymbol<T>(name, symbol).None<T, Message>()
-        : t.Some<T, Message>();
+            ? Message.ErrorUndefinedSymbol<T>(name, symbol).None<T, Message>()
+            : t.Some<T, Message>();
 
     public bool TryGetSymbol<T>(string name, [NotNullWhen(true)] out T? symbol) where T : Symbol
     {
