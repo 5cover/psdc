@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=https://github.com/5cover/ast-gen/raw/refs/heads/main/schemas/config.json
+namespace: Scover.Psdc.Parsing
+root: node
+common_props:
+  location: range

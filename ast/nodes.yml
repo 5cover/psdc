@@ -1,3 +1,13 @@
+# yaml-language-server: $schema=https://github.com/5cover/ast-gen/raw/refs/heads/main/schemas/config.json
+target: csharp
+known_types:
+  - ident
+modifiers:
+  ?:
+    type: Option<$1>
+    none_when: '!$1.HasValue'
+    unwrap: $1.Value
+---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/5cover/ast-gen/refs/heads/main/schemas/nodes.json
 algorithm:
   decls: decl*
@@ -112,7 +122,7 @@ expr:
     right: expr
   call:
     callee: ident
-    args: effective_param*
+    args: actual_param*
   lvalue:
     component_access:
       structure: expr
@@ -173,7 +183,7 @@ binary_operator:
   sub:
   xor:
 
-effective_param:
+actual_param:
   is_out: =bool
   value: expr
 
