@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Scover.Psdc.Benchmarks</RootNamespace>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Configuration>Release</Configuration>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <IsPackable>false</IsPackable>
+    <Optimize>true</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.12" Condition="'$(OS)' == 'Windows_NT'" />
+    <Using Include="Scover.Options" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Psdc\Psdc.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Scover.Options" Version="1.1.0" />
+  </ItemGroup>
+</Project>

@@ -2,7 +2,7 @@
 
 using Scover.Psdc.Lexing;
 
-namespace Scover.Psdc.Benchmark;
+namespace Scover.Psdc.Benchmarks;
 
 [MemoryDiagnoser]
 public sealed class LexingBenchmark
