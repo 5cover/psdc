@@ -161,8 +161,6 @@ public interface Node
 
         internal sealed record Array(Range Location, Type Type, IReadOnlyList<Expr> Dimensions) : Type;
 
-        internal sealed record File(Range Location) : Type;
-
         internal sealed record Character(Range Location) : Type;
 
         internal sealed record Boolean(Range Location) : Type;

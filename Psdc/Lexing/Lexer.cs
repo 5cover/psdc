@@ -1,137 +1,439 @@
-using Scover.Psdc.Messages;
+using System.Diagnostics;
+using System.Text;
+using System.Text.RegularExpressions;
 
-using static Scover.Psdc.Lexing.TokenType;
-using static Scover.Psdc.Lexing.TokenType.Valued;
+using Scover.Psdc.Messages;
 
 namespace Scover.Psdc.Lexing;
 
-public sealed class Lexer
+public sealed partial class Lexer(Messenger msger)
 {
-    static IEnumerable<T> GetRules<T>(IEnumerable<Ruled<T>> ruled) where T : TokenRule => ruled.SelectMany(r => r.Rules);
-    static IEnumerable<TokenRule> GetRules(IEnumerable<Ruled<TokenRule>> ruled) => ruled.SelectMany(r => r.Rules);
+    const int LineContinuationLen = 2;
 
-    static readonly HashSet<TokenType> ignoredTokens = [CommentMultiline, CommentSingleline];
-
-    static readonly IReadOnlyList<TokenRule> rules =
-        // Variable length
-        GetRules(new Ruled<TokenRule>[] { CommentMultiline, CommentSingleline, LiteralReal, LiteralInteger, LiteralString, LiteralCharacter })
-            // Maximum munch
-           .Concat(GetRules(Keyword.Instances).OrderByDescending(r => r.Expected.Length))
-           .Concat(GetRules(Punctuation.Instances).OrderByDescending(r => r.Expected.Length))
-            // Identifiers after keywords and punctuation/operators (just to be sure that they won't be lexed as identifiers)
-           .Concat(Identifier.Rules)
-           .ToArray();
-
-    Lexer(Messenger msger, string input)
-    {
-        _msger = msger;
-        (_code, _sortedLineContinutationIndexes) = PreprocessLineContinuations(input);
-    }
-
-    readonly Messenger _msger;
-    readonly List<int> _sortedLineContinutationIndexes;
-    readonly string _code;
     const int NaIndex = -1;
 
-    public static IEnumerable<Token> Lex(Messenger messenger, string input)
+    readonly Messenger _msger = msger;
+    readonly Queue<int> _sortedLineContinuationIndexes = new();
+
+    char[] _input = [];
+    int _i;
+    int _start;
+    int _iInvalidStart;
+    int _lineContinuationsOffsetBeforeI;
+
+    static Lexer() => Debug.Assert(reservedWords.Keys
+#pragma warning disable CA1862
+       .All(k => k.ToLower(Format.Code) == k && k == IdentifierRegex().Match(k).Value));
+#pragma warning restore CA1862
+
+    bool IsAtEnd => _i >= _input.Length;
+    ReadOnlySpan<char> Lexeme => _input.AsSpan()[_start.._i];
+    FixedRange LexemePos => new(_start, _lineContinuationsOffsetBeforeI + _i);
+
+    public IEnumerable<Token> Lex(string input)
     {
-        Lexer t = new(messenger, input);
+        _i = 0;
+        _iInvalidStart = NaIndex;
+        _lineContinuationsOffsetBeforeI = 0;
+        _input = PreprocessLineContinuations(input);
+        while (!IsAtEnd) {
+            _start = _i + _lineContinuationsOffsetBeforeI;
 
-        int i = 0;
-        int iInvalidStart = NaIndex;
-
-        while (i < t._code.Length) {
-            if (char.IsWhiteSpace(t._code[i])) {
-                t.ReportInvalidToken(ref iInvalidStart, i++);
-                continue;
-            }
-
-            var token = t.Lex(i);
-
-            if (token.HasValue) {
-                t.ReportInvalidToken(ref iInvalidStart, i);
-                if (!ignoredTokens.Contains(token.Value.Type)) {
-                    yield return token.Value with { Position = t.AdjustLocationForLineContinuations(token.Value.Position.Start, token.Value.Position.Length) };
+            switch (Advance()) {
+            case var c when char.IsWhiteSpace(c):
+                ReportInvalidToken();
+                break;
+            case '{':
+                yield return Ok(TokenType.LBrace);
+                break;
+            case '[':
+                yield return Ok(TokenType.LBracket);
+                break;
+            case '(':
+                yield return Ok(TokenType.LParen);
+                break;
+            case '}':
+                yield return Ok(TokenType.RBrace);
+                break;
+            case ']':
+                yield return Ok(TokenType.RBracket);
+                break;
+            case ')':
+                yield return Ok(TokenType.RParen);
+                break;
+            case '=':
+                yield return Ok(
+                    Match('>') ? TokenType.Arrow :
+                    Match('=') ? TokenType.Eq :
+                    TokenType.Equal);
+                break;
+            case ':':
+                yield return Ok(Match('=') ? TokenType.ColonEqual : TokenType.Colon);
+                break;
+            case ',':
+                yield return Ok(TokenType.Comma);
+                break;
+            case '#':
+                yield return Ok(TokenType.Hash);
+                break;
+            case '/':
+                if (Match('/')) {
+                    while (!IsAtEnd && Advance() != '\n') ;
+                } else if (Match('*')) {
+                    while (!IsAtEnd && (Advance() != '*' || !Match('/'))) ;
+                } else {
+                    yield return Ok(TokenType.Div);
                 }
-                i += token.Value.Position.Length;
-            } else {
-                if (iInvalidStart == NaIndex) {
-                    iInvalidStart = i;
+                break;
+            case '.':
+                yield return Match(char.IsAsciiDigit) ? Real() : Ok(TokenType.Dot);
+                break;
+            case ';':
+                yield return Ok(TokenType.Semi);
+                break;
+            case '>':
+                yield return Ok(Match('=') ? TokenType.Ge : TokenType.Gt);
+                break;
+            case '<':
+                yield return Ok(Match('=') ? TokenType.Le : TokenType.Lt);
+                break;
+            case '-':
+                yield return Ok(TokenType.Minus);
+                break;
+            case '%':
+                yield return Ok(TokenType.Mod);
+                break;
+            case '*':
+                yield return Ok(TokenType.Mul);
+                break;
+            case '!' when Match('='):
+                yield return Ok(TokenType.Neq);
+                break;
+            case '+':
+                yield return Ok(TokenType.Plus);
+                break;
+            case '\'': {
+                var value = EscapedString('\'');
+                if (value is null) {
+                    _msger.Report(Message.ErrorUnterminatedCharLiteral((Range)LexemePos));
+                    break;
                 }
-                i++;
+                switch (value.Length) {
+                case 0:
+                    _msger.Report(Message.ErrorCharLitEmpty((Range)LexemePos));
+                    break;
+                case 1:
+                    yield return Ok(TokenType.LiteralChar, value[0]);
+                    break;
+                default:
+                    _msger.Report(Message.ErrorCharLitContainsMoreThanOneChar((Range)LexemePos, value[0]));
+                    break;
+                }
+                break;
+            }
+            case '\"': {
+                var value = EscapedString('\"');
+                if (value is null) {
+                    _msger.Report(Message.ErrorUnterminatedStringLiteral((Range)LexemePos));
+                    break;
+                }
+                yield return Ok(TokenType.LiteralString, value.ToString());
+                break;
+            }
+            case var c when char.IsAsciiDigit(c): {
+                yield return Number();
+                break;
+            }
+            default: {
+                var inputSpan = _input.AsSpan();
+                var matches = IdentifierRegex().EnumerateMatches(inputSpan, _start);
+                if (matches.MoveNext()) {
+                    var m = matches.Current;
+                    Debug.Assert(_start == m.Index);
+                    if (m.Length > 1) Advance(m.Length - 1);
+                    var word = inputSpan.Slice(m.Index, m.Length).ToString();
+                    yield return reservedWords.TryGetValue(word.ToLower(Format.Code), out var type)
+                        ? Ok(type)
+                        : Ok(TokenType.Ident, word);
+                    break;
+                }
+
+                if (_iInvalidStart == NaIndex) _iInvalidStart = _i;
+                break;
+            }
             }
         }
-
-        t.ReportInvalidToken(ref iInvalidStart, i);
-
-        yield return new Token(Eof, null, t.AdjustLocationForLineContinuations(i, 0));
+        _start = _i;
+        yield return Ok(TokenType.Eof);
     }
 
-    void ReportInvalidToken(ref int iInvalidStart, int i)
-    {
-        if (iInvalidStart != NaIndex) {
-            _msger.Report(Message.ErrorUnknownToken(AdjustLocationForLineContinuations(iInvalidStart, i - iInvalidStart)));
-            iInvalidStart = NaIndex;
-        }
-    }
+    static ValueOption<byte> HexDigitValue(char c) => c switch {
+        >= '0' and <= '9' => (byte)(c - '0'),
+        >= 'A' and <= 'F' => (byte)(c - 'A' + 10),
+        >= 'a' and <= 'f' => (byte)(c - 'a' + 10),
+        _ => Option.None<byte>(),
+    };
 
-    ValueOption<Token> Lex(int offset)
-    {
-        foreach (var rule in rules) {
-            if (rule.Extract(_code, offset) is { HasValue: true } token) {
-                return token;
-            }
-        }
-        return default;
-    }
+    [GeneratedRegex(@"^[\p{L}_][\p{L}_0-9]*")]
+    private static partial Regex IdentifierRegex();
 
-    static (string, List<int>) PreprocessLineContinuations(string input)
+    static ValueOption<byte> OctDigitValue(char c) => c is >= '0' and <= '7'
+        ? (byte)(c - '0')
+        : Option.None<byte>();
+
+    char[] PreprocessLineContinuations(string input)
     {
-        if (input.Length == 0) {
-            return ("", []);
-        }
+        _sortedLineContinuationIndexes.Clear();
+        if (input.Length == 0) return [];
 
         var preprocessedCode = new char[input.Length];
-        List<int> sortedLineContinuationsIndexes = [];
 
         int i = 0;
         for (int j = 0; j < input.Length; ++j) {
             if (input[j] == '\\' && j + 1 < input.Length && input[j + 1] == '\n') {
-                sortedLineContinuationsIndexes.Add(j++);
+                _sortedLineContinuationIndexes.Enqueue(j++);
             } else {
                 preprocessedCode[i++] = input[j];
             }
         }
-        return (new(preprocessedCode.AsSpan()[..i]), sortedLineContinuationsIndexes);
+        Array.Resize(ref preprocessedCode, i);
+        return preprocessedCode;
     }
 
-    LengthRange AdjustLocationForLineContinuations(int start, int length)
+    char Advance(int of = 1)
     {
-        start += MeasureLineContinuations(0, start);
-        length += MeasureLineContinuations(start, start + length);
-        return new(start, length);
+        char c = _input[_i];
+        _i += of;
+        while (_sortedLineContinuationIndexes.Count > 0 && _sortedLineContinuationIndexes.Peek() <= _i) {
+            _sortedLineContinuationIndexes.Dequeue();
+            _lineContinuationsOffsetBeforeI += LineContinuationLen;
+        }
+        return c;
     }
 
-    int MeasureLineContinuations(int start, int end)
+    StringBuilder? EscapedString(char endDelimiter)
     {
-        const int LineContinuationLen = 2;
+        StringBuilder value = new();
 
-        int iFirstLc = _sortedLineContinutationIndexes.BinarySearch(start);
-        // If there's no line continuation after start
-        if (~iFirstLc == _sortedLineContinutationIndexes.Count) {
-            return 0;
-        }
-        if (iFirstLc < 0) {
-            iFirstLc = ~iFirstLc;
-        }
-        int iLastLc = iFirstLc;
-        for (int i = _sortedLineContinutationIndexes[iFirstLc]; iLastLc < _sortedLineContinutationIndexes.Count && i < end; ++i) {
-            if (i == _sortedLineContinutationIndexes[iLastLc]) {
-                ++iLastLc;
-                end += LineContinuationLen;
+        bool inEscape = false;
+        while (!IsAtEnd && (inEscape || _input[_i] != endDelimiter) && _input[_i] is not '\n' and not '\r') {
+            char c = Advance();
+            if (inEscape) {
+                inEscape = false;
+                Unescape(c, value);
+            } else if (c == '\\') {
+                inEscape = true;
+            } else {
+                value.Append(c);
             }
         }
-
-        return LineContinuationLen * (iLastLc - iFirstLc);
+        return Match(endDelimiter) ? value : null;
     }
+
+    bool Match(char expected)
+    {
+        if (IsAtEnd || _input[_i] != expected) return false;
+        Advance();
+        return true;
+    }
+
+    ValueOption<T> Match<T>(Func<char, ValueOption<T>> f) => IsAtEnd
+        ? default
+        : f(_input[_i]).Tap(_ => Advance());
+
+    bool Match(Func<char, bool> f)
+    {
+        if (IsAtEnd || !f(_input[_i])) return false;
+        Advance();
+        return true;
+    }
+
+    Token Number()
+    {
+        Debug.Assert(char.IsAsciiDigit(_input[_i - 1]));
+        while (Match(char.IsAsciiDigit)) ;
+        return Match('.') && Match(char.IsAsciiDigit)
+            ? Real()
+            : Ok(TokenType.LiteralInt, long.Parse(Lexeme, Format.Code));
+    }
+
+    Token Ok(TokenType type, object? value = null)
+    {
+        ReportInvalidToken();
+        return new(LexemePos, type, value);
+    }
+
+    Token Real()
+    {
+        Debug.Assert(char.IsAsciiDigit(_input[_i - 1]));
+        while (Match(char.IsAsciiDigit)) ;
+        return Ok(TokenType.LiteralReal, decimal.Parse(Lexeme, Format.Code));
+    }
+
+    void ReportInvalidToken()
+    {
+        if (_iInvalidStart == NaIndex) return;
+        _msger.Report(Message.ErrorUnknownToken(_iInvalidStart..(_i - _iInvalidStart)));
+        _iInvalidStart = NaIndex;
+    }
+
+    void Unescape(char c, StringBuilder value)
+    {
+        const int MaxLengthOctal = 3;
+        const int MaxLengthU16 = 4;
+        const int MaxLengthU32 = 8;
+        switch (c) {
+        case '\'' or '\"' or '\\':
+            value.Append(c);
+            break;
+        case 'a':
+            value.Append('\a');
+            break;
+        case 'b':
+            value.Append('\b');
+            break;
+        case 'f':
+            value.Append('\f');
+            break;
+        case 'n':
+            value.Append('\n');
+            break;
+        case 'r':
+            value.Append('\r');
+            break;
+        case 't':
+            value.Append('\t');
+            break;
+        case 'v':
+            value.Append('\v');
+            break;
+        case 'e':
+            value.Append('\x1b');
+            break;
+        case 'x': {
+            var hexDigit = Match(HexDigitValue);
+            if (!hexDigit.HasValue) {
+                _msger.Report(Message.ErrorInvalidEscapeSequence((Range)LexemePos, 'x',
+                    "must be followed by at least 1 hexadecimal digit"));
+                break;
+            }
+            int val = hexDigit.Value;
+            for (int nDigits = 1;
+                nDigits < MaxLengthU32 && (hexDigit = Match(HexDigitValue)).HasValue;
+                nDigits++) {
+                val *= 16;
+                val += hexDigit.Value;
+            }
+            AppendSafeConvertFromUtf32(value, val);
+            break;
+        }
+        case 'u': {
+            ushort val = 0;
+            ushort nDigits = 0;
+            for (;
+                nDigits < MaxLengthU16
+             && Match(HexDigitValue) is { HasValue: true } hexDigit;
+                nDigits++) {
+                val *= 16;
+                val += hexDigit.Value;
+            }
+            if (nDigits < MaxLengthU16) {
+                _msger.Report(Message.ErrorInvalidEscapeSequence((Range)LexemePos, 'u',
+                    $"must be followed by {MaxLengthU16} hexadecimal digits"));
+            } else {
+                value.Append((char)val);
+            }
+            break;
+        }
+        case 'U': {
+            int val = 0;
+            int nDigits = 0;
+            for (;
+                nDigits < MaxLengthU32
+             && Match(HexDigitValue) is { HasValue: true } hexDigit;
+                nDigits++) {
+                val *= 16;
+                val += hexDigit.Value;
+            }
+            if (nDigits < MaxLengthU32) {
+                _msger.Report(Message.ErrorInvalidEscapeSequence((Range)LexemePos, 'u',
+                    $"must be followed by {MaxLengthU32} hexadecimal digits"));
+            } else {
+                AppendSafeConvertFromUtf32(value, val);
+            }
+            break;
+        }
+        case var _ when OctDigitValue(c) is { HasValue: true } octDigit: {
+            ushort val = octDigit.Value;
+            for (int nDigits = 1;
+                nDigits < MaxLengthOctal && (octDigit = Match(OctDigitValue)).HasValue;
+                nDigits++) {
+                val *= 8;
+                val += octDigit.Value;
+            }
+            Debug.Assert(val < 512);
+            value.Append((char)val);
+            break;
+        }
+        default:
+            value.Append(c);
+            _msger.Report(Message.ErrorInvalidEscapeSequence((Range)LexemePos, c));
+            break;
+        }
+    }
+    static StringBuilder AppendSafeConvertFromUtf32(StringBuilder sb, int val) => ((uint)val - 0x110000u ^ 0xD800u) >= 0xFFEF0800u // IsValidUnicodeScalar
+        ? sb.Append(char.ConvertFromUtf32(val))
+        : sb.Append((char)val);
+
+    static readonly Dictionary<string, TokenType> reservedWords = new() {
+        ["tableau"] = TokenType.Array,
+        ["début"] = TokenType.Begin,
+        ["debut"] = TokenType.Begin,
+        ["booléen"] = TokenType.Boolean,
+        ["booleen"] = TokenType.Boolean,
+        ["caractère"] = TokenType.Character,
+        ["caractere"] = TokenType.Character,
+        ["constante"] = TokenType.Constant,
+        ["faire"] = TokenType.Do,
+        ["sinon"] = TokenType.Else,
+        ["sinon_si"] = TokenType.ElseIf,
+        ["fin"] = TokenType.End,
+        ["fin_pour"] = TokenType.EndFor,
+        ["fin_si"] = TokenType.EndIf,
+        ["fin_selon"] = TokenType.EndSwitch,
+        ["fin_tant_que"] = TokenType.EndWhile,
+        ["faux"] = TokenType.False,
+        ["pour"] = TokenType.For,
+        ["fonction"] = TokenType.Function,
+        ["si"] = TokenType.If,
+        ["entier"] = TokenType.Integer,
+        ["sortie"] = TokenType.Out,
+        ["procédure"] = TokenType.Procedure,
+        ["procedure"] = TokenType.Procedure,
+        ["programme"] = TokenType.Program,
+        ["lire"] = TokenType.Read,
+        ["réel"] = TokenType.Real,
+        ["reel"] = TokenType.Real,
+        ["retourne"] = TokenType.Return,
+        ["délivre"] = TokenType.Returns,
+        ["delivre"] = TokenType.Returns,
+        ["chaîne"] = TokenType.String,
+        ["chaine"] = TokenType.String,
+        ["structure"] = TokenType.Structure,
+        ["selon"] = TokenType.Switch,
+        ["alors"] = TokenType.Then,
+        ["vrai"] = TokenType.True,
+        ["ent"] = TokenType.Trunc,
+        ["type"] = TokenType.Type,
+        ["quand"] = TokenType.When,
+        ["quand_autre"] = TokenType.WhenOther,
+        ["tant_que"] = TokenType.While,
+        ["écrire"] = TokenType.Write,
+        ["ecrire"] = TokenType.Write,
+        ["et"] = TokenType.And,
+        ["non"] = TokenType.Not,
+        ["or"] = TokenType.Or,
+        ["xor"] = TokenType.Xor,
+    };
+
 }

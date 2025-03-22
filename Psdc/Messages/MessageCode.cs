@@ -5,12 +5,14 @@ public enum MessageCode
     #region Errors
 
     UnknownToken,
+    InvalidEscapeSequence,
     SyntaxError,
     UndefinedSymbol,
     RedefinedSymbol,
     RedefinedMainProgram,
     CallableNotDefined,
-    CharacterLiteralContainsMoreThanOneCharacter,
+    CharLitEmpty,
+    CharLitContainsMoreThanOneChar,
     SignatureMismatch,
     ConstantAssignment,
     CallParameterMismatch,
@@ -34,6 +36,9 @@ public enum MessageCode
     FeatureNotAvailable,
     ReturnExpectsValue,
     SwitchDefaultIsNotLast,
+    UnterminatedStringLiteral,
+    UnterminatedCharLiteral,
+
     CustomError = 999,
 
     #endregion Errors

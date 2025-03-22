@@ -12,5 +12,5 @@ public sealed class LexingBenchmark
     [Benchmark]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822", Justification = "benchmark")]
     public Token[] Run()
-        => Lexer.Lex(p.Msger, p.Input).ToArray();
+        => new Lexer(p.Msger).Lex(p.Input).ToArray();
 }

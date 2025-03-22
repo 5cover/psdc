@@ -36,6 +36,12 @@ public readonly struct Message
 
     static FormattableString Quantity(int quantity, string singular, string plural) => $"{quantity} {(quantity == 1 ? singular : plural)}";
 
+    internal static Message ErrorInvalidEscapeSequence(Range location, char escape, string details = "") => new(location,
+        MessageCode.InvalidEscapeSequence,
+        details.Length == 0
+            ? Fmt($"invalid escape sequence `\\{escape}`")
+            : Fmt($"invalid escape sequence `\\{escape}`: {details}"));
+
     internal static Message ErrorCallParameterMismatch(Range location, Symbol.Callable f, IReadOnlyList<string> problems) => new(location,
         MessageCode.CallParameterMismatch,
         Fmt($"call to {f.Kind} `{f.Name}` does not correspond to signature"),
@@ -76,6 +82,11 @@ public readonly struct Message
     ) => new(location, MessageCode.ExpressionHasWrongType,
         Fmt($"can't convert expression of type '{actual}' to '{expected}'"));
 
+    internal static Message ErrorUnterminatedStringLiteral(Range location) =>
+        new(location, MessageCode.UnterminatedStringLiteral, "Unterminated string literal");
+    internal static Message ErrorUnterminatedCharLiteral(Range location) =>
+        new(location, MessageCode.UnterminatedCharLiteral, "Unterminated character literal");
+
     internal static Message ErrorCallableNotDefined(Symbol.Callable f) => new(f.Location, MessageCode.CallableNotDefined,
         Fmt($"{f.Kind} `{f.Name}` declared but not defined"),
         [Fmt($"provide a definition for `{f.Name}`")]);
@@ -109,8 +120,12 @@ public readonly struct Message
             ? Fmt($"`{structType}` has no component named `{component}`")
             : Fmt($"no component named `{component}` in structure"));
 
-    internal static Message ErrorCharacterLiteralContainsMoreThanOneCharacter(Range location, char firstChar) => new(location,
-        MessageCode.CharacterLiteralContainsMoreThanOneCharacter,
+    internal static Message ErrorCharLitEmpty(Range location) => new(location,
+        MessageCode.CharLitEmpty,
+        "character literal is empty");
+
+    internal static Message ErrorCharLitContainsMoreThanOneChar(Range location, char firstChar) => new(location,
+        MessageCode.CharLitContainsMoreThanOneChar,
         "character literal contains more than one character",
         [Fmt($"only first character '{firstChar}' is considered")]);
 

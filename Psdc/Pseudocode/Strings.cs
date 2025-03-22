@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 
 namespace Scover.Psdc.Pseudocode;
@@ -26,7 +25,7 @@ static class Strings
             switch (c) {
             case '\'': o.Append("\\'"); break;
             case '\"': o.Append("\\\""); break;
-            case '\\': o.Append("\\\\"); break;
+            case '\\': o.Append(@"\\"); break;
             case '\a': o.Append("\\a"); break;
             case '\b': o.Append("\\b"); break;
             case '\f': o.Append("\\f"); break;
@@ -49,123 +48,4 @@ static class Strings
 
         return o;
     }
-
-    public static StringBuilder Unescape(ReadOnlySpan<char> input, IFormatProvider? fmtProvider = null)
-    {
-        StringBuilder o = new();
-        int i = 0;
-
-        while (i < input.Length) {
-            if (i + 1 < input.Length && input[i] == '\\') {
-                switch (input[i + 1]) {
-                case '\'':
-                    o.Append('\'');
-                    i += OffsetSimple;
-                    break;
-                case '\"':
-                    o.Append('\"');
-                    i += OffsetSimple;
-                    break;
-                case '\\':
-                    o.Append('\\');
-                    i += OffsetSimple;
-                    break;
-                case 'a':
-                    o.Append('\a');
-                    i += OffsetSimple;
-                    break;
-                case 'b':
-                    o.Append('\b');
-                    i += OffsetSimple;
-                    break;
-                case 'f':
-                    o.Append('\f');
-                    i += OffsetSimple;
-                    break;
-                case 'n':
-                    o.Append('\n');
-                    i += OffsetSimple;
-                    break;
-                case 'r':
-                    o.Append('\r');
-                    i += OffsetSimple;
-                    break;
-                case 't':
-                    o.Append('\t');
-                    i += OffsetSimple;
-                    break;
-                case 'v':
-                    o.Append('\v');
-                    i += OffsetSimple;
-                    break;
-                case 'e':
-                    o.Append('\x1b');
-                    i += OffsetSimple;
-                    break;
-                case var c when GetOctalDigitValue(c) is { HasValue: true } firstDigit: {
-                    ushort val = firstDigit.Value;
-                    int digitCount = 1;
-                    for (;
-                        digitCount < MaxLengthOctal
-                     && GetOctalDigitValue(input, i + OffsetOctal + digitCount) is { HasValue: true } digit;
-                        ++digitCount) {
-                        val *= 8;
-                        val += digit.Value;
-                    }
-                    o.Append((char)val);
-                    i += OffsetOctal + digitCount;
-                    break;
-                }
-                case 'x' when GetHexDigitValue(input, i + OffsetHex) is { HasValue: true } firstDigit: {
-                    ulong val = firstDigit.Value;
-                    int digitCount = 1;
-                    for (; GetHexDigitValue(input, i + OffsetHex + digitCount) is { HasValue: true } digit; ++digitCount) {
-                        if (digitCount < MaxLengthHex) {
-                            val *= 16;
-                            val += digit.Value;
-                        }
-                    }
-                    o.Append((char)val);
-                    i += OffsetHex + digitCount;
-                    break;
-                }
-                case 'u' when i + OffsetU16 + LengthU16 <= input.Length
-                           && ushort.TryParse(input.Slice(i + OffsetU16, LengthU16), NumberStyles.AllowHexSpecifier, fmtProvider, out var codepoint):
-                    o.Append((char)codepoint);
-                    i += OffsetU16 + LengthU16;
-                    break;
-                case 'U' when i + OffsetU32 + LengthU32 <= input.Length
-                           && uint.TryParse(input.Slice(i + OffsetU32, LengthU32), NumberStyles.AllowHexSpecifier, fmtProvider, out var codepoint):
-                    o.Append((char)codepoint);
-                    i += OffsetU32 + LengthU32;
-                    break;
-                default:
-                    // invalid escape sequences are simply treated as regular characters.
-                    o.Append(input[i]);
-                    ++i;
-                    break;
-                }
-            } else {
-                o.Append(input[i]);
-                ++i;
-            }
-        }
-
-        return o;
-    }
-
-    static ValueOption<byte> GetOctalDigitValue(char c) => c is >= '0' and <= '7'
-        ? (byte)(c - '0')
-        : Option.None<byte>();
-    static ValueOption<byte> GetOctalDigitValue(ReadOnlySpan<char> s, int i) => i < s.Length && s[i] is >= '0' and <= '7'
-        ? (byte)(s[i] - '0')
-        : Option.None<byte>();
-    static ValueOption<byte> GetHexDigitValue(ReadOnlySpan<char> s, int i) => i < s.Length
-        ? Option.None<byte>()
-        : s[i] switch {
-            >= '0' and <= '9' => (byte)(s[i] - '0'),
-            >= 'A' and <= 'F' => (byte)(s[i] - 'A' + 10),
-            >= 'a' and <= 'f' => (byte)(s[i] - 'a' + 10),
-            _ => default,
-        };
 }

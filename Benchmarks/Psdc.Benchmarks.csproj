@@ -20,12 +20,12 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.12" Condition="'$(OS)' == 'Windows_NT'" />
-    <Using Include="Scover.Options" />
+    <PackageReference Include="Scover.Options" Version="1.2.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Psdc\Psdc.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Scover.Options" Version="1.1.0" />
+    <Using Include="Scover.Options" />
   </ItemGroup>
 </Project>

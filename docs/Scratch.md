@@ -669,7 +669,7 @@ fin
 soo reuine the program declaration and the main program
 
 ```psc
-programm A c'est début
+programme A c'est début
 
 fin
 ```
@@ -687,3 +687,7 @@ Get rid of parse operation.
 KISS. Like In crafting interpreters..
 
 Also get rid of semantic nodes. All this duplication is ugly. See how Crafting Interpeters does it.
+
+## Make keywords case-insensitive
+
+Like in PHP, Pseudocode keywords are case-insensitive. Everything else is case-sensitive.

@@ -744,7 +744,6 @@ public sealed partial class StaticAnalyzer
         Node.Type.Array array => EvaluateArrayType(scope, array),
         Node.Type.Boolean => BooleanType.Instance,
         Node.Type.Character => CharacterType.Instance,
-        Node.Type.File => FileType.Instance,
         Node.Type.Integer => IntegerType.Instance,
         Node.Type.LengthedString str => EvaluateLengthedStringType(scope, str),
         Node.Type.Real => RealType.Instance,

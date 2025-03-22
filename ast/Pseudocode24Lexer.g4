@@ -1,13 +1,13 @@
 lexer grammar Pseudocode24Lexer;
 
+options {
+    caseInsensitive = true;
+}
+
 Ws: [\p{White_Space}]+ -> skip;
 Comment: ('/*' .*? '*/' | '//' ~[\n] '\n') -> skip;
 
 Ident: [\p{L}_][\p{L}_0-9]*;
-
-HashAssert: '#assert';
-HashEvalExpr: '#eval_expr';
-HashEvalType: '#eval_type';
 
 Array: 'tableau';
 Begin: 'début' | 'debut';
@@ -26,7 +26,7 @@ False: 'faux';
 For: 'pour';
 Function: 'fonction';
 If: 'si';
-Integer: 'integer';
+Integer: 'entier';
 Out: 'sortie';
 Procedure: 'procédure' | 'procedure';
 Program: 'programme';
@@ -46,10 +46,10 @@ WhenOther: 'quand_autre';
 While: 'tant_que';
 Write: 'écrire' | 'ecrire';
 
-And options { caseInsensitive = true; }: 'et';
-Not options { caseInsensitive = true; }: 'non';
-Or options { caseInsensitive = true; }: 'ou';
-Xor options { caseInsensitive = true; }: 'xor';
+And: 'et';
+Not: 'non';
+Or: 'ou';
+Xor: 'xor';
 
 LBrace: '{';
 LBracket: '[';
@@ -76,6 +76,7 @@ Mod: '%';
 Mul: '*';
 Neq: '!=';
 Plus: '+';
+Hash: '#';
 
 LiteralCharacter: '\'' CChar+ '\'';
 LiteralInteger: NonZeroDeigit Digit*;

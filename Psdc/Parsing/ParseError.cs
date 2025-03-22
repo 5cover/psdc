@@ -24,9 +24,6 @@ public sealed record ParseError(
     internal static ParseError ForProduction(string failedProduction, Option<Token> erroneousToken, TokenType expectedToken) => new(failedProduction,
         erroneousToken, ImmutableHashSet.Create(expectedToken), ImmutableHashSet<string>.Empty);
 
-    internal static ParseError ForContextKeyword(string failedProduction, Option<Token> erroneousToken, IImmutableSet<string> identifierValues) =>
-        new(failedProduction, erroneousToken, ImmutableHashSet.Create<TokenType>(TokenType.Valued.Identifier), identifierValues);
-
     internal bool IsEquivalent(ParseError? other) => other is not null
                                                   && other.ErroneousToken.Equals(ErroneousToken)
                                                   && other.ExpectedTokens.SetEquals(ExpectedTokens);
