@@ -8,7 +8,7 @@ sealed class KeywordTable : CodeGeneration.KeywordTable
     KeywordTable() { }
     public static KeywordTable Instance { get; } = new();
 
-    public string Validate(Scope scope, Range location, string ident, Messenger msger)
+    public string Validate(Scope scope, FixedRange location, string ident, Messenger msger)
     {
         if (keywords.Contains(ident)) {
             var newIdent = ident + "_";

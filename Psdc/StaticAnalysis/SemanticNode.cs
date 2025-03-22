@@ -5,7 +5,7 @@ using Scover.Psdc.Parsing;
 
 namespace Scover.Psdc.StaticAnalysis;
 
-public readonly record struct SemanticMetadata(Scope Scope, Range Location);
+public readonly record struct SemanticMetadata(Scope Scope, FixedRange Location);
 public interface SemanticNode
 {
     SemanticMetadata Meta { get; }

@@ -14,6 +14,28 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Psdc.Benchmarks", "Benchmar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Psdc.Tests", "Psdc.Tests\Psdc.Tests.csproj", "{21AABE7F-E07E-42CB-998D-09C03105E010}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		docs\Benchmarks.md = docs\Benchmarks.md
+		docs\Blog.md = docs\Blog.md
+		docs\Done.md = docs\Done.md
+		docs\Lexer.md = docs\Lexer.md
+		docs\Message ideas.md = docs\Message ideas.md
+		docs\Optimizations.md = docs\Optimizations.md
+		docs\Parsing tree.md = docs\Parsing tree.md
+		docs\Refused.md = docs\Refused.md
+		docs\Scratch.md = docs\Scratch.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ast", "ast", "{B18CA0D4-D0ED-4DE3-9D85-196DF8E4D3AD}"
+	ProjectSection(SolutionItems) = preProject
+		ast\config-semantic.yml = ast\config-semantic.yml
+		ast\config-syntax.yml = ast\config-syntax.yml
+		ast\nodes.yml = ast\nodes.yml
+		ast\Pseudocode24Lexer.g4 = ast\Pseudocode24Lexer.g4
+		ast\Pseudocode24Parser.g4 = ast\Pseudocode24Parser.g4
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

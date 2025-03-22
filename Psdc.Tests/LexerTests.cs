@@ -1,15 +1,36 @@
-﻿using Scover.Psdc.Lexing;
+﻿using System.Collections.Immutable;
+
+using Scover.Psdc.Lexing;
+using Scover.Psdc.Library;
 using Scover.Psdc.Messages;
 
-namespace Psdc.Tests;
+namespace Scover.Psdc.Tests;
 
-public sealed class LexerTests
+readonly record struct EvaluatedMessage(FixedRange Location, MessageCode Code, string Content, ImmutableArray<string> AdvicePieces);
+
+static class MessageExtensions
+{
+    public static EvaluatedMessage Evaluate(this Message msg, string input) => new(msg.Location, msg.Code, msg.Content.Get(input), [.. msg.AdvicePieces]);
+}
+
+sealed class LexerTests
 {
     [Test]
     [MethodDataSource<LexerTestsDataSources>(nameof(LexerTestsDataSources.TokenSequence))]
     public async Task TokenSequence(string input, IReadOnlyList<Token> tokens)
     {
         var t = await Lex(input, []);
+        await Assert.That(t).HasCount().EqualTo(tokens.Count + 1);
+        using var _ = Assert.Multiple();
+        await AssertEofToken(input, t[^1]);
+        await Assert.That(t[..^1]).IsEquivalentTo(tokens);
+    }
+
+    [Test]
+    [MethodDataSource<LexerTestsDataSources>(nameof(LexerTestsDataSources.TokenSequenceWithMessages))]
+    public async Task TokenSequenceWithMessages(string input, IReadOnlyList<Token> tokens, IEnumerable<EvaluatedMessage> messages)
+    {
+        var t = await Lex(input, messages);
         await Assert.That(t).HasCount().EqualTo(tokens.Count + 1);
         using var _ = Assert.Multiple();
         await AssertEofToken(input, t[^1]);
@@ -90,12 +111,12 @@ public sealed class LexerTests
         await AssertEofToken(input, t[^1]);
     }
 
-    static async Task<Token[]> Lex(string input, Message[] messages)
+    static async Task<Token[]> Lex(string input, IEnumerable<EvaluatedMessage> messages)
     {
-        TestMessenger m = new();
-        Lexer l = new(m);
+        TestMessenger msger = new();
+        Lexer l = new(msger);
         var t = l.Lex(input).ToArray();
-        await Assert.That(m.Messages).IsEquivalentTo(messages);
+        await Assert.That(msger.Messages.Select(m => m.Evaluate(input))).IsEquivalentTo(messages);
         return t;
     }
 

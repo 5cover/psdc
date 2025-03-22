@@ -4,6 +4,9 @@ public enum TokenType
 {
     Eof,
 
+    /// <summary>
+    /// Value is a <see cref="string"/>.
+    /// </summary>
     Ident,
 
     Array,
@@ -75,8 +78,20 @@ public enum TokenType
     Neq,
     Plus,
 
+    /// <summary>
+    /// Value is a <see cref="char"/>.
+    /// </summary>
     LiteralChar,
+    /// <summary>
+    /// Value is a <see cref="long"/>.
+    /// </summary>
     LiteralInt,
+    /// <summary>
+    /// Value is a <see cref="decimal"/>.
+    /// </summary>
     LiteralReal,
+    /// <summary>
+    /// Value is a <see cref="string"/>.
+    /// </summary>
     LiteralString,
 }

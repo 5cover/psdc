@@ -25,9 +25,9 @@ public interface Symbol : EquatableSemantics<Symbol>
     static string GetKind<T>() where T : Symbol => symbolKinds.Value[typeof(T)];
     string Kind { get; }
     Ident Name { get; }
-    Range Location { get; }
+    FixedRange Location { get; }
 
-    internal abstract record Variable(Ident Name, Range Location, EvaluatedType Type) : Symbol
+    internal abstract record Variable(Ident Name, FixedRange Location, EvaluatedType Type) : Symbol
     {
         public virtual string Kind => KindVariable;
 
@@ -36,7 +36,7 @@ public interface Symbol : EquatableSemantics<Symbol>
 
     internal sealed record LocalVariable(
         Ident Name,
-        Range Location,
+        FixedRange Location,
         EvaluatedType Type,
         Option<Value> Initializer
     )
@@ -51,7 +51,7 @@ public interface Symbol : EquatableSemantics<Symbol>
 
     internal sealed record Constant(
         Ident Name,
-        Range Location,
+        FixedRange Location,
         EvaluatedType Type,
         Value Value
     )
@@ -66,7 +66,7 @@ public interface Symbol : EquatableSemantics<Symbol>
 
     internal sealed record TypeAlias(
         Ident Name,
-        Range Location,
+        FixedRange Location,
         EvaluatedType Type
     )
         : Symbol
@@ -79,7 +79,7 @@ public interface Symbol : EquatableSemantics<Symbol>
 
     internal sealed record Callable(
         Ident Name,
-        Range Location,
+        FixedRange Location,
         IReadOnlyCollection<Parameter> Parameters,
         EvaluatedType ReturnType
     )
@@ -96,7 +96,7 @@ public interface Symbol : EquatableSemantics<Symbol>
 
     internal sealed record Parameter(
         Ident Name,
-        Range Location,
+        FixedRange Location,
         EvaluatedType Type,
         ParameterMode Mode
     )

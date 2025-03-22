@@ -38,7 +38,7 @@ where TOpTable : OperatorTable
     protected readonly TOpTable OpTable = operatorTable;
 
     protected string ValidateIdentifier(Scope scope, Ident ident) => KwTable.Validate(scope, ident, Msger);
-    protected string ValidateIdentifier(Scope scope, Range location, string ident) => KwTable.Validate(scope, location, ident, Msger);
+    protected string ValidateIdentifier(Scope scope, FixedRange location, string ident) => KwTable.Validate(scope, location, ident, Msger);
 
     public abstract string Generate(Algorithm algorithm);
 

@@ -8,18 +8,20 @@ namespace Scover.Psdc.Lexing;
 
 public sealed partial class Lexer(Messenger msger)
 {
-    const int LineContinuationLen = 2;
-
     const int NaIndex = -1;
 
     readonly Messenger _msger = msger;
-    readonly Queue<int> _sortedLineContinuationIndexes = new();
+
+    readonly record struct LineCont(int Index, int Length);
+
+    readonly Queue<LineCont> _sortedLineConts = new();
 
     char[] _input = [];
     int _i;
     int _start;
-    int _iInvalidStart;
-    int _lineContinuationsOffsetBeforeI;
+    int _strayStart;
+    int _lineContOffsetBeforeStart;
+    int _lineContOffsetSinceStart;
 
     static Lexer() => Debug.Assert(reservedWords.Keys
 #pragma warning disable CA1862
@@ -28,17 +30,23 @@ public sealed partial class Lexer(Messenger msger)
 
     bool IsAtEnd => _i >= _input.Length;
     ReadOnlySpan<char> Lexeme => _input.AsSpan()[_start.._i];
-    FixedRange LexemePos => new(_start, _lineContinuationsOffsetBeforeI + _i);
+    FixedRange LexemePos => new(_lineContOffsetBeforeStart + _start, _lineContOffsetBeforeStart + _lineContOffsetSinceStart + _i);
 
     public IEnumerable<Token> Lex(string input)
     {
-        _i = 0;
-        _iInvalidStart = NaIndex;
-        _lineContinuationsOffsetBeforeI = 0;
         _input = PreprocessLineContinuations(input);
-        while (!IsAtEnd) {
-            _start = _i + _lineContinuationsOffsetBeforeI;
+        _strayStart = NaIndex;
 
+        _i = 0;
+        _start = 0;
+        _lineContOffsetBeforeStart = 0;
+        _lineContOffsetSinceStart = 0;
+
+        while (_sortedLineConts.Count > 0 && _sortedLineConts.Peek().Index == 0) {
+            _lineContOffsetBeforeStart += _sortedLineConts.Dequeue().Length;
+        }
+
+        while (!IsAtEnd) {
             switch (Advance()) {
             case var c when char.IsWhiteSpace(c):
                 ReportInvalidToken();
@@ -115,18 +123,18 @@ public sealed partial class Lexer(Messenger msger)
             case '\'': {
                 var value = EscapedString('\'');
                 if (value is null) {
-                    _msger.Report(Message.ErrorUnterminatedCharLiteral((Range)LexemePos));
+                    _msger.Report(Message.ErrorUnterminatedCharLiteral(LexemePos));
                     break;
                 }
                 switch (value.Length) {
                 case 0:
-                    _msger.Report(Message.ErrorCharLitEmpty((Range)LexemePos));
+                    _msger.Report(Message.ErrorCharLitEmpty(LexemePos));
                     break;
                 case 1:
                     yield return Ok(TokenType.LiteralChar, value[0]);
                     break;
                 default:
-                    _msger.Report(Message.ErrorCharLitContainsMoreThanOneChar((Range)LexemePos, value[0]));
+                    _msger.Report(Message.ErrorCharLitContainsMoreThanOneChar(LexemePos, value[0]));
                     break;
                 }
                 break;
@@ -134,7 +142,7 @@ public sealed partial class Lexer(Messenger msger)
             case '\"': {
                 var value = EscapedString('\"');
                 if (value is null) {
-                    _msger.Report(Message.ErrorUnterminatedStringLiteral((Range)LexemePos));
+                    _msger.Report(Message.ErrorUnterminatedStringLiteral(LexemePos));
                     break;
                 }
                 yield return Ok(TokenType.LiteralString, value.ToString());
@@ -158,12 +166,20 @@ public sealed partial class Lexer(Messenger msger)
                     break;
                 }
 
-                if (_iInvalidStart == NaIndex) _iInvalidStart = _i;
+                if (_strayStart == NaIndex) _strayStart = _start;
                 break;
             }
             }
+
+            _start = _i;
+            _lineContOffsetBeforeStart += _lineContOffsetSinceStart;
+            _lineContOffsetSinceStart = 0;
         }
-        _start = _i;
+
+        while (_sortedLineConts.TryDequeue(out var lc)) {
+            _lineContOffsetBeforeStart += lc.Length;
+        }
+
         yield return Ok(TokenType.Eof);
     }
 
@@ -174,7 +190,7 @@ public sealed partial class Lexer(Messenger msger)
         _ => Option.None<byte>(),
     };
 
-    [GeneratedRegex(@"^[\p{L}_][\p{L}_0-9]*")]
+    [GeneratedRegex(@"\G[\p{L}_][\p{L}_0-9]*")]
     private static partial Regex IdentifierRegex();
 
     static ValueOption<byte> OctDigitValue(char c) => c is >= '0' and <= '7'
@@ -183,19 +199,25 @@ public sealed partial class Lexer(Messenger msger)
 
     char[] PreprocessLineContinuations(string input)
     {
-        _sortedLineContinuationIndexes.Clear();
+        _sortedLineConts.Clear();
         if (input.Length == 0) return [];
 
         var preprocessedCode = new char[input.Length];
 
-        int i = 0;
-        for (int j = 0; j < input.Length; ++j) {
-            if (input[j] == '\\' && j + 1 < input.Length && input[j + 1] == '\n') {
-                _sortedLineContinuationIndexes.Enqueue(j++);
-            } else {
-                preprocessedCode[i++] = input[j];
+        int i = 0, j = 0;
+        while (j < input.Length - 1) {
+            if (input[j] == '\\' && char.IsWhiteSpace(input[j + 1])) {
+                int start = j;
+                while (++j < input.Length && input[j] != '\n' && char.IsWhiteSpace(input[j])) ;
+                if (j < input.Length && input[j] == '\n') {
+                    _sortedLineConts.Enqueue(new(i, ++j - start));
+                    continue;
+                }
+                j = start;
             }
+            preprocessedCode[i++] = input[j++];
         }
+        if (j < input.Length) preprocessedCode[i++] = input[j];
         Array.Resize(ref preprocessedCode, i);
         return preprocessedCode;
     }
@@ -204,9 +226,9 @@ public sealed partial class Lexer(Messenger msger)
     {
         char c = _input[_i];
         _i += of;
-        while (_sortedLineContinuationIndexes.Count > 0 && _sortedLineContinuationIndexes.Peek() <= _i) {
-            _sortedLineContinuationIndexes.Dequeue();
-            _lineContinuationsOffsetBeforeI += LineContinuationLen;
+        LineCont lc;
+        while (_sortedLineConts.Count > 0 && _sortedLineConts.Peek().Index < _i) {
+            _lineContOffsetSinceStart += _sortedLineConts.Dequeue().Length;
         }
         return c;
     }
@@ -272,9 +294,9 @@ public sealed partial class Lexer(Messenger msger)
 
     void ReportInvalidToken()
     {
-        if (_iInvalidStart == NaIndex) return;
-        _msger.Report(Message.ErrorUnknownToken(_iInvalidStart..(_i - _iInvalidStart)));
-        _iInvalidStart = NaIndex;
+        if (_strayStart == NaIndex) return;
+        _msger.Report(Message.ErrorUnknownToken(new(_strayStart, _start)));
+        _strayStart = NaIndex;
     }
 
     void Unescape(char c, StringBuilder value)
@@ -313,7 +335,7 @@ public sealed partial class Lexer(Messenger msger)
         case 'x': {
             var hexDigit = Match(HexDigitValue);
             if (!hexDigit.HasValue) {
-                _msger.Report(Message.ErrorInvalidEscapeSequence((Range)LexemePos, 'x',
+                _msger.Report(Message.ErrorInvalidEscapeSequence(LexemePos, 'x',
                     "must be followed by at least 1 hexadecimal digit"));
                 break;
             }
@@ -338,7 +360,7 @@ public sealed partial class Lexer(Messenger msger)
                 val += hexDigit.Value;
             }
             if (nDigits < MaxLengthU16) {
-                _msger.Report(Message.ErrorInvalidEscapeSequence((Range)LexemePos, 'u',
+                _msger.Report(Message.ErrorInvalidEscapeSequence(LexemePos, 'u',
                     $"must be followed by {MaxLengthU16} hexadecimal digits"));
             } else {
                 value.Append((char)val);
@@ -356,7 +378,7 @@ public sealed partial class Lexer(Messenger msger)
                 val += hexDigit.Value;
             }
             if (nDigits < MaxLengthU32) {
-                _msger.Report(Message.ErrorInvalidEscapeSequence((Range)LexemePos, 'u',
+                _msger.Report(Message.ErrorInvalidEscapeSequence(LexemePos, 'u',
                     $"must be followed by {MaxLengthU32} hexadecimal digits"));
             } else {
                 AppendSafeConvertFromUtf32(value, val);
@@ -377,7 +399,7 @@ public sealed partial class Lexer(Messenger msger)
         }
         default:
             value.Append(c);
-            _msger.Report(Message.ErrorInvalidEscapeSequence((Range)LexemePos, c));
+            _msger.Report(Message.ErrorInvalidEscapeSequence(LexemePos, c));
             break;
         }
     }

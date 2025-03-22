@@ -704,7 +704,7 @@ public sealed partial class StaticAnalyzer
         };
     }
 
-    Value CheckType(Range location, TypeComparer typeComparer, EvaluatedType targetType, Value value)
+    Value CheckType(FixedRange location, TypeComparer typeComparer, EvaluatedType targetType, Value value)
     {
         if (typeComparer(value.Type, targetType)) {
             return value;

@@ -1,6 +1,6 @@
 ﻿using Scover.Psdc.Messages;
 
-namespace Psdc.Tests;
+namespace Scover.Psdc.Tests;
 
 sealed class TestMessenger : Messenger
 {

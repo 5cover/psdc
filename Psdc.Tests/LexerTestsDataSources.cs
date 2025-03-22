@@ -1,15 +1,137 @@
 ﻿using Scover.Psdc.Lexing;
+using Scover.Psdc.Messages;
 
-namespace Psdc.Tests;
+namespace Scover.Psdc.Tests;
 
-public sealed class LexerTestsDataSources
+sealed class LexerTestsDataSources
 {
+    public static IEnumerable<Func<(string, IReadOnlyList<Token>, IEnumerable<EvaluatedMessage>)>> TokenSequenceWithMessages()
+    {
+        yield return () => ("&", [], [new(new(0, 1), MessageCode.UnknownToken, "stray `&` in program", [])]);
+        yield return () => ("&&", [], [new(new(0, 2), MessageCode.UnknownToken, "stray `&&` in program", [])]);
+        yield return () => ("&&:&&", [new(new(2, 3), TokenType.Colon)], [
+            new(new(0, 2), MessageCode.UnknownToken, "stray `&&` in program", []),
+            new(new(3, 5), MessageCode.UnknownToken, "stray `&&` in program", []),
+        ]);
+        yield return () => ("&¤:&°&§``&&¤&&", [new(new(2, 3), TokenType.Colon)], [
+            new(new(0, 2), MessageCode.UnknownToken, "stray `&¤` in program", []),
+            new(new(3, 14), MessageCode.UnknownToken, "stray ```&°&§``&&¤&&``` in program", []),
+        ]);
+        yield return () => ("a\\ ", [new(new(0, 1), TokenType.Ident, "a")], [
+            new(new(1, 2), MessageCode.UnknownToken, "stray `\\` in program", []),
+        ]);
+    }
+
     public static IEnumerable<Func<(string, IReadOnlyList<Token>)>> TokenSequence()
     {
         yield return () => (";;;", [
             new(new(0, 1), TokenType.Semi),
             new(new(1, 2), TokenType.Semi),
             new(new(2, 3), TokenType.Semi),
+        ]);
+        yield return () => ("ac;dc", [
+            new(new(0, 2), TokenType.Ident, "ac"),
+            new(new(2, 3), TokenType.Semi),
+            new(new(3, 5), TokenType.Ident, "dc"),
+        ]);
+        yield return () => (":==", [
+            new(new(0, 2), TokenType.ColonEqual),
+            new(new(2, 3), TokenType.Equal),
+        ]);
+        yield return () => ("procèdure procédure Procèdure PROCÈDURE", [
+            new(new(0, 9), TokenType.Ident, "procèdure"),
+            new(new(10, 19), TokenType.Procedure),
+            new(new(20, 29), TokenType.Ident, "Procèdure"),
+            new(new(30, 39), TokenType.Ident, "PROCÈDURE"),
+        ]);
+
+        // Literals
+        yield return () => ("123 3.14 'a' \"Hello, World!\"", [
+            new(new(0, 3), TokenType.LiteralInt, 123L),
+            new(new(4, 8), TokenType.LiteralReal, 3.14m),
+            new(new(9, 12), TokenType.LiteralChar, 'a'),
+            new(new(13, 28), TokenType.LiteralString, "Hello, World!"),
+        ]);
+
+        // Control-flow and grouping with operators.
+        // Positions computed approximately (adjust as needed):
+        yield return () => ("si (a == b) alors écrire(a); fin_si", [
+            new(new(0, 2), TokenType.If),           // "si"
+            new(new(3, 4), TokenType.LParen),       // "("
+            new(new(4, 5), TokenType.Ident, "a"),   // "a"
+            new(new(6, 8), TokenType.Eq),           // "=="
+            new(new(9, 10), TokenType.Ident, "b"),  // "b"
+            new(new(10, 11), TokenType.RParen),     // ")"
+            new(new(12, 17), TokenType.Then),       // "alors"
+            new(new(18, 24), TokenType.Write),      // "écrire"
+            new(new(24, 25), TokenType.LParen),     // "("
+            new(new(25, 26), TokenType.Ident, "a"), // "a"
+            new(new(26, 27), TokenType.RParen),     // ")"
+            new(new(27, 28), TokenType.Semi),       // ";"
+            new(new(29, 35), TokenType.EndIf),      // "fin_si"
+        ]);
+
+        // Grouping tokens sequence.
+        yield return () => ("({[]})", [
+            new(new(0, 1), TokenType.LParen),   // "("
+            new(new(1, 2), TokenType.LBrace),   // "{"
+            new(new(2, 3), TokenType.LBracket), // "["
+            new(new(3, 4), TokenType.RBracket), // "]"
+            new(new(4, 5), TokenType.RBrace),   // "}"
+            new(new(5, 6), TokenType.RParen),   // ")"
+        ]);
+
+        // Expression with operators.
+        yield return () => ("a+b*c-d/e", [
+            new(new(0, 1), TokenType.Ident, "a"),
+            new(new(1, 2), TokenType.Plus), // "+"
+            new(new(2, 3), TokenType.Ident, "b"),
+            new(new(3, 4), TokenType.Mul), // "*"
+            new(new(4, 5), TokenType.Ident, "c"),
+            new(new(5, 6), TokenType.Minus), // "-"
+            new(new(6, 7), TokenType.Ident, "d"),
+            new(new(7, 8), TokenType.Div), // "/"
+            new(new(8, 9), TokenType.Ident, "e"),
+        ]);
+
+        // Complex assignment and operator mix.
+        yield return () => ("a:=b+c*d-%f", [
+            new(new(0, 1), TokenType.Ident, "a"),
+            new(new(1, 3), TokenType.ColonEqual), // ":="
+            new(new(3, 4), TokenType.Ident, "b"),
+            new(new(4, 5), TokenType.Plus), // "+"
+            new(new(5, 6), TokenType.Ident, "c"),
+            new(new(6, 7), TokenType.Mul), // "*"
+            new(new(7, 8), TokenType.Ident, "d"),
+            new(new(8, 9), TokenType.Minus), // "-"
+            new(new(9, 10), TokenType.Mod),  // "%"
+            new(new(10, 11), TokenType.Ident, "f"),
+        ]);
+
+        yield return () => ("a\\  \nb", [new(new(0, 6), TokenType.Ident, "ab")]);
+        yield return () => ("a\\  \nb\\\n", [new(new(0, 6), TokenType.Ident, "ab")]);
+        yield return () => ("\\\na\\  \nb", [new(new(2, 8), TokenType.Ident, "ab")]);
+        yield return () => ("\\\na\\  \nb\\\n", [new(new(2, 8), TokenType.Ident, "ab")]);
+        yield return () => ("a\\  \n", [new(new(0, 1), TokenType.Ident, "a")]);
+        yield return () => ("a\\\nb", [new(new(0, 4), TokenType.Ident, "ab")]);
+
+        // Identifier with a line continuation inside it.
+        yield return () => ("hé\\ \r  \nllo", [new(new(0, 11), TokenType.Ident, "héllo")]);
+
+        // No space after the line continuation, tokens merge.
+        yield return () => ("a\\\r\nb", [new(new(0, 5), TokenType.Ident, "ab")]);
+
+        // Space after the line continuation causes token splitting.
+        // After removing the sequence "\" and newline, the remaining space acts as a delimiter.
+        yield return () => ("a\\\n b", [
+            new(new(0, 1), TokenType.Ident, "a"),
+            new(new(4, 5), TokenType.Ident, "b"),
+        ]);
+
+        // 4. String literal with a line continuation.
+        // The backslash-newline sequence is removed.
+        yield return () => ("\"Hello,\\\nWorld!\"", [
+            new(new(0, 16), TokenType.LiteralString, "Hello,World!"),
         ]);
     }
 
@@ -238,8 +360,17 @@ public sealed class LexerTestsDataSources
 
     public static IEnumerable<Func<(TokenType, string)>> OneToken()
     {
+        // Line continuations
+        yield return () => (TokenType.Array, "tab\\\nleau");
+        yield return () => (TokenType.Array, "t\\\nab\\\n\\\n\\\nleau");
+
+        // Regular
+        yield return () => (TokenType.Array, "TABLEAU");
+        yield return () => (TokenType.Array, "Tableau");
+        yield return () => (TokenType.Array, "TaBlEaU");
         yield return () => (TokenType.Array, "tableau");
         yield return () => (TokenType.Begin, "début");
+        yield return () => (TokenType.Begin, "dÉbUt");
         yield return () => (TokenType.Begin, "debut");
         yield return () => (TokenType.Boolean, "booléen");
         yield return () => (TokenType.Boolean, "booleen");

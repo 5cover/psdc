@@ -2,18 +2,31 @@ using System.Text;
 
 namespace Scover.Psdc.Pseudocode;
 
-static class Strings
+public static class Strings
 {
-    const int LengthU32 = 8;
-    const int LengthU16 = 4;
-    const int MaxLengthOctal = 3;
-    const int MaxLengthHex = sizeof(ulong) * 2;
+    public static string WrapInCode(this string input)
+    {
+        // Find the longest run of backticks in the input
+        int maxBacktickSeq = 0;
+        int currentCount = 0;
 
-    const int OffsetOctal = 1;
-    const int OffsetHex = 2;
-    const int OffsetU16 = 2;
-    const int OffsetU32 = 2;
-    const int OffsetSimple = 2;
+        foreach (char c in input) {
+            if (c == '`') {
+                currentCount++;
+                if (currentCount > maxBacktickSeq) maxBacktickSeq = currentCount;
+            } else {
+                currentCount = 0;
+            }
+        }
+
+        // Use one more backtick than the maximum in the string
+        string wrapper = new('`', maxBacktickSeq + 1);
+
+        // Determine if padding is necessary (starts or ends with a backtick)
+        bool needsPadding = input.StartsWith('`') || input.EndsWith('`');
+
+        return needsPadding ? $"{wrapper} {input} {wrapper}" : $"{wrapper}{input}{wrapper}";
+    }
 
     public static StringBuilder Escape(ReadOnlySpan<char> input, IFormatProvider? fmtProvider = null)
     {

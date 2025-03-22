@@ -288,13 +288,13 @@ sealed class VoidType : EvaluatedTypeImplNotInstantiable<VoidValue>
 sealed class UnknownType : EvaluatedTypeImplNotInstantiable<UnknownValue>
 {
     readonly string _repr;
-    UnknownType(Range location, string repr, ValueOption<Ident> alias = default) : base(alias, ValueStatus.Invalid.Instance) =>
+    UnknownType(FixedRange location, string repr, ValueOption<Ident> alias = default) : base(alias, ValueStatus.Invalid.Instance) =>
         (Location, _repr) = (location, repr);
 
-    public Range Location { get; }
+    public FixedRange Location { get; }
     public static UnknownType Inferred { get; } = new(default, "<unknown-type>");
 
-    public static UnknownType Declared(string input, Range location) => new(location, input[location]);
+    public static UnknownType Declared(string input, FixedRange location) => new(location, input[(Range)location]);
 
     public override UnknownType ToAliasReference(Ident alias) => new(Location, _repr, alias);
 

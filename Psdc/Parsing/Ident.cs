@@ -1,10 +1,12 @@
 using System.Diagnostics;
 
+using Scover.Psdc.Pseudocode;
+
 namespace Scover.Psdc.Parsing;
 
 public sealed class Ident : Node, IEquatable<Ident?>
 {
-    public Ident(Range location, string name)
+    public Ident(FixedRange location, string name)
     {
         Debug.Assert(
             name.Length > 0
@@ -14,7 +16,7 @@ public sealed class Ident : Node, IEquatable<Ident?>
         (Location, Name) = (location, name);
     }
 
-    public Range Location { get; }
+    public FixedRange Location { get; }
     public string Name { get; }
 
     // Equals and GetHashCode implementation for usage in dictionaries.
@@ -22,4 +24,6 @@ public sealed class Ident : Node, IEquatable<Ident?>
     public bool Equals(Ident? other) => other is not null && other.Name == Name;
     public override int GetHashCode() => Name.GetHashCode();
     public override string ToString() => Name;
+
+    public string WrapInCode() => Name.WrapInCode();
 }
