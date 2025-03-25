@@ -18,7 +18,7 @@ sealed partial class CodeGenerator(Messenger messenger)
     {
         StringBuilder o = new();
 
-        foreach (var decl in algorithm.Declarations) {
+        foreach (var decl in algorithm.Decls) {
             AppendDeclaration(o, decl);
         }
 
@@ -28,7 +28,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     #region Declarations
 
-    protected override StringBuilder AppendAliasDeclaration(StringBuilder o, Declaration.TypeAlias alias)
+    protected override StringBuilder AppendAliasDeclaration(StringBuilder o, Decl.TypeDef alias)
     {
         SetGroup(o, Group.Types);
         return Indent(o).AppendLine(Format.Code,
@@ -515,7 +515,7 @@ sealed partial class CodeGenerator(Messenger messenger)
 
     StringBuilder FeatureComingSoon(StringBuilder o, SemanticNode node, string feature)
     {
-        Msger.Report(Message.ErrorFeatureComingSoon(node.Meta.Location, feature));
+        Msger.Report(Message.ErrorFeatureComingSoon(node.Meta.Extent, feature));
         return o;
     }
 

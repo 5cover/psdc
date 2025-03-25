@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
 
@@ -8,6 +9,8 @@ using static Scover.Psdc.Parsing.Node;
 using Scover.Psdc.Pseudocode;
 
 using System.Runtime.CompilerServices;
+
+using Scover.Psdc.Lexing;
 
 namespace Scover.Psdc.Messages;
 
@@ -58,7 +61,7 @@ public readonly struct Message
         "default not last in switch; all cases below are unreachable",
         ["move the default case to the end of the switch statement"]);
     internal static Message ErrorIndexOutOfBounds(ComptimeExpression<int> index, int length) =>
-        ErrorIndexOutOfBounds(index.Expression.Meta.Location, index.Value, length);
+        ErrorIndexOutOfBounds(index.Expression.Meta.Extent, index.Value, length);
     internal static Message ErrorFeatureComingSoon(FixedRange location, string feature) => new(location, MessageCode.FeatureNotAvailable,
         $"language feature '{feature}' not yet available");
     internal static Message ErrorConstantAssignment(FixedRange location, Symbol.Constant constant) => new(location, MessageCode.ConstantAssignment,
@@ -109,7 +112,13 @@ public readonly struct Message
 
     internal static Message ErrorSignatureMismatch<TSymbol>(TSymbol newSig, TSymbol expectedSig) where TSymbol : Symbol => new(newSig.Location,
         MessageCode.SignatureMismatch, new(input =>
-            Fmt($"this signature of {newSig.Kind} {newSig.Name.WrapInCode()} differs from previous signature ({input[(Range)expectedSig.Location].WrapInCode()})")));
+            Fmt($"this signature of {
+                newSig.Kind
+            } {
+                newSig.Name.WrapInCode()
+            } differs from previous signature ({
+                input[(Range)expectedSig.Location].WrapInCode()
+            })")));
 
     internal static Message ErrorStructureComponentDoesntExist(
         Ident componentName,
@@ -140,26 +149,33 @@ public readonly struct Message
     internal static Message ErrorSubscriptOfNonArray(FixedRange location, EvaluatedType actualArrayType) => new(location, MessageCode.SubscriptOfNonArray,
         Fmt($"subscripted value ('{actualArrayType}') is not an array"));
 
-    internal static Message ErrorSyntax(FixedRange location, ParseError error)
+    internal static Message ErrorSyntaxContextualKeyword(int index, IReadOnlyList<Token> tokens, string subject, IEnumerable<string> expectedWords) =>
+        new(FixedRange.Of(index, 1), MessageCode.SyntaxError,
+            new(input => {
+                var t = tokens[index];
+                return SyntaxError(
+                    $"expected {string.Join(" or ", expectedWords)} for {subject}, got {(t.Type is TokenType.Ident ? t.Value : t.Type)}",
+                    Closest(input, tokens, index));
+            }));
+
+    internal static Message ErrorSyntax(IReadOnlyList<Token> tokens, ParserError e) => new(tokens[e.Index].Position, MessageCode.SyntaxError, new(input => SyntaxError(
+        $"expected {string.Join(" or ", e.Expected)} for {e.Subject}, got {tokens[e.Index].Type}",
+        Closest(input, tokens, e.Index))));
+
+    static string Closest(string input, IReadOnlyList<Token> tokens, int i)
     {
-        StringBuilder msgContent = new("syntax: ");
+        bool isFirst = i == 0;
+        bool isLast = i >= tokens.Count - 2; // eof doesn't count
 
-        if (error.ExpectedProductions.Count > 0) {
-            msgContent.Append(Format.Msg, $"on {error.FailedProduction}: expected ").AppendJoin(" or ", error.ExpectedProductions);
-        } else if (location.Length == 0) {
-            // show expected tokens only if failure token isn't the first, or if we successfully read at least 1 token.
-            msgContent.Append(Format.Msg, $"on {error.FailedProduction}: expected ").AppendJoin(", ", error.ExpectedTokens);
-        } else {
-            msgContent.Append(Format.Msg, $"expected {error.FailedProduction}");
-        }
-
-        error.ErroneousToken.Tap(t => msgContent.Append(Format.Msg, $", got {t}"));
-
-        return new(error.ErroneousToken
-               .Map(t => (FixedRange)t.Position)
-               .ValueOr(location),
-            MessageCode.SyntaxError, msgContent.ToString());
+        return !isFirst ? $" (after `{input[(Range)tokens[i - 1].Position]}`)"
+            : !isLast ? $" (before `{input[(Range)tokens[i + 1].Position]}`)"
+            : "";
     }
+
+    static string SyntaxError(
+        string message,
+        string closest = ""
+    ) => $"syntax error {closest}: {message}";
 
     internal static Message ErrorTargetLanguageFormat(FixedRange location, string targetLanguageName, FormattableString content) =>
         CreateTargetLanguageFormat(location, MessageCode.TargetLanguageError, targetLanguageName, content);
@@ -184,7 +200,8 @@ public readonly struct Message
     internal static Message ErrorUnsupportedOperation(Expr.UnaryOperation opUn, EvaluatedType operandType) => new(opUn.Location,
         MessageCode.UnsupportedOperation,
         Fmt($"unsupported operand type for {opUn.Operator.Representation}: '{operandType}'"));
-    internal static Message HintRedundantCast(FixedRange location, EvaluatedType sourceType, EvaluatedType targetType) => new(location, MessageCode.RedundantCast,
+    internal static Message HintRedundantCast(FixedRange location, EvaluatedType sourceType, EvaluatedType targetType) => new(location,
+        MessageCode.RedundantCast,
         Fmt($"Rendundant cast from '{sourceType}' to '{targetType}': an implicit conversion exists"));
     internal static Message ErrrorComponentAccessOfNonStruct(Expr.Lvalue.ComponentAccess compAccess, EvaluatedType actualStructType) => new(compAccess.Location,
         MessageCode.ComponentAccessOfNonStruct,

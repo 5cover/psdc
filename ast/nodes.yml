@@ -2,11 +2,23 @@
 target: csharp
 known_types:
   - ident
+  - fixed_range
+union: public interface $1
+product: public readonly record struct $1
+imports:
+    - System.Collections.Immutable
 modifiers:
   ?:
     type: Option<$1>
-    none_when: '!$1.HasValue'
     unwrap: $1.Value
+    none_when: '!$1.HasValue'
+  '*':
+    type: ImmutableArray<$1>
+    unwrap: $1.All($1 => $2)
+    must: $1.Length > 0
+  +:
+    type: ImmutableArray<$1>
+    unwrap: $1.All($1 => $2)
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/5cover/ast-gen/refs/heads/main/schemas/nodes.json
 algorithm:

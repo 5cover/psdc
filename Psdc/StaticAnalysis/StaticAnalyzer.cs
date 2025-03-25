@@ -415,7 +415,7 @@ public sealed partial class StaticAnalyzer
                                     currentPath = EvaluateArrayPath(scope, first, sdes.AsSpan()[1..], targetArrayType)
                                        .DropError(_msger.Report).Or(currentPath);
                                 } else {
-                                    _msger.Report(Message.ErrorUnsupportedDesignator(sdes[0].Meta.Location, targetArrayType));
+                                    _msger.Report(Message.ErrorUnsupportedDesignator(sdes[0].Meta.Extent, targetArrayType));
                                 }
                             } else {
                                 currentPath = currentPath.Match(
@@ -446,7 +446,7 @@ public sealed partial class StaticAnalyzer
                                     currentPath = EvaluateStructurePath(scope, first, sdes.AsSpan()[1..], targetStructType)
                                        .DropError(_msger.Report).Or(currentPath);
                                 } else {
-                                    _msger.Report(Message.ErrorUnsupportedDesignator(sdes[0].Meta.Location, targetStructType));
+                                    _msger.Report(Message.ErrorUnsupportedDesignator(sdes[0].Meta.Extent, targetStructType));
                                 }
                             } else {
                                 currentPath = currentPath.Match(
@@ -628,7 +628,7 @@ public sealed partial class StaticAnalyzer
                     if (index.Value is IntegerValue intVal) {
                         actualIndex = intVal.Status.ComptimeValue;
                     } else {
-                        _msger.Report(Message.ErrorNonIntegerIndex(index.Meta.Location, index.Value.Type));
+                        _msger.Report(Message.ErrorNonIntegerIndex(index.Meta.Extent, index.Value.Type));
                         return arrVal.Type.ItemType.InvalidValue;
                     }
 
@@ -771,8 +771,8 @@ public sealed partial class StaticAnalyzer
 
     static ValueOption<TUnderlying, Message> GetComptimeValue<TType, TUnderlying>(TType expectedType, Expr expr)
     where TType : EvaluatedType => expr is { Value: Value<TType, TUnderlying> v }
-        ? v.Status.ComptimeValue.OrWithError(Message.ErrorComptimeExpressionExpected(expr.Meta.Location))
-        : Message.ErrorExpressionHasWrongType(expr.Meta.Location, expectedType, expr.Value.Type);
+        ? v.Status.ComptimeValue.OrWithError(Message.ErrorComptimeExpressionExpected(expr.Meta.Extent))
+        : Message.ErrorExpressionHasWrongType(expr.Meta.Extent, expectedType, expr.Value.Type);
 
     Option<ComptimeExpression<TUnderlying>, Message> GetComptimeExpression<TType, TUnderlying>(TType type, Scope scope, Node.Expr expr)
     where TType : EvaluatedType

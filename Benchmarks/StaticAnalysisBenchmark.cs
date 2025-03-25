@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 
 using Scover.Psdc.Parsing;
 using Scover.Psdc.StaticAnalysis;
@@ -9,14 +9,14 @@ namespace Scover.Psdc.Benchmarks;
 public sealed class StaticAnalysisBenchmark
 {
     static readonly Parameters p = Program.Parameters;
-    Node.Algorithm _ast = null!;
+    Node.Algorithm _ast;
 
     [GlobalSetup]
     public void Setup()
     {
         ParsingBenchmark b = new();
         b.Setup();
-        _ast = b.Run().Unwrap();
+        _ast = b.Run();
     }
 
     [Benchmark]

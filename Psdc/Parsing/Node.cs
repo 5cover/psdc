@@ -1,227 +1,289 @@
-using Scover.Psdc.Pseudocode;
+using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace Scover.Psdc.Parsing;
 
 public interface Node
 {
-    FixedRange Location { get; }
-
-    internal interface ParenExpr : Expr
+    readonly record struct Algorithm : Node
     {
-        Expr InnerExpr { get; }
-    }
-    sealed record Algorithm(FixedRange Location, IReadOnlyList<CompilerDirective> LeadingDirectives, Ident Title, IReadOnlyList<Declaration> Declarations) : Node;
-    interface Declaration : Node
-    {
-        internal sealed record MainProgram(FixedRange Location, IReadOnlyList<Stmt> Body) : Declaration;
-        internal sealed record TypeAlias(FixedRange Location, Ident Name, Type Type) : Declaration;
-        internal sealed record Constant(FixedRange Location, Type Type, Ident Name, Initializer Value) : Declaration;
-        internal sealed record Procedure(FixedRange Location, ProcedureSignature Signature) : Declaration;
-        internal sealed record ProcedureDefinition(FixedRange Location, ProcedureSignature Signature, IReadOnlyList<Stmt> Body) : Declaration;
-        internal sealed record Function(FixedRange Location, FunctionSignature Signature) : Declaration;
-        internal sealed record FunctionDefinition(FixedRange Location, FunctionSignature Signature, IReadOnlyList<Stmt> Body) : Declaration;
-    }
-    interface Stmt : Node
-    {
-        internal sealed record ExprStmt(FixedRange Location, Expr Expr) : Stmt;
-        internal sealed record Assignment(FixedRange Location, Expr.Lvalue Target, Expr Value) : Stmt;
-        internal sealed record DoWhileLoop(FixedRange Location, Expr Condition, IReadOnlyList<Stmt> Body) : Stmt;
-
-        internal sealed record Alternative(
-            FixedRange Location,
-            Alternative.IfClause If,
-            IReadOnlyList<Alternative.ElseIfClause> ElseIfs,
-            Option<Alternative.ElseClause> Else
-        ) : Stmt
+        public Algorithm(ImmutableArray<Decl> decls)
         {
-            internal sealed record IfClause(FixedRange Location, Expr Condition, IReadOnlyList<Stmt> Body) : Node;
-            internal sealed record ElseIfClause(FixedRange Location, Expr Condition, IReadOnlyList<Stmt> Body) : Node;
-            internal sealed record ElseClause(FixedRange Location, IReadOnlyList<Stmt> Body) : Node;
+            Debug.Assert(decls.Length > 0);
+            Decls = decls;
         }
-
-        internal sealed record Switch(FixedRange Location, Expr Expr, IReadOnlyList<Switch.Case> Cases) : Stmt
+        public ImmutableArray<Decl> Decls { get; }
+    }
+    interface Decl : FixedNode
+    {
+        readonly record struct ConstantDef(FixedRange Extent, Type Type, ImmutableArray<InitDeclarator> Declarators) : Decl { }
+        readonly record struct TypeDef(FixedRange Extent, Type Type, ImmutableArray<Ident> Names) : Decl { }
+        readonly record struct MainProgram : Decl
         {
-            internal interface Case : Node
+            public MainProgram(FixedRange extent, Ident title, ImmutableArray<Stmt> body)
             {
-                IReadOnlyList<Stmt> Body { get; }
-                internal sealed record OfValue(FixedRange Location, Expr Value, IReadOnlyList<Stmt> Body) : Case;
-                internal sealed record Default(FixedRange Location, IReadOnlyList<Stmt> Body) : Case;
+                Extent = extent;
+                Title = title;
+                Debug.Assert(body.Length > 0);
+                Body = body;
+            }
+            public FixedRange Extent { get; }
+            public Ident Title { get; }
+            public ImmutableArray<Stmt> Body { get; }
+        }
+        readonly record struct FuncDecl(FixedRange Extent, FuncSig Sig) : Decl { }
+        readonly record struct FuncDef : Decl
+        {
+            public FuncDef(FixedRange extent, FuncSig sig, ImmutableArray<Stmt> body)
+            {
+                Extent = extent;
+                Sig = sig;
+                Debug.Assert(body.Length > 0);
+                Body = body;
+            }
+            public FixedRange Extent { get; }
+            public FuncSig Sig { get; }
+            public ImmutableArray<Stmt> Body { get; }
+        }
+    }
+    interface CompilerDirective : Decl, Stmt, Type.Structure.Member
+    {
+        readonly record struct Assert(FixedRange Extent, Expr Expr, Option<Expr> Messsage) : CompilerDirective { }
+        readonly record struct EvalExpr(FixedRange Extent, Expr Expr) : CompilerDirective { }
+        readonly record struct EvalType(FixedRange Extent, Type Type) : CompilerDirective { }
+    }
+    readonly record struct Nop(FixedRange Extent) : Decl, Stmt { }
+    interface Type : FixedNode
+    {
+        readonly record struct Aliased(FixedRange Extent, Ident Name) : Type { }
+        readonly record struct Boolean(FixedRange Extent) : Type { }
+        readonly record struct Character(FixedRange Extent) : Type { }
+        readonly record struct Integer(FixedRange Extent) : Type { }
+        readonly record struct Real(FixedRange Extent) : Type { }
+        readonly record struct String(FixedRange Extent, Option<Expr> Length) : Type { }
+        readonly record struct Array(FixedRange Extent, Type ItemType, ImmutableArray<Expr> Dimensions) : Type { }
+        readonly record struct Structure : Type
+        {
+            public Structure(FixedRange extent, ImmutableArray<Member> members)
+            {
+                Extent = extent;
+                Debug.Assert(members.Length > 0);
+                Members = members;
+            }
+            public FixedRange Extent { get; }
+            public ImmutableArray<Member> Members { get; }
+            public interface Member : FixedNode
+            {
+                readonly record struct Component(FixedRange Extent, Type Type, ImmutableArray<Ident> Names) : Member, Designator { }
             }
         }
-
-        internal interface Builtin : Stmt
-        {
-            internal sealed record Ecrire(FixedRange Location, Expr ArgumentNomLog, Expr ArgumentExpression) : Builtin;
-            internal sealed record Fermer(FixedRange Location, Expr ArgumentNomLog) : Builtin;
-            internal sealed record Lire(FixedRange Location, Expr ArgumentNomLog, Expr.Lvalue ArgumentVariable) : Builtin;
-            internal sealed record OuvrirAjout(FixedRange Location, Expr ArgumentNomLog) : Builtin;
-            internal sealed record OuvrirEcriture(FixedRange Location, Expr ArgumentNomLog) : Builtin;
-            internal sealed record OuvrirLecture(FixedRange Location, Expr ArgumentNomLog) : Builtin;
-            internal sealed record Assigner(FixedRange Location, Expr.Lvalue ArgumentNomLog, Expr ArgumentNomExt) : Builtin;
-            internal sealed record EcrireEcran(FixedRange Location, IReadOnlyList<Expr> Arguments) : Builtin;
-            internal sealed record LireClavier(FixedRange Location, Expr.Lvalue ArgumentVariable) : Builtin;
-        }
-
-        internal sealed record ForLoop(FixedRange Location, Expr.Lvalue Variant, Expr Start, Expr End, Option<Expr> Step, IReadOnlyList<Stmt> Body) : Stmt;
-
-        internal sealed record RepeatLoop(FixedRange Location, Expr Condition, IReadOnlyList<Stmt> Body) : Stmt;
-
-        internal sealed record Return(FixedRange Location, Option<Expr> Value) : Stmt;
-
-        internal sealed record LocalVariable(FixedRange Location, VariableDeclaration Decl, Option<Initializer> Value) : Stmt;
-
-        internal sealed record WhileLoop(FixedRange Location, Expr Condition, IReadOnlyList<Stmt> Body) : Stmt;
     }
-    interface Initializer : Node
+    readonly record struct InitDeclarator(Ident Name, Init Init) : Node { }
+    interface Stmt : FixedNode
     {
-        sealed record Braced(FixedRange Location, IReadOnlyList<Braced.Item> Items) : Initializer
+        readonly record struct Block : Stmt
         {
-            public interface Item : Node;
-            internal sealed record ValuedItem(FixedRange Location, IReadOnlyList<Designator> Designators, Initializer Value) : Item;
-        }
-    }
-
-    internal interface Expr : Initializer
-    {
-        internal interface Lvalue : Expr
-        {
-            internal sealed record ComponentAccess(FixedRange Location, Expr Structure, Ident ComponentName) : Lvalue;
-
-            internal sealed record ParenLValue : Lvalue, ParenExpr
+            public Block(FixedRange extent, ImmutableArray<Stmt> stmts)
             {
-                public ParenLValue(FixedRange location, Lvalue lvalue) =>
-                    (Location, ContainedLvalue) = (location, lvalue is ParenExpr { InnerExpr: Lvalue l } ? l : lvalue);
-                public FixedRange Location { get; }
-                public Lvalue ContainedLvalue { get; }
-                Expr ParenExpr.InnerExpr => ContainedLvalue;
+                Extent = extent;
+                Debug.Assert(stmts.Length > 0);
+                Stmts = stmts;
             }
-
-            internal sealed record ArraySubscript(FixedRange Location, Expr Array, Expr Index) : Lvalue;
-
-            internal sealed record VariableReference(FixedRange Location, Ident Name) : Lvalue;
+            public FixedRange Extent { get; }
+            public ImmutableArray<Stmt> Stmts { get; }
         }
-
-        internal sealed record UnaryOperation(FixedRange Location, UnaryOperator Operator, Expr Operand) : Expr;
-
-        internal sealed record BinaryOperation(FixedRange Location, Expr Left, BinaryOperator Operator, Expr Right) : Expr;
-
-        internal sealed record BuiltinFdf(FixedRange Location, Expr ArgumentNomLog) : Expr;
-
-        internal sealed record Call(FixedRange Location, Ident Callee, IReadOnlyList<ParameterActual> Parameters) : Expr;
-
-        internal sealed record ParenExprImpl : ParenExpr
+        readonly record struct Assignment(FixedRange Extent, Expr.Lvalue Target, Expr Value) : Stmt { }
+        readonly record struct WhileLoop : Stmt
         {
-            public ParenExprImpl(FixedRange location, Expr expr) => (Location, InnerExpr) = (location, expr is ParenExpr b ? b.InnerExpr : expr);
-            public FixedRange Location { get; }
-            public Expr InnerExpr { get; }
-        }
-
-        internal abstract record Literal<TType, TValue, TUnderlying>(FixedRange Location, TType ValueType, TUnderlying Value) : Literal
-        where TValue : Value where TType : EvaluatedType, InstantiableType<TValue, TUnderlying> where TUnderlying : notnull
-        {
-            object Literal.Value => Value;
-            EvaluatedType Literal.ValueType => ValueType;
-
-            public Value CreateValue() => ValueType.Instanciate(Value);
-        }
-
-        internal interface Literal : Expr
-        {
-            object Value { get; }
-            EvaluatedType ValueType { get; }
-            Value CreateValue();
-
-            internal sealed record True(FixedRange Location) : Literal<BooleanType, BooleanValue, bool>(Location, BooleanType.Instance, true);
-
-            internal sealed record False(FixedRange Location) : Literal<BooleanType, BooleanValue, bool>(Location, BooleanType.Instance, false);
-
-            internal sealed record Character(FixedRange Location, char Value)
-                : Literal<CharacterType, CharacterValue, char>(Location, CharacterType.Instance, Value);
-
-            internal sealed record Integer(FixedRange Location, int Value) : Literal<IntegerType, IntegerValue, int>(Location, IntegerType.Instance, Value)
+            public WhileLoop(FixedRange extent, Expr condition, ImmutableArray<Stmt> body)
             {
-                public Integer(FixedRange location, string valueStr) : this(location, int.Parse(valueStr, Format.Code)) { }
+                Extent = extent;
+                Condition = condition;
+                Debug.Assert(body.Length > 0);
+                Body = body;
             }
-
-            internal sealed record Real(FixedRange Location, decimal Value) : Literal<RealType, RealValue, decimal>(Location, RealType.Instance, Value)
+            public FixedRange Extent { get; }
+            public Expr Condition { get; }
+            public ImmutableArray<Stmt> Body { get; }
+        }
+        readonly record struct DoWhileLoop : Stmt
+        {
+            public DoWhileLoop(FixedRange extent, Expr condition, ImmutableArray<Stmt> body)
             {
-                public Real(FixedRange location, string valueStr) : this(location, decimal.Parse(valueStr, Format.Code)) { }
+                Extent = extent;
+                Condition = condition;
+                Debug.Assert(body.Length > 0);
+                Body = body;
             }
-
-            internal sealed record String(FixedRange Location, string Value)
-                : Literal<LengthedStringType, LengthedStringValue, string>(Location, LengthedStringType.Create(Value.Length), Value);
+            public FixedRange Extent { get; }
+            public Expr Condition { get; }
+            public ImmutableArray<Stmt> Body { get; }
+        }
+        readonly record struct ForLoop : Stmt
+        {
+            public ForLoop(FixedRange extent, Option<Stmt> initialization, Option<Expr> condition, Option<Assignment> increment, ImmutableArray<Stmt> body)
+            {
+                Extent = extent;
+                Debug.Assert(!initialization.HasValue);
+                Initialization = initialization;
+                Debug.Assert(!condition.HasValue);
+                Condition = condition;
+                Debug.Assert(!increment.HasValue);
+                Increment = increment;
+                Debug.Assert(body.Length > 0);
+                Body = body;
+            }
+            public FixedRange Extent { get; }
+            public Option<Stmt> Initialization { get; }
+            public Option<Expr> Condition { get; }
+            public Option<Assignment> Increment { get; }
+            public ImmutableArray<Stmt> Body { get; }
+        }
+        readonly record struct Return(FixedRange Extent, Expr Value) : Stmt { }
+        readonly record struct Write : Stmt
+        {
+            public Write(FixedRange extent, ImmutableArray<Expr> args)
+            {
+                Extent = extent;
+                Debug.Assert(args.Length > 0);
+                Args = args;
+            }
+            public FixedRange Extent { get; }
+            public ImmutableArray<Expr> Args { get; }
+        }
+        readonly record struct Read(FixedRange Extent, Expr.Lvalue Target) : Stmt { }
+        readonly record struct Trunc(FixedRange Extent, Expr Arg) : Stmt { }
+        readonly record struct LocalVarDecl(FixedRange Extent, Type Type, Declarator Declarators) : Stmt { }
+        readonly record struct Alternative : Stmt
+        {
+            public Alternative(FixedRange extent, Clause @if, ImmutableArray<Clause> elseIfs, Option<ImmutableArray<Stmt>> @else)
+            {
+                Extent = extent;
+                If = @if;
+                Debug.Assert(elseIfs.Length > 0);
+                ElseIfs = elseIfs;
+                Debug.Assert(!@else.HasValue || @else.Value.Length > 0);
+                Else = @else;
+            }
+            public FixedRange Extent { get; }
+            public Clause If { get; }
+            public ImmutableArray<Clause> ElseIfs { get; }
+            public Option<ImmutableArray<Stmt>> Else { get; }
+        }
+        readonly record struct Switch : Stmt
+        {
+            public Switch(FixedRange extent, Expr condition, ImmutableArray<Clause> cases, Option<ImmutableArray<Stmt>> @default)
+            {
+                Extent = extent;
+                Condition = condition;
+                Debug.Assert(cases.Length > 0);
+                Cases = cases;
+                Debug.Assert(!@default.HasValue || @default.Value.Length > 0);
+                Default = @default;
+            }
+            public FixedRange Extent { get; }
+            public Expr Condition { get; }
+            public ImmutableArray<Clause> Cases { get; }
+            public Option<ImmutableArray<Stmt>> Default { get; }
         }
     }
-
-    internal interface Type : Node
+    readonly record struct FuncSig : Node
     {
-        internal sealed record AliasReference(FixedRange Location, Ident Name) : Type;
-
-        internal sealed record String(FixedRange Location) : Type;
-
-        internal sealed record Array(FixedRange Location, Type Type, IReadOnlyList<Expr> Dimensions) : Type;
-
-        internal sealed record Character(FixedRange Location) : Type;
-
-        internal sealed record Boolean(FixedRange Location) : Type;
-
-        internal sealed record Integer(FixedRange Location) : Type;
-
-        internal sealed record Real(FixedRange Location) : Type;
-
-        internal sealed record LengthedString(FixedRange Location, Expr Length) : Type;
-
-        internal sealed record Structure(FixedRange Location, IReadOnlyList<Component> Components) : Type;
+        public FuncSig(Ident name, ImmutableArray<FormalParam> @params, Option<Type> returnType)
+        {
+            Name = name;
+            Debug.Assert(@params.Length > 0);
+            Params = @params;
+            Debug.Assert(!returnType.HasValue);
+            ReturnType = returnType;
+        }
+        public Ident Name { get; }
+        public ImmutableArray<FormalParam> Params { get; }
+        public Option<Type> ReturnType { get; }
+    }
+    interface Expr : Stmt, Init
+    {
+        readonly record struct Unary(FixedRange Extent, UnaryOperator Operator, Expr Operand) : Expr { }
+        readonly record struct Binary(FixedRange Extent, Expr Left, BinaryOperator Operator, Expr Right) : Expr { }
+        readonly record struct Call : Expr
+        {
+            public Call(FixedRange extent, Ident callee, ImmutableArray<ActualParam> args)
+            {
+                Extent = extent;
+                Callee = callee;
+                Debug.Assert(args.Length > 0);
+                Args = args;
+            }
+            public FixedRange Extent { get; }
+            public Ident Callee { get; }
+            public ImmutableArray<ActualParam> Args { get; }
+        }
+        interface Lvalue : Expr
+        {
+            readonly record struct ComponentAccess(FixedRange Extent, Expr ure, Ident Name) : Lvalue { }
+            readonly record struct ArraySub(FixedRange Extent, Expr Array, Expr Index) : Lvalue { }
+            readonly record struct VarRef(FixedRange Extent, bool IsOut, Ident Name) : Lvalue { }
+        }
+        readonly record struct LitTrue(FixedRange Extent) : Expr { }
+        readonly record struct LitFalse(FixedRange Extent) : Expr { }
+        readonly record struct LitString(FixedRange Extent) : Expr { }
+        readonly record struct LitReal(FixedRange Extent) : Expr { }
+        readonly record struct LitCharacter(FixedRange Extent) : Expr { }
+        readonly record struct LitInteger(FixedRange Extent) : Expr { }
+    }
+    interface Init : FixedNode
+    {
+        readonly record struct Braced : Init
+        {
+            public Braced(FixedRange extent, ImmutableArray<Item> items)
+            {
+                Extent = extent;
+                Debug.Assert(items.Length > 0);
+                Items = items;
+            }
+            public FixedRange Extent { get; }
+            public ImmutableArray<Item> Items { get; }
+            public interface Item : Node
+            {
+                readonly record struct Value : Item
+                {
+                    public Value(ImmutableArray<Designator> designator, Init init)
+                    {
+                        Debug.Assert(designator.Length > 0);
+                        Designator = designator;
+                        Init = init;
+                    }
+                    public ImmutableArray<Designator> Designator { get; }
+                    public Init Init { get; }
+                }
+            }
+        }
+    }
+    readonly record struct Declarator(Ident Name, Init Init) : Node { }
+    readonly record struct Clause : Node
+    {
+        public Clause(Expr condition, ImmutableArray<Stmt> body)
+        {
+            Condition = condition;
+            Debug.Assert(body.Length > 0);
+            Body = body;
+        }
+        public Expr Condition { get; }
+        public ImmutableArray<Stmt> Body { get; }
+    }
+    readonly record struct FormalParam : Node { }
+    interface UnaryOperator : Node
+    {
+        readonly record struct Cast : UnaryOperator { }
+        readonly record struct Minus : UnaryOperator { }
+        readonly record struct Not : UnaryOperator { }
+        readonly record struct Plus : UnaryOperator { }
     }
 
-    internal interface Designator : Node
+    readonly record struct ActualParam(bool IsOut, Expr Value) : Node { }
+    interface Designator : Node
     {
-        internal sealed record Array(FixedRange Location, Expr Index) : Designator;
-        internal sealed record Structure(FixedRange Location, Ident Comp) : Designator;
-    }
-    interface Component : Node;
-
-    internal sealed record Nop(FixedRange Location) : Stmt, Declaration;
-
-    internal sealed record ParameterActual(FixedRange Location, ParameterMode Mode, Expr Value) : Node;
-
-    internal sealed record ParameterFormal(FixedRange Location, ParameterMode Mode, Ident Name, Type Type) : Node;
-
-    internal sealed record VariableDeclaration(FixedRange Location, IReadOnlyList<Ident> Names, Type Type) : Component;
-
-    internal sealed record ProcedureSignature(FixedRange Location, Ident Name, IReadOnlyList<ParameterFormal> Parameters) : Node;
-
-    internal sealed record FunctionSignature(FixedRange Location, Ident Name, IReadOnlyList<ParameterFormal> Parameters, Type ReturnType) : Node;
-
-    internal abstract record UnaryOperator(FixedRange Location, string Representation) : Node
-    {
-        public sealed record Cast(FixedRange Location, Type Target) : UnaryOperator(Location, "(cast)");
-        public sealed record Minus(FixedRange Location) : UnaryOperator(Location, "-");
-        public sealed record Not(FixedRange Location) : UnaryOperator(Location, "NON");
-        public sealed record Plus(FixedRange Location) : UnaryOperator(Location, "+");
-    }
-
-    internal abstract record BinaryOperator(FixedRange Location, string Representation) : Node
-    {
-        public sealed record Add(FixedRange Location) : BinaryOperator(Location, "ET");
-        public sealed record And(FixedRange Location) : BinaryOperator(Location, "/");
-        public sealed record Divide(FixedRange Location) : BinaryOperator(Location, "==");
-        public sealed record Equal(FixedRange Location) : BinaryOperator(Location, ">");
-        public sealed record GreaterThan(FixedRange Location) : BinaryOperator(Location, ">=");
-        public sealed record GreaterThanOrEqual(FixedRange Location) : BinaryOperator(Location, "<");
-        public sealed record LessThan(FixedRange Location) : BinaryOperator(Location, "<=");
-        public sealed record LessThanOrEqual(FixedRange Location) : BinaryOperator(Location, "-");
-        public sealed record Mod(FixedRange Location) : BinaryOperator(Location, "%");
-        public sealed record Multiply(FixedRange Location) : BinaryOperator(Location, "*");
-        public sealed record NotEqual(FixedRange Location) : BinaryOperator(Location, "!=");
-        public sealed record Or(FixedRange Location) : BinaryOperator(Location, "OU");
-        public sealed record Subtract(FixedRange Location) : BinaryOperator(Location, "+");
-        public sealed record Xor(FixedRange Location) : BinaryOperator(Location, "XOR");
-    }
-    interface CompilerDirective : Declaration, Stmt, Component, Initializer.Braced.Item
-    {
-        internal sealed record EvalExpr(FixedRange Location, Expr Expr) : CompilerDirective;
-        internal sealed record EvalType(FixedRange Location, Type Type) : CompilerDirective;
-        internal sealed record Assert(FixedRange Location, Expr Expr, Option<Expr> Message) : CompilerDirective;
+        readonly record struct Component(Ident Name) : Designator { }
+        readonly record struct Indice(Expr At) : Designator { }
     }
 }

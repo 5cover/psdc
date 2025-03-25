@@ -12,7 +12,7 @@ static class C
         && type is not ArrayType;
 
     public static bool IsPointerParameter(Expr expr)
-        => expr is Expr.Lvalue.VariableReference varRef
+        => expr is Expr.Lvalue.VarRef varRef
         && expr.Meta.Scope.TryGetSymbol<Symbol.Parameter>(varRef.Name, out var param)
         && RequiresPointer(param.Mode, param.Type);
 }

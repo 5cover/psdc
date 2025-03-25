@@ -680,6 +680,11 @@ and there can be stuff around it
 
 no more lasting until the end of the file part.
 
+## Renames
+
+- Location &rarr; Extent : shorter, more meaningful (not just an index, but a start and end 2uple)
+- Node &rarr; Ast : shorter, more meaningful (what is a Node? Are we running JS on the server?)
+
 ## rewrite Da Parser
 
 Get rid of parse operation.
@@ -687,7 +692,3 @@ Get rid of parse operation.
 KISS. Like In crafting interpreters..
 
 Also get rid of semantic nodes. All this duplication is ugly. See how Crafting Interpeters does it.
-
-## Make keywords case-insensitive
-
-Like in PHP, Pseudocode keywords are case-insensitive. Everything else is case-sensitive.

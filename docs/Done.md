@@ -2111,3 +2111,7 @@ allow more whitespace
 ## truly case insensitive bool operators
 
 instead of all majs all mins
+
+## Make keywords case-insensitive
+
+Like in PHP, Pseudocode keywords are case-insensitive. Everything else is case-sensitive.

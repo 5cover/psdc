@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 
 using Scover.Psdc.Parsing;
 using Scover.Psdc.Lexing;
@@ -15,6 +15,6 @@ public sealed class ParsingBenchmark
     public void Setup() => _tokens = new LexingBenchmark().Run();
 
     [Benchmark]
-    public ValueOption<Node.Algorithm> Run()
-        => Parser.Parse(p.Msger, _tokens);
+    public Node.Algorithm Run()
+        => new Parser(p.Msger, _tokens).Parse();
 }

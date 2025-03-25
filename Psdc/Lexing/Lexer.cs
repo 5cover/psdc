@@ -160,7 +160,7 @@ public sealed partial class Lexer(Messenger msger)
                     Debug.Assert(_start == m.Index);
                     if (m.Length > 1) Advance(m.Length - 1);
                     var word = inputSpan.Slice(m.Index, m.Length).ToString();
-                    yield return reservedWords.TryGetValue(word.ToLower(Format.Code), out var type)
+                    yield return reservedWords.TryGetValue(word, out var type)
                         ? Ok(type)
                         : Ok(TokenType.Ident, word);
                     break;
@@ -407,13 +407,13 @@ public sealed partial class Lexer(Messenger msger)
         ? sb.Append(char.ConvertFromUtf32(val))
         : sb.Append((char)val);
 
-    static readonly Dictionary<string, TokenType> reservedWords = new() {
+    static readonly Dictionary<string, TokenType> reservedWords = new(StringComparer.OrdinalIgnoreCase) {
         ["tableau"] = TokenType.Array,
-        ["début"] = TokenType.Begin,
+        ["dÃ©but"] = TokenType.Begin,
         ["debut"] = TokenType.Begin,
-        ["booléen"] = TokenType.Boolean,
+        ["boolÃ©en"] = TokenType.Boolean,
         ["booleen"] = TokenType.Boolean,
-        ["caractère"] = TokenType.Character,
+        ["caractÃ¨re"] = TokenType.Character,
         ["caractere"] = TokenType.Character,
         ["constante"] = TokenType.Constant,
         ["faire"] = TokenType.Do,
@@ -430,16 +430,16 @@ public sealed partial class Lexer(Messenger msger)
         ["si"] = TokenType.If,
         ["entier"] = TokenType.Integer,
         ["sortie"] = TokenType.Out,
-        ["procédure"] = TokenType.Procedure,
+        ["procÃ©dure"] = TokenType.Procedure,
         ["procedure"] = TokenType.Procedure,
         ["programme"] = TokenType.Program,
         ["lire"] = TokenType.Read,
-        ["réel"] = TokenType.Real,
+        ["rÃ©el"] = TokenType.Real,
         ["reel"] = TokenType.Real,
         ["retourne"] = TokenType.Return,
-        ["délivre"] = TokenType.Returns,
+        ["dÃ©livre"] = TokenType.Returns,
         ["delivre"] = TokenType.Returns,
-        ["chaîne"] = TokenType.String,
+        ["chaÃ®ne"] = TokenType.String,
         ["chaine"] = TokenType.String,
         ["structure"] = TokenType.Structure,
         ["selon"] = TokenType.Switch,
@@ -450,7 +450,7 @@ public sealed partial class Lexer(Messenger msger)
         ["quand"] = TokenType.When,
         ["quand_autre"] = TokenType.WhenOther,
         ["tant_que"] = TokenType.While,
-        ["écrire"] = TokenType.Write,
+        ["Ã©crire"] = TokenType.Write,
         ["ecrire"] = TokenType.Write,
         ["et"] = TokenType.And,
         ["non"] = TokenType.Not,

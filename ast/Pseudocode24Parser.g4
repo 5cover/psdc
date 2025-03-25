@@ -90,10 +90,10 @@ switch_default: WhenOther Arrow stmt*;
 
 idents: Ident (Comma Ident)* Comma?;
 
-declarators: declarator (Comma declarator)* Comma?;
+declarators: (declarator Comma)* declarator Comma?;
 declarator: Ident (ColonEqual init)?;
 
-init_declarators: init_declarator (Comma init_declarator)* Comma?;
+init_declarators: (init_declarator Comma)* init_declarator Comma?;
 init_declarator: Ident ColonEqual init;
 
 init: expr | braced_init;
@@ -121,7 +121,7 @@ component_access: terminal_rvalue component+;
 
 terminal_lvalue
     : LParen lvalue RParen # paren_lvalue
-    | Out? Ident      # var_ref
+    | Out? Ident           # var_ref
 ;
 
 terminal_rvalue: paren_expr | terminal_lvalue | call | literal;
@@ -145,12 +145,12 @@ type
     | Character                             # character
     | Integer                               # integer
     | Real                                  # real
-    | String paren_expr                     # string
+    | String paren_expr?                     # string
     | Array LParen type RParen indice+      # array
     | Structure Begin structure_member* End # structure
 ;
-structure_member: compiler_directive | member_decl;
-member_decl: type Colon idents Semi;
+structure_member: compiler_directive | structure_component;
+structure_component: type Colon idents Semi;
 
 // Utils
 
