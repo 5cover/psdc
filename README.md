@@ -253,6 +253,6 @@ And there you have it. Automated translation between Pseudocode and C.
 - [ ] `i++` or `++i`
 - [ ] Use count-based string functions: strncpy, strncmp...
 - [ ] use `puts` instead of `printf` where possible
-- [ ] anonymous block in switch cases: always, when multiple statements, never
-- [ ] anonymous block in switch default: always, when multiple statements, never
+- [ ] anonymous block in switch cases: always, when multiple statements, when vardecl
+- [ ] anonymous block in switch default: always, when multiple statements, when vardecl
 - [ ] Doxygen keyword char : `\` or `@`
