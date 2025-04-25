@@ -1,22 +1,27 @@
 using System.Diagnostics;
-
+using Scover.Psdc.Lexing;
 using Scover.Psdc.Pseudocode;
 
 namespace Scover.Psdc.Parsing;
 
 public readonly record struct Ident : Node
 {
-    public Ident(string name)
+    public Ident(string value)
     {
         Debug.Assert(
-            name.Length > 0
-         && (name[0] == '_' || char.IsLetter(name[0]))
-         && name.Skip(1).All(c => c == '_' || char.IsLetterOrDigit(c)),
-            $"`{name}` is not a valid identifier");
-        Name = name;
+            value.Length > 0
+         && (value[0] == '_' || char.IsLetter(value[0]))
+         && value.Skip(1).All(c => c == '_' || char.IsLetterOrDigit(c)),
+            $"`{value}` is not a valid identifier");
+        Value = value;
     }
 
-    public string Name { get; }
+    public Ident(Token token) : this((string)token.Value.NotNull())
+    {
 
-    public string WrapInCode() => Name.WrapInCode();
+    }
+
+    public string Value { get; }
+
+    public string WrapInCode() => Value.WrapInCode();
 }

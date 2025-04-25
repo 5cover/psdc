@@ -9,6 +9,10 @@ Comment: ('/*' .*? '*/' | '//' ~[\n] '\n') -> skip;
 
 Ident: [\p{L}_][\p{L}_0-9]*;
 
+HashAssert: 'assert';
+HashEval: 'eval';
+EvalExpr: 'expr';
+
 Array: 'tableau';
 Begin: 'début' | 'debut';
 Boolean: 'booléen' | 'booleen';
@@ -97,6 +101,6 @@ fragment HexEscape: '\\x' HexDigit+;
 fragment OctDigit: [0-7];
 fragment Digit: [0-9];
 fragment NonZeroDeigit: [1-9];
-fragment HexDigit: [0-9a-fA-F];
+fragment HexDigit: [0-9A-F];
 fragment UnicodeEscape: '\\u' HexQuad | '\\U' HexQuad HexQuad;
 fragment HexQuad: HexDigit HexDigit HexDigit HexDigit;

@@ -15,10 +15,10 @@ modifiers:
   '*':
     type: ImmutableArray<$1>
     unwrap: $1.All($1 => $2)
-    must: $1.Length > 0
   +:
     type: ImmutableArray<$1>
     unwrap: $1.All($1 => $2)
+    must: $1.Length > 0
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/5cover/ast-gen/refs/heads/main/schemas/nodes.json
 algorithm:
@@ -34,18 +34,18 @@ decl:
     names: ident+
   main_program:
     title: ident
-    body: stmt*
+    body: stmt.block
   func_decl:
     sig: func_sig
   func_def:
     sig: func_sig
-    body: stmt*
+    body: stmt.block
   nop:
 #
 compiler_directive:
   assert:
     expr: expr
-    messsage: expr?
+    message: expr?
   eval_expr:
     expr: expr
   eval_type:
@@ -89,15 +89,15 @@ stmt:
     value: expr
   while_loop:
     condition: expr
-    body: stmt*
+    stmts: stmt*
   do_while_loop:
     condition: expr
-    body: stmt*
+    stmts: stmt*
   for_loop:
     initialization: stmt?
     condition: expr?
     increment: stmt.assignment?
-    body: stmt*
+    stmts: stmt*
   return:
     value: expr
   write:
@@ -108,7 +108,7 @@ stmt:
     arg: expr
   local_var_decl:
     type: type
-    declarators: declarator
+    declarators: init_declarator
   alternative:
     if: clause
     else_ifs: clause*
@@ -121,7 +121,7 @@ stmt:
 
 func_sig: # procedures are functions with no return type
   name: ident
-  params: formal_param*
+  parameters: formal_param*
   return_type: type?
 #
 expr:

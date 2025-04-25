@@ -31,6 +31,7 @@ public sealed partial class Lexer(Messenger msger)
     bool IsAtEnd => _i >= _input.Length;
     ReadOnlySpan<char> Lexeme => _input.AsSpan()[_start.._i];
     FixedRange LexemePos => new(_lineContOffsetBeforeStart + _start, _lineContOffsetBeforeStart + _lineContOffsetSinceStart + _i);
+    TokenType _prevType = (TokenType)(-1);
 
     public IEnumerable<Token> Lex(string input)
     {
@@ -162,7 +163,12 @@ public sealed partial class Lexer(Messenger msger)
                     var word = inputSpan.Slice(m.Index, m.Length).ToString();
                     yield return reservedWords.TryGetValue(word, out var type)
                         ? Ok(type)
-                        : Ok(TokenType.Ident, word);
+                        : _prevType switch {
+                            TokenType.Hash when word.Equals("assert", StringComparison.OrdinalIgnoreCase) => Ok(TokenType.HashAssert),
+                            TokenType.Hash when word.Equals("eval", StringComparison.OrdinalIgnoreCase) => Ok(TokenType.HashEval),
+                            TokenType.HashEval when word.Equals("expr", StringComparison.OrdinalIgnoreCase) => Ok(TokenType.EvalExpr),
+                            _ => Ok(TokenType.Ident, word),
+                        };
                     break;
                 }
 
@@ -226,7 +232,6 @@ public sealed partial class Lexer(Messenger msger)
     {
         char c = _input[_i];
         _i += of;
-        LineCont lc;
         while (_sortedLineConts.Count > 0 && _sortedLineConts.Peek().Index < _i) {
             _lineContOffsetSinceStart += _sortedLineConts.Dequeue().Length;
         }
@@ -282,7 +287,9 @@ public sealed partial class Lexer(Messenger msger)
     Token Ok(TokenType type, object? value = null)
     {
         ReportInvalidToken();
-        return new(LexemePos, type, value);
+        Token t = new(LexemePos, type, value);
+        _prevType = t.Type;
+        return t;
     }
 
     Token Real()

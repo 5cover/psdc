@@ -9,6 +9,17 @@ public enum TokenType
     /// </summary>
     Ident,
 
+    #region Contextual tokens
+
+    // Those tokens are specially treated identifiers by the lexer
+    // Naming convention : PrecedingTokenType . ActualName
+
+    HashAssert,
+    HashEval,
+    EvalExpr,
+
+    #endregion
+
     Array,
     Begin,
     Boolean,

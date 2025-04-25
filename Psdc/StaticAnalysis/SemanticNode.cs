@@ -1,325 +1,260 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
-
 using Scover.Psdc.Parsing;
+using Scover.Psdc.Pseudocode;
 
 namespace Scover.Psdc.StaticAnalysis;
 
+
 public interface SemanticNode
 {
-    SemanticMetadata Meta { get; }
-    readonly record struct Algorithm : SemanticNode
+    Scope Scope { get; }
+    public readonly record struct Algorithm(Scope Scope, ImmutableArray<Decl> Decls) : SemanticNode
     {
-        public Algorithm(SemanticMetadata meta, ImmutableArray<Decl> decls)
-        {
-            Meta = meta;
-            Debug.Assert(decls.Length > 0);
-            Decls = decls;
-        }
-        public SemanticMetadata Meta { get; }
-        public ImmutableArray<Decl> Decls { get; }
     }
-    interface Decl : SemanticNode
+    interface Decl : SemanticNode, Locatable
     {
-        readonly record struct ConstantDef(SemanticMetadata Meta, Type Type, ImmutableArray<InitDeclarator> Declarators) : Decl { }
-        readonly record struct TypeDef(SemanticMetadata Meta, Type Type, ImmutableArray<Ident> Names) : Decl { }
-        readonly record struct MainProgram : Decl
+        internal readonly record struct ConstantDef : Decl
         {
-            public MainProgram(SemanticMetadata meta, Ident title, ImmutableArray<Stmt> body)
+            internal ConstantDef(Scope scope, FixedRange extent, EvaluatedType type, ImmutableArray<InitDeclarator> declarators)
             {
-                Meta = meta;
-                Title = title;
-                Debug.Assert(body.Length > 0);
-                Body = body;
+                Scope = scope;
+                Extent = extent;
+                Type = type;
+                Debug.Assert(declarators.Length > 0);
+                Declarators = declarators;
             }
-            public SemanticMetadata Meta { get; }
-            public Ident Title { get; }
-            public ImmutableArray<Stmt> Body { get; }
+            public Scope Scope { get; }
+            public FixedRange Extent { get; }
+            public EvaluatedType Type { get; }
+            public ImmutableArray<InitDeclarator> Declarators { get; }
         }
-        readonly record struct FuncDecl(SemanticMetadata Meta, FuncSig Sig) : Decl { }
-        readonly record struct FuncDef : Decl
+        internal readonly record struct TypeDef : Decl
         {
-            public FuncDef(SemanticMetadata meta, FuncSig sig, ImmutableArray<Stmt> body)
+            internal TypeDef(Scope scope, FixedRange extent, EvaluatedType type, ImmutableArray<Ident> names)
             {
-                Meta = meta;
-                Sig = sig;
-                Debug.Assert(body.Length > 0);
-                Body = body;
+                Scope = scope;
+                Extent = extent;
+                Type = type;
+                Debug.Assert(names.Length > 0);
+                Names = names;
             }
-            public SemanticMetadata Meta { get; }
-            public FuncSig Sig { get; }
-            public ImmutableArray<Stmt> Body { get; }
+            public Scope Scope { get; }
+            public FixedRange Extent { get; }
+            public EvaluatedType Type { get; }
+            public ImmutableArray<Ident> Names { get; }
         }
-    }
-    interface CompilerDirective : SemanticNode, Decl, Stmt
-    {
-        readonly record struct Assert(SemanticMetadata Meta, Expr Expr, Option<Expr> Messsage) : CompilerDirective { }
-        readonly record struct EvalExpr(SemanticMetadata Meta, Expr Expr) : CompilerDirective { }
-        readonly record struct EvalType(SemanticMetadata Meta, Type Type) : CompilerDirective { }
-    }
-    readonly record struct Nop(SemanticMetadata Meta) : SemanticNode, Decl, Stmt { }
-    interface Type : SemanticNode
-    {
-        readonly record struct Aliased(SemanticMetadata Meta, Ident Name) : Type { }
-        readonly record struct Boolean(SemanticMetadata Meta) : Type { }
-        readonly record struct Character(SemanticMetadata Meta) : Type { }
-        readonly record struct Integer(SemanticMetadata Meta) : Type { }
-        readonly record struct Real(SemanticMetadata Meta) : Type { }
-        readonly record struct String(SemanticMetadata Meta, Option<Expr> Length) : Type { }
-        readonly record struct Array(SemanticMetadata Meta, Type ItemType, ImmutableArray<Expr> Dimensions) : Type { }
-        readonly record struct Structure : Type
+        internal readonly record struct MainProgram(Scope Scope, FixedRange Extent, Ident Title, Stmt.Block Body) : Decl
         {
-            public Structure(SemanticMetadata meta, ImmutableArray<Structure.Member> members)
-            {
-                Meta = meta;
-                Debug.Assert(members.Length > 0);
-                Members = members;
-            }
-            public SemanticMetadata Meta { get; }
-            public ImmutableArray<Member> Members { get; }
-            public interface Member
-            {
-                readonly record struct Component(SemanticMetadata Meta, Type Type, ImmutableArray<Ident> Names) : Member, Designator { }
-            }
+        }
+        internal readonly record struct FuncDecl(Scope Scope, FixedRange Extent, FuncSig Sig) : Decl
+        {
+        }
+        internal readonly record struct FuncDef(Scope Scope, FixedRange Extent, FuncSig Sig, Stmt.Block Body) : Decl
+        {
         }
     }
-    readonly record struct InitDeclarator(SemanticMetadata Meta, Ident Name, Init Init) : SemanticNode { }
-    interface Stmt : SemanticNode
+    internal interface CompilerDirective : SemanticNode, Decl, Stmt
     {
-        readonly record struct Block : Stmt
+        internal readonly record struct Assert(Scope Scope, FixedRange Extent, Expr Expr, Option<Expr> Message) : CompilerDirective
         {
-            public Block(SemanticMetadata meta, ImmutableArray<Stmt> stmts)
-            {
-                Meta = meta;
-                Debug.Assert(stmts.Length > 0);
-                Stmts = stmts;
-            }
-            public SemanticMetadata Meta { get; }
-            public ImmutableArray<Stmt> Stmts { get; }
         }
-        readonly record struct Assignment(SemanticMetadata Meta, Expr.Lvalue Target, Expr Value) : Stmt { }
-        readonly record struct WhileLoop : Stmt
+        internal readonly record struct EvalExpr(Scope Scope, FixedRange Extent, Expr Expr) : CompilerDirective
         {
-            public WhileLoop(SemanticMetadata meta, Expr condition, ImmutableArray<Stmt> body)
-            {
-                Meta = meta;
-                Condition = condition;
-                Debug.Assert(body.Length > 0);
-                Body = body;
-            }
-            public SemanticMetadata Meta { get; }
-            public Expr Condition { get; }
-            public ImmutableArray<Stmt> Body { get; }
         }
-        readonly record struct DoWhileLoop : Stmt
+        internal readonly record struct EvalType(Scope Scope, FixedRange Extent, EvaluatedType Type) : CompilerDirective
         {
-            public DoWhileLoop(SemanticMetadata meta, Expr condition, ImmutableArray<Stmt> body)
-            {
-                Meta = meta;
-                Condition = condition;
-                Debug.Assert(body.Length > 0);
-                Body = body;
-            }
-            public SemanticMetadata Meta { get; }
-            public Expr Condition { get; }
-            public ImmutableArray<Stmt> Body { get; }
-        }
-        readonly record struct ForLoop : Stmt
-        {
-            public ForLoop(
-                SemanticMetadata meta,
-                Option<Stmt> initialization,
-                Option<Expr> condition,
-                Option<Stmt.Assignment> increment,
-                ImmutableArray<Stmt> body
-            )
-            {
-                Meta = meta;
-                Debug.Assert(!initialization.HasValue);
-                Initialization = initialization;
-                Debug.Assert(!condition.HasValue);
-                Condition = condition;
-                Debug.Assert(!increment.HasValue);
-                Increment = increment;
-                Debug.Assert(body.Length > 0);
-                Body = body;
-            }
-            public SemanticMetadata Meta { get; }
-            public Option<Stmt> Initialization { get; }
-            public Option<Expr> Condition { get; }
-            public Option<Stmt.Assignment> Increment { get; }
-            public ImmutableArray<Stmt> Body { get; }
-        }
-        readonly record struct Return(SemanticMetadata Meta, Expr Value) : Stmt { }
-        readonly record struct Write : Stmt
-        {
-            public Write(SemanticMetadata meta, ImmutableArray<Expr> args)
-            {
-                Meta = meta;
-                Debug.Assert(args.Length > 0);
-                Args = args;
-            }
-            public SemanticMetadata Meta { get; }
-            public ImmutableArray<Expr> Args { get; }
-        }
-        readonly record struct Read(SemanticMetadata Meta, Expr.Lvalue Target) : Stmt { }
-        readonly record struct Trunc(SemanticMetadata Meta, Expr Arg) : Stmt { }
-        readonly record struct LocalVarDecl(SemanticMetadata Meta, Type Type, Declarator Declarators) : Stmt { }
-        readonly record struct Alternative : Stmt
-        {
-            public Alternative(SemanticMetadata meta, Clause @if, ImmutableArray<Clause> elseIfs, Option<ImmutableArray<Stmt>> @else)
-            {
-                Meta = meta;
-                If = @if;
-                Debug.Assert(elseIfs.Length > 0);
-                ElseIfs = elseIfs;
-                Debug.Assert(!@else.HasValue && @else.Value.Length > 0);
-                Else = @else;
-            }
-            public SemanticMetadata Meta { get; }
-            public Clause If { get; }
-            public ImmutableArray<Clause> ElseIfs { get; }
-            public Option<ImmutableArray<Stmt>> Else { get; }
-        }
-        readonly record struct Switch : Stmt
-        {
-            public Switch(SemanticMetadata meta, Expr condition, ImmutableArray<Clause> cases, Option<ImmutableArray<Stmt>> @default)
-            {
-                Meta = meta;
-                Condition = condition;
-                Debug.Assert(cases.Length > 0);
-                Cases = cases;
-                Debug.Assert(!@default.HasValue && @default.Value.Length > 0);
-                Default = @default;
-            }
-            public SemanticMetadata Meta { get; }
-            public Expr Condition { get; }
-            public ImmutableArray<Clause> Cases { get; }
-            public Option<ImmutableArray<Stmt>> Default { get; }
         }
     }
-    readonly record struct FuncSig : SemanticNode
+    internal readonly record struct Nop(Scope Scope, FixedRange Extent) : Decl, Stmt
     {
-        public FuncSig(SemanticMetadata meta, Ident name, ImmutableArray<FormalParam> @params, Option<Type> returnType)
-        {
-            Meta = meta;
-            Name = name;
-            Debug.Assert(@params.Length > 0);
-            Params = @params;
-            Debug.Assert(!returnType.HasValue);
-            ReturnType = returnType;
-        }
-        public SemanticMetadata Meta { get; }
-        public Ident Name { get; }
-        public ImmutableArray<FormalParam> Params { get; }
-        public Option<Type> ReturnType { get; }
     }
-    interface Expr : SemanticNode, Stmt, Init
+    internal readonly record struct InitDeclarator(Scope Scope, Ident Name, Init Init) : SemanticNode
     {
-        readonly record struct Unary(SemanticMetadata Meta, UnaryOperator Operator, Expr Operand) : Expr { }
-        readonly record struct Binary(SemanticMetadata Meta, Expr Left, BinaryOperator Operator, Expr Right) : Expr { }
-        readonly record struct Call : Expr
+    }
+    interface Stmt : SemanticNode, Locatable
+    {
+        internal readonly record struct Block(Scope Scope, FixedRange Extent, ImmutableArray<Stmt> Stmts) : Stmt
         {
-            public Call(SemanticMetadata meta, Ident callee, ImmutableArray<ActualParam> args)
-            {
-                Meta = meta;
-                Callee = callee;
-                Debug.Assert(args.Length > 0);
-                Args = args;
-            }
-            public SemanticMetadata Meta { get; }
-            public Ident Callee { get; }
-            public ImmutableArray<ActualParam> Args { get; }
         }
-        interface Lvalue : Expr
+        internal readonly record struct Assignment(Scope Scope, FixedRange Extent, Expr.Lvalue Target, Expr Value) : Stmt
         {
-            readonly record struct ComponentAccess(SemanticMetadata Meta, Expr Structure, Ident Name) : Lvalue { }
-            readonly record struct ArraySub(SemanticMetadata Meta, Expr Array, Expr Index) : Lvalue { }
-            readonly record struct VarRef(SemanticMetadata Meta, bool IsOut, Ident Name) : Lvalue { }
         }
-        interface Literal : Expr
+        internal readonly record struct WhileLoop(Scope Scope, FixedRange Extent, Expr Condition, ImmutableArray<Stmt> Stmts) : Stmt
         {
-            readonly record struct True(SemanticMetadata Meta) : Literal { }
-            readonly record struct False(SemanticMetadata Meta) : Literal { }
-            readonly record struct String(SemanticMetadata Meta) : Literal, Type { }
-            readonly record struct Real(SemanticMetadata Meta) : Literal, Type { }
-            readonly record struct Character(SemanticMetadata Meta) : Literal, Type { }
-            readonly record struct Integer(SemanticMetadata Meta) : Literal, Type { }
+        }
+        internal readonly record struct DoWhileLoop(Scope Scope, FixedRange Extent, Expr Condition, ImmutableArray<Stmt> Stmts) : Stmt
+        {
+        }
+        internal readonly record struct ForLoop(Scope Scope, FixedRange Extent, Option<Stmt> Initialization, Option<Expr> Condition, Option<Stmt.Assignment> Increment, ImmutableArray<Stmt> Stmts) : Stmt
+        {
+        }
+        internal readonly record struct Return(Scope Scope, FixedRange Extent, Expr Value) : Stmt
+        {
+        }
+        internal readonly record struct Write(Scope Scope, FixedRange Extent, ImmutableArray<Expr> Args) : Stmt
+        {
+        }
+        internal readonly record struct Read(Scope Scope, FixedRange Extent, Expr.Lvalue Target) : Stmt
+        {
+        }
+        internal readonly record struct Trunc(Scope Scope, FixedRange Extent, Expr Arg) : Stmt
+        {
+        }
+        internal readonly record struct LocalVarDecl(Scope Scope, FixedRange Extent, EvaluatedType Type, InitDeclarator Declarators) : Stmt
+        {
+        }
+        internal readonly record struct Alternative(Scope Scope, FixedRange Extent, Clause If, ImmutableArray<Clause> ElseIfs, Option<ImmutableArray<Stmt>> Else) : Stmt
+        {
+        }
+        internal readonly record struct Switch(Scope Scope, FixedRange Extent, Expr Condition, ImmutableArray<Clause> Cases, Option<ImmutableArray<Stmt>> Default) : Stmt
+        {
         }
     }
-    interface Init : SemanticNode
+    internal readonly record struct FuncSig(Scope Scope, Ident Name, ImmutableArray<FormalParam> Parameters, Option<EvaluatedType> ReturnType) : SemanticNode
     {
-        readonly record struct Braced : Init
+    }
+    internal interface Expr : SemanticNode, Stmt, Init
+    {
+        internal readonly record struct Unary(Value Value, FixedRange Extent, Scope Scope, UnaryOperator Operator, Expr Operand) : Expr
         {
-            public Braced(SemanticMetadata meta, ImmutableArray<Braced.Item> items)
+        }
+        internal readonly record struct Binary(Value Value, FixedRange Extent, Scope Scope, Expr Left, BinaryOperator Operator, Expr Right) : Expr
+        {
+        }
+        internal readonly record struct Call(Value Value, FixedRange Extent, Scope Scope, Ident Callee, ImmutableArray<ActualParam> Args) : Expr
+        {
+        }
+        internal interface Lvalue : Expr
+        {
+            internal readonly record struct ComponentAccess(Value Value, FixedRange Extent, Scope Scope, Expr Structure, Ident Name) : Lvalue
             {
-                Meta = meta;
-                Debug.Assert(items.Length > 0);
-                Items = items;
             }
-            public SemanticMetadata Meta { get; }
-            public ImmutableArray<Item> Items { get; }
-            public interface Item
+            internal readonly record struct ArraySub(Value Value, FixedRange Extent, Scope Scope, Expr Array, Expr Index) : Lvalue
             {
-                readonly record struct Value : Item
+            }
+            internal readonly record struct VarRef(Value Value, FixedRange Extent, Scope Scope, bool IsOut, Ident Name) : Lvalue
+            {
+            }
+        }
+        internal interface Literal : Expr
+        {
+            internal readonly record struct True(Scope Scope, FixedRange Extent) : Literal
+            {
+                static readonly Value value = new BooleanValue(BooleanType.Instance, ValueStatus.Comptime.Of(true));
+                public Value Value => value;
+            }
+            internal readonly record struct False(Scope Scope, FixedRange Extent) : Literal
+            {
+                static readonly Value value = new BooleanValue(BooleanType.Instance, ValueStatus.Comptime.Of(false));
+                public Value Value => value;
+            }
+            internal readonly record struct String(Value Value, FixedRange Extent, Scope Scope) : Literal
+            {
+            }
+            internal readonly record struct Real(Value Value, FixedRange Extent, Scope Scope) : Literal
+            {
+            }
+            internal readonly record struct Character(Value Value, FixedRange Extent, Scope Scope) : Literal
+            {
+            }
+            internal readonly record struct Integer(Value Value, FixedRange Extent, Scope Scope) : Literal
+            {
+            }
+        }
+    }
+    internal interface Init : SemanticNode
+    {
+        Value Value { get; }
+        readonly record struct Braced(Value Value, Scope Scope, ImmutableArray<Braced.Item> Items) : Init
+        {
+            internal interface Item
+            {
+                internal readonly record struct Value(Scope Scope, ImmutableArray<Designator> Designator, Init Init) : Item
                 {
-                    public Value(SemanticMetadata meta, ImmutableArray<Designator> designator, Init init)
-                    {
-                        Meta = meta;
-                        Debug.Assert(designator.Length > 0);
-                        Designator = designator;
-                        Init = init;
-                    }
-                    public SemanticMetadata Meta { get; }
-                    public ImmutableArray<Designator> Designator { get; }
-                    public Init Init { get; }
                 }
             }
         }
     }
-    readonly record struct Declarator(SemanticMetadata Meta, Ident Name, Init Init) : SemanticNode { }
-    readonly record struct Clause : SemanticNode
+    internal readonly record struct eclarator(Scope Scope, Ident Name, Init Init) : SemanticNode
     {
-        public Clause(SemanticMetadata meta, Expr condition, ImmutableArray<Stmt> body)
-        {
-            Meta = meta;
-            Condition = condition;
-            Debug.Assert(body.Length > 0);
-            Body = body;
-        }
-        public SemanticMetadata Meta { get; }
-        public Expr Condition { get; }
-        public ImmutableArray<Stmt> Body { get; }
     }
-    readonly record struct FormalParam(SemanticMetadata Meta) : SemanticNode { }
+    internal readonly record struct Clause(Scope Scope, Expr Condition, ImmutableArray<Stmt> Body) : SemanticNode
+    {
+    }
+    internal readonly record struct FormalParam(Scope Scope, Ident Name, bool IsOut, EvaluatedType Type) : SemanticNode
+    {
+    }
     interface UnaryOperator : SemanticNode
     {
-        readonly record struct Cast(SemanticMetadata Meta) : UnaryOperator { }
-        readonly record struct Minus(SemanticMetadata Meta) : UnaryOperator { }
-        readonly record struct Not(SemanticMetadata Meta) : UnaryOperator { }
-        readonly record struct Plus(SemanticMetadata Meta) : UnaryOperator { }
+        internal readonly record struct Cast(Scope Scope) : UnaryOperator
+        {
+        }
+        internal readonly record struct Minus(Scope Scope) : UnaryOperator
+        {
+        }
+        internal readonly record struct Not(Scope Scope) : UnaryOperator
+        {
+        }
+        internal readonly record struct Plus(Scope Scope) : UnaryOperator
+        {
+        }
     }
     interface BinaryOperator : SemanticNode
     {
-        readonly record struct Add(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct And(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Div(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Eq(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Gt(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Ge(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Lt(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Le(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Mod(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Mult(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Ne(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Or(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Sub(SemanticMetadata Meta) : BinaryOperator { }
-        readonly record struct Xor(SemanticMetadata Meta) : BinaryOperator { }
+        internal readonly record struct Add(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct And(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Div(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Eq(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Gt(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Ge(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Lt(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Le(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Mod(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Mult(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Ne(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Or(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Sub(Scope Scope) : BinaryOperator
+        {
+        }
+        internal readonly record struct Xor(Scope Scope) : BinaryOperator
+        {
+        }
     }
-    readonly record struct ActualParam(SemanticMetadata Meta, bool IsOut, Expr Value) : SemanticNode { }
-    interface Designator : SemanticNode
+    internal readonly record struct ActualParam(Scope Scope, bool IsOut, Expr Value) : SemanticNode
     {
-        readonly record struct Component(SemanticMetadata Meta, Ident Name) : Designator { }
-        readonly record struct Indice(SemanticMetadata Meta, Expr At) : Designator { }
+    }
+    internal interface Designator : SemanticNode
+    {
+        internal readonly record struct Component(Scope Scope, Ident Name) : Designator
+        {
+        }
+        internal readonly record struct Indice(Scope Scope, Expr At) : Designator
+        {
+        }
     }
 }

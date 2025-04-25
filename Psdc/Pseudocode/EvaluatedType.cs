@@ -103,7 +103,7 @@ sealed class ArrayType : EvaluatedTypeImplInstantiable<ArrayValue, ImmutableArra
 
     public ImmutableArray<Value> CreateDefaultValue() => CreateDefaultValue(ItemType, Length);
     static ImmutableArray<Value> CreateDefaultValue(EvaluatedType type, ComptimeExpression<int> length) =>
-        [..Enumerable.Repeat(type.DefaultValue, length.Value)];
+        Enumerable.Repeat(type.DefaultValue, length.Value).ToImmutableArray();
 
     public ArrayType(
         EvaluatedType itemType,

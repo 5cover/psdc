@@ -2,7 +2,7 @@ using Scover.Psdc.Lexing;
 
 namespace Scover.Psdc.Parsing;
 
-enum BinaryOperator
+public enum BinaryOperator
 {
     Plus = TokenType.Plus,
     And = TokenType.And,

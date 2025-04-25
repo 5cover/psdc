@@ -16,6 +16,8 @@ public readonly record struct FixedRange
 
     public static FixedRange Of(int start, int length) => new(start, start + length);
 
+    public FixedRange OfStart(int start) => new(start, End);
+
     public (Position Start, Position End) Apply(string str) => (str.GetPositionAt(Start), str.GetPositionAt(End));
 
     public static explicit operator Range(FixedRange fixedRange) => fixedRange.Start..fixedRange.End;

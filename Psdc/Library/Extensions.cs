@@ -211,5 +211,5 @@ static class Function
 }
 static class Set
 {
-    internal static ImmutableHashSet<T> Of<T>(params T[] items) => [.. items];
+    internal static ImmutableHashSet<T> Of<T>(params T[] items) => items.ToImmutableHashSet();
 }

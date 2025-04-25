@@ -98,7 +98,7 @@ public interface Symbol : EquatableSemantics<Symbol>
         Ident Name,
         FixedRange Location,
         EvaluatedType Type,
-        ParameterMode Mode
+        bool IsOut
     )
         : Variable(Name, Location, Type)
     {
@@ -106,6 +106,6 @@ public interface Symbol : EquatableSemantics<Symbol>
         public override bool SemanticsEqual(Symbol other) => other is Parameter o
                                                           && o.Name.Equals(Name)
                                                           && o.Type.SemanticsEqual(Type)
-                                                          && o.Mode == Mode;
+                                                          && o.IsOut == IsOut;
     }
 }

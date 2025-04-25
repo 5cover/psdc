@@ -10,7 +10,7 @@ readonly record struct EvaluatedMessage(FixedRange Location, MessageCode Code, s
 
 static class MessageExtensions
 {
-    public static EvaluatedMessage Evaluate(this Message msg, string input) => new(msg.Location, msg.Code, msg.Content.Get(input), [.. msg.AdvicePieces]);
+    public static EvaluatedMessage Evaluate(this Message msg, string input) => new(msg.Location, msg.Code, msg.Content.Get(input), msg.AdvicePieces.ToImmutableArray());
 }
 
 sealed class LexerTests

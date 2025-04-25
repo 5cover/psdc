@@ -4,7 +4,7 @@ using Scover.Psdc.Lexing;
 
 namespace Scover.Psdc.Parsing;
 
-static class Parser
+static partial class Parser
 {
     // Token type -> whether to consume the token
     static readonly IReadOnlyDictionary<TokenType, bool> syncDecl = new Dictionary<TokenType, bool>() {
@@ -23,18 +23,25 @@ static class Parser
         return o.Ok(new Node.Algorithm(decls));
     }
 
-    static readonly IReadOnlyDictionary<TokenType, Parser<Node.Decl>> decl = new Dictionary<TokenType, Parser<Node.Decl>>() { };
+    static readonly IReadOnlyDictionary<TokenType, Parser<Node.Decl>> dispatchDecl = new Dictionary<TokenType, Parser<Node.Decl>>() {
+        [TokenType.Hash] = CompilerDirective,
+        [TokenType.Program] = MainProgram,
+    };
 
     static ParseResult<Node.Decl> Decl(ParsingContext ctx)
     {
         var o = ParseOperation.Start(ctx.PushSubject("declaration"));
-        if (o.Opt(TokenType.Hash)) {
+        if (!o.Switch(dispatchDecl, out var decl)) return o.Ko<Node.Decl>();
+        return o.Ok(decl);
+    }
 
-        }
-        if (o.Opt(TokenType.Program)) {
-
-        }
-        return o.Ko<Node.Decl>();
+    static ParseResult<Node.Decl> MainProgram(ParsingContext ctx)
+    {
+        var o = ParseOperation.Start(ctx.PushSubject("main program"));
+        o.One(TokenType.Program);
+        if (!o.One(TokenType.Ident, out var title)) return o.Ko<Node.Decl>();
+        if (!o.One(Block, out var body)) return o.Ko<Node.Decl>();
+        return o.Ok<Node.Decl>(new Node.Decl.MainProgram(o.Extent, new(title), body));
     }
 }
 

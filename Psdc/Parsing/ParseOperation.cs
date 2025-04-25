@@ -12,6 +12,9 @@ readonly record struct ParsingContext(ImmutableArray<Token> Tokens, int Start, I
 
 delegate ParseResult<T> Parser<out T>(ParsingContext ctx);
 
+// Naming conventions
+//  Try* -> method never emit errors
+
 sealed class ParseOperation
 {
     readonly ParsingContext _ctx;
@@ -44,7 +47,21 @@ sealed class ParseOperation
             result = r.Value;
             return r.HasValue;
         }
+        AddError(dispatch.Keys.ToArray());
+        result = default;
+        return false;
+    }
 
+    public bool SwitchConsume<T>(
+        IReadOnlyDictionary<TokenType, Parser<T>> dispatch,
+        [NotNullWhen(true)] out T? result)
+    {
+        if (dispatch.TryGetValue(Peek.Type, out var parser)) {
+            Advance();
+            var r = Call(parser);
+            result = r.Value;
+            return r.HasValue;
+        }
         AddError(dispatch.Keys.ToArray());
         result = default;
         return false;
@@ -77,6 +94,17 @@ sealed class ParseOperation
         var r = Call(parser);
         result = r.Value;
         return r.HasValue;
+    }
+
+    /// <summary>Try to execute a parser. Unlike <see cref="One{T}"/>, no error can be emitted from this function.</summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="parser"></param>
+    /// <returns></returns>
+    public Option<T> TryOne<T>(Parser<T> parser)
+    {
+        var r = parser(_ctx with { Start = _i });
+        if (r.HasValue) _i += r.Read;
+        return r;
     }
 
     public void ZeroOrMore<T>(Parser<T> parser, TokenType endAt, IReadOnlyDictionary<TokenType, bool> syncPoints, out ImmutableArray<T> result)

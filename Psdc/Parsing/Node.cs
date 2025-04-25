@@ -5,55 +5,48 @@ namespace Scover.Psdc.Parsing;
 
 public interface Node
 {
-    readonly record struct Algorithm : Node
+    readonly record struct Algorithm(ImmutableArray<Decl> Decls) : Node { }
+    interface Decl : Node, Locatable
     {
-        public Algorithm(ImmutableArray<Decl> decls)
+        public readonly record struct ConstantDef : Decl
         {
-            Debug.Assert(decls.Length > 0);
-            Decls = decls;
-        }
-        public ImmutableArray<Decl> Decls { get; }
-    }
-    interface Decl : FixedNode
-    {
-        readonly record struct ConstantDef(FixedRange Extent, Type Type, ImmutableArray<InitDeclarator> Declarators) : Decl { }
-        readonly record struct TypeDef(FixedRange Extent, Type Type, ImmutableArray<Ident> Names) : Decl { }
-        readonly record struct MainProgram : Decl
-        {
-            public MainProgram(FixedRange extent, Ident title, ImmutableArray<Stmt> body)
+            public ConstantDef(FixedRange extent, Type type, ImmutableArray<InitDeclarator> declarators)
             {
                 Extent = extent;
-                Title = title;
-                Debug.Assert(body.Length > 0);
-                Body = body;
+                Type = type;
+                Debug.Assert(declarators.Length > 0);
+                Declarators = declarators;
             }
             public FixedRange Extent { get; }
-            public Ident Title { get; }
-            public ImmutableArray<Stmt> Body { get; }
+            public Type Type { get; }
+            public ImmutableArray<InitDeclarator> Declarators { get; }
         }
+        public readonly record struct TypeDef : Decl
+        {
+            public TypeDef(FixedRange extent, Type type, ImmutableArray<Ident> names)
+            {
+                Extent = extent;
+                Type = type;
+                Debug.Assert(names.Length > 0);
+                Names = names;
+            }
+            public FixedRange Extent { get; }
+            public Type Type { get; }
+            public ImmutableArray<Ident> Names { get; }
+        }
+        readonly record struct MainProgram(FixedRange Extent, Ident Title, Stmt.Block Body) : Decl { }
         readonly record struct FuncDecl(FixedRange Extent, FuncSig Sig) : Decl { }
-        readonly record struct FuncDef : Decl
-        {
-            public FuncDef(FixedRange extent, FuncSig sig, ImmutableArray<Stmt> body)
-            {
-                Extent = extent;
-                Sig = sig;
-                Debug.Assert(body.Length > 0);
-                Body = body;
-            }
-            public FixedRange Extent { get; }
-            public FuncSig Sig { get; }
-            public ImmutableArray<Stmt> Body { get; }
-        }
+        readonly record struct FuncDef(FixedRange Extent, FuncSig Sig, Stmt.Block Body) : Decl
+        { }
     }
     interface CompilerDirective : Decl, Stmt, Type.Structure.Member
     {
-        readonly record struct Assert(FixedRange Extent, Expr Expr, Option<Expr> Messsage) : CompilerDirective { }
+        readonly record struct Assert(FixedRange Extent, Expr Expr, Option<Expr> Message) : CompilerDirective { }
         readonly record struct EvalExpr(FixedRange Extent, Expr Expr) : CompilerDirective { }
         readonly record struct EvalType(FixedRange Extent, Type Type) : CompilerDirective { }
     }
     readonly record struct Nop(FixedRange Extent) : Decl, Stmt { }
-    interface Type : FixedNode
+    interface Type : Node, Locatable
     {
         readonly record struct Aliased(FixedRange Extent, Ident Name) : Type { }
         readonly record struct Boolean(FixedRange Extent) : Type { }
@@ -61,166 +54,64 @@ public interface Node
         readonly record struct Integer(FixedRange Extent) : Type { }
         readonly record struct Real(FixedRange Extent) : Type { }
         readonly record struct String(FixedRange Extent, Option<Expr> Length) : Type { }
-        readonly record struct Array(FixedRange Extent, Type ItemType, ImmutableArray<Expr> Dimensions) : Type { }
-        readonly record struct Structure : Type
+        public readonly record struct Array : Type
         {
-            public Structure(FixedRange extent, ImmutableArray<Member> members)
+            public Array(FixedRange extent, Type itemType, ImmutableArray<Expr> dimensions)
             {
                 Extent = extent;
-                Debug.Assert(members.Length > 0);
-                Members = members;
+                ItemType = itemType;
+                Debug.Assert(dimensions.Length > 0);
+                Dimensions = dimensions;
             }
             public FixedRange Extent { get; }
-            public ImmutableArray<Member> Members { get; }
-            public interface Member : FixedNode
+            public Type ItemType { get; }
+            public ImmutableArray<Expr> Dimensions { get; }
+        }
+        readonly record struct Structure(FixedRange Extent, ImmutableArray<Structure.Member> Members) : Type
+        {
+            public interface Member : Node, Locatable
             {
-                readonly record struct Component(FixedRange Extent, Type Type, ImmutableArray<Ident> Names) : Member, Designator { }
+                public readonly record struct Component : Member, Designator
+                {
+                    public Component(FixedRange extent, Type type, ImmutableArray<Ident> names)
+                    {
+                        Extent = extent;
+                        Type = type;
+                        Debug.Assert(names.Length > 0);
+                        Names = names;
+                    }
+                    public FixedRange Extent { get; }
+                    public Type Type { get; }
+                    public ImmutableArray<Ident> Names { get; }
+                }
             }
         }
     }
     readonly record struct InitDeclarator(Ident Name, Init Init) : Node { }
-    interface Stmt : FixedNode
+    interface Stmt : Node, Locatable
     {
-        readonly record struct Block : Stmt
-        {
-            public Block(FixedRange extent, ImmutableArray<Stmt> stmts)
-            {
-                Extent = extent;
-                Debug.Assert(stmts.Length > 0);
-                Stmts = stmts;
-            }
-            public FixedRange Extent { get; }
-            public ImmutableArray<Stmt> Stmts { get; }
-        }
+        readonly record struct Block(FixedRange Extent, ImmutableArray<Stmt> Stmts) : Stmt { }
         readonly record struct Assignment(FixedRange Extent, Expr.Lvalue Target, Expr Value) : Stmt { }
-        readonly record struct WhileLoop : Stmt
-        {
-            public WhileLoop(FixedRange extent, Expr condition, ImmutableArray<Stmt> body)
-            {
-                Extent = extent;
-                Condition = condition;
-                Debug.Assert(body.Length > 0);
-                Body = body;
-            }
-            public FixedRange Extent { get; }
-            public Expr Condition { get; }
-            public ImmutableArray<Stmt> Body { get; }
-        }
-        readonly record struct DoWhileLoop : Stmt
-        {
-            public DoWhileLoop(FixedRange extent, Expr condition, ImmutableArray<Stmt> body)
-            {
-                Extent = extent;
-                Condition = condition;
-                Debug.Assert(body.Length > 0);
-                Body = body;
-            }
-            public FixedRange Extent { get; }
-            public Expr Condition { get; }
-            public ImmutableArray<Stmt> Body { get; }
-        }
-        readonly record struct ForLoop : Stmt
-        {
-            public ForLoop(FixedRange extent, Option<Stmt> initialization, Option<Expr> condition, Option<Assignment> increment, ImmutableArray<Stmt> body)
-            {
-                Extent = extent;
-                Debug.Assert(!initialization.HasValue);
-                Initialization = initialization;
-                Debug.Assert(!condition.HasValue);
-                Condition = condition;
-                Debug.Assert(!increment.HasValue);
-                Increment = increment;
-                Debug.Assert(body.Length > 0);
-                Body = body;
-            }
-            public FixedRange Extent { get; }
-            public Option<Stmt> Initialization { get; }
-            public Option<Expr> Condition { get; }
-            public Option<Assignment> Increment { get; }
-            public ImmutableArray<Stmt> Body { get; }
-        }
+        readonly record struct WhileLoop(FixedRange Extent, Expr Condition, ImmutableArray<Stmt> Stmts) : Stmt { }
+        readonly record struct DoWhileLoop(FixedRange Extent, Expr Condition, ImmutableArray<Stmt> Stmts) : Stmt { }
+        readonly record struct ForLoop(FixedRange Extent, Option<Stmt> Initialization, Option<Expr> Condition, Option<Assignment> Increment, ImmutableArray<Stmt> Body) : Stmt { }
         readonly record struct Return(FixedRange Extent, Expr Value) : Stmt { }
-        readonly record struct Write : Stmt
-        {
-            public Write(FixedRange extent, ImmutableArray<Expr> args)
-            {
-                Extent = extent;
-                Debug.Assert(args.Length > 0);
-                Args = args;
-            }
-            public FixedRange Extent { get; }
-            public ImmutableArray<Expr> Args { get; }
-        }
+        readonly record struct Write(FixedRange Extent, ImmutableArray<Expr> Args) : Stmt { }
         readonly record struct Read(FixedRange Extent, Expr.Lvalue Target) : Stmt { }
         readonly record struct Trunc(FixedRange Extent, Expr Arg) : Stmt { }
-        readonly record struct LocalVarDecl(FixedRange Extent, Type Type, Declarator Declarators) : Stmt { }
-        readonly record struct Alternative : Stmt
-        {
-            public Alternative(FixedRange extent, Clause @if, ImmutableArray<Clause> elseIfs, Option<ImmutableArray<Stmt>> @else)
-            {
-                Extent = extent;
-                If = @if;
-                Debug.Assert(elseIfs.Length > 0);
-                ElseIfs = elseIfs;
-                Debug.Assert(!@else.HasValue || @else.Value.Length > 0);
-                Else = @else;
-            }
-            public FixedRange Extent { get; }
-            public Clause If { get; }
-            public ImmutableArray<Clause> ElseIfs { get; }
-            public Option<ImmutableArray<Stmt>> Else { get; }
-        }
-        readonly record struct Switch : Stmt
-        {
-            public Switch(FixedRange extent, Expr condition, ImmutableArray<Clause> cases, Option<ImmutableArray<Stmt>> @default)
-            {
-                Extent = extent;
-                Condition = condition;
-                Debug.Assert(cases.Length > 0);
-                Cases = cases;
-                Debug.Assert(!@default.HasValue || @default.Value.Length > 0);
-                Default = @default;
-            }
-            public FixedRange Extent { get; }
-            public Expr Condition { get; }
-            public ImmutableArray<Clause> Cases { get; }
-            public Option<ImmutableArray<Stmt>> Default { get; }
-        }
+        readonly record struct LocalVarDecl(FixedRange Extent, Type Type, InitDeclarator Declarators) : Stmt { }
+        readonly record struct Alternative(FixedRange Extent, Clause If, ImmutableArray<Clause> ElseIfs, Option<ImmutableArray<Stmt>> Else) : Stmt { }
+        readonly record struct Switch(FixedRange Extent, Expr Condition, ImmutableArray<Clause> Cases, Option<ImmutableArray<Stmt>> Default) : Stmt { }
     }
-    readonly record struct FuncSig : Node
-    {
-        public FuncSig(Ident name, ImmutableArray<FormalParam> @params, Option<Type> returnType)
-        {
-            Name = name;
-            Debug.Assert(@params.Length > 0);
-            Params = @params;
-            Debug.Assert(!returnType.HasValue);
-            ReturnType = returnType;
-        }
-        public Ident Name { get; }
-        public ImmutableArray<FormalParam> Params { get; }
-        public Option<Type> ReturnType { get; }
-    }
+    readonly record struct FuncSig(Ident Name, ImmutableArray<FormalParam> Parameters, Option<Type> ReturnType) : Node { }
     interface Expr : Stmt, Init
     {
         readonly record struct Unary(FixedRange Extent, UnaryOperator Operator, Expr Operand) : Expr { }
         readonly record struct Binary(FixedRange Extent, Expr Left, BinaryOperator Operator, Expr Right) : Expr { }
-        readonly record struct Call : Expr
-        {
-            public Call(FixedRange extent, Ident callee, ImmutableArray<ActualParam> args)
-            {
-                Extent = extent;
-                Callee = callee;
-                Debug.Assert(args.Length > 0);
-                Args = args;
-            }
-            public FixedRange Extent { get; }
-            public Ident Callee { get; }
-            public ImmutableArray<ActualParam> Args { get; }
-        }
+        readonly record struct Call(FixedRange Extent, Ident Callee, ImmutableArray<ActualParam> Args) : Expr { }
         interface Lvalue : Expr
         {
-            readonly record struct ComponentAccess(FixedRange Extent, Expr ure, Ident Name) : Lvalue { }
+            readonly record struct ComponentAccess(FixedRange Extent, Expr Structure, Ident Name) : Lvalue { }
             readonly record struct ArraySub(FixedRange Extent, Expr Array, Expr Index) : Lvalue { }
             readonly record struct VarRef(FixedRange Extent, bool IsOut, Ident Name) : Lvalue { }
         }
@@ -231,46 +122,17 @@ public interface Node
         readonly record struct LitCharacter(FixedRange Extent) : Expr { }
         readonly record struct LitInteger(FixedRange Extent) : Expr { }
     }
-    interface Init : FixedNode
+    interface Init : Node, Locatable
     {
-        readonly record struct Braced : Init
+        readonly record struct Braced(FixedRange Extent, ImmutableArray<Braced.Item> Items) : Init
         {
-            public Braced(FixedRange extent, ImmutableArray<Item> items)
-            {
-                Extent = extent;
-                Debug.Assert(items.Length > 0);
-                Items = items;
-            }
-            public FixedRange Extent { get; }
-            public ImmutableArray<Item> Items { get; }
             public interface Item : Node
             {
-                readonly record struct Value : Item
-                {
-                    public Value(ImmutableArray<Designator> designator, Init init)
-                    {
-                        Debug.Assert(designator.Length > 0);
-                        Designator = designator;
-                        Init = init;
-                    }
-                    public ImmutableArray<Designator> Designator { get; }
-                    public Init Init { get; }
-                }
+                readonly record struct Value(ImmutableArray<Designator> Designators, Init Init) : Item { }
             }
         }
     }
-    readonly record struct Declarator(Ident Name, Init Init) : Node { }
-    readonly record struct Clause : Node
-    {
-        public Clause(Expr condition, ImmutableArray<Stmt> body)
-        {
-            Condition = condition;
-            Debug.Assert(body.Length > 0);
-            Body = body;
-        }
-        public Expr Condition { get; }
-        public ImmutableArray<Stmt> Body { get; }
-    }
+    readonly record struct Clause(Expr Condition, ImmutableArray<Stmt> Stmts) : Node { }
     readonly record struct FormalParam : Node { }
     interface UnaryOperator : Node
     {

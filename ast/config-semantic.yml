@@ -3,3 +3,5 @@ namespace: Scover.Psdc.StaticAnalysis
 root: semantic_node
 common_props:
   meta: semantic_metadata
+imports:
+    - Scover.Psdc.Parsing

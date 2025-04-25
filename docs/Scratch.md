@@ -656,6 +656,8 @@ Maybe reuse the C compiler test suite? Since the language is pretty close to C, 
 
 like c, optional, defaults to 0. corresponds to the exit code of the program.
 
+## cli strict option
+
 ## anonymous block
 
 ```psc
@@ -685,6 +687,12 @@ no more lasting until the end of the file part.
 - Location &rarr; Extent : shorter, more meaningful (not just an index, but a start and end 2uple)
 - Node &rarr; Ast : shorter, more meaningful (what is a Node? Are we running JS on the server?)
 
+### does None need to be an interface?
+
+or can it be a static class and act as a mini, non usign-able namespace?
+
+## add lexer contextual keyword test cases
+
 ## rewrite Da Parser
 
 Get rid of parse operation.
@@ -692,3 +700,7 @@ Get rid of parse operation.
 KISS. Like In crafting interpreters..
 
 Also get rid of semantic nodes. All this duplication is ugly. See how Crafting Interpeters does it.
+
+## with resharper : change parseoperation signatures so output argument is first
+
+that way, it's more transparant with assignment and more aligned.

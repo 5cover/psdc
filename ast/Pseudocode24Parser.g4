@@ -19,9 +19,9 @@ decl
 ;
 
 compiler_directive
-    : Hash 'assert' expr expr?
-    | Hash 'eval' 'expr' expr
-    | Hash 'eval' 'type' type
+    : Hash HashAssert expr expr?
+    | Hash HashEval EvalExpr expr
+    | Hash HashEval Type type
 ;
 
 constant_def: Constant type Colon init_declarators Semi;
