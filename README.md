@@ -208,6 +208,7 @@ And there you have it. Automated translation between Pseudocode and C.
 - [x] `finPour` keyword (equivalent to `fin` but only for loops)
 - [x] Escape sequences in string and character literals
 - [x] Case-insensitive boolean operators
+- [ ] `,` (comma) operator and `` ` `` (reverse comma) operator = evaluate two expressions. comma keeps the second. reverse comma keeps the first.
 - [ ] More static analysis
 - [ ] Alternative array syntax `tableau[INDICE_DEPART..INDICE_FIN] de type;`
 - [ ] Numeroted control stuctures (`si1`, `si2`, `si3`)
