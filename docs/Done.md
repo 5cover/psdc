@@ -13,7 +13,7 @@ We should make failures "light" as much as possible.
 
 So for `ParseToken(TokenType type, out ParseResult<string> value)`, we will never return an `ErroneousOperation` and failure will be indicated by assigning value to a failed ParseResult.
 
-But for `ParseToken(TokenType type)`, we don't have anywhere else for the value to go so we return an `ErroneousOperation` as we currenlty do.
+But for `ParseToken(TokenType type)`, we don't have anywhere else for the value to go so we return an `ErroneousOperation` as we currently do.
 
 ## Multiple possibilities in parsing
 

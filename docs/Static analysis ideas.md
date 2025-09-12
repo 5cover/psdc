@@ -1,5 +1,7 @@
 # Message ideas
 
+~~strike~~ : implemented
+
 ## Syntax errors
 
 ### Parameter modes

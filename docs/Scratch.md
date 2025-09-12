@@ -22,7 +22,7 @@ Indeed, making it lazy means that non-pure functions will never see their purity
 
 This could be implemented as a `RequirePure(Messenger msger) -> bool` method on a Function or the like object.
 
-## Make scalar initializers affect deepest subobject
+## Make scalar initializers affect deepest sub-object
 
 ```psc
 type d_example = structure début
@@ -380,7 +380,7 @@ Simply add some graph-building logic in the NodeImpl constructor.
 
 ## Preprocessor directives
 
-Since a PD can be located anywher in the program, it cannot be parsed as part of the normal syntax, unless we want to make the grammar extremely messy.
+Since a PD can be located anywhere in the program, it cannot be parsed as part of the normal syntax, unless we want to make the grammar extremely messy.
 
 The Lexer recognizes and interprets them, but does not produce tokens. Instead, it does something special.
 
@@ -406,19 +406,19 @@ Add support for modularity.
 
 Just use an include statement. It is dead simple, but it works. No special extension for header files.
 
-It's more of a DIY approach, like in C. Common issues of a modularity system based on include statements can be mitagated.
+It's more of a DIY approach, like in C. Common issues of a modularity system based on include statements can be mitigated.
 
 issue|solution
 -|-
 Naming conflicts|Manual prefixing of declared symbols
 Encapsulation|Public header file containing the interface<br>internal header file(s) for internals
-Circular includes|Implicit include guards<br>`#pragma include <expr>` for explictly allowing multiple inclusions
+Circular includes|Implicit include guards<br>`#pragma include <expr>` for explicitly allowing multiple inclusions
 
 ### Implementation
 
 #### 1. Run a preprocessor
 
-Works for things like #include but would require rewriting static analyisis for PD like `#compiler log`.
+Works for things like #include but would require rewriting static analysis for PD like `#compiler log`.
 
 #### 2. Token channels (like in ANTLR)
 
@@ -526,7 +526,7 @@ And what happens if we return a file or pass it to a function/procedure. We shou
 
 Also what happens of closing the file occurs in a if statement? How do we know for sure it's been closed? Can we analyze the truthfulness of the condition? You can push static analysis further and further to support scenarios that are unlikely to happen in real code anyway. It's difficult to implement. I won't do that.
 
-## SA of initialiers (Constant, LocalVariable): make sure the declared type is the same as the inferred value type
+## SA of initializers (Constant, LocalVariable): make sure the declared type is the same as the inferred value type
 
 Currently, we only check that the inferred value type is assignable to the declared type. This is fine except when we retrieve the value of the symbol or semantic node and get the wrong type later on.
 
@@ -553,6 +553,8 @@ Disable floating point equality warning in initializers.psc
 Sort members in code maid.
 
 ## Esolang wiki page
+
+i think there are two wikis
 
 ## Pseudocode standard
 
@@ -666,9 +668,9 @@ début
 fin
 ```
 
-## fix program and main programm
+## fix program and main program
 
-soo reuine the program declaration and the main program
+soo reunite the program declaration and the main program
 
 ```psc
 programme A c'est début
