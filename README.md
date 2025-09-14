@@ -4,7 +4,7 @@ IUT de Lannion Pseudocode compiler (transpiler).
 
 ## Tools
 
-[ast-gen Python](https://github.com/5cover/ast-gen)
+[mkast Python](https://github.com/5cover/mkast)
 
 [VSCode Pseudocode extension](https://marketplace.visualstudio.com/items?itemName=NoanPerrot.pseudocode)
 

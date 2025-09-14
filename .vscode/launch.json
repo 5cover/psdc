@@ -2,12 +2,22 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python Debugger: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Psdc Debug",
       "type": "coreclr",
       "request": "launch",
       "program": "${workspaceFolder}/Psdc/bin/Debug/net8.0/psdc.dll",
-      "args": ["c", "${workspaceFolder}/testPrograms/test.psc"],
+      "args": [
+        "c",
+        "${workspaceFolder}/testPrograms/test.psc"
+      ],
       "console": "internalConsole"
-    }   
+    }
   ],
 }

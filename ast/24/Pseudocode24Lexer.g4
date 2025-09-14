@@ -83,7 +83,7 @@ Plus: '+';
 Hash: '#';
 
 LiteralCharacter: '\'' CChar+ '\'';
-LiteralInteger: NonZeroDeigit Digit*;
+LiteralInteger: NonZeroDigit Digit*;
 LiteralReal: Digit* Dot Digit+;
 LiteralString: '"' SChar+ '"';
 
@@ -100,7 +100,7 @@ fragment OctEscape: '\\' OctDigit OctDigit? OctDigit?;
 fragment HexEscape: '\\x' HexDigit+;
 fragment OctDigit: [0-7];
 fragment Digit: [0-9];
-fragment NonZeroDeigit: [1-9];
+fragment NonZeroDigit: [1-9];
 fragment HexDigit: [0-9A-F];
 fragment UnicodeEscape: '\\u' HexQuad | '\\U' HexQuad HexQuad;
 fragment HexQuad: HexDigit HexDigit HexDigit HexDigit;

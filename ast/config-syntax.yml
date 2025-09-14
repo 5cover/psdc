@@ -1,4 +1,5 @@
-# yaml-language-server: $schema=https://github.com/5cover/ast-gen/raw/refs/heads/main/schemas/config.json
+# yaml-language-server: $schema=https://github.com/5cover/mkast/raw/refs/heads/main/src/mkast/schemas/config.json
+extends: config.yml
 namespace: Scover.Psdc.Parsing
 root: node
 

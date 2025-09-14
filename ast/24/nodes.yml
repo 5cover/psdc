@@ -1,26 +1,4 @@
-# yaml-language-server: $schema=https://github.com/5cover/ast-gen/raw/refs/heads/main/schemas/config.json
-target: csharp
-known_types:
-  - ident
-  - fixed_range
-union: public interface $1
-product: public readonly record struct $1
-imports:
-    - System.Collections.Immutable
-modifiers:
-  ?:
-    type: Option<$1>
-    unwrap: $1.Value
-    none_when: '!$1.HasValue'
-  '*':
-    type: ImmutableArray<$1>
-    unwrap: $1.All($1 => $2)
-  +:
-    type: ImmutableArray<$1>
-    unwrap: $1.All($1 => $2)
-    must: $1.Length > 0
----
-# yaml-language-server: $schema=https://raw.githubusercontent.com/5cover/ast-gen/refs/heads/main/schemas/nodes.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/5cover/mkast/refs/heads/main/src/mkast/schemas/nodes.json
 algorithm:
   decls: decl*
 
