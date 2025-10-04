@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=https://github.com/5cover/mkast/raw/refs/heads/main/src/mkast/schemas/config.json
 # todo: extends
 target: csharp
+namespace: Scover.Psdc.Ast
 known_types:
   - ident
   - fixed_range

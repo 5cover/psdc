@@ -1,0 +1,27 @@
+{
+  "name": "psdc",
+  "version": "1.0.0",
+  "description": "IUT de Lannion Pseudocode compiler (transpiler).",
+  "homepage": "https://github.com/5cover/psdc#readme",
+  "bugs": {
+    "url": "https://github.com/5cover/psdc/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/5cover/psdc.git"
+  },
+  "license": "MIT",
+  "author": "5cover",
+  "main": "index.js",
+  "type": "module",
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {
+    "@5cover/mkast": "github:5cover/mkast",
+    "antlr-ng": "^1.0.10"
+  },
+  "scripts": {
+    "gen-parser": "node scripts/gen-parser.js"
+  }
+}
