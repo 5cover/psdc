@@ -706,3 +706,8 @@ Also get rid of semantic nodes. All this duplication is ugly. See how Crafting I
 ## with resharper : change parseoperation signatures so output argument is first
 
 that way, it's more transparant with assignment and more aligned.
+
+## % and ° postfix ops
+
+% = /100
+° = *pi/180
